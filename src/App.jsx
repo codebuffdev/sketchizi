@@ -68,6 +68,8 @@ const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"
 const ArchitectureTemplatesModal = lazy(() => import("./components/app/ArchitectureTemplatesModal"));
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { getTabCloudMeta } from "./features/workspace/tabCloudState.js";
+import { buildChapterEditorUrl, useChapterNavigation } from "./features/workspace/useChapterNavigation.js";
+import { recordWorkspaceItemOpened } from "./features/workspace/workspacePresentation.js";
 import ZenHud from "./components/app/ZenHud.jsx";
 import { applyCanvasSpellcheck } from "./features/canvas/nativeSpellcheck.js";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
@@ -272,6 +274,14 @@ function App() {
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
   const cloudManualSaveRequestedRef = useRef(false);
   const [cloudDocumentName, setCloudDocumentName] = useState("Cloud diagram");
+  const cloudSaveStateRef = useRef(cloudSaveState);
+  cloudSaveStateRef.current = cloudSaveState;
+  // Sibling chapters of the open cloud diagram (null unless the project has 2+ chapters).
+  const chapterNav = useChapterNavigation({
+    enabled: Boolean(cloudSessionRef.current.active && !cloudDetached),
+    projectId: cloudSessionRef.current.projectId || cloudProjectId,
+    diagramId: cloudSessionRef.current.diagramId || cloudDiagramId,
+  });
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -452,6 +462,28 @@ function App() {
     queueSketchSave(api.getSceneElements?.() || [], api.getAppState?.() || {});
     cloudFlushImmediatelyRef.current = false;
   }, [apiRef, cloudDiagramId, queueSketchSave]);
+
+  // Move to another chapter of the same project. Flushes any pending cloud save first and
+  // only records "last opened" - it never changes the chapter's sequence position.
+  const navigateToChapter = useCallback(async (target) => {
+    if (!target?.id || !cloudSessionRef.current.active) return;
+    const projectId = cloudSessionRef.current.projectId || cloudProjectId;
+    if (["pending", "saving"].includes(cloudSaveStateRef.current.state)) {
+      saveCloudDiagramNow();
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      await cloudSaveQueueRef.current.catch(() => {});
+      await new Promise((resolve) => setTimeout(resolve, 60));
+    }
+    if (["error", "conflict", "pending", "saving"].includes(cloudSaveStateRef.current.state)
+      && !window.confirm("This chapter has changes that are not saved to Cloud Workspace. Switch chapters anyway?")) return;
+    const usedAt = new Date().toISOString();
+    recordWorkspaceItemOpened(target.id, usedAt);
+    await Promise.race([
+      workspaceClient.updateDiagram(target.id, { lastOpenedAt: usedAt }).catch(() => {}),
+      new Promise((resolve) => setTimeout(resolve, 1200)),
+    ]);
+    window.location.assign(buildChapterEditorUrl(projectId, target.id));
+  }, [cloudProjectId, saveCloudDiagramNow]);
 
   useEffect(() => {
     if (!cloudDiagramId || !apiReady || !sketchReady || !canvasTabsReady || cloudLoadStartedRef.current || cloudSessionRef.current.active) return undefined;
@@ -2887,6 +2919,8 @@ function App() {
         isCloudDocument={Boolean(cloudSessionRef.current.active && !cloudDetached)}
         onSaveToCloud={() => cloudSessionRef.current.active && !cloudDetachedRef.current ? saveCloudDiagramNow() : setCloudSaveDialogOpen(true)}
         cloudSaveState={cloudSaveState.state}
+        chapterNav={chapterNav}
+        onNavigateChapter={navigateToChapter}
         onDownloadRecoveryBackup={downloadRecoveryBackup}
         onOpenExport={() => setExportStudioOpen(true)}
         onOpenTemplates={() => setDesignStudioOpen(true)}

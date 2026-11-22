@@ -206,7 +206,13 @@ test("Cloud Workspace follows the saved canvas theme, including system preferenc
   assert.match(dashboard, /addEventListener\("storage", syncTheme\)/);
   assert.match(preference, /THEME_PREFERENCE_KEY = "diagram-app-theme"/);
   assert.match(stylesheet, /\.cloud-workspace\[data-theme="light"\]/);
-  assert.match(stylesheet, /--cw-bg: #0f1318/);
+  // Neutral slate & monochrome studio palette (no purple/indigo fills).
+  assert.match(stylesheet, /--cw-bg: #0f1117/);
+  assert.match(stylesheet, /--cw-bg: #f8fafc/);
+  assert.match(stylesheet, /--cw-button: #0f172a/);
+  assert.match(stylesheet, /--cw-button: #f8fafc/);
+  assert.doesNotMatch(stylesheet, /#(7865f4|a89bff|6656d9|8b7df5)/i);
+  assert.doesNotMatch(stylesheet, /--cw-border:var\(--cw-border\)/);
 });
 
 test("cloud document excludes deleted elements and unreferenced cached files", () => {

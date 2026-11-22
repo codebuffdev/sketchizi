@@ -91,3 +91,47 @@
     white-space: normal;
   }
 }
+
+/* In-editor chapter switcher: "<- Ch 02 | Chapter 3 of 5 | Ch 04 ->". Theme-agnostic (uses currentColor). */
+.desktop-app-chapter-nav {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.desktop-app-chapter-nav-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.desktop-app-chapter-nav-button:hover:not(:disabled) { background: color-mix(in srgb, currentColor 10%, transparent); }
+.desktop-app-chapter-nav-button:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+.desktop-app-chapter-nav-button:disabled { opacity: .35; cursor: default; }
+.desktop-app-chapter-nav-position {
+  padding: 0 8px;
+  border-inline: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  font-weight: 650;
+  opacity: .85;
+}
+@media (min-width: 1100px) {
+  .app.canvas-first-header .desktop-app-header-island-center:has(.desktop-app-chapter-nav) { max-width: min(680px, 48vw); }
+}
+@media (max-width: 760px) {
+  .desktop-app-chapter-nav-label { display: none; }
+  .desktop-app-chapter-nav-position { padding: 0 6px; }
+}

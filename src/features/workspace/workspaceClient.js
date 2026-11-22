@@ -83,6 +83,15 @@ export const workspaceClient = Object.freeze({
     method: "PUT", headers: { "if-match": String(revision) }, body: document, timeout: DRAWING_WRITE_TIMEOUT_MS,
   }),
   updateDiagram: (diagramId, metadata) => request(`/diagrams/${encodeURIComponent(diagramId)}`, { method: "PATCH", body: metadata }),
+  // Chapter sequence metadata (orderIndex / chapterStatus). Sent as a metadata-only
+  // PATCH so it never touches the saved scene document or its revision.
+  updateDiagramChapter: (diagramId, chapter) => request(`/diagrams/${encodeURIComponent(diagramId)}`, {
+    method: "PATCH",
+    body: {
+      ...(Number.isInteger(chapter?.orderIndex) ? { orderIndex: chapter.orderIndex } : {}),
+      ...(typeof chapter?.chapterStatus === "string" ? { chapterStatus: chapter.chapterStatus } : {}),
+    },
+  }),
   duplicateDiagram: (diagramId) => request(`/diagrams/${encodeURIComponent(diagramId)}/duplicate`, { method: "POST" }),
   deleteDiagram: (diagramId) => request(`/diagrams/${encodeURIComponent(diagramId)}`, { method: "DELETE" }),
 });

@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "../navigation/themePreference.js";
 import { workspaceClient } from "./workspaceClient.js";
 import { findDuplicateDiagramName, readDiagramRows } from "./diagramNames.js";
-import { formatWorkspaceDate as dateLabel, mergeWorkspaceActivity, recordWorkspaceItemOpened, sortWorkspaceRecentlyUsed } from "./workspacePresentation.js";
+import { WORKSPACE_GRID_SORTS, findLastOpenedItem, formatWorkspaceDate as dateLabel, mergeWorkspaceActivity, recordWorkspaceItemOpened, sortWorkspaceDiagrams, sortWorkspaceRecentlyUsed } from "./workspacePresentation.js";
+import {
+  CHAPTER_STATUS_LABELS, appendChapter, buildChapterLayout, countCompletedChapters, cycleChapterStatus, formatChapterBadge, formatChapterLabel,
+  getChapterChanges, moveChapter, readChapterLayout, removeChapter, reorderChapters, resolveChapterSequence, setChapterStatus, suggestNextChapterName, writeChapterLayout,
+} from "./chapterSequence.js";
 import "./workspace.css";
 
 
@@ -26,7 +30,7 @@ const DiagramThumbnail = ({ diagram }) => {
     const y = Number(element.y) || 0;
     const width = Math.max(1, Math.abs(Number(element.width) || 1));
     const height = Math.max(1, Math.abs(Number(element.height) || 1));
-    const stroke = element.strokeColor || "#a5b4fc";
+    const stroke = element.strokeColor || "#94a3b8";
     const fill = element.backgroundColor && element.backgroundColor !== "transparent" ? element.backgroundColor : "none";
     const common = { key: element.id || `${element.type}-${x}-${y}`, stroke, strokeWidth: Math.max(1, Number(element.strokeWidth) || 1.5), fill, opacity: element.opacity == null ? 1 : element.opacity / 100, vectorEffect: "non-scaling-stroke" };
     if (["rectangle", "image", "embeddable", "frame"].includes(element.type)) return <rect {...common} x={x} y={y} width={width} height={height} rx={element.roundness ? 4 : 0} />;
@@ -45,6 +49,46 @@ const DiagramThumbnail = ({ diagram }) => {
   };
   return <div className="cw-diagram-preview" aria-label={`Preview of ${diagram.name}`}><svg viewBox={viewBox} preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">{elements.slice(0, 250).map(drawElement)}</svg></div>;
 };
+
+const VIEW_MODE_KEY = "sketchizi.workspace.chapterView.v1";
+
+const PencilIcon = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>;
+const TrashIcon = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>;
+
+function ChapterCard({ d, variant, busy, reorderable, isFirst, isLast, isLastOpened, renaming, dragging, dragOver, onOpen, onStartRename, onCommitRename, onCancelRename, onDelete, onDuplicate, onMove, onCycleStatus, dragProps }) {
+  const classes = ["cw-diagram-card", "cw-chapter-card", variant === "flow" ? "is-flow" : "is-grid", `is-${d.chapterStatus}`, isLastOpened ? "is-last-opened" : "", dragging ? "is-dragging" : "", dragOver ? "is-drag-over" : ""].filter(Boolean).join(" ");
+  const moveHint = reorderable ? undefined : "Switch to Sequence Order to reorder chapters";
+  return <article className={classes} role={variant === "flow" ? "listitem" : undefined} data-chapter-id={d.id} {...dragProps}>
+    <div className="cw-chapter-top">
+      <span className="cw-drag-handle" aria-hidden="true" title={reorderable ? "Drag to reorder" : moveHint}>⋮⋮</span>
+      <span className="cw-chapter-pill">{formatChapterBadge(d.chapterNumber)}</span>
+      <button type="button" className={`cw-status-pill is-${d.chapterStatus}`} disabled={busy} onClick={onCycleStatus} title="Click to change status" aria-label={`Status: ${CHAPTER_STATUS_LABELS[d.chapterStatus]}. Click to change.`}>{CHAPTER_STATUS_LABELS[d.chapterStatus]}</button>
+    </div>
+    <DiagramThumbnail diagram={d} />
+    <div className="cw-diagram-body">
+      <div className="cw-chapter-title-row">
+        {renaming
+          ? <input className="cw-rename-input" autoFocus maxLength={120} aria-label="Chapter name" defaultValue={d.name} onFocus={(e) => e.currentTarget.select()}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onCommitRename(e.currentTarget.value); } else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); onCancelRename(); } }}
+              onBlur={(e) => onCommitRename(e.currentTarget.value)} />
+          : <b title={`${d.name} — double-click to rename`} onDoubleClick={() => { if (!busy) onStartRename(); }}>{d.name}</b>}
+        <span className="cw-chapter-icons">
+          <button type="button" className="cw-icon-button" disabled={busy || renaming} onClick={onStartRename} aria-label={`Rename ${d.name}`} title="Rename"><PencilIcon /></button>
+          <button type="button" className="cw-icon-button cw-icon-danger" disabled={busy} onClick={onDelete} aria-label={`Delete ${d.name}`} title="Delete"><TrashIcon /></button>
+        </span>
+      </div>
+      <div className="cw-chapter-meta"><small>sketchizi · {dateLabel(d.lastOpenedAt || d.lastUsedAt || d.updatedAt || d.createdAt)}</small>{isLastOpened && <span className="cw-last-opened-pill">Last Opened</span>}</div>
+      <div className="cw-chapter-actions">
+        <button type="button" className="cw-open-button" disabled={busy} onClick={onOpen}>Open</button>
+        <button type="button" disabled={busy} onClick={onDuplicate}>Duplicate</button>
+        <span className="cw-move-group">
+          <button type="button" disabled={busy || !reorderable || isFirst} onClick={() => onMove(-1)} aria-label="Move chapter earlier" title={moveHint || "Move earlier"}>←</button>
+          <button type="button" disabled={busy || !reorderable || isLast} onClick={() => onMove(1)} aria-label="Move chapter later" title={moveHint || "Move later"}>→</button>
+        </span>
+      </div>
+    </div>
+  </article>;
+}
 
 export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
   const [themeMode, setThemeMode] = useState(() => getInitialThemeMode());
@@ -86,6 +130,20 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
   const [diagramName, setDiagramName] = useState("");
   const [projectForm, setProjectForm] = useState(false);
   const [diagramForm, setDiagramForm] = useState(false);
+  const [chapterLayout, setChapterLayout] = useState({ order: [], status: {} });
+  const [viewMode, setViewMode] = useState(() => { try { return globalThis.localStorage?.getItem(VIEW_MODE_KEY) === "grid" ? "grid" : "flow"; } catch { return "flow"; } });
+  const [gridSort, setGridSort] = useState("sequence");
+  const [renamingId, setRenamingId] = useState("");
+  const renamingRef = useRef("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [dragId, setDragId] = useState("");
+  const [dragOverId, setDragOverId] = useState("");
+  const chapters = useMemo(() => resolveChapterSequence(diagrams, chapterLayout), [diagrams, chapterLayout]);
+  const lastOpened = useMemo(() => findLastOpenedItem(chapters), [chapters]);
+  const completedCount = countCompletedChapters(chapters);
+  const displayChapters = useMemo(() => viewMode === "grid" ? sortWorkspaceDiagrams(chapters, gridSort) : chapters, [chapters, viewMode, gridSort]);
+  const atDiagramLimit = !limits.admin && limits.diagramCount >= (limits.diagramLimit ?? 3);
+  const nextChapterLabel = String(chapters.length + 1).padStart(2, "0");
   const active = projects.find((p) => p.id === activeId) || null;
   const filtered = useMemo(() => projects.filter((p) => p.name.toLowerCase().includes(query.trim().toLowerCase())), [projects, query]);
 
@@ -104,15 +162,28 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     reloadProjects();
     workspaceClient.getLimits().then(setLimits).catch(() => {});
   }, [reloadProjects]);
+  // Resolve the locked chapter order and remember it, so later renames, saves or
+  // opens can never re-sort a project's sequence.
+  const applyDiagramRows = useCallback((projectId, rows) => {
+    const merged = mergeWorkspaceActivity(rows);
+    const layout = buildChapterLayout(resolveChapterSequence(merged, readChapterLayout(projectId)));
+    writeChapterLayout(projectId, layout);
+    setChapterLayout(layout);
+    setDiagrams(merged);
+  }, []);
+  const refreshDiagrams = useCallback(async (projectId) => {
+    applyDiagramRows(projectId, readDiagramRows(await workspaceClient.listDiagrams(projectId)));
+  }, [applyDiagramRows]);
   useEffect(() => {
+    setDiagramForm(false); setRenamingId(""); renamingRef.current = ""; setDeleteTarget(null);
     if (!activeId) { setDiagrams([]); return undefined; }
     let cancelled = false;
     setDiagramLoading(true);
-    workspaceClient.listDiagrams(activeId).then((r) => { if (!cancelled) setDiagrams(sortWorkspaceRecentlyUsed(mergeWorkspaceActivity(readDiagramRows(r)))); })
+    workspaceClient.listDiagrams(activeId).then((r) => { if (!cancelled) applyDiagramRows(activeId, readDiagramRows(r)); })
       .catch((e) => { if (!cancelled) setError(e.message || "Could not load diagrams."); })
       .finally(() => { if (!cancelled) setDiagramLoading(false); });
     return () => { cancelled = true; };
-  }, [activeId]);
+  }, [activeId, applyDiagramRows]);
 
   const createProject = async (event) => {
     event.preventDefault(); if (!projectName.trim() || busy) return;
@@ -120,6 +191,94 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     try { const p = await workspaceClient.createProject({ name: projectName.trim(), description: "" }); setProjectName(""); setProjectForm(false); await reloadProjects(p.id); setNotice("Project created and saved to your cloud workspace."); }
     catch (e) { setError(e.message || "Could not create project."); } finally { setBusy(false); }
   };
+  const renameProject = async (p) => {
+    const name = window.prompt("Project name", p.name); if (name === null || !name.trim() || name.trim() === p.name) return;
+    setBusy(true); setError("");
+    try { await workspaceClient.updateProject(p.id, { name: name.trim(), description: p.description || "" }); await reloadProjects(p.id); setNotice("Project renamed."); }
+    catch (e) { setError(e.message || "Could not rename project."); } finally { setBusy(false); }
+  };
+  const deleteProject = async (p) => {
+    if (!window.confirm(`Delete "${p.name}" and all its diagrams? This cannot be undone.`)) return;
+    setBusy(true); setError("");
+    try { await workspaceClient.deleteProject(p.id); await reloadProjects(); setNotice("Project deleted."); }
+    catch (e) { setError(e.message || "Could not delete project."); } finally { setBusy(false); }
+  };
+    const changeViewMode = (mode) => { setViewMode(mode); try { globalThis.localStorage?.setItem(VIEW_MODE_KEY, mode); } catch { /* preference only */ } };
+
+  // Persist a new chapter arrangement: UI + local layout first, then a best-effort
+  // metadata PATCH for only the chapters whose position or status changed.
+  const commitChapters = async (next, before) => {
+    const layout = buildChapterLayout(next);
+    writeChapterLayout(activeId, layout);
+    setChapterLayout(layout);
+    setDiagrams(next);
+    const changes = getChapterChanges(before, next);
+    await Promise.allSettled(changes.map((change) => workspaceClient.updateDiagramChapter(change.id, change)));
+  };
+  const reorderTo = (fromId, toId) => { const next = reorderChapters(chapters, fromId, toId); if (next !== chapters) commitChapters(next, chapters); };
+  const shiftChapter = (id, delta) => { const next = moveChapter(chapters, id, delta); if (next !== chapters) commitChapters(next, chapters); };
+  const cycleStatus = (d) => commitChapters(setChapterStatus(chapters, d.id, cycleChapterStatus(d.chapterStatus)), chapters);
+
+  const openChapterForm = () => {
+    if (diagramForm) { setDiagramForm(false); return; }
+    setDiagramName(suggestNextChapterName(chapters));
+    setDiagramForm(true);
+  };
+  const openDiagram = async (d) => {
+    const usedAt = new Date().toISOString();
+    recordWorkspaceItemOpened(d.id, usedAt);
+    setBusy(true);
+    try { await workspaceClient.updateDiagram(d.id, { lastOpenedAt: usedAt }).catch(() => {}); }
+    finally { window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(d.id)}&cloudProjectId=${encodeURIComponent(activeId)}`); }
+  };
+
+  const startRename = (d) => { renamingRef.current = d.id; setRenamingId(d.id); };
+  const cancelRename = () => { renamingRef.current = ""; setRenamingId(""); };
+  const commitRename = async (d, rawValue) => {
+    if (renamingRef.current !== d.id) return;
+    renamingRef.current = ""; setRenamingId("");
+    const name = String(rawValue ?? "").trim();
+    if (!name || name === d.name) return;
+    setBusy(true); setError("");
+    try {
+      const currentDiagrams = readDiagramRows(await workspaceClient.listDiagrams(activeId));
+      if (findDuplicateDiagramName(currentDiagrams, name, d.id)) { setError("A diagram with this name already exists in this project. Choose a different name."); return; }
+      await workspaceClient.updateDiagram(d.id, { name, projectId: activeId });
+      setDiagrams((rows) => rows.map((row) => row.id === d.id ? { ...row, name } : row));
+      setNotice("Chapter renamed.");
+    } catch (e) { setError(e.message || "Could not rename chapter."); } finally { setBusy(false); }
+  };
+
+  const confirmDelete = async () => {
+    const target = deleteTarget; if (!target || busy) return;
+    setBusy(true); setError(""); setNotice("");
+    try {
+      await workspaceClient.deleteDiagram(target.id);
+      setDeleteTarget(null);
+      const before = chapters;
+      const next = removeChapter(before, target.id);
+      setProjects((rows) => rows.map((p) => p.id === activeId ? { ...p, diagramCount: next.length } : p));
+      workspaceClient.getLimits().then(setLimits).catch(() => {});
+      await commitChapters(next, before);
+      setNotice(next.length ? `"${target.name}" deleted. Remaining chapters were renumbered CH 01–${formatChapterLabel(next.length).slice(3)}.` : `"${target.name}" deleted.`);
+    } catch (e) { setError(e.message || "Could not delete chapter."); } finally { setBusy(false); }
+  };
+  const duplicateDiagram = async (d) => {
+    setBusy(true); setError("");
+    try {
+      await workspaceClient.duplicateDiagram(d.id);
+      await refreshDiagrams(activeId);
+      workspaceClient.getLimits().then(setLimits).catch(() => {});
+      setNotice("Chapter duplicated and added to the end of the sequence.");
+    } catch (e) { setError(e.message || "Could not duplicate chapter."); } finally { setBusy(false); }
+  };
+  useEffect(() => {
+    if (!deleteTarget) return undefined;
+    const onKey = (event) => { if (event.key === "Escape" && !busy) setDeleteTarget(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [deleteTarget, busy]);
+
   const createDiagram = async (event) => {
     event.preventDefault(); if (!active || !diagramName.trim() || busy) return;
     setBusy(true); setError(""); setNotice("");
@@ -141,45 +300,58 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
       setDiagramName(""); setDiagramForm(false);
       workspaceClient.getLimits().then(setLimits).catch(() => {});
       if (created?.id) {
+        // Append to the END of the sequence; the new chapter never displaces an existing one.
+        const next = appendChapter(chapters, { ...created, name: created.name || diagramName.trim(), chapterStatus: "up-next" });
+        writeChapterLayout(active.id, buildChapterLayout(next));
+        recordWorkspaceItemOpened(created.id);
+        const appended = next[next.length - 1];
+        await Promise.race([
+          workspaceClient.updateDiagramChapter(created.id, appended).catch(() => {}),
+          new Promise((resolve) => setTimeout(resolve, 1500)),
+        ]);
         window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(created.id)}&cloudProjectId=${encodeURIComponent(active.id)}`);
         return;
       }
-      const rows = await workspaceClient.listDiagrams(active.id); setDiagrams(sortWorkspaceRecentlyUsed(mergeWorkspaceActivity(readDiagramRows(rows))));
-      await reloadProjects(active.id); setNotice("Diagram created. Open it to begin editing.");
-    } catch (e) { setError(e.message || "Could not create diagram."); } finally { setBusy(false); }
+      await refreshDiagrams(active.id);
+      await reloadProjects(active.id); setNotice("Chapter created. Open it to begin editing.");
+    } catch (e) { setError(e.message || "Could not create chapter."); } finally { setBusy(false); }
   };
-  const renameProject = async (p) => {
-    const name = window.prompt("Project name", p.name); if (name === null || !name.trim() || name.trim() === p.name) return;
-    setBusy(true); setError("");
-    try { await workspaceClient.updateProject(p.id, { name: name.trim(), description: p.description || "" }); await reloadProjects(p.id); setNotice("Project renamed."); }
-    catch (e) { setError(e.message || "Could not rename project."); } finally { setBusy(false); }
+
+  const cardProps = (d, index, list, variant) => {
+    const reorderable = variant === "flow" || gridSort === "sequence";
+    return {
+      d, variant, busy, reorderable,
+      isFirst: index === 0, isLast: index === list.length - 1,
+      isLastOpened: lastOpened?.id === d.id,
+      renaming: renamingId === d.id,
+      dragging: dragId === d.id, dragOver: dragOverId === d.id && dragId !== d.id,
+      onOpen: () => openDiagram(d),
+      onStartRename: () => startRename(d),
+      onCommitRename: (value) => commitRename(d, value),
+      onCancelRename: cancelRename,
+      onDelete: () => setDeleteTarget(d),
+      onDuplicate: () => duplicateDiagram(d),
+      onMove: (delta) => shiftChapter(d.id, delta),
+      onCycleStatus: () => cycleStatus(d),
+      dragProps: reorderable ? {
+        draggable: !busy && renamingId !== d.id,
+        onDragStart: (event) => { setDragId(d.id); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", d.id); },
+        onDragOver: (event) => { if (dragId && dragId !== d.id) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; if (dragOverId !== d.id) setDragOverId(d.id); } },
+        onDrop: (event) => { event.preventDefault(); const from = dragId; setDragId(""); setDragOverId(""); if (from && from !== d.id) reorderTo(from, d.id); },
+        onDragEnd: () => { setDragId(""); setDragOverId(""); },
+      } : {},
+    };
   };
-  const deleteProject = async (p) => {
-    if (!window.confirm(`Delete "${p.name}" and all its diagrams? This cannot be undone.`)) return;
-    setBusy(true); setError("");
-    try { await workspaceClient.deleteProject(p.id); await reloadProjects(); setNotice("Project deleted."); }
-    catch (e) { setError(e.message || "Could not delete project."); } finally { setBusy(false); }
-  };
-  const diagramAction = async (d, action) => {
-    if (action === "rename") { const name = window.prompt("Diagram name", d.name); if (name === null || !name.trim() || name.trim() === d.name) return; d = { ...d, nextName: name.trim() }; }
-    if (action === "delete" && !window.confirm(`Delete "${d.name}"? This cannot be undone.`)) return;
-    setBusy(true); setError("");
-    try {
-      if (action === "rename") {
-        const currentDiagramsResult = await workspaceClient.listDiagrams(activeId);
-        const currentDiagrams = readDiagramRows(currentDiagramsResult);
-        if (findDuplicateDiagramName(currentDiagrams, d.nextName, d.id)) {
-          setError("A diagram with this name already exists in this project. Choose a different name.");
-          return;
-        }
-        await workspaceClient.updateDiagram(d.id, { name: d.nextName, projectId: activeId });
-      }
-      if (action === "duplicate") await workspaceClient.duplicateDiagram(d.id);
-      if (action === "delete") await workspaceClient.deleteDiagram(d.id);
-      const rows = await workspaceClient.listDiagrams(activeId); setDiagrams(readDiagramRows(rows));
-      await reloadProjects(activeId); setNotice(action === "duplicate" ? "Diagram duplicated." : action === "delete" ? "Diagram deleted." : "Diagram renamed.");
-    } catch (e) { setError(e.message || `Could not ${action} diagram.`); } finally { setBusy(false); }
-  };
+
+  const sequenceControls = <div className="cw-chapter-controls">
+    <div className="cw-segmented" role="group" aria-label="Chapter view">
+      <button type="button" className={viewMode === "flow" ? "is-selected" : ""} aria-pressed={viewMode === "flow"} onClick={() => changeViewMode("flow")}>Sequence Flow</button>
+      <button type="button" className={viewMode === "grid" ? "is-selected" : ""} aria-pressed={viewMode === "grid"} onClick={() => changeViewMode("grid")}>Grid</button>
+    </div>
+    {viewMode === "grid" && <label className="cw-sort"><span>Sort</span><select aria-label="Sort chapters" value={gridSort} onChange={(e) => setGridSort(e.target.value)}>{Object.entries(WORKSPACE_GRID_SORTS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>}
+    <span className="cw-progress-badge" aria-label={`${completedCount} of ${chapters.length} chapters completed`}>{completedCount}/{chapters.length} Chapters Completed</span>
+    {lastOpened && chapters.length > 1 && <button type="button" className="cw-button cw-quiet" disabled={busy} onClick={() => openDiagram(lastOpened)}>Resume Last Opened ({formatChapterLabel(lastOpened.chapterNumber)})</button>}
+  </div>;
 
   return <main className="cloud-workspace" data-theme={isDarkTheme ? "dark" : "light"}>
     <header className="cw-header"><a className="cw-brand" href="/" aria-label="Sketchizi"><span className="cw-brand-mark">S</span> Sketchizi <span className="cw-brand-sub">CLOUD WORKSPACE</span></a><div className="cw-header-actions"><span className="cw-user">{user?.name || user?.email || "Signed in"}</span><button className="cw-button cw-quiet" onClick={onOpenEditor}>Open editor</button><button className="cw-button cw-quiet" onClick={onSignOut}>Sign out</button></div></header>
@@ -189,11 +361,26 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
       <div className="cw-toolbar"><strong>PROJECTS <span>{projects.length}</span></strong><input aria-label="Search projects" className="cw-search" placeholder="Search projects…" value={query} onChange={(e) => setQuery(e.target.value)}/></div>
       {loading ? <div className="cw-loading">Loading your workspace…</div> : projects.length === 0 ? <div className="cw-empty"><div className="cw-empty-icon">▦</div><h2>Your workspace starts here</h2><p>Create a project to keep your architecture diagrams together. Projects are private to your account.</p><button className="cw-button cw-primary" onClick={() => setProjectForm(true)}>Create your first project</button></div> : <div className="cw-layout">
         <aside className="cw-project-list" aria-label="Projects">{filtered.map((p) => <article className={p.id === activeId ? "cw-project is-active" : "cw-project"} key={p.id}><button className="cw-project-select" onClick={() => setActiveId(p.id)}><span className="cw-project-icon">▦</span><span><b>{p.name}</b><small>{p.diagramCount ?? 0} diagrams · {dateLabel(p.lastOpenedAt || p.lastUsedAt || p.updatedAt || p.createdAt)}</small></span></button><div className="cw-project-actions"><button disabled={busy} onClick={() => renameProject(p)}>Rename</button><button disabled={busy} onClick={() => deleteProject(p)}>Delete</button></div></article>)}{!filtered.length && <p className="cw-muted">No matching projects.</p>}</aside>
-        <section className="cw-diagrams">{active ? <><div className="cw-diagram-heading"><div><div className="cw-eyebrow">PROJECT</div><h2>{active.name}</h2><p>{active.description || "Diagrams in this project"}</p></div><button className="cw-button cw-primary" disabled={busy || (!limits.admin && limits.diagramCount >= (limits.diagramLimit ?? 3))} title={!limits.admin && limits.diagramCount >= (limits.diagramLimit ?? 3) ? "Delete a diagram to create another" : undefined} onClick={() => setDiagramForm(!diagramForm)}>+ New diagram</button></div>
-          {diagramForm && <form className="cw-form" onSubmit={createDiagram}><label htmlFor="cw-diagram-name">Diagram name</label><input id="cw-diagram-name" autoFocus maxLength={120} required value={diagramName} onChange={(e) => setDiagramName(e.target.value)} placeholder="e.g. System overview"/><div className="cw-form-actions"><button type="button" className="cw-button cw-quiet" onClick={() => setDiagramForm(false)}>Cancel</button><button className="cw-button cw-primary" disabled={busy}>{busy ? "Creating…" : "Create diagram"}</button></div></form>}
-          {diagramLoading ? <div className="cw-loading">Loading diagrams…</div> : diagrams.length ? <div className="cw-diagram-grid">{diagrams.map((d) => <article className="cw-diagram-card" key={d.id}><DiagramThumbnail diagram={d} /><div className="cw-diagram-body"><b>{d.name}</b><small>sketchizi · {dateLabel(d.lastOpenedAt || d.lastUsedAt || d.updatedAt || d.createdAt)}</small><div className="cw-diagram-actions"><button disabled={busy} onClick={async () => { const usedAt = new Date().toISOString(); recordWorkspaceItemOpened(d.id, usedAt); setBusy(true); try { await workspaceClient.updateDiagram(d.id, { lastOpenedAt: usedAt }).catch(() => {}); } finally { window.location.assign(`/?editor=1&cloudDiagramId=${encodeURIComponent(d.id)}&cloudProjectId=${encodeURIComponent(activeId)}`); } }}>Open</button><button disabled={busy} onClick={() => diagramAction(d,"rename")}>Rename</button><button disabled={busy} onClick={() => diagramAction(d,"duplicate")}>Duplicate</button><button disabled={busy} onClick={() => diagramAction(d,"delete")}>Delete</button></div></div></article>)}</div> : <div className="cw-empty cw-empty-small"><div className="cw-empty-icon">◇</div><h3>No diagrams yet</h3><p>Create a diagram to start building this project.</p><button className="cw-button cw-quiet" onClick={() => setDiagramForm(true)}>Create diagram</button></div>}
+        <section className="cw-diagrams">{active ? <><div className="cw-diagram-heading"><div><div className="cw-eyebrow">PROJECT</div><h2>{active.name}</h2><p>{active.description || "Chapters in this project"}</p></div><button className="cw-button cw-primary" disabled={busy || atDiagramLimit} title={atDiagramLimit ? "Delete a diagram to create another" : undefined} onClick={openChapterForm}>+ Add Next Chapter</button></div>
+          {chapters.length > 0 && sequenceControls}
+          {diagramForm && <form className="cw-form" onSubmit={createDiagram}><label htmlFor="cw-diagram-name">Chapter name</label><input id="cw-diagram-name" ref={(el) => { if (el && !el.dataset.caretSet) { el.dataset.caretSet = "1"; el.setSelectionRange(el.value.length, el.value.length); } }} autoFocus maxLength={120} required value={diagramName} onChange={(e) => setDiagramName(e.target.value)} placeholder="e.g. day-06-systemdesign-deployment"/><div className="cw-form-actions"><button type="button" className="cw-button cw-quiet" onClick={() => setDiagramForm(false)}>Cancel</button><button className="cw-button cw-primary" disabled={busy}>{busy ? "Creating…" : "Create chapter"}</button></div></form>}
+          {diagramLoading ? <div className="cw-loading">Loading chapters…</div> : chapters.length ? (viewMode === "flow"
+            ? <div className="cw-flow" role="list" aria-label="Chapter sequence flow">
+                {displayChapters.map((d, index, list) => <Fragment key={d.id}>{index > 0 && <span className="cw-flow-connector" aria-hidden="true">→</span>}<ChapterCard {...cardProps(d, index, list, "flow")} /></Fragment>)}
+                <span className="cw-flow-connector" aria-hidden="true">→</span>
+                <button type="button" className="cw-chapter-add-card" disabled={busy || atDiagramLimit} title={atDiagramLimit ? "Delete a diagram to create another" : undefined} onClick={openChapterForm}><span>+ Chapter {nextChapterLabel}</span><small>Adds to the end of the sequence</small></button>
+              </div>
+            : <div className="cw-diagram-grid">{displayChapters.map((d, index, list) => <ChapterCard key={d.id} {...cardProps(d, index, list, "grid")} />)}</div>)
+            : <div className="cw-empty cw-empty-small"><div className="cw-empty-icon">◇</div><h3>No chapters yet</h3><p>Create your first chapter to start building this project.</p><button className="cw-button cw-quiet" onClick={openChapterForm}>Create first chapter</button></div>}
         </> : <div className="cw-empty cw-empty-small"><h3>Select a project</h3></div>}</section></div>}
       <footer className="cw-footnote"><span/> Cloud storage · PostgreSQL · Private to your account</footer>
     </section>
+    {deleteTarget && <div className="cw-modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) setDeleteTarget(null); }}>
+      <div className="cw-modal" role="alertdialog" aria-modal="true" aria-labelledby="cw-delete-title" aria-describedby="cw-delete-desc">
+        <h2 id="cw-delete-title">Delete {formatChapterLabel(chapters.find((c) => c.id === deleteTarget.id)?.chapterNumber ?? 0)}?</h2>
+        <p id="cw-delete-desc"><b>{deleteTarget.name}</b> will be permanently deleted. The remaining chapters will be renumbered so the sequence has no gaps. This cannot be undone.</p>
+        <div className="cw-form-actions"><button type="button" autoFocus className="cw-button cw-quiet" disabled={busy} onClick={() => setDeleteTarget(null)}>Cancel</button><button type="button" className="cw-button cw-danger" disabled={busy} onClick={confirmDelete}>{busy ? "Deleting…" : "Delete chapter"}</button></div>
+      </div>
+    </div>}
   </main>;
 }

@@ -10,6 +10,7 @@ import SmartStudioPill from "./SmartStudioPill.jsx";
 import { getCanvasBrowserTitle } from "../../features/files/documentTitle.js";
 import { getCommandPaletteShortcut } from "../../features/commands/platformShortcut.js";
 import { BROWSER_DRAFT_LABEL } from "../../features/workspace/tabCloudState.js";
+import { formatChapterShortLabel } from "../../features/workspace/chapterSequence.js";
 
 const MENU_DEFINITIONS = [
   {
@@ -208,6 +209,8 @@ export default function DesktopAppHeader({
   onSaveToCloud,
   isCloudDocument = false,
   cloudSaveState = "inactive",
+  chapterNav = null,
+  onNavigateChapter,
   onDownloadRecoveryBackup,
   onOpenExport,
   onOpenTemplates,
@@ -707,6 +710,19 @@ export default function DesktopAppHeader({
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-center" aria-label="Current workspace">
         {workspaceToggle}
+        {chapterNav && (
+          <nav className="desktop-app-chapter-nav" aria-label="Chapter navigation">
+            <button type="button" className="desktop-app-chapter-nav-button" disabled={!chapterNav.previous} onClick={() => onNavigateChapter?.(chapterNav.previous)} aria-label={chapterNav.previous ? `Previous chapter: ${chapterNav.previous.name}` : "No previous chapter"} title={chapterNav.previous?.name}>
+              <span aria-hidden="true">←</span>
+              <span className="desktop-app-chapter-nav-label">{chapterNav.previous ? formatChapterShortLabel(chapterNav.previous.chapterNumber) : "—"}</span>
+            </button>
+            <span className="desktop-app-chapter-nav-position" aria-live="polite">Chapter {chapterNav.index + 1} of {chapterNav.total}</span>
+            <button type="button" className="desktop-app-chapter-nav-button" disabled={!chapterNav.next} onClick={() => onNavigateChapter?.(chapterNav.next)} aria-label={chapterNav.next ? `Next chapter: ${chapterNav.next.name}` : "No next chapter"} title={chapterNav.next?.name}>
+              <span className="desktop-app-chapter-nav-label">{chapterNav.next ? formatChapterShortLabel(chapterNav.next.chapterNumber) : "—"}</span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </nav>
+        )}
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-right">
       {collaborationCreationState === "creating" && (
