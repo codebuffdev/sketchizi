@@ -47,6 +47,7 @@ import { getKubernetesResourceDefinitionById } from "./kubernetesResourceDefinit
 import { applyKubernetesRelationshipSuggestion } from "./features/architecture/kubernetesDiagnosticFixService.js";
 import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinitions.js";
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
+import { sceneFingerprint, createRevisionRegistry, isRevisionConflict, classifyConflict } from "./features/workspace/cloudSaveGuard.js";
 import { hydrateFilesSync, hydrateMissingFromCache } from "./features/workspace/binaryFileCache.js";
 import { normalizeCloudDiagramResponse } from "./features/workspace/cloudDiagramPayload.js";
 import { createCanvasTabId, sanitizeTabAppState } from "./features/workspace/tabSnapshot.js";
@@ -277,6 +278,11 @@ function App() {
   const [cloudSaveState, setCloudSaveState] = useState({ state: cloudDiagramId ? "loading" : "inactive", error: "" });
   const cloudManualSaveRequestedRef = useRef(false);
   const [cloudDocumentName, setCloudDocumentName] = useState("Cloud diagram");
+  const cloudRevisionRegistryRef = useRef(null);
+  if (!cloudRevisionRegistryRef.current) cloudRevisionRegistryRef.current = createRevisionRegistry();
+  // diagramId -> { saved, queued }: structural fingerprints of the last saved / in-flight scene.
+  const cloudFingerprintsRef = useRef(new Map());
+  const [cloudConflictDismissed, setCloudConflictDismissed] = useState(false);
   const cloudSaveStateRef = useRef(cloudSaveState);
   cloudSaveStateRef.current = cloudSaveState;
   // Sibling chapters of the open cloud diagram (null unless the project has 2+ chapters).
@@ -403,6 +409,15 @@ function App() {
     // Keep any already queued non-empty save intact when an empty callback
     // arrives during restoration.
     if (!hasCloudSceneChange(elements)) return;
+    // Scroll, zoom and selection also fire onChange. Only a structural change
+    // (elements / files) may start a cloud save; otherwise the save queue churns
+    // and risks racing itself into a false revision conflict.
+    const guardId = cloudSessionRef.current.diagramId;
+    const guardFiles = apiRef.current?.getFiles?.() || {};
+    const fingerprint = sceneFingerprint(elements, guardFiles);
+    const known = cloudFingerprintsRef.current.get(guardId) || {};
+    if (!cloudManualSaveRequestedRef.current && (fingerprint === known.queued || fingerprint === known.saved)) return;
+    cloudFingerprintsRef.current.set(guardId, { ...known, queued: fingerprint });
     // Excalidraw fires onChange from componentDidUpdate. Returning a new object
     // here on every callback re-renders App, which rebuilds the onChange prop,
     // which makes Excalidraw update and fire onChange again (React #185).
@@ -428,16 +443,18 @@ function App() {
         // The user may have created a new local drawing while a previous
         // cloud save was waiting in the queue. Never send that stale request.
         if (!isActiveCloudSession(session, cloudSessionRef.current)) return;
-        const revision = session.revision;
+        const registry = cloudRevisionRegistryRef.current;
+        const revision = registry.effective(session.diagramId, session.revision);
         const result = await workspaceClient.saveDiagram(session.diagramId, revision, document);
-        // An in-flight request can finish after detachment. Keep its result
-        // from overwriting the status or revision of the new local drawing.
+        // Record the new revision even if this tab was switched away meanwhile;
+        // a stale snapshot copy would otherwise send an old if-match later.
+        const savedRevision = result && result.revision !== undefined && result.revision !== null
+          ? result.revision
+          : (typeof revision === "number" ? revision + 1 : revision);
+        registry.note(session.diagramId, savedRevision);
+        cloudFingerprintsRef.current.set(session.diagramId, { saved: fingerprint, queued: fingerprint });
         if (!isActiveCloudSession(session, cloudSessionRef.current)) return;
-        if (result && result.revision !== undefined && result.revision !== null) {
-          session.revision = result.revision;
-        } else if (typeof revision === "number") {
-          session.revision = revision + 1;
-        }
+        session.revision = savedRevision;
         setCloudSaveState({ state: "saved", error: "", lastSavedAt: Date.now() });
         if (cloudManualSaveRequestedRef.current) {
           cloudManualSaveRequestedRef.current = false;
@@ -445,15 +462,60 @@ function App() {
         }
       }).catch((error) => {
         if (!isActiveCloudSession(session, cloudSessionRef.current)) return;
-        const conflict = error?.status === 409 || error?.status === 412 || error?.code === "revision_conflict";
-        cloudManualSaveRequestedRef.current = false;
-        setCloudSaveState({
-          state: conflict ? "conflict" : "error",
-          error: conflict
-            ? "This cloud diagram changed in another session. Reload the latest version before continuing; your current edits are still available to download as a backup."
-            : error.message || "Could not save this cloud diagram.",
-        });
+        return reconcileSaveFailure(error);
       });
+      const reconcileSaveFailure = async (error) => {
+        cloudManualSaveRequestedRef.current = false;
+        const known = cloudFingerprintsRef.current.get(session.diagramId) || {};
+        cloudFingerprintsRef.current.set(session.diagramId, { ...known, queued: known.saved });
+        if (!isRevisionConflict(error)) {
+          setCloudSaveState({ state: "error", error: error.message || "Could not save this cloud diagram." });
+          return;
+        }
+        // A 409 is not necessarily another session: it can be our own duplicate
+        // request. Compare against the server copy before alarming the user.
+        const showConflict = () => setCloudSaveState({
+          state: "conflict",
+          error: "This cloud diagram changed in another session. Reload the latest version before continuing; your current edits are still available to download as a backup.",
+        });
+        try {
+          const latest = await workspaceClient.getDiagram(session.diagramId);
+          if (!isActiveCloudSession(session, cloudSessionRef.current)) return;
+          const { diagram: remoteDiagram, document: remoteDocument } = normalizeCloudDiagramResponse(latest, session.diagramId);
+          const remoteRevision = remoteDiagram.revision ?? latest?.revision ?? latest?.version;
+          const liveApi = apiRef.current;
+          const localFingerprint = sceneFingerprint(
+            liveApi?.getSceneElementsIncludingDeleted?.() || [], liveApi?.getFiles?.() || {},
+          );
+          const verdict = classifyConflict({
+            remoteFingerprint: sceneFingerprint(remoteDocument.elements, remoteDocument.files || {}),
+            attemptedFingerprint: fingerprint,
+            savedFingerprint: known.saved,
+            localFingerprint,
+          });
+          cloudRevisionRegistryRef.current.note(session.diagramId, remoteRevision);
+          if (verdict === "self-echo") {
+            session.revision = remoteRevision ?? session.revision;
+            cloudFingerprintsRef.current.set(session.diagramId, { saved: fingerprint, queued: fingerprint });
+            setCloudSaveState({ state: "saved", error: "", lastSavedAt: Date.now() });
+            return;
+          }
+          if (verdict === "reload" && liveApi?.updateScene) {
+            const restored = restoreElements(remoteDocument.elements, null, { repairBindings: true });
+            const hydrated = hydrateFilesSync(liveApi, restored, remoteDocument.files || {});
+            liveApi.updateScene({ elements: hydrated.elements, captureUpdate: CaptureUpdateAction.NEVER });
+            session.revision = remoteRevision ?? session.revision;
+            cloudFingerprintsRef.current.set(session.diagramId, {
+              saved: sceneFingerprint(restored, remoteDocument.files || {}),
+              queued: sceneFingerprint(restored, remoteDocument.files || {}),
+            });
+            setCloudSaveState({ state: "saved", error: "", lastSavedAt: Date.now() });
+            return;
+          }
+        } catch { /* Could not verify; fall through to the visible conflict. */ }
+        setCloudConflictDismissed(false);
+        showConflict();
+      };
     }, cloudFlushImmediatelyRef.current ? 0 : 700);
   }, [apiRef, cloudDiagramId, documentMetadataRef, queueLocalSketchSave, showToast]);
 
@@ -566,6 +628,12 @@ function App() {
       });
       api.history?.clear?.();
       if (hydrated.missing.length) hydrateMissingFromCache(api, hydrated.missing).catch(() => {});
+      cloudRevisionRegistryRef.current.note(session.diagramId, session.revision);
+      {
+        const loadedFp = sceneFingerprint(elements, document.files || {});
+        cloudFingerprintsRef.current.set(session.diagramId, { saved: loadedFp, queued: loadedFp });
+      }
+      setCloudConflictDismissed(false);
       setCurrentFileRef.current?.(null);
       setSavedSketch({ elements, appState: document.appState || {}, files: document.files || {}, metadata: document.metadata || {}, extensions: document.extensions || {}, format });
       applied = true;
@@ -799,6 +867,16 @@ function App() {
     });
     api.history?.clear?.();
     if (hydrated.missing.length) hydrateMissingFromCache(api, hydrated.missing).catch(() => {});
+    if (snapshot.cloudSession?.active && snapshot.cloudSession.diagramId) {
+      // The snapshot's session copy can be older than a save that finished
+      // after it was captured; the registry keeps the newest revision.
+      cloudRevisionRegistryRef.current.note(snapshot.cloudSession.diagramId, snapshot.cloudSession.revision);
+      const known = cloudFingerprintsRef.current.get(snapshot.cloudSession.diagramId);
+      if (!known) {
+        const fp = sceneFingerprint(elements, snapshot.files || {});
+        cloudFingerprintsRef.current.set(snapshot.cloudSession.diagramId, { saved: fp, queued: fp });
+      }
+    }
     setSavedSketch(snapshot.elements ? { elements, appState: snapshot.appState || {}, files: snapshot.files || {}, metadata: snapshot.metadata || {}, extensions: snapshot.extensions || {}, format: snapshot.format || "excalidraw" } : null);
     setCurrentFile(snapshot.file || null, snapshot.fileSceneSignature || undefined);
     if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
@@ -859,6 +937,7 @@ function App() {
         const revision = latestDiagram?.revision ?? latest?.revision ?? latest?.version ?? session.revision;
         const result = await workspaceClient.saveDiagram(session.diagramId, revision, cloudDocument);
         session.revision = result?.revision ?? (typeof revision === "number" ? revision + 1 : revision);
+        cloudRevisionRegistryRef.current.note(session.diagramId, session.revision);
         const savedTabs = canvasTabsRef.current.map((tab) => tab.id === previousId
           ? { ...tab, dirty: false, snapshot: { ...tab.snapshot, cloudSession: { ...session }, cloudSaveState: { state: "saved", error: "" } } }
           : tab);
@@ -1186,6 +1265,7 @@ function App() {
         try {
           const result = await workspaceClient.getDiagram(session.diagramId);
           const { diagram, document, name } = normalizeCloudDiagramResponse(result, session.diagramId, { fallbackName: session.name || tab.name });
+          cloudRevisionRegistryRef.current.note(session.diagramId, diagram.revision ?? result?.revision ?? result?.version);
           return {
             ...tab,
             name,
@@ -2939,21 +3019,24 @@ function App() {
 
   return (
     <div className={`${isDarkTheme ? "app theme-dark" : "app theme-light"} ${legacyPanelClasses.join(" ")} ${nativeMenuOpen ? "native-menu-open" : ""} ${aiAskOpen ? "ai-ask-open" : ""} ${isZenMode ? "is-zen-mode" : ""} ${startupChooserOpen ? "startup-chooser-active" : ""} canvas-first-header`} data-theme={isDarkTheme ? "dark" : "light"} data-welcome-open={isWelcomeOrDashboardOpen ? "true" : "false"} data-open-panel={activeLeftPanel === "iconLibrary" ? "icon-library" : activeRightPanel === "properties" ? "properties" : activeRightPanel === "rightRail" ? "architecture-validation" : activeTransientPanel || "none"} data-left-panel={activeLeftPanel || "none"} data-right-panel={activeRightPanel || "none"}>
-      {cloudSessionRef.current.active && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
-        <span>{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
-        {cloudSaveState.state === "error" && <>
-          <button type="button" onClick={() => {
-            const api = apiRef.current;
-            if (!api) return;
-            queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
-          }}>Retry save</button>
-          <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
-        </>}
-        {cloudSaveState.state === "conflict" && <>
-          <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
-          <button type="button" onClick={() => window.location.reload()}>Reload latest version</button>
-        </>}
-        <button type="button" onClick={openCloudWorkspace} aria-label="Return to Cloud Workspace">Cloud Workspace</button>
+      {cloudSessionRef.current.active && !cloudDetached && <div className={`cloud-editor-save-status cloud-editor-save-status-${cloudSaveState.state}`} hidden={cloudSaveState.state === "conflict" && cloudConflictDismissed} role={["error", "conflict"].includes(cloudSaveState.state) ? "alert" : "status"}>
+        <span className="cloud-editor-save-status-text">{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
+        <span className="cloud-editor-save-status-actions">
+          {cloudSaveState.state === "error" && <>
+            <button type="button" className="is-primary" onClick={() => {
+              const api = apiRef.current;
+              if (!api) return;
+              queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
+            }}>Retry save</button>
+            <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
+          </>}
+          {cloudSaveState.state === "conflict" && <>
+            <button type="button" className="is-primary" onClick={() => window.location.reload()}>Reload latest version</button>
+            <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>
+            <button type="button" onClick={() => setCloudConflictDismissed(true)}>Dismiss</button>
+          </>}
+          <button type="button" onClick={openCloudWorkspace} aria-label="Return to Cloud Workspace">Cloud Workspace</button>
+        </span>
       </div>}
       <DesktopAppHeader
         commands={commands}

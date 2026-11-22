@@ -321,3 +321,20 @@ min-height:100vh;background:var(--cw-bg);color:var(--cw-text);font:14px/1.5 Inte
 @media (prefers-reduced-motion: reduce) {
   .cloud-workspace .cw-diagram-card { transition: none; }
 }
+
+/* Cloud save/conflict banner: sits below the header bar, never under the header pills. */
+.cloud-editor-save-status{top:64px;right:auto;left:50%;transform:translateX(-50%);z-index:45;width:calc(100% - 32px);max-width:680px;box-sizing:border-box}
+.cloud-editor-save-status-text{flex:1 1 auto;min-width:0}
+.cloud-editor-save-status-actions{display:flex;flex-wrap:wrap;gap:6px;flex:0 0 auto;justify-content:flex-end}
+.cloud-editor-save-status-conflict,.cloud-editor-save-status-error{align-items:flex-start;padding:12px 14px;border-radius:12px;font:500 13px/1.45 system-ui,sans-serif;background:#fffbeb;border:1px solid #fcd34d;color:#78350f;box-shadow:0 12px 32px rgba(15,23,42,.12)}
+.cloud-editor-save-status-conflict button,.cloud-editor-save-status-error button{border:1px solid #b45309;background:transparent;color:#78350f;padding:6px 10px;font-weight:600}
+.cloud-editor-save-status-conflict button:hover,.cloud-editor-save-status-error button:hover{background:#fef3c7}
+.cloud-editor-save-status-conflict button.is-primary,.cloud-editor-save-status-error button.is-primary{background:#78350f;border-color:#78350f;color:#fffbeb}
+.cloud-editor-save-status-conflict button.is-primary:hover,.cloud-editor-save-status-error button.is-primary:hover{background:#92400e}
+.theme-dark .cloud-editor-save-status-conflict,.theme-dark .cloud-editor-save-status-error{background:#1c1917;border:1px solid rgba(251,191,36,.35);color:#fef3c7}
+.theme-dark .cloud-editor-save-status-conflict button,.theme-dark .cloud-editor-save-status-error button{border-color:rgba(251,191,36,.55);color:#fef3c7}
+.theme-dark .cloud-editor-save-status-conflict button:hover,.theme-dark .cloud-editor-save-status-error button:hover{background:rgba(251,191,36,.14)}
+.theme-dark .cloud-editor-save-status-conflict button.is-primary,.theme-dark .cloud-editor-save-status-error button.is-primary{background:#fbbf24;border-color:#fbbf24;color:#1c1917}
+@media(max-width:600px){.cloud-editor-save-status{top:auto;bottom:8px;left:50%;flex-direction:column}}
+
+.cloud-editor-save-status[hidden]{display:none!important}

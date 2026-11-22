@@ -134,8 +134,8 @@ test("cloud diagrams open in the existing editor and autosave with revision prot
   assert.match(app, /if \(!hasCloudSceneChange\(elements\)\) return;/);
   assert.match(app, /cloudSceneReadyRef\.current/);
   assert.doesNotMatch(app, /allowEmpty: true/);
-  assert.ok(app.includes("error?.status === 409 || error?.status === 412"));
-  assert.ok(app.includes('state: conflict ? "conflict" : "error"'));
+  assert.ok(app.includes("isRevisionConflict(error)"));
+  assert.ok(app.includes('state: "conflict"'));
   assert.ok(app.includes(">Reload latest version</button>"));
   assert.match(app, /Saving to Cloud Workspace/);
   assert.match(app, />Retry save<\/button>/);

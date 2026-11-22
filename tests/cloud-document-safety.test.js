@@ -37,7 +37,7 @@ test("in-flight saves from a detached session cannot overwrite new document stat
   assert.equal(isActiveCloudSession(original, original), true);
   assert.equal(isActiveCloudSession(original, replaced), false);
   assert.equal(isActiveCloudSession({ active: false }, original), false);
-  assert.match(app, /if \(!isActiveCloudSession\(session, cloudSessionRef\.current\)\) return;\s*const revision = session\.revision/);
+  assert.match(app, /if \(!isActiveCloudSession\(session, cloudSessionRef\.current\)\) return;\s*const registry = cloudRevisionRegistryRef\.current;\s*const revision = registry\.effective\(session\.diagramId, session\.revision\)/);
   assert.match(app, /const result = await workspaceClient\.saveDiagram\(session\.diagramId, revision, document\);[\s\S]*?if \(!isActiveCloudSession\(session, cloudSessionRef\.current\)\) return/);
   assert.match(app, /\.catch\(\(error\) => \{\s*if \(!isActiveCloudSession\(session, cloudSessionRef\.current\)\) return/);
 });
