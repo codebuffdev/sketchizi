@@ -1,17 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-// Header zoom pill: shows only the live percentage. Clicking it opens a small
-// menu that runs the existing view.* zoom commands, so behaviour matches the
-// keyboard shortcuts and the View menu.
+// Header zoom pill: shows the live percentage and resets the viewport to 100%
+// in one click. It runs the existing view.reset-zoom command, so behaviour
+// matches Ctrl+0 and the View menu. Zoom in/out shortcuts and wheel/pinch zoom
+// are handled elsewhere and are untouched.
 function readZoomPercent(api) {
   const value = Number(api?.getAppState?.()?.zoom?.value);
   return Number.isFinite(value) && value > 0 ? Math.round(value * 100) : 100;
 }
 
-export default function CanvasZoomControl({ api, onZoomIn, onZoomOut, onReset, onFit, onBeforeOpen }) {
+export default function CanvasZoomControl({ api, onReset }) {
   const [percent, setPercent] = useState(() => readZoomPercent(api));
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef(null);
 
   useEffect(() => {
     setPercent(readZoomPercent(api));
@@ -26,63 +25,17 @@ export default function CanvasZoomControl({ api, onZoomIn, onZoomOut, onReset, o
     return () => { if (typeof unsubscribe === "function") unsubscribe(); };
   }, [api]);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const close = (event) => {
-      if (!rootRef.current?.contains(event.target)) setOpen(false);
-    };
-    const onKeyDown = (event) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation?.();
-      setOpen(false);
-    };
-    document.addEventListener("pointerdown", close, true);
-    window.addEventListener("keydown", onKeyDown, true);
-    return () => {
-      document.removeEventListener("pointerdown", close, true);
-      window.removeEventListener("keydown", onKeyDown, true);
-    };
-  }, [open]);
-
-  const run = (action) => () => {
-    setOpen(false);
-    action?.();
-  };
-  const items = [
-    ["Zoom In", "Ctrl++", onZoomIn],
-    ["Zoom Out", "Ctrl+-", onZoomOut],
-    ["Reset to 100%", "Ctrl+0", onReset],
-    ["Fit to Screen", "", onFit],
-  ];
-
   return (
-    <div className="desktop-app-zoom-wrap" ref={rootRef}>
+    <div className="desktop-app-zoom-wrap">
       <button
         type="button"
         className="desktop-app-zoom-control"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={`Zoom ${percent}%. Zoom options`}
-        title="Zoom options"
-        onClick={() => {
-          if (!open) onBeforeOpen?.();
-          setOpen(!open);
-        }}
+        aria-label="Reset zoom to 100%"
+        title="Reset zoom to 100% (Ctrl+0)"
+        onClick={() => onReset?.()}
       >
         {percent}%
       </button>
-      {open && (
-        <div className="desktop-app-top-popover desktop-app-zoom-menu" role="menu" aria-label="Zoom options">
-          {items.map(([label, shortcut, action]) => (
-            <button type="button" role="menuitem" key={label} onClick={run(action)}>
-              <span>{label}</span>
-              {shortcut && <kbd>{shortcut}</kbd>}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

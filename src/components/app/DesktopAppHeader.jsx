@@ -1025,11 +1025,7 @@ export default function DesktopAppHeader({
         {!activeIsTodoTab && canvasApi && (
           <CanvasZoomControl
             api={canvasApi}
-            onBeforeOpen={() => { onBeforeOpenPanel?.(); }}
-            onZoomIn={() => executeCommand(commandMap.get("view.zoom-in"))}
-            onZoomOut={() => executeCommand(commandMap.get("view.zoom-out"))}
             onReset={() => executeCommand(commandMap.get("view.reset-zoom"))}
-            onFit={() => executeCommand(commandMap.get("view.fit-canvas"))}
           />
         )}
       <div className="desktop-app-global-theme-control">
