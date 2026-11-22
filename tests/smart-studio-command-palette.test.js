@@ -86,7 +86,10 @@ test("command registry groups engineering actions", async () => {
   for (const id of ["export.diagram-yaml-png", "templates.architecture-packs", "templates.design-catalog"]) {
     assert.ok(registry.includes(`id: "${id}"`), id);
   }
-  for (const id of ["review.architecture", "studios.kubernetes", "studios.docker-compose", "studios.system-design-review"])
+  // Studios are reachable from Ctrl/Cmd+K; validation and design review stay removed.
+  for (const id of ["studios.kubernetes", "studios.docker-compose"])
+    assert.ok(registry.includes(`id: "${id}"`), id);
+  for (const id of ["review.architecture", "studios.system-design-review"])
     assert.ok(!registry.includes(`id: "${id}"`), id);
   assert.match(registry, /ARCHITECTURE_PACKS\.map/);
   assert.match(registry, /getInfrastructureInsertTargets\(\)\.map/);

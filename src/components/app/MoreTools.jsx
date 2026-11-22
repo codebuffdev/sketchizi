@@ -14,7 +14,7 @@ function ToolIcon({ name }) {
   return <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" {...common}>{paths[name]}</svg>;
 }
 
-export default function MoreTools({ open, anchor, position, activateTool, openPanel, toggle, canEdit = true, placement = "canvas" }) {
+export default function MoreTools({ open, anchor, position, activateTool, openPanel, toggle, canEdit = true, placement = "canvas", onOpenKubernetesStudio, onOpenDockerComposeStudio, onOpenIconLibrary }) {
   useEffect(() => {
     if (!open) return undefined;
     const closeOnOutsidePointer = (event) => {
@@ -58,6 +58,14 @@ export default function MoreTools({ open, anchor, position, activateTool, openPa
     ["zen-mode", "Zen mode", "Alt+Z"],
   ];
 
+  // One quiet launcher: studios and cloud icons live inside this existing menu
+  // (and in Ctrl/Cmd+K), so they take no space on the canvas until needed.
+  const studios = [
+    ["cloud-icons", "Cloud icons", "Browse icon library", onOpenIconLibrary],
+    ["kubernetes", "Kubernetes Studio", "Author, validate, export YAML", onOpenKubernetesStudio],
+    ["docker", "Docker Compose Studio", "Edit and diagram Compose", onOpenDockerComposeStudio],
+  ].filter(([, , , handler]) => typeof handler === "function");
+
   return (
     <div className={`sketchizi-more-tools sketchizi-more-tools-${placement} ${open ? "open" : ""}`} style={{ "--sketchizi-more-tools-left": `${anchor.left}px`, "--sketchizi-more-tools-top": `${anchor.top}px` }}>
       <button type="button" className="sketchizi-more-tools-trigger" aria-label="Tool" aria-haspopup="menu" aria-expanded={open} onClick={(event) => { event.preventDefault(); event.stopPropagation(); position(); toggle("more-tools"); }}>
@@ -69,6 +77,10 @@ export default function MoreTools({ open, anchor, position, activateTool, openPa
           <button type="button" className="more-tools-menu-close" aria-label="Close Tool menu" onClick={() => toggle("more-tools")}>×</button>
         </div>
         {items.map(([tool, label, key]) => <button key={tool} type="button" role="menuitem" disabled={tool !== "layers" && !canEdit} onClick={() => { if (tool === "layers") openPanel?.("layers"); else activateTool(tool); }}><span className="more-tools-icon"><ToolIcon name={tool} /></span><span>{label}</span><kbd>{key}</kbd></button>)}
+        {studios.length > 0 && <>
+          <div className="more-tools-menu-section" role="presentation">Studios</div>
+          {studios.map(([id, label, hint, handler]) => <button key={id} type="button" role="menuitem" data-more-tools-studio={id} disabled={!canEdit} onClick={() => handler()}><span className="more-tools-icon" aria-hidden="true">{id === "kubernetes" ? "⎈" : id === "docker" ? "▣" : "◫"}</span><span>{label}</span><kbd title={hint}>Ctrl+K</kbd></button>)}
+        </>}
       </div>}
     </div>
   );

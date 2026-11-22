@@ -68,3 +68,7 @@ auth-service/target/
 auth-service/.env
 auth-service/.env.*
 **/.idea/
+
+# Playwright
+test-results/
+playwright-report/

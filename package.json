@@ -69,7 +69,8 @@
     "test:kubernetes-studio-workflow": "node --test tests/kubernetes-resource-validation.test.js tests/kubernetes-relationships.test.js",
     "test:kubernetes-diagnostic-fixes": "node --test tests/kubernetes-relationships.test.js",
     "test:workspace-gateway": "node --test tests/workspace-gateway.test.js",
-    "test:smart-studio": "node --test tests/smart-studio-command-palette.test.js"
+    "test:smart-studio": "node --test tests/smart-studio-command-palette.test.js",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",
@@ -82,6 +83,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
-    "vite": "^5.4.8"
+    "vite": "^5.4.8",
+    "@playwright/test": "^1.48.0"
   }
 }
