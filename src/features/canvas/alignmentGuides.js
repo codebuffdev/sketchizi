@@ -160,3 +160,159 @@ export function selectDisplayGuides(guides) {
       return priority(a) - priority(b) || a.distance - b.distance;
     })[0]).filter(Boolean);
 }
+
+/* ------------------------------------------------------------------------
+   Pre-placement guides: shown while a creation tool is active and the cursor
+   hovers the canvas (before any click). All coordinates are scene space.
+   ------------------------------------------------------------------------ */
+export const PLACEMENT_GUIDE_TOLERANCE = 6;
+export const PLACEMENT_VERTICAL_WINDOW = 320;
+export const PLACEMENT_HORIZONTAL_WINDOW = 480;
+export const PLACEMENT_INDENT_STEPS = Object.freeze([24, 32]);
+export const PLACEMENT_TOOLS = new Set(["text", "line", "arrow", "rectangle", "diamond", "ellipse"]);
+/** Tools whose first click/press magnetically snaps to the guide. */
+export const PLACEMENT_SNAP_TOOLS = new Set(["text", "line", "arrow"]);
+/** Tools that also get horizontal (Y) guides. */
+const PLACEMENT_Y_TOOLS = new Set(["line", "arrow"]);
+const PLACEMENT_REFERENCE_TYPES = new Set(["text", "line", "arrow", "rectangle", "diamond", "ellipse"]);
+const MAX_VERTEX_REFERENCES = 32;
+
+const EMPTY_PLACEMENT = Object.freeze({ active: false, snappedX: null, snappedY: null, x: null, y: null });
+
+function vertexPoints(element) {
+  if (!Array.isArray(element.points)) return [];
+  const ox = Number(element.x) || 0;
+  const oy = Number(element.y) || 0;
+  const points = element.points
+    .filter((point) => Array.isArray(point) && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1])))
+    .map((point) => [ox + Number(point[0]), oy + Number(point[1])]);
+  if (points.length <= MAX_VERTEX_REFERENCES) return points;
+  const step = points.length / MAX_VERTEX_REFERENCES;
+  return Array.from({ length: MAX_VERTEX_REFERENCES }, (_, index) => points[Math.floor(index * step)]);
+}
+
+function referenceBounds(element, points) {
+  if (points.length) {
+    const xs = points.map((p) => p[0]);
+    const ys = points.map((p) => p[1]);
+    const left = Math.min(...xs); const right = Math.max(...xs);
+    const top = Math.min(...ys); const bottom = Math.max(...ys);
+    return { left, right, top, bottom, centerX: (left + right) / 2, centerY: (top + bottom) / 2 };
+  }
+  const b = getElementBounds(element);
+  return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, centerX: b.centerX, centerY: b.centerY };
+}
+
+/** Nearby, visible elements the cursor can align with. */
+export function collectPlacementReferences(elements, cursor, { verticalWindow = PLACEMENT_VERTICAL_WINDOW, horizontalWindow = PLACEMENT_HORIZONTAL_WINDOW } = {}) {
+  if (!Array.isArray(elements)) return [];
+  const refs = [];
+  for (const element of elements) {
+    if (!isVisible(element) || !PLACEMENT_REFERENCE_TYPES.has(element.type)) continue;
+    // Text bound inside a container is positioned by the container, not freely.
+    if (element.type === "text" && element.containerId) continue;
+    const points = element.type === "line" || element.type === "arrow" ? vertexPoints(element) : [];
+    const bounds = referenceBounds(element, points);
+    if (bounds.bottom < cursor.y - verticalWindow || bounds.top > cursor.y + verticalWindow) continue;
+    if (bounds.right < cursor.x - horizontalWindow || bounds.left > cursor.x + horizontalWindow) continue;
+    const xs = points.length ? points.map((p) => p[0]) : [bounds.left];
+    const ys = [bounds.top, bounds.centerY, bounds.bottom];
+    if (points.length) for (const p of points) ys.push(p[1]);
+    refs.push({ id: element.id, type: element.type, bounds, xs, ys, indentable: element.type === "text" });
+  }
+  return refs;
+}
+
+const bandDistance = (value, start, end) => (value < start ? start - value : value > end ? value - end : 0);
+
+function pickBest(candidates) {
+  let best = null;
+  for (const candidate of candidates) {
+    if (!best) { best = candidate; continue; }
+    if (candidate.distance < best.distance - 0.5) best = candidate;
+    else if (Math.abs(candidate.distance - best.distance) <= 0.5) {
+      if (candidate.band < best.band - 0.5) best = candidate;
+      else if (Math.abs(candidate.band - best.band) <= 0.5 && candidate.offset < best.offset) best = candidate;
+    }
+  }
+  return best;
+}
+
+/**
+ * Compute the alignment the cursor would snap to if the user clicked now.
+ * Returns `{ active, snappedX, snappedY, x, y }`; `x` is a vertical guide
+ * (left-edge or indent step), `y` a horizontal guide (line/arrow only).
+ */
+export function calculatePlacementGuides(elements, cursor, options = {}) {
+  const { tool, tolerance = PLACEMENT_GUIDE_TOLERANCE, indentSteps = PLACEMENT_INDENT_STEPS } = options;
+  if (!PLACEMENT_TOOLS.has(tool) || !cursor || !Number.isFinite(cursor.x) || !Number.isFinite(cursor.y)) return EMPTY_PLACEMENT;
+  const refs = collectPlacementReferences(elements, cursor, options);
+  if (!refs.length) return EMPTY_PLACEMENT;
+
+  const xCandidates = [];
+  for (const ref of refs) {
+    const band = bandDistance(cursor.y, ref.bounds.top, ref.bounds.bottom);
+    for (const x of ref.xs) {
+      const distance = Math.abs(cursor.x - x);
+      if (distance <= tolerance) xCandidates.push({ ref, kind: "left", offset: 0, position: x, distance, band });
+      if (ref.indentable) for (const step of indentSteps) {
+        const target = x + step;
+        const d = Math.abs(cursor.x - target);
+        if (d <= tolerance) xCandidates.push({ ref, kind: "indent", offset: step, position: target, distance: d, band });
+      }
+    }
+  }
+  const bestX = pickBest(xCandidates);
+
+  let bestY = null;
+  if (PLACEMENT_Y_TOOLS.has(tool)) {
+    const yCandidates = [];
+    for (const ref of refs) {
+      const band = bandDistance(cursor.x, ref.bounds.left, ref.bounds.right);
+      ref.ys.forEach((y, index) => {
+        const distance = Math.abs(cursor.y - y);
+        if (distance > tolerance) return;
+        yCandidates.push({ ref, kind: index === 1 ? "center" : "edge", offset: index === 1 ? 0 : 1, position: y, distance, band });
+      });
+    }
+    bestY = pickBest(yCandidates);
+  }
+
+  if (!bestX && !bestY) return EMPTY_PLACEMENT;
+  const snappedX = bestX ? bestX.position : cursor.x;
+  const snappedY = bestY ? bestY.position : cursor.y;
+
+  let x = null;
+  if (bestX) {
+    const { top, bottom } = bestX.ref.bounds;
+    x = {
+      axis: "x", kind: bestX.kind, position: bestX.position, offset: bestX.offset,
+      parentLeft: bestX.position - bestX.offset, refId: bestX.ref.id, distance: bestX.distance,
+      start: snappedY >= bottom ? top : snappedY <= top ? snappedY : top,
+      end: snappedY >= bottom ? snappedY : snappedY <= top ? bottom : bottom,
+      label: bestX.kind === "indent" ? `Indent +${bestX.offset}px` : "Align Left",
+    };
+    if (snappedY >= top && snappedY < bottom) x.end = Math.max(bottom, snappedY);
+  }
+  let y = null;
+  if (bestY) {
+    const { left, right } = bestY.ref.bounds;
+    y = {
+      axis: "y", kind: bestY.kind, position: bestY.position, refId: bestY.ref.id, distance: bestY.distance,
+      start: snappedX >= right ? left : snappedX <= left ? snappedX : left,
+      end: snappedX >= right ? snappedX : snappedX <= left ? right : right,
+      label: bestY.kind === "center" ? "Center Y" : "Align Y",
+    };
+  }
+  return { active: true, snappedX, snappedY, x, y };
+}
+
+/** Client (window) pixels -> scene coordinates for a given viewport. */
+export function clientToScene(clientX, clientY, viewportRect, appState) {
+  const zoom = Math.max(0.1, Number(appState?.zoom?.value ?? appState?.zoom) || 1);
+  return {
+    x: (clientX - viewportRect.left) / zoom - (Number(appState?.scrollX) || 0),
+    y: (clientY - viewportRect.top) / zoom - (Number(appState?.scrollY) || 0),
+    zoom,
+  };
+}
