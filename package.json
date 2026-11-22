@@ -70,7 +70,7 @@
     "test:kubernetes-diagnostic-fixes": "node --test tests/kubernetes-relationships.test.js",
     "test:workspace-gateway": "node --test tests/workspace-gateway.test.js",
     "test:smart-studio": "node --test tests/smart-studio-command-palette.test.js",
-    "test:e2e": "playwright test"
+    "test:e2e": "npm install --prefix e2e --no-audit --no-fund && npx --prefix e2e playwright test -c e2e/playwright.config.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",
@@ -83,7 +83,6 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
-    "vite": "^5.4.8",
-    "@playwright/test": "^1.48.0"
+    "vite": "^5.4.8"
   }
 }

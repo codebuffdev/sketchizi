@@ -34,9 +34,11 @@ test("Ctrl/Cmd+K can find the icon library by 'cloud icons'", () => {
   assert.match(registry, /"cloud icons"/);
 });
 
-test("browser smoke test is present and wired to npm run test:e2e", () => {
+test("browser smoke test lives in its own e2e package so the root lockfile stays in sync", () => {
   const pkg = JSON.parse(read("package.json"));
-  assert.equal(pkg.scripts["test:e2e"], "playwright test");
-  assert.ok(pkg.devDependencies["@playwright/test"]);
-  assert.match(read("e2e/smoke.spec.js"), /Ctrl\+K|Control\+K/);
+  assert.match(pkg.scripts["test:e2e"], /playwright test/);
+  assert.ok(!pkg.devDependencies["@playwright/test"], "root package.json must not need a lockfile change");
+  assert.ok(JSON.parse(read("e2e/package.json")).devDependencies["@playwright/test"]);
+  assert.match(read("e2e/smoke.spec.js"), /Control\+K/);
+  assert.match(read("e2e/playwright.config.js"), /testDir: "\."/);
 });
