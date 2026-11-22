@@ -18,11 +18,15 @@ import {
   syncDiagnosticsEnabled,
 } from "../collaboration/syncDiagnostics";
 
+// Stable default so omitted callbacks don't change identity every render
+// (a fresh `() => {}` default re-created handleExcalidrawChange each render).
+const NOOP_SCENE_CHANGE = () => {};
+
 export function useExcalidrawScene({
   apiRef, nativeMenuOpenRef, setNativeMenuOpen, onNativeMenuOpen,
   lastSelectionSignature, setSelectedCount, setSelectedElements, setSelectedConnector,
   updateMinimap, queueSketchSave, collaborationRemoteUpdateRef,
-  collaborationRef, canEdit = true, onArchitectureSceneChange = () => {}, onDocumentSceneChange = () => {},
+  collaborationRef, canEdit = true, onArchitectureSceneChange = NOOP_SCENE_CHANGE, onDocumentSceneChange = NOOP_SCENE_CHANGE,
   toolStylePresets = null,
 }) {
   const architectureFrameRef = useRef(null);
