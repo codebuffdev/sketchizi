@@ -850,3 +850,110 @@
 .app .sketchizi-tool-options-dock .sk-tool-color-control:focus-within {
   border-color: var(--sk-swatch-ring) !important;
 }
+
+
+/* ==========================================================================
+   Routing popover + active states (theme-aware indigo, no dark navy box)
+
+   Root cause of the navy active box in Light theme: the generic
+   `.sketchizi-tool-options-dock button.is-active / [aria-expanded="true"]`
+   rule above paints `#2b2e3b !important` regardless of theme. These later,
+   higher-specificity rules replace it with the indigo accent tokens.
+   ========================================================================== */
+.app .sketchizi-tool-options-dock {
+  --sk-route-active-bg: rgba(129, 140, 248, 0.2);
+  --sk-route-active-border: rgba(129, 140, 248, 0.45);
+  --sk-route-active-ink: #c7d2fe;
+}
+.app.theme-light .sketchizi-tool-options-dock {
+  --sk-route-active-bg: rgba(99, 102, 241, 0.12);
+  --sk-route-active-border: rgba(99, 102, 241, 0.35);
+  --sk-route-active-ink: #4338ca;
+}
+.app .sketchizi-tool-options-dock button.sk-tool-option-button.is-active,
+.app .sketchizi-tool-options-dock button.sk-tool-layer-trigger.is-active,
+.app .sketchizi-tool-options-dock button.sk-tool-choice-trigger[aria-expanded="true"] {
+  background: var(--sk-route-active-bg) !important;
+  border-color: var(--sk-route-active-border) !important;
+  color: var(--sk-route-active-ink) !important;
+  box-shadow: none !important;
+}
+
+/* Portaled menus live on <body>, so theme is detected with :has(). */
+body {
+  --sk-route-menu-active-bg: rgba(129, 140, 248, 0.2);
+  --sk-route-menu-active-border: rgba(129, 140, 248, 0.45);
+  --sk-route-menu-active-ink: #c7d2fe;
+}
+body:has(.app.theme-light) {
+  --sk-route-menu-active-bg: rgba(99, 102, 241, 0.12);
+  --sk-route-menu-active-border: rgba(99, 102, 241, 0.35);
+  --sk-route-menu-active-ink: #4338ca;
+}
+.sk-tool-choice-menu .sk-tool-choice-option.is-selected,
+.sk-tool-choice-menu .sk-tool-choice-option[aria-checked="true"] {
+  background: var(--sk-route-menu-active-bg) !important;
+  border-color: var(--sk-route-menu-active-border) !important;
+  color: var(--sk-route-menu-active-ink) !important;
+}
+
+/* Routing popover: 2x2 cards wide enough for "Rounded Elbow", wrapping
+   cleanly onto two lines instead of ellipsizing. */
+.sk-tool-choice-menu[data-kind="line-geometry"] {
+  grid-template-columns: repeat(2, minmax(84px, 1fr));
+  width: min(204px, calc(100vw - 16px));
+}
+.sk-tool-choice-menu[data-kind="line-geometry"] .sk-tool-choice-option {
+  min-width: 84px;
+  padding: 10px 8px;
+}
+.sk-tool-choice-menu[data-kind="line-geometry"] .sk-tool-choice-option-label {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.sk-tool-choice-menu[data-kind="line-geometry"] .sk-tool-choice-option-glyph {
+  width: 40px;
+}
+
+/* Swap-ends button in the arrowhead pair (dock) and contextual toolbar. */
+.app .sketchizi-tool-options-dock .sk-tool-arrowhead-swap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.app .sketchizi-tool-options-dock .sk-tool-arrowhead-swap svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.app .sketchizi-tool-options-dock .sk-tool-arrowhead-swap:hover,
+.app .sketchizi-tool-options-dock .sk-tool-arrowhead-swap:focus-visible {
+  background: var(--sk-route-active-bg) !important;
+  border-color: var(--sk-route-active-border) !important;
+  color: var(--sk-route-active-ink) !important;
+  outline: 0;
+}
+.app .contextual-formatting-toolbar .format-arrowhead-swap {
+  min-width: 30px;
+  font-size: 15px;
+  line-height: 1;
+}

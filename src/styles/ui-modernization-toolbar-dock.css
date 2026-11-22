@@ -4349,3 +4349,18 @@ body:has(.app.theme-light) .sk-tool-choice-menu .sk-tool-choice-option.is-select
     top: calc(68px + var(--safe-top, 0px));
   }
 }
+
+/* Contextual toolbar: selected option buttons use the same soft indigo tint
+   as the dock (replaces the dark navy fill in the light theme). */
+.app.theme-light .contextual-formatting-toolbar .format-option-button.is-selected,
+.app.theme-light .contextual-formatting-toolbar .format-icon-button.is-active {
+  background: rgba(99, 102, 241, 0.12) !important;
+  border-color: rgba(99, 102, 241, 0.35) !important;
+  color: #4338ca !important;
+}
+.app.theme-dark .contextual-formatting-toolbar .format-option-button.is-selected,
+.app.theme-dark .contextual-formatting-toolbar .format-icon-button.is-active {
+  background: rgba(129, 140, 248, 0.2) !important;
+  border-color: rgba(129, 140, 248, 0.45) !important;
+  color: #c7d2fe !important;
+}

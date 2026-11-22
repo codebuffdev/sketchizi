@@ -4,6 +4,7 @@ import usePresence from "../../features/hud/usePresence.js";
 import { CaptureUpdateAction, FONT_FAMILY } from "@excalidraw/excalidraw";
 import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
 import { normalizeToolKey } from "../../features/canvas/toolStylePresets.js";
+import { normalizeArrowheadPatch, swapArrowheadsPatch, toUiArrowhead } from "../../features/canvas/arrowheads.js";
 import { applyDarkModeFilter } from "@excalidraw/common";
 import { isHexColor } from "../../features/navigation/recentCustomColors.js";
 import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
@@ -27,7 +28,7 @@ const LINE_GEOMETRIES = [
   ["straight", "Straight"],
   ["curved", "Curved"],
   ["elbow", "Elbow"],
-  ["rounded-elbow", "Rounded elbow"],
+  ["rounded-elbow", "Rounded Elbow"],
 ];
 
 function applyLineGeometryStyle(element, style) {
@@ -44,7 +45,8 @@ function applyLineGeometryStyle(element, style) {
     const dx = end[0] - start[0];
     const dy = end[1] - start[1];
     const length = Math.hypot(dx, dy) || 1;
-    const offset = Math.max(24, length * 0.22);
+    // Bend scales with endpoint distance but stays bounded for very long arrows.
+    const offset = Math.min(120, Math.max(24, length * 0.22));
     nextPoints = [start, [
       (start[0] + end[0]) / 2 - (dy / length) * offset,
       (start[1] + end[1]) / 2 + (dx / length) * offset,
@@ -249,7 +251,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
     }
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const columns = Math.min(4, Math.max(2, safeOptions.length));
+    const columns = kind === "line-geometry" ? 2 : Math.min(4, Math.max(2, safeOptions.length));
     const estimatedHeight = Math.ceil(safeOptions.length / columns) * 66 + 16;
     const top = rect.bottom + estimatedHeight + 10 > window.innerHeight
       ? Math.max(8, rect.top - estimatedHeight - 8)
@@ -275,7 +277,7 @@ function DockChoiceMenu({ label, value, onChange, icon, options, kind = "standar
         <svg className={`sk-tool-choice-chevron${open ? " is-open" : ""}`} viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
       {menuMounted && position && createPortal(
-        <div ref={menuRef} className={`sk-tool-choice-menu${menuClosing ? " is-closing" : ""}`} role="menu" aria-label={label}
+        <div ref={menuRef} className={`sk-tool-choice-menu${menuClosing ? " is-closing" : ""}`} data-kind={kind} role="menu" aria-label={label}
           style={{ position: "fixed", left: position.left, top: position.top }}>
           {safeOptions.map((option) => {
             const active = String(option.value) === String(value);
@@ -517,6 +519,12 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const current = (elementKey, appKey, fallback) => isSelection
     ? (first?.[elementKey] ?? fallback)
     : (appState[appKey] ?? fallback);
+  // Arrowheads are legitimately null ("none"): only an *undefined* value falls
+  // back to the default, otherwise an explicit "None" would flip back to Arrow.
+  const currentArrowhead = (elementKey, appKey, fallback) => {
+    const value = isSelection ? first?.[elementKey] : appState[appKey];
+    return toUiArrowhead(value === undefined ? fallback : value);
+  };
   const strokeColor = String(current("strokeColor", "currentItemStrokeColor", "#1e1e1e")).toLowerCase();
   const fillColor = String(current("backgroundColor", "currentItemBackgroundColor", "transparent")).toLowerCase();
   const strokeWidth = Number(current("strokeWidth", "currentItemStrokeWidth", 2)) || 1;
@@ -554,9 +562,11 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     onToolStyleChange(targets, stylePatch);
   };
 
-  const update = (patch) => {
+  const update = (rawPatch) => {
     const api = apiRef?.current;
     if (!api) return;
+    // "dot" -> the value the Excalidraw renderer actually draws as a circle.
+    const patch = normalizeArrowheadPatch(rawPatch);
     if (!isSelection) {
       const effectiveToolPatch = { ...patch };
       if ("backgroundColor" in patch && patch.backgroundColor !== "transparent" && isShape && fillColor === "transparent") {
@@ -609,10 +619,46 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     const next = elements.map((element) => ids.has(element.id)
       ? { ...element, ...effectivePatch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
       : element);
-    api.updateScene({ elements: next, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    const arrowheadAppState = {};
+    if ("startArrowhead" in effectivePatch) arrowheadAppState.currentItemStartArrowhead = effectivePatch.startArrowhead;
+    if ("endArrowhead" in effectivePatch) arrowheadAppState.currentItemEndArrowhead = effectivePatch.endArrowhead;
+    api.updateScene({
+      elements: next,
+      ...(Object.keys(arrowheadAppState).length ? { appState: arrowheadAppState } : {}),
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
     rememberStyle(effectivePatch);
   };
 
+
+  const swapArrowheadEnds = () => {
+    const api = apiRef?.current;
+    if (!api) return;
+    if (!isSelection) {
+      const live = api.getAppState?.() || {};
+      update(swapArrowheadsPatch(live.currentItemStartArrowhead ?? null, live.currentItemEndArrowhead ?? null));
+      return;
+    }
+    const liveState = api.getAppState?.() || {};
+    const ids = new Set(selected.map((element) => element.id));
+    Object.entries(liveState.selectedElementIds || {}).forEach(([id, active]) => { if (active) ids.add(id); });
+    const now = Date.now();
+    let swappedFirst = null;
+    const next = (api.getSceneElements?.() || []).map((element) => {
+      if (!ids.has(element.id) || element.type !== "arrow") return element;
+      const patch = swapArrowheadsPatch(element.startArrowhead, element.endArrowhead);
+      if (!swappedFirst) swappedFirst = patch;
+      return { ...element, ...patch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now };
+    });
+    if (!swappedFirst) return;
+    // Keep the "next arrow" defaults in step with what the user just did.
+    api.updateScene({
+      elements: next,
+      appState: { currentItemStartArrowhead: swappedFirst.startArrowhead, currentItemEndArrowhead: swappedFirst.endArrowhead },
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
+    rememberStyle(swappedFirst);
+  };
 
   const updateTextFontFamily = (value) => {
     const api = apiRef?.current;
@@ -932,12 +978,15 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
           <option value="on">Pressure enabled</option><option value="off">Pressure disabled</option>
         </DockSelect>}
         {type === "arrow" && <div role="group" aria-label="Arrowheads" className="sk-tool-arrowhead-pair">
-          <DockSelect label="Start arrowhead" value={current("startArrowhead", "currentItemStartArrowhead", null) || "none"} onChange={(value) => update({ startArrowhead: value === "none" ? null : value })}>
+          <DockSelect label="Start arrowhead" value={currentArrowhead("startArrowhead", "currentItemStartArrowhead", null)} onChange={(value) => update({ startArrowhead: value === "none" ? null : value })}>
             <option value="none">Start: None</option><option value="arrow">Start: Arrow</option><option value="bar">Start: Bar</option><option value="dot">Start: Dot</option>
           </DockSelect>
-          <DockSelect label="End arrowhead" value={current("endArrowhead", "currentItemEndArrowhead", "arrow") || "none"} onChange={(value) => update({ endArrowhead: value === "none" ? null : value })}>
+          <DockSelect label="End arrowhead" value={currentArrowhead("endArrowhead", "currentItemEndArrowhead", "arrow")} onChange={(value) => update({ endArrowhead: value === "none" ? null : value })}>
             <option value="none">End: None</option><option value="arrow">End: Arrow</option><option value="bar">End: Bar</option><option value="dot">End: Dot</option>
           </DockSelect>
+          <button type="button" className="sk-tool-arrowhead-swap" title="Swap ends" aria-label="Swap start and end arrowheads" onClick={swapArrowheadEnds}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h12m-3-3 3 3-3 3M17 17H5m3-3-3 3 3 3" /></svg>
+          </button>
         </div>}
       </DockGroup>}
 

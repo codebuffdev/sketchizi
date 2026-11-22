@@ -4,6 +4,7 @@ import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults
 import { SMART_THEMES, applySmartThemeToElements } from "../../features/canvas/smartThemePalettes.js";
 import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
 import { normalizeToolKey } from "../../features/canvas/toolStylePresets.js";
+import { normalizeArrowheadPatch, swapArrowheadsPatch, toUiArrowhead } from "../../features/canvas/arrowheads.js";
 import { isHexColor } from "../../features/navigation/recentCustomColors.js";
 import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
 
@@ -440,9 +441,10 @@ export default function ContextualFormattingToolbar({
       }
       return true;
     });
-  const applyFormatting = (patch) => {
+  const applyFormatting = (rawPatch) => {
     const api = apiRef?.current;
     if (!api) return;
+    const patch = normalizeArrowheadPatch(rawPatch);
     if (!toolMode) {
       // Use the same live selection snapshot that rendered this toolbar. The
       // parent callback re-reads Excalidraw selection state, which can be empty
@@ -473,7 +475,14 @@ export default function ContextualFormattingToolbar({
         };
       });
       if (updatedElements.some((element, index) => element !== elements[index])) {
-        api.updateScene({ elements: updatedElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+        const arrowheadAppState = {};
+        if ("startArrowhead" in patch) arrowheadAppState.currentItemStartArrowhead = patch.startArrowhead;
+        if ("endArrowhead" in patch) arrowheadAppState.currentItemEndArrowhead = patch.endArrowhead;
+        api.updateScene({
+          elements: updatedElements,
+          ...(Object.keys(arrowheadAppState).length ? { appState: arrowheadAppState } : {}),
+          captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+        });
       }
       // Editing an existing element also teaches its tool: the next line/rectangle/
       // text drawn on this canvas inherits the look. Sticky notes keep their own
@@ -699,7 +708,7 @@ export default function ContextualFormattingToolbar({
                 <div className="format-option-row format-arrowhead-row">
                   <label className="format-arrowhead-control">
                     <span>Start</span>
-                    <select aria-label="Start arrowhead" value={first?.startArrowhead || "none"} onChange={(event) => applyFormatting({ startArrowhead: event.target.value === "none" ? null : event.target.value })}>
+                    <select aria-label="Start arrowhead" value={toUiArrowhead(first?.startArrowhead)} onChange={(event) => applyFormatting({ startArrowhead: event.target.value === "none" ? null : event.target.value })}>
                       <option value="none">None</option>
                       <option value="arrow">Arrow</option>
                       <option value="bar">Bar</option>
@@ -708,13 +717,14 @@ export default function ContextualFormattingToolbar({
                   </label>
                   <label className="format-arrowhead-control">
                     <span>End</span>
-                    <select aria-label="End arrowhead" value={first?.endArrowhead || "none"} onChange={(event) => applyFormatting({ endArrowhead: event.target.value === "none" ? null : event.target.value })}>
+                    <select aria-label="End arrowhead" value={toUiArrowhead(first?.endArrowhead)} onChange={(event) => applyFormatting({ endArrowhead: event.target.value === "none" ? null : event.target.value })}>
                       <option value="none">None</option>
                       <option value="arrow">Arrow</option>
                       <option value="bar">Bar</option>
                       <option value="dot">Dot</option>
                     </select>
                   </label>
+                  <button type="button" className="format-option-button format-arrowhead-swap" aria-label="Swap start and end arrowheads" title="Swap ends" onClick={() => applyFormatting(swapArrowheadsPatch(first?.startArrowhead, first?.endArrowhead))}>⇄</button>
                 </div>
               </>
             )}

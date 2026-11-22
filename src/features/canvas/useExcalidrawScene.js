@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import { toCanvasArrowhead } from "./arrowheads.js";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { getActiveSelectedElementIds } from "./selectedElementIds.js";
 import {
@@ -175,6 +176,40 @@ export function useExcalidrawScene({
         currentItemFontFamily: normalizeFontFamilyId(reconciledAppState.currentItemFontFamily),
       };
       previousTextFontFamiliesRef.current = getTextFontFamilyMap(effectiveElements);
+
+      // Legacy "dot" arrowheads (saved files, older presets) are not drawn as a
+      // circle by this Excalidraw build and fall back to the V-chevron. Convert
+      // them to the supported circle value once; nothing matches afterwards, so
+      // this cannot loop.
+      if (canEdit && !remoteUpdate && api?.updateScene) {
+        const legacyDot = effectiveElements.some((element) =>
+          !element.isDeleted && (element.startArrowhead === "dot" || element.endArrowhead === "dot"));
+        const stateStart = reconciledAppState.currentItemStartArrowhead;
+        const stateEnd = reconciledAppState.currentItemEndArrowhead;
+        if (legacyDot || stateStart === "dot" || stateEnd === "dot") {
+          const now = Date.now();
+          api.updateScene({
+            ...(legacyDot ? {
+              elements: (api.getSceneElementsIncludingDeleted?.() || effectiveElements).map((element) =>
+                element.startArrowhead === "dot" || element.endArrowhead === "dot"
+                  ? {
+                    ...element,
+                    startArrowhead: toCanvasArrowhead(element.startArrowhead),
+                    endArrowhead: toCanvasArrowhead(element.endArrowhead),
+                    version: (Number(element.version) || 0) + 1,
+                    versionNonce: Math.floor(Math.random() * 2147483647),
+                    updated: now,
+                  }
+                  : element),
+            } : {}),
+            appState: {
+              ...(stateStart === "dot" ? { currentItemStartArrowhead: toCanvasArrowhead(stateStart) } : {}),
+              ...(stateEnd === "dot" ? { currentItemEndArrowhead: toCanvasArrowhead(stateEnd) } : {}),
+            },
+            captureUpdate: CaptureUpdateAction.NEVER,
+          });
+        }
+      }
 
       // Queue persistence after font-default reconciliation so a stale callback
       // snapshot cannot save the default family immediately after a font pick.

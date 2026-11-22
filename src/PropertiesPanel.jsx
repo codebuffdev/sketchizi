@@ -1,3 +1,4 @@
+import { toUiArrowhead } from "./features/canvas/arrowheads.js";
 export default function PropertiesPanel({
   selectedCount, propertiesOpen, setPropertiesOpen, firstSelected, hasShapeSelection,
   hasArrowSelection, hasTextSelection, applyToSelected, applyToSelectedArrow, updateSingleSelected,
@@ -350,7 +351,7 @@ export default function PropertiesPanel({
         </div>
         <div className="property-row">
           <label>Start</label>
-          <select value={firstSelected?.startArrowhead || "none"} onChange={(event) => applyToSelectedArrow({ startArrowhead: event.target.value === "none" ? null : event.target.value })}>
+          <select value={toUiArrowhead(firstSelected?.startArrowhead)} onChange={(event) => applyToSelectedArrow({ startArrowhead: event.target.value === "none" ? null : event.target.value })}>
             <option value="none">None</option>
             <option value="arrow">Arrow</option>
             <option value="bar">Bar</option>
@@ -359,7 +360,7 @@ export default function PropertiesPanel({
         </div>
         <div className="property-row">
           <label>End</label>
-          <select value={firstSelected?.endArrowhead || "none"} onChange={(event) => applyToSelectedArrow({ endArrowhead: event.target.value === "none" ? null : event.target.value })}>
+          <select value={toUiArrowhead(firstSelected?.endArrowhead)} onChange={(event) => applyToSelectedArrow({ endArrowhead: event.target.value === "none" ? null : event.target.value })}>
             <option value="none">None</option>
             <option value="arrow">Arrow</option>
             <option value="bar">Bar</option>
