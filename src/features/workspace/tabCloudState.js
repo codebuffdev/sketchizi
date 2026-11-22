@@ -25,7 +25,10 @@ export function getTabCloudMeta(tab, live = null) {
   const saveState = live?.cloudSaveState || tab?.snapshot?.cloudSaveState || { state: "inactive", error: "" };
   const isDirty = Boolean(live ? live.dirty : tab?.dirty);
   if (!isCloud) {
-    return { sourceType: "local", cloudDocId: null, cloudVersion: null, syncStatus: "local", isDirty, error: "" };
+    // A local tab linked to a real file handle is "file"; everything else only
+    // lives in this browser as a draft and must never look permanently saved.
+    const fileBacked = Boolean(live?.fileBacked ?? tab?.snapshot?.file);
+    return { sourceType: "local", cloudDocId: null, cloudVersion: null, syncStatus: fileBacked ? "file" : "draft", fileBacked, isDirty, error: "" };
   }
   let syncStatus = SAVE_STATE_TO_SYNC[saveState.state] || "synced";
   if (syncStatus === "synced" && isDirty) syncStatus = "dirty";
@@ -46,7 +49,7 @@ export function findTabByCloudDocId(tabs, cloudDocId) {
 }
 
 export function describeTabSync(meta) {
-  if (meta.sourceType === "local") return meta.isDirty ? "Unsaved changes" : "Local canvas";
+  if (meta.sourceType === "local") return describeLocalTabStatus(meta);
   switch (meta.syncStatus) {
     case "synced": return "Synced to Cloud Workspace";
     case "syncing": return "Syncing to Cloud Workspace…";
@@ -54,4 +57,20 @@ export function describeTabSync(meta) {
     case "error": return meta.error ? `Sync error: ${meta.error}` : "Sync error — will retry";
     default: return "Cloud canvas";
   }
+}
+
+export const BROWSER_DRAFT_LABEL = "Browser draft (not saved to file)";
+
+/** Label/tooltip for tabs that are not cloud documents. */
+export function describeLocalTabStatus(meta) {
+  if (meta?.fileBacked) return meta.isDirty ? "Changes not saved to file" : "Saved to disk";
+  return BROWSER_DRAFT_LABEL;
+}
+
+/** Dot class for the tab bar: green is reserved for file/cloud-backed saves. */
+export function getTabStatusClass(meta, saveState = "ready") {
+  if (meta?.sourceType === "cloud") return `is-${meta.syncStatus === "synced" ? "saved" : meta.syncStatus === "error" ? "error" : "pending"}`;
+  if (saveState === "error") return "is-error";
+  if (meta?.fileBacked) return meta.isDirty ? "is-pending" : "is-saved";
+  return "is-draft";
 }

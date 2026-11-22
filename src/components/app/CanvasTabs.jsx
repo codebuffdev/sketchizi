@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getTabDisplayName } from "../../features/workspace/tabLabel.js";
-import { describeTabSync } from "../../features/workspace/tabCloudState.js";
+import { describeTabSync, getTabStatusClass } from "../../features/workspace/tabCloudState.js";
+import { countLiveElements, describeClosedAt } from "../../features/workspace/closedTabs.js";
 
 function CanvasGlyph() {
   return (
@@ -37,6 +38,15 @@ function TabSyncBadge({ meta }) {
   );
 }
 
+function ReopenGlyph() {
+  return (
+    <svg className="canvas-tabs-reopen-icon" viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4.5 9.5a5.5 5.5 0 1 1 1.6 3.9" />
+      <path d="M4.5 5v4.5H9" />
+    </svg>
+  );
+}
+
 function NewCanvasGlyph() {
   return (
     <svg className="canvas-tabs-add-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -51,9 +61,10 @@ function CloseGlyph() {
   return <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" /></svg>;
 }
 
-export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, onRename, activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved", activeStatusLabel = "Saved", disabled = false, showAddButton = true }) {
+export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, onRename, closedTabs = [], onReopenClosedTab, onDeleteClosedTab, onClearClosedTabs, activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved", activeStatusLabel = "Saved", disabled = false, showAddButton = true }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [activeMenuOpen, setActiveMenuOpen] = useState(false);
+  const [closedMenuOpen, setClosedMenuOpen] = useState(false);
   const rootRef = useRef(null);
   const visibleTabs = useMemo(() => {
     if (tabs.length <= 3) return tabs;
@@ -69,7 +80,28 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
   useEffect(() => {
     setOverflowOpen(false);
     setActiveMenuOpen(false);
+    setClosedMenuOpen(false);
   }, [activeId]);
+
+  useEffect(() => {
+    if (!closedMenuOpen) return undefined;
+    const closeOnOutsideInteraction = (event) => {
+      if (!rootRef.current?.contains(event.target)) setClosedMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setClosedMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideInteraction, true);
+    document.addEventListener("keydown", closeOnEscape, true);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideInteraction, true);
+      document.removeEventListener("keydown", closeOnEscape, true);
+    };
+  }, [closedMenuOpen]);
+
+  useEffect(() => {
+    if (closedMenuOpen && closedTabs.length === 0) setClosedMenuOpen(false);
+  }, [closedMenuOpen, closedTabs.length]);
 
   useEffect(() => {
     if (!activeMenuOpen) return undefined;
@@ -134,7 +166,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
       >
         {tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}
         <span className="canvas-tab-name">{getTabDisplayName(tab.name)}</span>
-        {tab.syncMeta?.sourceType === "cloud" ? <TabSyncBadge meta={tab.syncMeta} /> : activeId === tab.id ? <span className={`canvas-tab-status-dot ${activeStatusClass}`} role="status" aria-label={activeStatusLabel} title={activeStatusLabel} /> : tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
+        {tab.syncMeta?.sourceType === "cloud" ? <TabSyncBadge meta={tab.syncMeta} /> : tab.isTodoTab ? null : activeId === tab.id ? <span className={`canvas-tab-status-dot ${activeStatusClass}`} role="status" aria-label={activeStatusLabel} title={activeStatusLabel} /> : tab.syncMeta && <span className={`canvas-tab-status-dot ${getTabStatusClass(tab.syncMeta)}`} role="status" aria-label={describeTabSync(tab.syncMeta)} title={describeTabSync(tab.syncMeta)} />}
       </button>
       {activeId === tab.id && activeRenameAction && <span className="canvas-tab-inline-rename">{activeRenameAction}</span>}
       {activeId === tab.id && activeMenu && <button type="button" className={`canvas-tab-menu-trigger${activeMenuOpen ? " is-open" : ""}`} aria-label="Canvas options" aria-haspopup="dialog" aria-expanded={activeMenuOpen} title="Canvas options" onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); setActiveMenuOpen((open) => !open); }} disabled={disabled}><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg></button>}
@@ -143,7 +175,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
   );
 
   return (
-    <div className="canvas-tabs-bar" role="tablist" aria-label="Workspace tabs" ref={rootRef}>
+    <div className="canvas-tabs-bar" role="tablist" aria-label="Workspace tabs" ref={rootRef} onContextMenu={(event) => { if (!closedTabs.length || !onReopenClosedTab) return; event.preventDefault(); setOverflowOpen(false); setActiveMenuOpen(false); setClosedMenuOpen(true); }}>
       <div className="canvas-tabs-list">
         {visibleTabs.map(renderTab)}
         <div className="canvas-tab-controls-group">
@@ -156,11 +188,37 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
                   <div className="canvas-tabs-overflow-item" role="none" key={tab.id}>
                     <button type="button" role="menuitem" className={activeId === tab.id ? "is-active" : ""} onClick={() => { onSelect?.(tab.id); setOverflowOpen(false); }}>
                       <span className="canvas-tabs-overflow-name">{tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}<span className="canvas-tabs-overflow-label" title={tab.name}>{getTabDisplayName(tab.name)}</span></span>
-                      {tab.syncMeta?.sourceType === "cloud" ? <TabSyncBadge meta={tab.syncMeta} /> : tab.dirty && <span className="canvas-tab-dirty" aria-label="Unsaved changes" />}
+                      {tab.syncMeta?.sourceType === "cloud" ? <TabSyncBadge meta={tab.syncMeta} /> : tab.syncMeta && !tab.isTodoTab && <span className={`canvas-tab-status-dot ${getTabStatusClass(tab.syncMeta)}`} role="status" aria-label={describeTabSync(tab.syncMeta)} title={describeTabSync(tab.syncMeta)} />}
                     </button>
                     {onClose && <button type="button" className="canvas-tab-close canvas-tabs-overflow-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={() => { setOverflowOpen(false); onClose(tab.id); }} disabled={disabled}><CloseGlyph /></button>}
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+        {closedTabs.length > 0 && onReopenClosedTab && (
+          <div className="canvas-tabs-closed">
+            <button type="button" className={`canvas-tabs-closed-trigger${closedMenuOpen ? " is-open" : ""}`} aria-haspopup="menu" aria-expanded={closedMenuOpen} aria-label={`Recently closed canvases (${closedTabs.length})`} title="Recently closed (Ctrl/Cmd+Shift+T reopens the last one)" onClick={() => { setOverflowOpen(false); setActiveMenuOpen(false); setClosedMenuOpen((open) => !open); }} disabled={disabled}>
+              <ReopenGlyph />
+              <span className="canvas-tabs-closed-count">{closedTabs.length}</span>
+            </button>
+            {closedMenuOpen && (
+              <div className="canvas-tabs-closed-menu" role="menu" aria-label="Recently closed canvases">
+                <div className="canvas-tabs-closed-heading">
+                  <strong>Recently closed</strong>
+                  <span>Local drafts kept in this browser</span>
+                </div>
+                {closedTabs.map((record) => (
+                  <div className="canvas-tabs-closed-item" role="none" key={record.closedId}>
+                    <button type="button" role="menuitem" className="canvas-tabs-closed-open" title={`Reopen ${record.name}`} onClick={() => { setClosedMenuOpen(false); onReopenClosedTab(record.closedId); }}>
+                      <span className="canvas-tabs-closed-name">{getTabDisplayName(record.name)}</span>
+                      <small>{describeClosedAt(record)} · {countLiveElements(record)} {countLiveElements(record) === 1 ? "element" : "elements"}</small>
+                    </button>
+                    {onDeleteClosedTab && <button type="button" className="canvas-tab-close canvas-tabs-closed-delete" aria-label={`Delete draft ${record.name}`} title="Delete this draft permanently" onClick={() => onDeleteClosedTab(record.closedId)}><CloseGlyph /></button>}
+                  </div>
+                ))}
+                {onClearClosedTabs && <button type="button" role="menuitem" className="canvas-tabs-closed-clear" onClick={() => { setClosedMenuOpen(false); onClearClosedTabs(); }}>Delete all local drafts</button>}
               </div>
             )}
           </div>

@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { describeClosedAt } from "../workspace/closedTabs.js";
 import { getRecentFileActivityLabel, getRecentFileAvailability, getRecentFileOriginLabel, getRecentFileTypeLabel } from "../files/recentFilePresentation.js";
 import { getRecentFolderActivityLabel, getRecentFolderAvailability, getRecentFolderTypeLabel } from "../files/recentFolderPresentation.js";
 
@@ -10,11 +11,19 @@ export function useNativeSketchiziMenu({
   currentFolderFiles,
   recentFiles,
   recentFolders,
+  closedTabs = [],
+  reopenClosedTab = () => {},
+  deleteClosedTab = () => {},
+  clearClosedTabs = () => {},
   refreshCurrentFolderFiles,
   handleFileError,
   useThemeDefaultBackground = () => {},
   markCanvasBackgroundCustom = () => {},
 }) {
+  // The menu is rendered imperatively and its click handlers are bound once, so
+  // they read the latest closed-tab actions through a ref instead of a closure.
+  const closedTabActionsRef = useRef(null);
+  closedTabActionsRef.current = { reopenClosedTab, deleteClosedTab, clearClosedTabs };
   useEffect(() => {
     // Canvas color swatches are intentionally disabled: the global Day/Night
     // switch controls both application chrome and Excalidraw's canvas.
@@ -215,7 +224,7 @@ export function useNativeSketchiziMenu({
 <button type="button" class="sketchizi-folder-action" data-sketchizi-open-file><span aria-hidden="true">↗</span> Open file</button>
 </div>
 <div class="sketchizi-file-menu-announcement" data-file-menu-announcement role="status" aria-live="polite" aria-atomic="true"></div>
-<section class="sketchizi-file-menu-group sketchizi-file-menu-recents" aria-label="Recent items"><details class="sketchizi-recent-dropdown"><summary aria-controls="sketchizi-recent-files-panel"><span>Recent files</span><span class="sketchizi-recent-count" data-recent-files-count></span><span class="sketchizi-recent-chevron" aria-hidden="true">⌄</span></summary><div id="sketchizi-recent-files-panel" class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button></details></section>`;
+<section class="sketchizi-file-menu-group sketchizi-file-menu-recents" aria-label="Recent items"><details class="sketchizi-recent-dropdown"><summary aria-controls="sketchizi-recent-files-panel"><span>Recent files</span><span class="sketchizi-recent-count" data-recent-files-count></span><span class="sketchizi-recent-chevron" aria-hidden="true">⌄</span></summary><div id="sketchizi-recent-files-panel" class="sketchizi-recent-list" data-recent-list></div><button type="button" class="sketchizi-recent-clear" data-clear-recent-files>Clear recent files</button></details><details class="sketchizi-recent-dropdown" data-closed-tabs-menu><summary aria-controls="sketchizi-closed-tabs-panel"><span>Local drafts · recently closed</span><span class="sketchizi-recent-count" data-closed-tabs-count></span><span class="sketchizi-recent-chevron" aria-hidden="true">⌄</span></summary><div id="sketchizi-closed-tabs-panel" class="sketchizi-recent-list" data-closed-tabs-list></div><button type="button" class="sketchizi-recent-clear" data-clear-closed-tabs>Delete all local drafts</button></details></section>`;
           // Remove only the horizontal rules called out in the menu mockup;
           // retain the existing rows, content, and spacing.
           recentSection.style.setProperty("border-top", "0", "important");
@@ -422,6 +431,28 @@ export function useNativeSketchiziMenu({
 
       const recentFilesCount = recentMenu?.querySelector("[data-recent-files-count]");
       if (recentFilesCount) recentFilesCount.textContent = `${recentFiles.length} ${recentFiles.length === 1 ? "file" : "files"}`;
+      const closedCount = recentMenu?.querySelector("[data-closed-tabs-count]");
+      if (closedCount) closedCount.textContent = `${closedTabs.length} ${closedTabs.length === 1 ? "draft" : "drafts"}`;
+      const closedList = recentMenu?.querySelector("[data-closed-tabs-list]");
+      if (closedList) {
+        const signature = JSON.stringify(closedTabs.map((item) => [item.closedId, item.name, item.closedAt]));
+        if (closedList.dataset.signature !== signature) {
+          closedList.dataset.signature = signature;
+          closedList.innerHTML = closedTabs.length
+            ? closedTabs.map((item) => `<div class="sketchizi-recent-row"><button type="button" class="sketchizi-recent-item" data-closed-tab-id="${escapeHtml(item.closedId)}" title="Reopen ${escapeHtml(item.name)} as a browser draft"><span class="sketchizi-recent-name">${escapeHtml(item.name)}</span><span class="sketchizi-recent-meta"><small class="sketchizi-recent-type">Browser draft</small><small class="sketchizi-recent-activity">${escapeHtml(describeClosedAt(item))}</small></span></button><button type="button" class="sketchizi-recent-remove" data-remove-closed-tab="${escapeHtml(item.closedId)}" aria-label="Delete draft ${escapeHtml(item.name)}" title="Delete this draft permanently">×</button></div>`).join("")
+            : `<div class="sketchizi-recent-empty">No closed canvases yet. Closed tabs are kept here as local drafts.</div>`;
+        }
+        bind(closedList, "bound", (event) => {
+          const remove = event.target.closest?.("[data-remove-closed-tab]");
+          if (remove) { closedTabActionsRef.current.deleteClosedTab(remove.dataset.removeClosedTab); return; }
+          const open = event.target.closest?.("[data-closed-tab-id]");
+          if (open) {
+            apiRef.current?.updateScene?.({ appState: { openMenu: null }, captureUpdate: "NEVER" });
+            closedTabActionsRef.current.reopenClosedTab(open.dataset.closedTabId);
+          }
+        });
+      }
+      bind(recentMenu?.querySelector("[data-clear-closed-tabs]"), "bound", () => closedTabActionsRef.current.clearClosedTabs());
       const recentFoldersCount = recentMenu?.querySelector("[data-recent-folders-count]");
       if (recentFoldersCount) recentFoldersCount.textContent = `${recentFolders.length} ${recentFolders.length === 1 ? "folder" : "folders"}`;
       const recentList = recentMenu?.querySelector("[data-recent-list]");
@@ -518,5 +549,5 @@ export function useNativeSketchiziMenu({
       window.visualViewport?.removeEventListener("resize", scheduleCleanup);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [currentFolder, currentFolderFiles, fileActionsRef, handleFileError, markCanvasBackgroundCustom, openCloudWorkspace, recentFiles, recentFolders, refreshCurrentFolderFiles, useThemeDefaultBackground]);
+  }, [currentFolder, currentFolderFiles, fileActionsRef, handleFileError, markCanvasBackgroundCustom, openCloudWorkspace, recentFiles, recentFolders, closedTabs, refreshCurrentFolderFiles, useThemeDefaultBackground]);
 }

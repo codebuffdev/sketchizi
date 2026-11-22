@@ -1207,3 +1207,32 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
   color: #ffffff;
   -webkit-text-fill-color: #ffffff;
 }
+
+/* Browser drafts: a hollow amber ring. Green is reserved for file/cloud saves. */
+.canvas-tab-status-dot.is-draft { background: transparent; box-shadow: inset 0 0 0 1.6px #d69a32; }
+.canvas-tabs-action-state.is-draft { background: rgb(214 154 50 / 12%); color: #9a6a12; }
+.app.theme-dark .canvas-tabs-action-state.is-draft { background: rgb(214 154 50 / 16%); color: #e8bd68; }
+.canvas-tabs-active-menu .desktop-app-document-identity-dirty-dot.is-draft { background: transparent; box-shadow: inset 0 0 0 1.6px #d69a32; animation: none; }
+
+/* Recently closed / local drafts menu */
+.canvas-tabs-closed { position: relative; display: inline-flex; }
+.canvas-tabs-closed-trigger { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 7px; border: 0; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; opacity: .78; }
+.canvas-tabs-closed-trigger:hover, .canvas-tabs-closed-trigger.is-open { background: rgb(128 128 128 / 16%); opacity: 1; }
+.canvas-tabs-closed-trigger:focus-visible { outline: 2px solid #d69a32; outline-offset: 1px; }
+.canvas-tabs-closed-count { font-size: 11px; font-weight: 650; }
+.canvas-tabs-closed-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 1300; width: 280px; max-height: 340px; overflow-y: auto; padding: 6px; border: 1px solid var(--ui-border, #dedede); border-radius: 12px; background: var(--ui-surface-solid, #fff); color: var(--ui-text, #333); box-shadow: 0 14px 40px rgba(0,0,0,.18); }
+.canvas-tabs-closed-heading { display: grid; gap: 1px; padding: 6px 8px 8px; font-size: 12px; }
+.canvas-tabs-closed-heading span { opacity: .65; font-size: 11px; }
+.canvas-tabs-closed-item { display: flex; align-items: center; gap: 2px; }
+.canvas-tabs-closed-open { flex: 1; min-width: 0; display: grid; gap: 1px; padding: 7px 8px; border: 0; border-radius: 8px; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.canvas-tabs-closed-open:hover, .canvas-tabs-closed-open:focus-visible { background: rgb(128 128 128 / 15%); outline: none; }
+.canvas-tabs-closed-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.canvas-tabs-closed-open small { font-size: 11px; opacity: .65; }
+.canvas-tabs-closed-clear { width: 100%; margin-top: 4px; padding: 7px 8px; border: 0; border-top: 1px solid var(--ui-border, #dedede); border-radius: 0 0 8px 8px; background: transparent; color: #b4432f; font-size: 12px; cursor: pointer; text-align: left; }
+.canvas-tabs-closed-clear:hover { background: rgb(180 67 47 / 10%); }
+
+/* "Closed … Reopen Tab" toast: interactive, so it re-enables pointer events. */
+.sketchizi-toast.closed-tab-toast { display: flex; align-items: center; gap: 14px; bottom: 112px; pointer-events: auto; }
+.sketchizi-toast.closed-tab-toast button { flex: 0 0 auto; padding: 5px 12px; border: 1px solid rgba(255,255,255,.35); border-radius: 8px; background: rgba(255,255,255,.14); color: #fff; font: inherit; font-weight: 650; cursor: pointer; }
+.sketchizi-toast.closed-tab-toast button:hover { background: rgba(255,255,255,.26); }
+.sketchizi-toast.closed-tab-toast button:focus-visible { outline: 2px solid #f0c36a; outline-offset: 2px; }

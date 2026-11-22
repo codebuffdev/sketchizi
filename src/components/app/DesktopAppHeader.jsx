@@ -9,6 +9,7 @@ import AuthenticationControl from "../../features/auth/AuthenticationControl.jsx
 import SmartStudioPill from "./SmartStudioPill.jsx";
 import { getCanvasBrowserTitle } from "../../features/files/documentTitle.js";
 import { getCommandPaletteShortcut } from "../../features/commands/platformShortcut.js";
+import { BROWSER_DRAFT_LABEL } from "../../features/workspace/tabCloudState.js";
 
 const MENU_DEFINITIONS = [
   {
@@ -194,6 +195,10 @@ export default function DesktopAppHeader({
   onCreateCanvasTab,
   onReorderCanvasTabs,
   onCloseCanvasTab,
+  closedTabs = [],
+  onReopenClosedTab,
+  onDeleteClosedTab,
+  onClearClosedTabs,
   onCloseTodoTab,
   onRenameDocument,
   currentDocumentFileBacked = false,
@@ -509,7 +514,7 @@ export default function DesktopAppHeader({
     ready: "Autosave ready",
     pending: "Unsaved changes",
     saving: "Saving…",
-    saved: "Saved locally",
+    saved: "Autosaved in this browser",
     error: "Save issue",
   };
   const saveStateLabel = saveStateLabels[saveState] || "Local save status";
@@ -521,12 +526,12 @@ export default function DesktopAppHeader({
     error: "Cloud save failed",
     conflict: "Cloud save conflict",
   };
-  const storageLocation = isCloudDocument ? "Cloud" : currentDocumentFileBacked ? "File" : "Local";
+  const storageLocation = isCloudDocument ? "Cloud" : currentDocumentFileBacked ? "File" : "Browser";
   const documentStatusLabel = isCloudDocument
     ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace")
     : currentDocumentFileBacked
-      ? (currentDocumentDirty ? "Changes not saved to file" : "Linked file")
-      : `Local canvas. ${saveStateLabel}`;
+      ? (currentDocumentDirty ? "Changes not saved to file" : "Saved to disk")
+      : BROWSER_DRAFT_LABEL;
   const lastSavedLabel = saveStatus?.lastSavedAt
     ? new Date(saveStatus.lastSavedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
     : "No successful local save yet";
@@ -895,6 +900,10 @@ export default function DesktopAppHeader({
           activeId={activeCanvasId}
           onSelect={onSelectCanvasTab}
           onCreate={onCreateCanvasTab}
+          closedTabs={closedTabs}
+          onReopenClosedTab={onReopenClosedTab}
+          onDeleteClosedTab={onDeleteClosedTab}
+          onClearClosedTabs={onClearClosedTabs}
           onReorder={onReorderCanvasTabs}
           onClose={(tabId) => {
             const closingTab = canvasTabs.find((tab) => tab.id === tabId);
@@ -907,7 +916,7 @@ export default function DesktopAppHeader({
             setDocumentNameDraft(renamedTab?.name || activeCanvasTabName);
             setDocumentNameEditing(true);
           }}
-          activeStatusClass={`is-${isCloudDocument ? cloudSaveState : currentDocumentDirty ? (saveState === "error" ? "error" : "pending") : saveState}`}
+          activeStatusClass={`is-${isCloudDocument ? cloudSaveState : currentDocumentFileBacked ? (currentDocumentDirty ? (saveState === "error" ? "error" : "pending") : "saved") : saveState === "error" ? "error" : "draft"}`}
           activeStatusLabel={documentStatusLabel}
           activeRenameAction={activeTabRenameAction}
           activeMenu={
@@ -920,14 +929,14 @@ export default function DesktopAppHeader({
                 {isCloudDocument && <span className={`canvas-tab-status-dot is-${cloudSaveState}`} aria-label={cloudStatusLabels[cloudSaveState] || "Cloud Workspace"} />}
                 {!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "saved", "error"].includes(saveState) && (
                   <span
-                    className={`desktop-app-document-identity-dirty-dot is-${saveState}`}
-                    aria-label={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
-                    title={saveState === "saved" ? "Saved locally on this device" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
+                    className={`desktop-app-document-identity-dirty-dot is-${saveState === "saved" ? "draft" : saveState}`}
+                    aria-label={saveState === "saved" ? "Browser draft: autosaved in this browser, not saved to a file" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
+                    title={saveState === "saved" ? "Browser draft: autosaved in this browser, not saved to a file" : saveState === "error" ? "Local save failed" : saveState === "saving" ? "Saving locally" : "Local changes waiting to be saved"}
                   />
                 )}
                 <span className="desktop-app-document-location" aria-label="Storage location">{storageLocation}</span>
-                <span>{isCloudDocument ? "Cloud Workspace" : currentDocumentFileBacked ? "Linked file" : "Local draft"}</span>
-                <span className="canvas-tabs-active-menu-status-detail">{isCloudDocument ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace") : currentDocumentFileBacked ? (currentDocumentDirty ? "Unsaved file changes" : "Linked file saved") : saveStateLabel}</span>
+                <span>{isCloudDocument ? "Cloud Workspace" : currentDocumentFileBacked ? "Saved to disk" : "Browser draft"}</span>
+                <span className="canvas-tabs-active-menu-status-detail">{isCloudDocument ? (cloudStatusLabels[cloudSaveState] || "Cloud Workspace") : currentDocumentFileBacked ? (currentDocumentDirty ? "Unsaved file changes" : "Saved to disk") : saveStateLabel}</span>
               </div>
 
               <section className="canvas-tabs-menu-section" aria-label="Save and sync">
@@ -936,7 +945,7 @@ export default function DesktopAppHeader({
                   <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveNow?.()} aria-label="Save locally">
                     <CanvasActionIcon name="save" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Save locally</strong><small>Keep a copy on this device</small></span>
-                    <span className={`canvas-tabs-action-state is-${saveState}`}>{saveState === "saved" ? "Saved" : saveState === "saving" ? "Saving…" : saveState === "pending" ? "Unsaved" : saveState === "error" ? "Issue" : "Auto-save"}</span>
+                    <span className={`canvas-tabs-action-state is-${saveState === "saved" ? "draft" : saveState}`}>{saveState === "saved" ? "Autosaved" : saveState === "saving" ? "Saving…" : saveState === "pending" ? "Unsaved" : saveState === "error" ? "Issue" : "Auto-save"}</span>
                   </button>
                   <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveToCloud?.()} disabled={cloudSaveState === "loading" || cloudSaveState === "saving"} aria-label="Save to Cloud Workspace">
                     <CanvasActionIcon name="cloud" />
@@ -950,6 +959,7 @@ export default function DesktopAppHeader({
                 <strong>Local save &amp; recovery</strong>
                 <span>Sketchizi autosaves this canvas in this browser on this device.</span>
                 <span>Local autosave is not a cloud backup.</span>
+                <span>It is also not a saved file: save to a file or the cloud for a permanent copy. Closed tabs stay under Recently closed.</span>
               </div>
 
               <section className="canvas-tabs-menu-section" aria-label="Download and export">

@@ -231,6 +231,37 @@ export async function loadCanvasTabs() {
   } finally { try { db.close(); } catch {} }
 }
 
+const CLOSED_TABS_KEY = "closed-tabs";
+
+/** Recently closed tabs ("local drafts"), newest first. Survives reloads. */
+export async function loadClosedTabs() {
+  const db = await openDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, "readonly");
+      const request = transaction.objectStore(STORE_NAME).get(CLOSED_TABS_KEY);
+      request.onsuccess = () => resolve(Array.isArray(request.result?.tabs) ? request.result.tabs : []);
+      request.onerror = () => reject(toPersistenceError(request.error, "Unable to restore recently closed canvases.", "read"));
+    });
+  } finally { try { db.close(); } catch {} }
+}
+
+export async function saveClosedTabs(records) {
+  const tabs = structuredClone(prepareTabsForPersistence(
+    (Array.isArray(records) ? records : []).map((record) => ({ ...record, id: record.closedId })),
+  )).map(({ id: _id, ...record }) => record);
+  const db = await openDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, "readwrite");
+      transaction.objectStore(STORE_NAME).put({ tabs, savedAt: Date.now() }, CLOSED_TABS_KEY);
+      transaction.oncomplete = () => resolve(true);
+      transaction.onerror = () => reject(toPersistenceError(transaction.error, "Unable to save recently closed canvases.", "write"));
+      transaction.onabort = () => reject(toPersistenceError(transaction.error, "Unable to save recently closed canvases.", "write"));
+    });
+  } finally { try { db.close(); } catch {} }
+}
+
 export async function saveCanvasTabs(tabs) {
   const savedAt = Date.now();
   const db = await openDatabase();

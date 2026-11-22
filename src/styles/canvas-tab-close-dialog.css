@@ -184,3 +184,26 @@
     transition: none;
   }
 }
+
+/* Three-way close choices: save, keep as local draft, discard. */
+.canvas-tab-close-choices { display: grid; gap: 8px; margin-top: 18px; }
+.canvas-tab-close-choice { display: grid; gap: 2px; width: 100%; padding: 11px 14px; border: 1px solid var(--ui-border, #dedede); border-radius: 12px; background: transparent; color: var(--ui-text, #333); font: inherit; text-align: left; cursor: pointer; transition: background 120ms ease, border-color 120ms ease; }
+.canvas-tab-close-choice strong { font-size: 13.5px; font-weight: 650; }
+.canvas-tab-close-choice small { font-size: 11.5px; opacity: .66; }
+.canvas-tab-close-choice:hover { background: rgb(128 128 128 / 11%); }
+.canvas-tab-close-choice.is-primary { border-color: rgba(198, 137, 52, .55); background: rgba(198, 137, 52, .1); }
+.canvas-tab-close-choice.is-danger strong { color: #b4432f; }
+.canvas-tab-close-choice:focus-visible { outline: 2px solid #c68934; outline-offset: 2px; }
+.canvas-tab-close-remember { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 12px; opacity: .8; cursor: pointer; }
+.canvas-tab-close-remember input { margin: 0; }
+.canvas-tab-close-dialog-actions { margin-top: 14px; }
+
+/* Local drafts list on the welcome / startup chooser. */
+.startup-canvas-drafts { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; max-height: 180px; overflow-y: auto; }
+.startup-canvas-draft { display: flex; align-items: center; gap: 4px; border: 1px solid var(--ui-border, #dedede); border-radius: 10px; }
+.startup-canvas-draft-open { flex: 1; min-width: 0; display: grid; gap: 1px; padding: 8px 12px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 10px; }
+.startup-canvas-draft-open:hover, .startup-canvas-draft-open:focus-visible { background: rgb(128 128 128 / 12%); outline: none; }
+.startup-canvas-draft-open strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.startup-canvas-draft-open small { font-size: 11px; opacity: .65; }
+.startup-canvas-draft-delete { width: 28px; height: 28px; margin-right: 6px; border: 0; border-radius: 8px; background: transparent; color: inherit; font-size: 16px; cursor: pointer; opacity: .6; }
+.startup-canvas-draft-delete:hover { opacity: 1; background: rgb(180 67 47 / 14%); color: #b4432f; }

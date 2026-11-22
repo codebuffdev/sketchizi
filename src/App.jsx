@@ -8,7 +8,8 @@ import { CaptureUpdateAction, convertToExcalidrawElements, getCommonBounds, rest
 import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
 import { useMoreTools } from "./features/navigation/useMoreTools";
-import { useSketchiziPreferences } from "./features/navigation/useSketchiziPreferences";
+import { useSketchiziPreferences, readSkipLocalDraftPrompt } from "./features/navigation/useSketchiziPreferences";
+import { buildClosedTabRecord, countLiveElements, describeClosedAt, normalizeClosedTabs, pushClosedTab, removeClosedTab, restoreClosedTab, isTabBackedByFileOrCloud } from "./features/workspace/closedTabs.js";
 import { getInitialThemeMode } from "./features/navigation/themePreference.js";
 import { applyCanvasAppearance, getCanvasAppearanceFromBackground } from "./features/navigation/canvasAppearance.js";
 import { useSketchiziEscape, useSketchiziCanvasDismissal } from "./features/navigation/useSketchiziEscape";
@@ -73,7 +74,7 @@ import "./styles/ai-ask.css";
 import "./features/design/design.css";
 import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
-import { loadCanvasTabs, saveCanvasTabs, saveCanvasTabsPagehideBackup } from "./persistence.js";
+import { loadCanvasTabs, saveCanvasTabs, saveCanvasTabsPagehideBackup, loadClosedTabs, saveClosedTabs } from "./persistence.js";
 import { createTabDates, getLocalDateString, isValidCanvasStartDate, normalizeTabDates } from "./features/canvas/canvasStartDate.js";
 import "./styles/canvas-tabs.css";
 import "./styles/canvas-tabs-dock.css";
@@ -145,6 +146,14 @@ function App() {
   const [apiReady, setApiReady] = useState(false);
   const [canvasTabs, setCanvasTabs] = useState(() => [{ id: "canvas-1", name: "Canvas 1", ...createTabDates(), snapshot: null, dirty: false }]);
   const [closeTabPrompt, setCloseTabPrompt] = useState(null);
+  const [dontAskDraftChecked, setDontAskDraftChecked] = useState(false);
+  // Recently closed tabs ("local drafts"): persisted in IndexedDB so a closed
+  // canvas can always be reopened, including after a page reload.
+  const [closedTabs, setClosedTabs] = useState([]);
+  const closedTabsRef = useRef([]);
+  const [closedTabToast, setClosedTabToast] = useState(null);
+  const closedTabToastTimerRef = useRef(null);
+  const skipDraftPromptRef = useRef(readSkipLocalDraftPrompt());
   const [activeCanvasId, setActiveCanvasId] = useState("canvas-1");
   const [activeWorkspaceTabId, setActiveWorkspaceTabId] = useState("canvas-1");
   const [canvasTabsReady, setCanvasTabsReady] = useState(false);
@@ -924,12 +933,115 @@ function App() {
     });
   }, [handleExcalidrawAPI, setCurrentFile, setSavedSketch]);
 
-  const performCloseCanvasTab = useCallback((tabId) => {
+  const commitClosedTabs = useCallback((next) => {
+    closedTabsRef.current = next;
+    setClosedTabs(next);
+    saveClosedTabs(next).catch((error) => {
+      logger.warn("Recently closed canvases could not be saved", { category: "persistence", error });
+    });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadClosedTabs().then((stored) => {
+      if (cancelled) return;
+      const seen = new Set(closedTabsRef.current.map((item) => item.closedId));
+      const merged = normalizeClosedTabs([...closedTabsRef.current, ...stored.filter((item) => item && !seen.has(item.closedId))]);
+      closedTabsRef.current = merged;
+      setClosedTabs(merged);
+    }).catch((error) => {
+      logger.warn("Recently closed canvases could not be restored", { category: "persistence", error });
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Serialize the tab (live scene for the active tab) into the closed-tab store
+  // before it is removed. Returns null for empty canvases, which need no recovery.
+  const archiveClosedTab = useCallback((tabId) => {
+    const tab = canvasTabsRef.current.find((item) => item.id === tabId);
+    if (!tab) return null;
+    const liveSnapshot = tabId === activeCanvasIdRef.current && apiRef.current ? captureCanvasTabSnapshot() : null;
+    const record = buildClosedTabRecord(tab, liveSnapshot || tab.snapshot);
+    if (!record) return null;
+    commitClosedTabs(pushClosedTab(closedTabsRef.current, record));
+    return record;
+  }, [captureCanvasTabSnapshot, commitClosedTabs]);
+
+  const dismissClosedTabToast = useCallback(() => {
+    if (closedTabToastTimerRef.current) window.clearTimeout(closedTabToastTimerRef.current);
+    closedTabToastTimerRef.current = null;
+    setClosedTabToast(null);
+  }, []);
+
+  const showClosedTabToast = useCallback((record) => {
+    if (closedTabToastTimerRef.current) window.clearTimeout(closedTabToastTimerRef.current);
+    setClosedTabToast({ closedId: record.closedId, name: record.name, id: Date.now() });
+    closedTabToastTimerRef.current = window.setTimeout(() => {
+      closedTabToastTimerRef.current = null;
+      setClosedTabToast(null);
+    }, 6000);
+  }, []);
+
+  // Reopen a specific closed tab, or the most recently closed one.
+  const reopenClosedTab = useCallback((closedId) => {
+    const list = closedTabsRef.current;
+    const record = closedId ? list.find((item) => item.closedId === closedId) : list[0];
+    const currentTabs = canvasTabsRef.current;
+    const restored = restoreClosedTab(record, currentTabs.map((tab) => tab.id));
+    if (!restored) {
+      showToast("No recently closed canvas to reopen", "error");
+      return false;
+    }
+    const activeId = activeCanvasIdRef.current;
+    const currentSnapshot = apiRef.current && activeId
+      ? captureCanvasTabSnapshot()
+      : (currentTabs.find((tab) => tab.id === activeId)?.snapshot || null);
+    const syncedTabs = currentTabs.map((tab) => tab.id === activeId && currentSnapshot ? { ...tab, snapshot: currentSnapshot } : tab);
+    persistCanvasTabs([...syncedTabs, restored]);
+    commitClosedTabs(removeClosedTab(list, record.closedId));
+    startupChoiceMadeRef.current = true;
+    setStartupChooserOpen(false);
+    dismissClosedTabToast();
+    switchCanvasTab(restored.id);
+    showToast(`Reopened “${restored.name}” as a browser draft`);
+    return true;
+  }, [captureCanvasTabSnapshot, commitClosedTabs, dismissClosedTabToast, persistCanvasTabs, showToast, switchCanvasTab]);
+
+  const deleteClosedTab = useCallback((closedId) => {
+    commitClosedTabs(removeClosedTab(closedTabsRef.current, closedId));
+  }, [commitClosedTabs]);
+
+  const clearClosedTabs = useCallback(() => {
+    dismissClosedTabToast();
+    commitClosedTabs([]);
+  }, [commitClosedTabs, dismissClosedTabToast]);
+
+  useEffect(() => {
+    const reopenFromShortcut = (event) => {
+      if (!(event.ctrlKey || event.metaKey) || !event.shiftKey || event.altKey || event.key.toLowerCase() !== "t") return;
+      const target = event.target;
+      if (target instanceof Element && target.closest("input, textarea, select, [contenteditable='true'], .monaco-editor, .cm-editor")) return;
+      // Some browsers reserve this chord for their own tabs; where the page does
+      // receive it, claim it. The tab "+" menu and command palette are the fallback.
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.repeat) return;
+      reopenClosedTab();
+    };
+    window.addEventListener("keydown", reopenFromShortcut, true);
+    return () => window.removeEventListener("keydown", reopenFromShortcut, true);
+  }, [reopenClosedTab]);
+
+  const performCloseCanvasTab = useCallback((tabId, { keepDraft = true } = {}) => {
     const currentTabs = canvasTabsRef.current;
     const tabIndex = currentTabs.findIndex((tab) => tab.id === tabId);
     if (tabIndex < 0) return;
     const remainingTabs = currentTabs.filter((item) => item.id !== tabId);
     const isActive = tabId === activeCanvasIdRef.current;
+
+    // Archive before anything is cleared or switched so the live scene is intact.
+    const archived = keepDraft ? archiveClosedTab(tabId) : null;
+    if (archived) showClosedTabToast(archived);
 
     if (remainingTabs.length === 0) {
       returnToWelcomeScreen();
@@ -946,7 +1058,7 @@ function App() {
     // instead of persisting the copy taken before the switch.
     persistCanvasTabs(isActive ? canvasTabsRef.current.filter((item) => item.id !== tabId) : remainingTabs);
     setCloseTabPrompt(null);
-  }, [persistCanvasTabs, returnToWelcomeScreen, switchCanvasTab]);
+  }, [archiveClosedTab, persistCanvasTabs, returnToWelcomeScreen, showClosedTabToast, switchCanvasTab]);
 
   const closeCanvasTab = useCallback((tabId) => {
     const currentTabs = canvasTabsRef.current;
@@ -964,12 +1076,30 @@ function App() {
       canvasSnapshotStateRef.current?.documentDirty ||
       ["pending", "saving", "error", "conflict"].includes(canvasSnapshotStateRef.current?.cloudSaveState?.state)
     )));
-    if (hasUnsavedChanges) {
-      setCloseTabPrompt({ tabId, name: tab.name });
+    if (hasUnsavedChanges && !skipDraftPromptRef.current) {
+      const snapshot = isActive && apiRef.current ? captureCanvasTabSnapshot() : tab.snapshot;
+      const cloudBacked = Boolean(snapshot?.cloudSession?.active && snapshot?.cloudSession?.diagramId && snapshot?.cloudDetached !== true);
+      setDontAskDraftChecked(false);
+      setCloseTabPrompt({ tabId, name: tab.name, isActive, cloudBacked, fileBacked: !cloudBacked && isTabBackedByFileOrCloud(snapshot) });
       return;
     }
     performCloseCanvasTab(tabId);
-  }, [performCloseCanvasTab]);
+  }, [captureCanvasTabSnapshot, performCloseCanvasTab]);
+
+  // "Save to file" from the close prompt. Only close once the canvas is really
+  // linked to a file; a cancelled picker leaves the tab open. The archive made
+  // on close means nothing is lost either way.
+  const saveAndCloseTab = useCallback(async (prompt) => {
+    setCloseTabPrompt(null);
+    if (!prompt.isActive) {
+      switchCanvasTab(prompt.tabId);
+      showToast(`Save “${prompt.name}” to a file, then close it again`);
+      return;
+    }
+    await fileActionsRef.current.saveCurrentDrawing?.();
+    if (currentFileRef.current && activeCanvasIdRef.current === prompt.tabId) performCloseCanvasTab(prompt.tabId);
+    else showToast("Canvas not saved to a file, so it was left open", "error");
+  }, [currentFileRef, fileActionsRef, performCloseCanvasTab, showToast, switchCanvasTab]);
 
   useEffect(() => {
     if (!closeTabPrompt) return undefined;
@@ -1512,6 +1642,7 @@ function App() {
     canvasAppearance, setCanvasAppearance,
   });
   const { themeMode, setThemeMode, isDarkTheme, spellcheckEnabled, toggleSpellcheck } = preferences;
+  skipDraftPromptRef.current = preferences.skipLocalDraftPrompt;
   useEffect(() => {
     if (typeof document === "undefined" || typeof MutationObserver === "undefined") return undefined;
     applyCanvasSpellcheck(document, spellcheckEnabled);
@@ -1574,6 +1705,8 @@ function App() {
     collaborationPermission,
     currentFolder,
     fileActionsRef,
+    reopenClosedTab,
+    closedTabCount: closedTabs.length,
     openExportStudio: () => setExportStudioOpen(true),
     architectureContext,
     insertCatalogIcon: insertCatalogIconAtViewportCenter,
@@ -1584,7 +1717,7 @@ function App() {
     openArchitectureTemplates: () => setTemplatesModalOpen(true),
     openDesignTemplates: () => setDesignStudioOpen(true),
   });
-  useNativeSketchiziMenu({ apiRef, fileActionsRef, openCloudWorkspace, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
+  useNativeSketchiziMenu({ apiRef, fileActionsRef, openCloudWorkspace, closedTabs, reopenClosedTab, deleteClosedTab, clearClosedTabs, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
   const handleExcalidrawChange = useExcalidrawScene({
     apiRef, nativeMenuOpenRef, setNativeMenuOpen, onNativeMenuOpen: closeLeftPanel, lastSelectionSignature,
     setSelectedCount, setSelectedElements, setSelectedConnector, updateMinimap, queueSketchSave,
@@ -2767,6 +2900,10 @@ function App() {
         onCreateCanvasTab={createCanvasTab}
         onReorderCanvasTabs={reorderCanvasTabs}
         onCloseCanvasTab={closeCanvasTab}
+        closedTabs={closedTabs}
+        onReopenClosedTab={reopenClosedTab}
+        onDeleteClosedTab={deleteClosedTab}
+        onClearClosedTabs={clearClosedTabs}
         workspaceToggle={workspaceToggle}
         moreToolsToggle={moreToolsToggle}
         libraryToggle={collaborationCanEdit ? (
@@ -3007,6 +3144,22 @@ function App() {
                 <span>Todo</span>
               </button>
             </div>
+            {closedTabs.length > 0 && (
+              <>
+                <h3 className="startup-canvas-subtitle">Local drafts · recently closed</h3>
+                <ul className="startup-canvas-drafts" aria-label="Local drafts">
+                  {closedTabs.map((record) => (
+                    <li className="startup-canvas-draft" key={record.closedId}>
+                      <button type="button" className="startup-canvas-draft-open" onClick={() => reopenClosedTab(record.closedId)} title={`Reopen ${record.name}`}>
+                        <strong>{record.name}</strong>
+                        <small>{describeClosedAt(record)} · {countLiveElements(record)} elements · browser draft</small>
+                      </button>
+                      <button type="button" className="startup-canvas-draft-delete" aria-label={`Delete draft ${record.name}`} title="Delete this draft permanently" onClick={() => deleteClosedTab(record.closedId)}>×</button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
             <h3 className="startup-canvas-subtitle">Or open an existing file</h3>
             <div className="startup-canvas-options startup-canvas-options-open">
               <button type="button" className="startup-canvas-option startup-canvas-option-wide" onClick={openLocalFileFromStartup}>
@@ -3078,6 +3231,13 @@ function App() {
       )}
       <AiAskPanel open={aiAskOpen} onClose={() => setAiAskOpen(false)} apiRef={apiRef} persistSketchNow={persistSketchNow} saveTimerRef={saveTimerRef} pageContext={canvasPageContext} />
 
+      {closedTabToast && (
+        <div className="sketchizi-toast closed-tab-toast" role="status" aria-live="polite" key={closedTabToast.id}>
+          <span>Closed “{closedTabToast.name}” (saved in local drafts)</span>
+          <button type="button" onClick={() => reopenClosedTab(closedTabToast.closedId)}>Reopen Tab</button>
+        </div>
+      )}
+
       {toast && (
         <div className={`sketchizi-toast ${toast.kind === "error" ? "error" : ""}`} role="status" aria-live="polite" key={toast.id}>
           {toast.text}
@@ -3120,14 +3280,49 @@ function App() {
               </svg>
             </div>
             <div className="canvas-tab-close-dialog-copy">
-              <span className="canvas-tab-close-eyebrow">UNSAVED CHANGES</span>
+              <span className="canvas-tab-close-eyebrow">{closeTabPrompt.cloudBacked || closeTabPrompt.fileBacked ? "UNSAVED CHANGES" : "BROWSER DRAFT · NOT SAVED TO A FILE"}</span>
               <h2 id="canvas-tab-close-title">Close this canvas?</h2>
               <p className="canvas-tab-close-name">{closeTabPrompt.name}</p>
-              <p id="canvas-tab-close-description">This canvas has changes that haven’t been saved yet. If you close it now, those changes may be lost.</p>
+              <p id="canvas-tab-close-description">
+                {closeTabPrompt.cloudBacked
+                  ? "This canvas has changes that haven’t synced to your Cloud Workspace yet."
+                  : closeTabPrompt.fileBacked
+                    ? "This canvas has changes that haven’t been saved to its file yet."
+                    : "This canvas only exists as a draft in this browser. Save it to a file to keep a permanent copy."}
+                {" "}Choose what happens to it:
+              </p>
             </div>
+            <div className="canvas-tab-close-choices">
+              {!closeTabPrompt.cloudBacked && (
+                <button type="button" className="canvas-tab-close-choice is-primary" autoFocus onClick={() => saveAndCloseTab(closeTabPrompt)}>
+                  <strong>{closeTabPrompt.fileBacked ? "Save to file & close" : "Save to file… & close"}</strong>
+                  <small>Permanent copy on disk</small>
+                </button>
+              )}
+              {!closeTabPrompt.cloudBacked && !closeTabPrompt.fileBacked && (
+                <button type="button" className="canvas-tab-close-choice" onClick={() => { setCloseTabPrompt(null); if (!closeTabPrompt.isActive) switchCanvasTab(closeTabPrompt.tabId); setCloudSaveDialogOpen(true); }}>
+                  <strong>Save to cloud…</strong>
+                  <small>Opens the Cloud Workspace save dialog; the tab stays open</small>
+                </button>
+              )}
+              <button type="button" className={`canvas-tab-close-choice${closeTabPrompt.cloudBacked ? " is-primary" : ""}`} autoFocus={closeTabPrompt.cloudBacked} onClick={() => {
+                if (dontAskDraftChecked) preferences.setSkipLocalDraftPrompt(true);
+                performCloseCanvasTab(closeTabPrompt.tabId);
+              }}>
+                <strong>Close &amp; keep in Local Drafts</strong>
+                <small>Recoverable from Recently closed (Ctrl/Cmd+Shift+T)</small>
+              </button>
+              <button type="button" className="canvas-tab-close-choice is-danger" onClick={() => performCloseCanvasTab(closeTabPrompt.tabId, { keepDraft: false })}>
+                <strong>Discard</strong>
+                <small>Close and delete this draft</small>
+              </button>
+            </div>
+            <label className="canvas-tab-close-remember">
+              <input type="checkbox" checked={dontAskDraftChecked} onChange={(event) => setDontAskDraftChecked(event.target.checked)} />
+              <span>Don’t ask again for local drafts (always “Close &amp; keep”)</span>
+            </label>
             <div className="canvas-tab-close-dialog-actions">
-              <button type="button" className="canvas-tab-close-keep" autoFocus onClick={() => setCloseTabPrompt(null)}>Keep editing</button>
-              <button type="button" className="canvas-tab-close-confirm" onClick={() => performCloseCanvasTab(closeTabPrompt.tabId)}>Close tab</button>
+              <button type="button" className="canvas-tab-close-keep" onClick={() => setCloseTabPrompt(null)}>Keep editing</button>
             </div>
           </section>
         </div>

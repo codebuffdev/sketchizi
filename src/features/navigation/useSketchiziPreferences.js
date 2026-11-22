@@ -5,6 +5,12 @@ import { applyCanvasThemeBackground } from "./canvasTheme.js";
 import { applyCanvasAppearance } from "./canvasAppearance.js";
 import { readSpellcheckPreference, SPELLCHECK_PREFERENCE_KEY } from "../canvas/nativeSpellcheck.js";
 
+export const SKIP_LOCAL_DRAFT_PROMPT_KEY = "sketchizi-skip-local-draft-prompt";
+
+export function readSkipLocalDraftPrompt() {
+  try { return localStorage.getItem(SKIP_LOCAL_DRAFT_PROMPT_KEY) === "true"; } catch { return false; }
+}
+
 export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, openPanel, togglePanel, activePanel, connectionMode, selectedCount, toggleGrid, activateSelectionTool, setMinimapOpen, searchRef, fileActionsRef, sketchReady, savedSketch = null, canEdit = true, canvasAppearance = "clean", setCanvasAppearance = () => {} }) {
   const [themeModeState, setThemeModeState] = useState(() => getInitialThemeMode());
   const themeMode = themeModeState;
@@ -26,6 +32,13 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
   const [spellcheckEnabled, setSpellcheckEnabled] = useState(() => readSpellcheckPreference());
   const toggleSpellcheck = useCallback(() => setSpellcheckEnabled((enabled) => !enabled), []);
   useEffect(() => { try { localStorage.setItem(SPELLCHECK_PREFERENCE_KEY, spellcheckEnabled ? "true" : "false"); } catch {} }, [spellcheckEnabled]);
+  // "Don't ask again for local drafts": closing an unsaved tab then keeps it in
+  // Recently closed / Local drafts without showing the confirmation dialog.
+  const [skipLocalDraftPrompt, setSkipLocalDraftPromptState] = useState(() => readSkipLocalDraftPrompt());
+  const setSkipLocalDraftPrompt = useCallback((value) => {
+    setSkipLocalDraftPromptState(Boolean(value));
+    try { localStorage.setItem(SKIP_LOCAL_DRAFT_PROMPT_KEY, value ? "true" : "false"); } catch {}
+  }, []);
   const markCanvasBackgroundCustom = useCallback(() => {}, []);
   const useThemeDefaultBackground = useCallback(() => {
     setCanvasAppearance("clean");
@@ -107,5 +120,5 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     return () => document.removeEventListener("click", handleResetCanvas, true);
   }, [canEdit, fileActionsRef]);
 
-  return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram, markCanvasBackgroundCustom, useThemeDefaultBackground, spellcheckEnabled, setSpellcheckEnabled, toggleSpellcheck };
+  return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram, markCanvasBackgroundCustom, useThemeDefaultBackground, spellcheckEnabled, setSpellcheckEnabled, toggleSpellcheck, skipLocalDraftPrompt, setSkipLocalDraftPrompt };
 }
