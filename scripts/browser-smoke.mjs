@@ -167,8 +167,9 @@ try {
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 2);
   console.log("PASS: port drag-to-card and click-port-to-card create single orthogonal connectors without resizing nodes.");
 
-  // Port-to-port: select the destination first so its ports remain exposed while
-  // the pointer is over the source, then click source and destination ports.
+  // Port-to-port: hover the destination after arming the source; this exposes
+  // its port without requiring a precise initial drop on the dot.
+  await blank.page.keyboard.press("Escape");
   const portPoolSource = cards.nth(2);
   const portPoolTarget = cards.nth(3);
   const portPoolTargetBox = await portPoolTarget.boundingBox();
@@ -194,7 +195,7 @@ try {
   portPoolTargetId);
   await blank.page.mouse.click(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 4);
-  console.log("PASS: C arms the selected node and connects it to the next clicked card.");
+  console.log("PASS: C arms the hovered/selected node and connects it to the next clicked card.");
 
 
   // The floating header may collapse after canvas interaction; reveal it with
