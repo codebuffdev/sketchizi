@@ -14,7 +14,7 @@ test("graph dependencies wire Redis, SQL and Kafka environment in Kubernetes Con
   const yaml = compileKubernetesStack(nodes, edges);
   assert.match(yaml, /REDIS_URL: "redis:\/\/redis-cache:6379"/);
   assert.match(yaml, /DATABASE_URL: "postgresql:\/\/postgres:5432\/app"/);
-  assert.match(yaml, /KAFKA_BROKERS: "message-queue-kafka:9092"/);
+  assert.match(yaml, /KAFKA_BROKERS: "kafka:9092"/);
   assert.match(yaml, /kind: ConfigMap/);
   assert.match(yaml, /kind: HorizontalPodAutoscaler/);
   assert.match(yaml, /replicas: 2/);
@@ -24,7 +24,7 @@ test("graph dependencies wire Redis and DATABASE_URL in Docker Compose and add d
   const yaml = compileDockerCompose(nodes, edges);
   assert.match(yaml, /REDIS_URL: "redis:\/\/redis-cache:6379"/);
   assert.match(yaml, /DATABASE_URL: "postgresql:\/\/postgres:5432\/app"/);
-  assert.match(yaml, /KAFKA_BROKERS: "message-queue-kafka:9092"/);
+  assert.match(yaml, /KAFKA_BROKERS: "kafka:9092"/);
   assert.match(yaml, /depends_on:/);
   assert.match(yaml, /networks:/);
   assert.match(yaml, /volumes:/);
@@ -32,6 +32,6 @@ test("graph dependencies wire Redis and DATABASE_URL in Docker Compose and add d
 
 test("compiler infers only valid connected service dependencies", () => {
   const result = inferStackDependencies(nodes, [...edges, { from: "missing", to: "db" }]);
-  assert.deepEqual(result.dependencies.get("api"), ["redis-cache", "sql-database", "message-queue-kafka"]);
+  assert.deepEqual(result.dependencies.get("api"), ["redis-cache", "sql-database", "kafka"]);
   assert.equal(result.environments.get("api").DATABASE_URL, "postgresql://postgres:5432/app");
 });
