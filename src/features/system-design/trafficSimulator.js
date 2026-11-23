@@ -141,7 +141,7 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
       const lagging = consumers.length > 0 && (available.length !== consumers.length || capacityTotal < arriving || slow);
       if (lagging) {
         const failed = consumers.filter(({ node: target }) => target.health === "down").map(({ node: target }) => target.label || target.kind);
-        const slowNames = available.filter(({ node: target }) => target.health === "degraded" || arriving > nodeCapacity(target)).map(({ node: target }) => target.label || target.kind);
+        const slowNames = available.filter(({ node: target }) => target.health === "degraded" || perConsumerRps > nodeCapacity(target)).map(({ node: target }) => target.label || target.kind);
         queueLag = { nodeId: id, nodeLabel: node.label || "Message Queue / Kafka", incomingRps: arriving, consumerNames: [...failed, ...slowNames], consumerDown: failed.length > 0 };
         queueLags.push(queueLag);
       }
