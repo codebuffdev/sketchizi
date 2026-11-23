@@ -218,7 +218,10 @@ export function collectSceneRepairs(elements) {
     } else if (element.type === "arrow") {
       const data = element.customData?.[CUSTOM_KEY] || {};
       const edge = readEdge(element, nodes);
-      if (!edge || !nodeIds.has(edge.from) || !nodeIds.has(edge.to)) continue;
+      if (!edge || !nodeIds.has(edge.from) || !nodeIds.has(edge.to)) {
+        if (isSystemDesignEdge(element)) repairs.set(element.id, { isDeleted: true });
+        continue;
+      }
       const pair = JSON.stringify([edge.from, edge.to]);
       if (seenPairs.has(pair)) {
         repairs.set(element.id, { isDeleted: true });
@@ -236,10 +239,15 @@ export function collectSceneRepairs(elements) {
         protocol: edge.protocol,
         lineStyle: edge.lineStyle,
       };
-      if (!isSystemDesignEdge(element) || Object.keys(normalized).some((key) => data[key] !== normalized[key])) {
+      if (!isSystemDesignEdge(element)) {
         patch.customData = {
           ...element.customData,
           [CUSTOM_KEY]: { ...data, ...normalized },
+        };
+      } else if (data.from !== edge.from || data.to !== edge.to) {
+        patch.customData = {
+          ...element.customData,
+          [CUSTOM_KEY]: { ...data, from: edge.from, to: edge.to },
         };
       }
       if (!isSystemDesignEdge(element)) {
