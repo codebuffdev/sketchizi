@@ -18,6 +18,7 @@ export const SCOPE_TABS = [
 ];
 
 export function sourceLabel(icon) {
+  if (icon?.source === "system-design" || icon?.category === "System Design") return "System Design";
   if (icon?.source === "aws" || icon?.catalog === "aws-architecture") return "AWS Architecture";
   if (icon?.source === "kubernetes" || icon?.category === "Kubernetes") return "Kubernetes";
   if (icon?.source === "networking" || icon?.category === "Networking") return "Networking";
@@ -246,6 +247,8 @@ export function getActiveCollectionTitle(activeSource) {
       return "Saved Icons";
     case "recent":
       return "Recently Used";
+    case "system-design":
+      return "System Design";
     case "all":
     default:
       return "Icon Library";
