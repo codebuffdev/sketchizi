@@ -84,9 +84,9 @@ test("single-visual contract: no ring on the card and Sketchizi native toolbars 
   // Studio bar sits below Sketchizi's first row and derives from ITS variables.
   assert.match(css, /--sd-bar-top: calc\(var\(--header-top, 12px\) \+ var\(--top-row-height, 42px\)/);
   assert.match(css, /--sd-rail-clear: calc\(var\(--header-rail-right, 12px\) \+ var\(--header-rail-width, 56px\)/);
-  // Dropdowns live inside the dock / top bar stacking contexts, which must sit above the drawer or the popover is clipped by it.
+  // Top-bar dropdowns must sit above the drawer rather than being clipped by it.
   assert.match(css, /\.sd-topbar \{ position: absolute; z-index: 3;/);
-  assert.match(css, /\.sd-dock \{ position: absolute; z-index: 3;/);
+  assert.doesNotMatch(css, /\.sd-dock/);
   assert.doesNotMatch(css, /\.sd-sim-btn|\.sd-topbar-right|\.sd-zoom|\.sd-tabs|\.sd-persist/);
 });
 
