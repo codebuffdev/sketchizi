@@ -5,6 +5,7 @@ import {
   createSystemDesignWorkspaceByTabId,
   readSystemDesignTabState,
   updateSystemDesignWorkspaceTab,
+  persistSystemDesignTabState,
 } from "../systemDesignTabState.js";
 
 test("System Design activation is isolated to its document tab", () => {
@@ -20,6 +21,14 @@ test("System Design activation is isolated to its document tab", () => {
   assert.equal(workspaceByTabId["tab-1"].active, true);
   assert.equal(workspaceByTabId["tab-2"].active, false);
   assert.deepEqual(readSystemDesignTabState(tabs, "tab-2"), DEFAULT_SYSTEM_DESIGN_TAB_STATE);
+
+  const persistedTabs = persistSystemDesignTabState(tabs, "tab-1", workspaceByTabId["tab-1"]);
+  assert.deepEqual(readSystemDesignTabState(persistedTabs, "tab-1"), workspaceByTabId["tab-1"]);
+  assert.deepEqual(readSystemDesignTabState(persistedTabs, "tab-2"), DEFAULT_SYSTEM_DESIGN_TAB_STATE);
+
+  const reloadedWorkspace = createSystemDesignWorkspaceByTabId(persistedTabs, "tab-2");
+  assert.equal(reloadedWorkspace["tab-1"].active, true, "tab-1 studio mode survives IndexedDB tab reload");
+  assert.equal(reloadedWorkspace["tab-2"].active, false, "tab-2 remains a standard canvas after reload");
 
   const tab2 = workspaceByTabId["tab-2"];
   assert.equal(tab2.active, false, "switching to tab-2 must hide the System Design bar");
