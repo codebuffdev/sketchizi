@@ -156,3 +156,21 @@ test("collectSceneRepairs hides native arrow strokes and deletes duplicate conne
   });
   assert.deepEqual(repairs.get("duplicate"), { isDeleted: true });
 });
+
+
+test("scene repair keeps binding-resolved arrows and persists their endpoint metadata", () => {
+  const a = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "client");
+  const b = asElement(createNodeSkeleton("microservice", { x: 400, y: 0 }), "orders");
+  const arrow = {
+    id: "bound-arrow", type: "arrow", opacity: 100, strokeColor: "#000000",
+    x: 200, y: 42, points: [[0, 0], [200, 0]],
+    startBinding: { elementId: "client" }, endBinding: { elementId: "orders" },
+    customData: { [CUSTOM_KEY]: { role: "edge", protocol: "gRPC" } },
+  };
+  const patch = collectSceneRepairs([a, b, arrow]).get("bound-arrow");
+  assert.equal(patch.opacity, 0);
+  assert.equal(patch.strokeColor, "transparent");
+  assert.deepEqual(patch.customData[CUSTOM_KEY], {
+    role: "edge", protocol: "gRPC", from: "client", to: "orders",
+  });
+});
