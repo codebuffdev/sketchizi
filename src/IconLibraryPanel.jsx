@@ -250,7 +250,11 @@ export default function IconLibraryPanel({
       setActiveCategory("Favorites");
       setActiveKubernetesCategory("All");
       setActiveAwsCategory("All");
-    } else if (source === "system-design") {\n      setActiveCategory("System Design");\n      setActiveKubernetesCategory("All");\n      setActiveAwsCategory("All");\n    } else if (source === "recent") {
+    } else if (source === "system-design") {
+      setActiveCategory("System Design");
+      setActiveKubernetesCategory("All");
+      setActiveAwsCategory("All");
+    } else if (source === "recent") {
       setActiveCategory("Recently Used");
       setActiveKubernetesCategory("All");
       setActiveAwsCategory("All");
@@ -267,7 +271,11 @@ export default function IconLibraryPanel({
 
   const displayedIcons = useMemo(() => {
     const query = search.trim();
-    if (activeSource === "system-design") {\n      const query = search.trim().toLowerCase();\n      return query ? systemDesignIcons.filter((icon) => [icon.name, icon.id, ...icon.tags, ...icon.searchAliases].join(" ").toLowerCase().includes(query)) : systemDesignIcons;\n    }\n    if (activeSource === "all" || activeSource === "eraser" || activeSource === "favorites" || activeSource === "recent") {
+    if (activeSource === "system-design") {
+      const query = search.trim().toLowerCase();
+      return query ? systemDesignIcons.filter((icon) => [icon.name, icon.id, ...icon.tags, ...icon.searchAliases].join(" ").toLowerCase().includes(query)) : systemDesignIcons;
+    }
+    if (activeSource === "all" || activeSource === "eraser" || activeSource === "favorites" || activeSource === "recent") {
       return resolveDisplayedIcons({
         activeSource,
         search: query,
@@ -320,6 +328,7 @@ export default function IconLibraryPanel({
     networkingIcons,
     umlIcons,
     mindMapIcons,
+    systemDesignIcons,
   ]);
 
   const shownIcons = displayedIcons.slice(0, iconDisplayLimit);
@@ -331,7 +340,14 @@ export default function IconLibraryPanel({
     { id: "mindmaps", label: "Mind Maps" },
     { id: "uml", label: "UML" },
     { id: "eraser", label: "Essentials" },
-    { id: "all", label: "All" },\n    { id: "system-design", label: "System Design (16)" },
+    { id: "system-design", label: "System Design (16)" },
+    { id: "aws", label: "AWS" },
+    { id: "networking", label: "Networking" },
+    { id: "kubernetes", label: "Kubernetes" },
+    { id: "mindmaps", label: "Mind Maps" },
+    { id: "uml", label: "UML" },
+    { id: "eraser", label: "Essentials" },
+    { id: "all", label: "All" },
   ];
 
   const collectionTitle = getActiveCollectionTitle(activeSource);
@@ -487,7 +503,8 @@ export default function IconLibraryPanel({
             }}
           >
             <option value="all">All icons ({allIcons.length.toLocaleString()})</option>
-            <option value="system-design">System Design (16)</option>\n            <optgroup label="Collections">
+            <option value="system-design">System Design (16)</option>
+            <optgroup label="Collections">
               {sourceTabs.filter((tab) => tab.id !== "all").map((tab) => (
                 <option key={tab.id} value={tab.id}>{tab.label}</option>
               ))}
@@ -604,7 +621,7 @@ export default function IconLibraryPanel({
                       aria-pressed={isSelected}
                     >
                       <span className="icon-preview library-icon-preview sk-icon-stage">
-                        <img src={icon.src} alt="" draggable={false} loading="lazy" />
+                        {icon.source === "system-design" ? <PrimitiveIcon kind={icon.kind} size={30} /> : <img src={icon.src} alt="" draggable={false} loading="lazy" />}
                       </span>
                       <span className="library-icon-card-content sk-icon-card-text">
                         <span className="icon-name sk-icon-name">
