@@ -110,6 +110,60 @@ try {
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: the canvas-tab add action opens an editable canvas.");
 
+  // System Design connector UX: drag from a generous port hit area to any
+  // point on a target card, then verify click-port-to-click-card and C-to-card.
+  await openStudioFromCommandPalette(blank.page, "System Design Studio");
+  await blank.page.locator('[data-testid="system-design-studio"]').waitFor({ state: "visible" });
+  const primitiveDock = blank.page.getByRole("navigation", { name: "System design primitives" });
+  for (const label of ["Client", "Microservice", "SQL Database"]) {
+    await primitiveDock.getByRole("button", { name: `Add ${label}` }).click();
+    await blank.page.keyboard.press("Escape");
+  }
+  const cards = blank.page.locator(".sd-node[data-node-id]");
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-node[data-node-id]").length === 3);
+  const initialCards = await cards.evaluateAll((items) => items.map((item) => ({
+    id: item.dataset.nodeId, width: item.style.width, height: item.style.height,
+  })));
+  if (initialCards.some((item) => item.width !== "204px" || item.height !== "88px")) {
+    throw new Error(`System Design cards do not use the 204x88 minimum: ${JSON.stringify(initialCards)}`);
+  }
+  const dragSource = cards.nth(0);
+  const dragTarget = cards.nth(1);
+  await dragSource.hover();
+  const dragPort = dragSource.locator(".sd-port.is-right.is-visible");
+  await dragPort.waitFor({ state: "visible" });
+  const [portBox, targetBox] = await Promise.all([dragPort.boundingBox(), dragTarget.boundingBox()]);
+  if (!portBox || !targetBox) throw new Error("Connector source port or target card has no hit area.");
+  await blank.page.mouse.move(portBox.x + portBox.width / 2, portBox.y + portBox.height / 2);
+  await blank.page.mouse.down();
+  await blank.page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, { steps: 12 });
+  await blank.page.mouse.up();
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 1);
+  const dragAfter = await Promise.all([dragSource.boundingBox(), dragTarget.boundingBox()]);
+  if (Math.abs(dragAfter[0].width - targetBox.width) > 0.5 ||
+      Math.abs(dragAfter[0].height - targetBox.height) > 0.5 ||
+      Math.abs(dragAfter[1].width - targetBox.width) > 0.5 ||
+      Math.abs(dragAfter[1].height - targetBox.height) > 0.5) {
+    throw new Error("Dragging a connector resized a node card.");
+  }
+
+  const clickSource = cards.nth(1);
+  const clickTarget = cards.nth(2);
+  await clickSource.hover();
+  const clickPort = clickSource.locator(".sd-port.is-right.is-visible");
+  await clickPort.click();
+  await clickSource.locator(".sd-port.is-armed").waitFor({ state: "visible" });
+  await clickTarget.click();
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 2);
+  console.log("PASS: port drag-to-card and click-port-to-card create single orthogonal connectors without resizing nodes.");
+
+  await clickTarget.click();
+  await blank.page.keyboard.press("c");
+  await dragSource.click();
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 3);
+  console.log("PASS: C arms the selected node and connects it to the next clicked card.");
+
+
   // The floating header may collapse after canvas interaction; reveal it with
   // the same keyboard shortcut users have before opening header-only actions.
   await ensureHeaderVisible(blank.page);
