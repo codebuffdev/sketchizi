@@ -2,10 +2,24 @@ import { serviceNames } from "./yamlPreview.js";
 
 const RUNNABLE = (node) => node.kind !== "client" && node.kind !== "dns" && node.kind !== "cdn" && node.image && !String(node.image).startsWith("n/a");
 const quote = (value) => JSON.stringify(String(value ?? ""));
+function stackServiceNames(nodes) {
+  const names = stackServiceNames(nodes);
+  const used = new Set();
+  const canonical = { sql: "postgres", queue: "kafka" };
+  for (const node of nodes) {
+    const base = canonical[node.kind] || names.get(node.id);
+    let name = base;
+    let suffix = 2;
+    while (used.has(name)) name = `${base}-${suffix++}`;
+    used.add(name);
+    names.set(node.id, name);
+  }
+  return names;
+}
 const volumePath = (kind) => ({ sql: "/var/lib/postgresql/data", nosql: "/data/db", redis: "/data", queue: "/bitnami/kafka", search: "/usr/share/opensearch/data", "object-storage": "/data" }[kind] || null);
 const dependencyEnv = (target, name) => {
   const port = Number(target.port) || ({ sql: 5432, redis: 6379, queue: 9092 }[target.kind] || 80);
-  if (target.kind === "sql") return ["DATABASE_URL", `postgresql://postgres:5432/app`];
+  if (target.kind === "sql") return ["DATABASE_URL", `postgresql://${name}:5432/app`];
   if (target.kind === "redis") return ["REDIS_URL", `redis://${name}:${port}`];
   if (target.kind === "queue") return ["KAFKA_BROKERS", `${name}:${port}`];
   if (target.kind === "nosql") return ["MONGODB_URL", `mongodb://${name}:${port}/app`];
@@ -58,7 +72,7 @@ export function compileKubernetesStack(nodes = [], edges = []) {
     const serviceType = node.kind === "load-balancer" ? "LoadBalancer" : "ClusterIP";
     docs.push([
       "apiVersion: v1", "kind: Service", "metadata:", `  name: ${name}`, "  namespace: prod", "spec:",
-      `  type: ${serviceType}`, "  selector:", `    app: ${name}`, "  ports:", "    - name: app", "      protocol: TCP",
+      `  type: ${serviceType}`, ...(stateful ? ["  clusterIP: None"] : []), "  selector:", `    app: ${name}`, "  ports:", "    - name: app", "      protocol: TCP",
       `      port: ${Number(node.port) || 8080}`, `      targetPort: ${Number(node.port) || 8080}`,
     ].join("\n"));
     docs.push([
