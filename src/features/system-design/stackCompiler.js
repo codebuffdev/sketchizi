@@ -155,7 +155,7 @@ export function compileDockerCompose(nodes = [], edges = []) {
   if (externalApis.length) {
     lines.push("x-external-dependencies:");
     for (const node of externalApis) {
-      lines.push("  " + names.get(node.id) + ":", "    url: \"${EXTERNAL_API_URL:?Set EXTERNAL_API_URL}\"", "    rate_limit_rps: " + (Number(node.capacityPerReplica) || 2000));
+      lines.push("  " + names.get(node.id) + ":", "    url: \"https://api.example.com\"", "    rate_limit_rps: " + (Number(node.capacityPerReplica) || 2000));
     }
   }
   return `${lines.join("\n")}\n`;
