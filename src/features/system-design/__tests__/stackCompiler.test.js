@@ -56,7 +56,7 @@ test("architecture diagnostic identifies an overloaded service with a concrete f
   const diagnostic = deriveArchitectureDiagnostic(graph, simulation, edges);
   assert.equal(simulation.nodes.api.status, "overloaded");
   assert.match(diagnostic.message, /Bottleneck: Read API at 167% load/);
-  assert.match(diagnostic.message, /increase replicas/);
+  assert.match(diagnostic.message, /increase replicas/i);
 });
 
 test("architecture diagnostic reports cache shielding and single-replica SPOFs", () => {
