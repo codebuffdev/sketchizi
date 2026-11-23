@@ -147,7 +147,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
             const packets = simulate && live ? packetCountForRps(live.rps) : 0;
             const duration = Math.max(1.2, 3.4 - Math.log10((live?.rps || 1) + 1) * 0.5);
             return (
-              <g key={edge.id} className={`sd-edge is-${tone}${selected ? " is-selected" : ""}${edge.lineStyle === "dashed" ? " is-dashed" : ""}`}>
+              <g key={edge.id} className={`sd-edge is-${tone}${selected ? " is-selected" : ""}${edge.lineStyle === "dashed" || (simulate && ["elevated", "overloaded", "down"].includes(targetStatus)) ? " is-dashed" : ""}`}>
                 <path id={`sd-path-${edge.id}`} d={d} fill="none" markerEnd="url(#sd-arrow)" />
                 {packets > 0 && Array.from({ length: packets }, (_, i) => (
                   <circle key={i} r="3.6" className="sd-packet">
