@@ -23,7 +23,7 @@ function isTypingTarget(target) {
  * All System Design Studio state lives here so `App.jsx` only mounts a thin boundary.
  * High-frequency scene data goes through `store` (external store), not React state in App.
  */
-export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize = 20, canEdit = true, canvasTabsRef, persistSystemDesignState }) {
+export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize = 20, canEdit = true, canvasTabsRef, activeCanvasIdRef, persistSystemDesignState }) {
   // Each document owns an independent scene subscription and workspace state.
   const storesRef = useRef(new Map());
   if (!storesRef.current.has(activeCanvasId)) storesRef.current.set(activeCanvasId, createSceneStore());
@@ -44,14 +44,15 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
   enabledRef.current = enabled;
 
   const updateActiveTabState = useCallback((patch) => {
-    if (!activeCanvasId) return normalizeSystemDesignTabState({});
-    const nextMap = updateSystemDesignWorkspaceTab(workspaceByTabIdRef.current, activeCanvasId, patch);
+    const tabId = activeCanvasIdRef?.current || activeCanvasId;
+    if (!tabId) return normalizeSystemDesignTabState({});
+    const nextMap = updateSystemDesignWorkspaceTab(workspaceByTabIdRef.current, tabId, patch);
     workspaceByTabIdRef.current = nextMap;
     setWorkspaceByTabId(nextMap);
-    const nextState = nextMap[activeCanvasId];
-    persistSystemDesignState?.(activeCanvasId, nextState);
+    const nextState = nextMap[tabId];
+    persistSystemDesignState?.(tabId, nextState);
     return nextState;
-  }, [activeCanvasId, persistSystemDesignState]);
+  }, [activeCanvasId, activeCanvasIdRef, persistSystemDesignState]);
 
   const setEnabled = useCallback((value) => {
     updateActiveTabState((current) => ({ active: typeof value === "function" ? value(current.active) : value }));
@@ -69,9 +70,9 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     updateActiveTabState((current) => ({ inspectorOpen: typeof value === "function" ? value(current.inspectorOpen) : value }));
   }, [updateActiveTabState]);
 
-  const getTabState = useCallback((tabId = activeCanvasId) => (
+  const getTabState = useCallback((tabId = (activeCanvasIdRef?.current || activeCanvasId)) => (
     normalizeSystemDesignTabState(workspaceByTabIdRef.current[tabId] || readSystemDesignTabState(canvasTabsRef?.current || [], tabId))
-  ), [activeCanvasId, canvasTabsRef]);
+  ), [activeCanvasId, activeCanvasIdRef, canvasTabsRef]);
   const restoreTabState = useCallback((tabId, value) => {
     if (!tabId) return;
     const nextMap = { ...workspaceByTabIdRef.current, [tabId]: normalizeSystemDesignTabState(value) };
