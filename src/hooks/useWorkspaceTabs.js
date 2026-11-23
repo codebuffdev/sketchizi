@@ -112,7 +112,7 @@ export function useWorkspaceTabs({
       cloudSaveState: { ...live.cloudSaveState },
       cloudDocumentName: live.cloudDocumentName,
       // Per-tool style memory travels with the tab so it survives tab switches and reloads.
-      toolStylePresets: toolStyles.exportCanvas(activeCanvasIdRef.current) || undefined,
+      toolStylePresets: toolStyles.exportCanvas(activeCanvasIdRef.current) || undefined,\n      systemDesign: systemDesignRef?.current?.getTabState?.(activeCanvasIdRef.current),
     };
   }, [apiRef, currentFileRef, getCurrentFileSceneSignature, toolStyles]);
 
@@ -128,6 +128,14 @@ export function useWorkspaceTabs({
       });
     }, 450);
   }, []);
+
+  const persistSystemDesignState = useCallback((tabId, systemDesign) => {
+    if (!tabId || !canvasTabsRestoredRef.current) return;
+    const nextTabs = canvasTabsRef.current.map((tab) => tab.id === tabId
+      ? { ...tab, snapshot: { ...(tab.snapshot || {}), systemDesign } }
+      : tab);
+    persistCanvasTabs(nextTabs);
+  }, [persistCanvasTabs]);
 
   const updateActiveCanvasStartDate = useCallback((startDate) => {
     if (!isValidCanvasStartDate(startDate)) return;
@@ -220,7 +228,7 @@ export function useWorkspaceTabs({
     setSavedSketch(snapshot.elements ? { elements, appState: snapshot.appState || {}, files: snapshot.files || {}, metadata: snapshot.metadata || {}, extensions: snapshot.extensions || {}, format: snapshot.format || "excalidraw" } : null);
     setCurrentFile(snapshot.file || null, snapshot.fileSceneSignature || undefined);
     if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
-  }, [apiRef, setCurrentFile, setSavedSketch, toolStyles]);
+  }, [apiRef, setCurrentFile, setSavedSketch, toolStyles, systemDesignRef]);
 
   useEffect(() => {
     if (!apiReady || !apiRef.current) return;
