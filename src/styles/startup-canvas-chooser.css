@@ -206,3 +206,13 @@
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+/* Keep the System Design affordance emerald in both explicit theme variants. */
+.startup-canvas-option-system-design svg { stroke-width: 1.6px; }
+.app[data-theme="dark"] .startup-canvas-option-system-design:hover,
+.app[data-theme="dark"] .startup-canvas-option-system-design:focus-visible,
+.app[data-theme="light"] .startup-canvas-option-system-design:hover,
+.app[data-theme="light"] .startup-canvas-option-system-design:focus-visible {
+  border-color: #059669;
+  background: rgb(5 150 105 / 9%);
+}
