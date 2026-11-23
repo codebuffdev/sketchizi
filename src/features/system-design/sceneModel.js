@@ -40,6 +40,8 @@ function sanitizeMeta(meta) {
     protocol: PROTOCOLS.includes(meta.protocol) ? meta.protocol : primitive.defaultProtocol,
     replicas: Math.round(num(meta.replicas, primitive.replicas, 0, 500)),
     capacityPerReplica: Math.round(num(meta.capacityPerReplica, primitive.capacityPerReplica, 1, 1_000_000)),
+    manualRps: Math.round(num(meta.manualRps, 0, 0, 1_000_000_000)),
+    baseLatencyMs: num(meta.baseLatencyMs, primitive.baseLatencyMs, 0.5, 60000),
     cacheHitRate: num(meta.cacheHitRate, primitive.cacheHitRate, 0, 1),
     port: Math.round(num(meta.port, primitive.port, 1, 65535)),
     health: HEALTH_OVERRIDES.includes(meta.health) ? meta.health : "healthy",
