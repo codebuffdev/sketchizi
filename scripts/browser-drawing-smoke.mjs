@@ -180,7 +180,7 @@ try {
   if (previousBuild) await page.unroute(appRequests, usePreviousBuild);
   await page.reload({ waitUntil: "networkidle", timeout: 60000 });
   await page.locator(".excalidraw").waitFor();
-  await page.locator(".canvas-tab-status-dot.is-ready, .canvas-tab-status-dot.is-saved").waitFor({ state: "attached", timeout: 20000 });
+  await page.locator(".canvas-tab.is-active .canvas-tab-status-dot").waitFor({ state: "attached", timeout: 20000 });
   await page.evaluate((original) => { window.__drawingSmokeOriginalBounds = original; }, { id: drawn.id, x: drawn.x, y: drawn.y });
   await awaitScene(async () => {
     const scene = await currentDrawing();
