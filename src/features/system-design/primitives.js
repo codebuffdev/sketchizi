@@ -1,4 +1,4 @@
-// Curated catalog of 16 system design primitives in 4 categories.
+// Curated catalog of 22 system design primitives in 5 architectural categories.
 // Pure data: no React, no Excalidraw, safe to import from node --test.
 
 export const ACCENTS = ["slate", "emerald", "amber"];
@@ -10,6 +10,7 @@ export const CATEGORIES = [
   { id: "compute", label: "Compute & Services" },
   { id: "data", label: "Data & Caching" },
   { id: "messaging", label: "Messaging & Observability" },
+  { id: "integration", label: "External Integrations" },
 ];
 
 // `entry: true` marks nodes that originate traffic when the simulator runs.
@@ -43,12 +44,19 @@ export const PRIMITIVES = Object.freeze([
   p({ kind: "redis", icon: "zap", shortLabel: "Cache", label: "Redis Cache", category: "data", accent: "emerald", defaultProtocol: "RESP", replicas: 3, capacityPerReplica: 40000, cacheHitRate: 0.8, port: 6379, image: "redis:7-alpine", subtitle: "In-memory cache", cache: true, baseLatencyMs: 1 }),
   p({ kind: "object-storage", icon: "archive", shortLabel: "Storage", label: "Object Storage (S3)", category: "data", accent: "slate", defaultProtocol: "HTTPS", replicas: 1, capacityPerReplica: 5500, port: 9000, image: "minio/minio:latest", subtitle: "Blobs · static assets", terminal: true, baseLatencyMs: 35 }),
   p({ kind: "search", icon: "search", shortLabel: "Search", label: "Search Index", category: "data", accent: "amber", defaultProtocol: "HTTPS", replicas: 3, capacityPerReplica: 2500, port: 9200, image: "opensearchproject/opensearch:2.14.0", subtitle: "Full-text search", terminal: true, baseLatencyMs: 22 }),
+  p({ kind: "read-replica", icon: "read-replica", shortLabel: "Replica", label: "Read Replica", category: "data", accent: "emerald", defaultProtocol: "SQL", replicas: 1, capacityPerReplica: 6000, port: 5432, image: "postgres:16", subtitle: "Async read scaling", terminal: true, baseLatencyMs: 12 }),
+  p({ kind: "warehouse", icon: "warehouse", shortLabel: "OLAP", label: "Data Warehouse (OLAP)", category: "data", accent: "amber", defaultProtocol: "SQL", replicas: 1, capacityPerReplica: 8000, port: 8123, image: "clickhouse/clickhouse-server:24.8", subtitle: "ClickHouse · BigQuery", terminal: true, baseLatencyMs: 45 }),
   // Messaging & Observability
   p({ kind: "queue", icon: "arrows-lr", shortLabel: "Queue", label: "Message Queue / Kafka", category: "messaging", accent: "amber", defaultProtocol: "Kafka", replicas: 3, capacityPerReplica: 15000, port: 9092, image: "bitnami/kafka:3.7", subtitle: "Event backbone", baseLatencyMs: 5 }),
+  p({ kind: "pubsub", icon: "pubsub", shortLabel: "Pub/Sub", label: "Pub/Sub Event Bus", category: "messaging", accent: "emerald", defaultProtocol: "Kafka", replicas: 3, capacityPerReplica: 25000, port: 4222, image: "nats:2.10-alpine", subtitle: "Fan-out topics", baseLatencyMs: 6 }),
+  p({ kind: "stream-processor", icon: "stream-processor", shortLabel: "Stream", label: "Stream Processor", category: "compute", accent: "emerald", defaultProtocol: "Kafka", replicas: 2, capacityPerReplica: 12000, port: 8081, image: "flink:1.19", subtitle: "Flink · Kafka Streams", baseLatencyMs: 22 }),
   p({ kind: "observability", icon: "activity", shortLabel: "Metrics", label: "Metrics & Logging", category: "messaging", accent: "slate", defaultProtocol: "HTTPS", replicas: 1, capacityPerReplica: 20000, port: 9090, image: "prom/prometheus:v2.53.0", subtitle: "Prometheus · Loki", terminal: true, baseLatencyMs: 6 }),
+  // External integrations are represented by a local egress proxy in generated stacks.
+  p({ kind: "websocket-gateway", icon: "websocket", shortLabel: "WebSocket", label: "WebSocket Gateway", category: "edge", accent: "emerald", defaultProtocol: "HTTPS", replicas: 2, capacityPerReplica: 15000, port: 8080, image: "nginx:1.27-alpine", subtitle: "Stateful · Live push", baseLatencyMs: 9 }),
+  p({ kind: "external-api", icon: "external-api", shortLabel: "External API", label: "External 3rd-Party API", category: "integration", accent: "amber", defaultProtocol: "HTTPS", replicas: 1, capacityPerReplica: 2000, port: 10000, image: "envoyproxy/envoy:v1.31-latest", subtitle: "Stripe · LLM · Rate-limited", baseLatencyMs: 240 }),
 ]);
 
-// The bottom dock shows only the six most common primitives; the other ten live behind "+ More".
+// The catalog is role-based; the icon library groups every primitive by its architectural category.
 // Dock order is deliberate (a typical request path reads left to right) and is independent of catalog order,
 // which stays stable because keyboard shortcuts 1-9 map onto it.
 export const QUICK_KINDS = Object.freeze(["client", "api-gateway", "microservice", "sql", "redis", "queue"]);
