@@ -3,7 +3,7 @@ import TopWorkspaceBar from "./TopWorkspaceBar.jsx";
 import CollapsibleQuickDock from "./CollapsibleQuickDock.jsx";
 import SystemDesignNodeOverlay from "./SystemDesignNodeOverlay.jsx";
 import ContextualInspectorDrawer from "./ContextualInspectorDrawer.jsx";
-import { readGraph } from "./sceneModel.js";
+import { readGraph, isSystemDesignEdge } from "./sceneModel.js";
 import { simulateTraffic } from "./trafficSimulator.js";
 import { deriveArchitectureDiagnostic } from "./architectureDiagnostics.js";
 import "./systemDesign.css";
@@ -74,7 +74,8 @@ export default function SystemDesignStudio({ workspace, isDarkTheme }) {
     const node = graph.nodes.find((n) => n.id === id);
     if (node) return { kind: "node", item: node };
     const edge = graph.edges.find((e) => e.id === id);
-    return edge ? { kind: "edge", item: edge } : null;
+    const selectedElement = snapshot.elements.find((element) => element.id === id);
+    return edge && isSystemDesignEdge(selectedElement) ? { kind: "edge", item: edge } : null;
   }, [snapshot.selectedIds, graph]);
 
   useLayoutEffect(() => {
