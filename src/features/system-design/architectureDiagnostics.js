@@ -5,6 +5,12 @@ export function deriveArchitectureDiagnostic(nodes = [], simulation = null, edge
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const diagnostics = simulation.diagnostics || {};
 
+  const rateLimit = diagnostics.rateLimitWarnings?.[0];
+  if (rateLimit) return {
+    tone: "danger",
+    message: "⚠ " + (rateLimit.statusCode || 429) + " Too Many Requests: " + rateLimit.nodeLabel + " received " + formatRps(rateLimit.incomingRps) + "/s against a " + formatRps(rateLimit.capacityRps) + "/s limit — " + formatRps(rateLimit.rejectedRps) + " requests/s rejected. Add quota-aware backoff or reduce outbound demand.",
+  };
+
   const stampede = diagnostics.cacheStampedes?.[0];
   if (stampede) {
     const backing = edges.filter((edge) => edge.from === stampede.nodeId)
