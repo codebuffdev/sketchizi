@@ -290,3 +290,41 @@ test("path traversal stops at MAX_HOPS and reports a depth warning", () => {
   assert.equal(r.edges[`svc-${MAX_HOPS}-svc-${MAX_HOPS + 1}`].cycleBlocked, true);
   assert.match(r.diagnostics.depthWarnings[0].message, /12-hop safety limit/);
 });
+
+test("Pub/Sub broadcasts the full 10k RPS to every subscriber instead of splitting it", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("client", "client"),
+      node("bus", "pubsub", { replicas: 1, capacityPerReplica: 25000 }),
+      node("billing", "microservice"),
+      node("analytics", "stream-processor"),
+    ],
+    edges: [edge("client", "bus"), edge("bus", "billing"), edge("bus", "analytics")],
+    totalRps: 10000,
+  });
+  assert.equal(r.nodes.bus.incomingRps, 10000);
+  assert.equal(r.edges["bus-billing"].rps, 10000);
+  assert.equal(r.edges["bus-analytics"].rps, 10000);
+  assert.equal(r.nodes.billing.incomingRps, 10000);
+  assert.equal(r.nodes.analytics.incomingRps, 10000);
+  assert.equal(r.edges["bus-billing"].delivery, "broadcast");
+  assert.equal(r.edges["bus-analytics"].delivery, "broadcast");
+});
+
+test("External 3rd-Party API reports HTTP 429 when incoming RPS exceeds its rate limit", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("client", "client"),
+      node("vendor", "external-api", { label: "Payments API", replicas: 1, capacityPerReplica: 2000 }),
+    ],
+    edges: [edge("client", "vendor")],
+    totalRps: 10000,
+  });
+  assert.equal(r.nodes.vendor.incomingRps, 10000);
+  assert.equal(r.nodes.vendor.servedRps, 2000);
+  assert.equal(r.nodes.vendor.droppedRps, 8000);
+  assert.equal(r.nodes.vendor.status, "overloaded");
+  assert.equal(r.diagnostics.rateLimitWarnings.length, 1);
+  assert.equal(r.diagnostics.rateLimitWarnings[0].statusCode, 429);
+  assert.equal(r.diagnostics.rateLimitWarnings[0].rejectedRps, 8000);
+});
