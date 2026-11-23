@@ -62,7 +62,7 @@ test("architecture diagnostic identifies an overloaded service with a concrete f
 test("architecture diagnostic reports cache shielding and single-replica SPOFs", () => {
   const graph = [
     { id: "client", kind: "client", replicas: 1, capacityPerReplica: 100000, health: "healthy" },
-    { id: "cache", kind: "redis", replicas: 1, capacityPerReplica: 100000, cacheHitRate: 0.8, health: "healthy" },
+    { id: "cache", kind: "redis", replicas: 2, capacityPerReplica: 100000, cacheHitRate: 0.8, health: "healthy" },
     { id: "db", kind: "sql", replicas: 2, capacityPerReplica: 4000, health: "healthy" },
   ];
   const edges = [{ id: "cache-edge", from: "client", to: "cache" }, { id: "db-edge", from: "cache", to: "db" }];
