@@ -168,6 +168,10 @@ try {
   console.log("PASS: port drag-to-card and click-port-to-card create single orthogonal connectors without resizing nodes.");
 
   await blank.page.mouse.click(clickTargetBox.x + clickTargetBox.width / 2, clickTargetBox.y + clickTargetBox.height / 2);
+  const clickTargetId = await clickTarget.getAttribute("data-node-id");
+  await blank.page.waitForFunction((id) =>
+    document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-selected"),
+  clickTargetId);
   await blank.page.keyboard.press("c");
   await blank.page.mouse.click(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 3);
