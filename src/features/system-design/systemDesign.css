@@ -133,11 +133,22 @@
 .sd-node.s-down { opacity: .72; }
 .sd-label-input { pointer-events: auto; flex: 1; min-width: 0; font-size: 13px; font-weight: 600; background: var(--sd-soft); border: 1px solid var(--sd-emerald); border-radius: 6px; padding: 1px 5px; }
 
-/* Ports: 10px so they never reach into Excalidraw's resize handles, which sit 4-12px outside each edge. */
-.sd-port { position: absolute; width: 10px; height: 10px; box-sizing: border-box; border-radius: 50%; background: var(--sd-card); border: 2px solid var(--sd-emerald); padding: 0; opacity: 0; pointer-events: none; transition: opacity .12s, transform .12s, background .12s; transform: translate(-50%, -50%); }
-.sd-port.is-visible { opacity: 1; pointer-events: auto; cursor: crosshair; }
-.sd-port.is-visible:hover, .sd-port.is-target { transform: translate(-50%, -50%) scale(1.45); background: var(--sd-emerald); }
-.sd-port.is-top { left: 50%; top: 0; } .sd-port.is-bottom { left: 50%; top: 100%; } .sd-port.is-left { left: 0; top: 50%; } .sd-port.is-right { left: 100%; top: 50%; }
+/* Ports use a 24px transparent hit target centred 6px beyond the card edge. The visible 10px dot
+   remains crisp, while the middle-of-edge targets stay clear of Excalidraw's corner resize handles. */
+.sd-port { position: absolute; width: 24px; height: 24px; box-sizing: border-box; border: 0; border-radius: 50%; background: transparent; padding: 0; opacity: 0; pointer-events: none; cursor: crosshair; transform: translate(-50%, -50%); }
+.sd-port::before { content: ""; position: absolute; inset: 7px; box-sizing: border-box; border-radius: 50%; background: var(--sd-card); border: 2px solid var(--sd-emerald); transition: transform .12s, background .12s, box-shadow .12s; }
+.sd-port.is-visible { opacity: 1; pointer-events: auto; }
+.sd-port.is-visible:hover::before, .sd-port.is-target::before { transform: scale(1.22); background: var(--sd-emerald); box-shadow: 0 0 0 3px rgba(5,150,105,.14); }
+.sd-port.is-armed::before { background: var(--sd-emerald); box-shadow: 0 0 0 4px rgba(5,150,105,.18); animation: sd-port-pulse 1.25s ease-in-out infinite; }
+.sd-port.is-top { left: 50%; top: -6px; } .sd-port.is-bottom { left: 50%; top: calc(100% + 6px); }
+.sd-port.is-left { left: -6px; top: 50%; } .sd-port.is-right { left: calc(100% + 6px); top: 50%; }
+@keyframes sd-port-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(5,150,105,.14); } 50% { box-shadow: 0 0 0 7px rgba(5,150,105,.04); } }
+.sd-node.is-drop-target { border-color: var(--sd-emerald); box-shadow: 0 0 0 3px rgba(5,150,105,.22), 0 0 0 7px rgba(5,150,105,.08), 0 4px 14px rgba(15,23,42,.09); }
+.sd-node.is-connect-armed { box-shadow: 0 0 0 2px rgba(5,150,105,.22), 0 4px 14px rgba(15,23,42,.09); }
+.sd-edge-preview.is-snapped { stroke-width: 2.4; stroke-dasharray: none; filter: drop-shadow(0 0 2px rgba(5,150,105,.35)); }
+.sd-node { min-width: 204px; min-height: 88px; padding-left: 8px; padding-right: 8px; }
+.sd-node-foot { overflow: visible; gap: 4px; }
+.sd-node-foot .sd-status { flex-shrink: 0; white-space: nowrap; }
 
 /* Contextual pill (only while one node / connector is selected) */
 .sd-pill-bar { position: absolute; top: var(--sd-ctx-top); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; box-sizing: border-box; height: var(--sd-bar-h); padding: 0 6px 0 10px; max-width: calc(100% - 24px); animation: sd-rise .16s ease-out; }
