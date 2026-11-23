@@ -232,7 +232,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           const telemetry = simulation?.nodes[node.id];
           const selected = selectedIds.includes(node.id);
           const isDropTarget = dropTarget?.id === node.id;
-          const showPorts = canEdit && (selected || hoverId === node.id || drag?.fromId === node.id || isDropTarget);
+          const showPorts = canEdit && (selected || hoverId === node.id || drag?.fromId === node.id || armedConnect?.nodeId === node.id || isDropTarget);
           const facets = nodeFacets(node, mode, names);
           const status = simulate && telemetry ? telemetry.status : node.health === "down" ? "down" : node.health === "degraded" ? "elevated" : "healthy";
           return (
