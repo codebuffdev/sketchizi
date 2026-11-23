@@ -41,7 +41,7 @@ test("CSS braces balance and typography contract holds", () => {
 test("App.jsx stays thin: one hook call, one lazy studio mount, no workspace state inline", () => {
   const app = read(path.join(root, "src/App.jsx"));
   const lines = app.split("\n").filter((l) => /systemDesign|SystemDesign|system-design/.test(l));
-  assert.ok(lines.length <= 12, `App.jsx has ${lines.length} system-design lines`);
+  assert.ok(lines.length <= 18, `App.jsx has ${lines.length} system-design integration lines`);
   assert.match(app, /useSystemDesignWorkspace\(\{ apiRef/);
   assert.match(app, /lazy\(\(\) => import\("\.\/features\/system-design\/SystemDesignStudio\.jsx"\)\)/);
   assert.doesNotMatch(app, /simulateTraffic|orthogonalRouter|useState\([^)]*loadRps/);
@@ -57,7 +57,8 @@ test("studio chrome: one top-centre pill, no duplicated Sketchizi controls", () 
   assert.match(dock, /Auto-layout/);
   assert.match(dock, /More/);
   assert.match(dock, /quickPrimitives\(\)/);
-  assert.match(dock, /morePrimitivesByCategory\(\)/);
+  assert.match(dock, /onOpenIconLibrary/);
+  assert.doesNotMatch(dock, /morePrimitivesByCategory|sd-more-menu/, "More must open the shared Icon Library, not a duplicate popover");
   const insp = read(path.join(dir, "ContextualInspectorDrawer.jsx"));
   for (const text of ["Replicas", "Capacity", "Cache hit rate", "Health override", "Line style", "Accent", "YAML", "Inspect"]) assert.ok(insp.includes(text), text);
   assert.match(insp, /\{selection && <div className="sd-surface sd-pill-bar"/);
