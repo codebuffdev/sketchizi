@@ -57,8 +57,7 @@ export const PRIMITIVES = Object.freeze([
 ]);
 
 // The catalog is role-based; the icon library groups every primitive by its architectural category.
-// Dock order is deliberate (a typical request path reads left to right) and is independent of catalog order,
-// which stays stable because keyboard shortcuts 1-9 map onto it.
+// Kept as a stable six-item shortcut set for existing integrations; the Icon Library itself renders all roles by category.
 export const QUICK_KINDS = Object.freeze(["client", "api-gateway", "microservice", "sql", "redis", "queue"]);
 
 export const PRIMITIVES_BY_KIND = Object.freeze(Object.fromEntries(PRIMITIVES.map((item) => [item.kind, item])));
@@ -78,7 +77,7 @@ export function quickPrimitives() {
   return QUICK_KINDS.map((kind) => PRIMITIVES_BY_KIND[kind]);
 }
 
-/** Everything not in the quick dock, in catalog order, grouped so the "+ More" popover can show section labels. */
+/** Category-grouped complement to the legacy six-item shortcut set. */
 export function morePrimitivesByCategory() {
   const quick = new Set(QUICK_KINDS);
   return CATEGORIES
