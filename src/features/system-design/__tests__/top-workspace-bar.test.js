@@ -7,12 +7,14 @@ import { dirname, resolve } from "node:path";
 const here = dirname(fileURLToPath(import.meta.url));
 const component = readFileSync(resolve(here, "../TopWorkspaceBar.jsx"), "utf8");
 const styles = readFileSync(resolve(here, "../systemDesign.css"), "utf8");
+const studio = readFileSync(resolve(here, "../SystemDesignStudio.jsx"), "utf8");
 
 test("renders the compact three-zone command pill without Auto-Layout", () => {
   assert.match(component, /sd-command-zone-start/);
   assert.match(component, /sd-command-zone-actions/);
   assert.match(component, /sd-command-modes/);
   assert.doesNotMatch(component, /Auto-Layout|onAutoLayout|sd-auto-layout-trigger/);
+  assert.doesNotMatch(studio, /onAutoLayout|actions\.autoLayout/);
 });
 
 test("exposes the requested icon-first actions and keyboard tooltips", () => {
