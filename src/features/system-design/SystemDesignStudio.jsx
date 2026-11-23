@@ -59,8 +59,8 @@ export default function SystemDesignStudio({ workspace, isDarkTheme }) {
     setOffset((current) => (current.x === next.x && current.y === next.y ? current : next));
   }, [getHost, snapshot.revision, enabled]);
 
-  // While the studio is open this class (a) re-themes Excalidraw's selection accents (default violet) and (b) hides
-  // Sketchizi's bottom stroke/fill palette, which would otherwise sit on top of the studio dock (see systemDesign.css).
+  // While the studio is open, re-theme Excalidraw's selection accents. The native
+  // formatting dock is suppressed separately and only while a System Design item is selected.
   useLayoutEffect(() => {
     if (!enabled) return undefined;
     const region = rootRef.current?.parentElement;
