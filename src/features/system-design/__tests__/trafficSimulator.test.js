@@ -89,7 +89,7 @@ test("packets scale with edge RPS and idle edges have none", () => {
 });
 
 
-test("load balancer health checks redistribute all traffic across surviving targets", () => {
+test("load balancer keeps distinct domain routes isolated when one target is down", () => {
   const r = simulateTraffic({
     nodes: [
       node("client", "client"),
@@ -111,16 +111,16 @@ test("load balancer health checks redistribute all traffic across surviving targ
     totalRps: 10000,
   });
 
-  assert.equal(r.edges["lb-users"].rps, 5000);
+  assert.equal(r.edges["lb-users"].rps, 3333.3);
   assert.equal(r.edges["lb-orders"].rps, 0);
-  assert.equal(r.edges["lb-catalog"].rps, 5000);
+  assert.equal(r.edges["lb-catalog"].rps, 3333.3);
   assert.equal(r.edges["lb-orders"].healthCheckFailed, true);
   assert.equal(r.edges["lb-orders"].inactiveReason, "Health Check Failed");
-  assert.equal(r.nodes.users.incomingRps, 5000);
-  assert.equal(r.nodes.catalog.incomingRps, 5000);
+  assert.equal(r.nodes.users.incomingRps, 3333.3);
+  assert.equal(r.nodes.catalog.incomingRps, 3333.3);
   assert.equal(r.nodes.orders.incomingRps, 0);
-  assert.equal(r.nodes["users-db"].incomingRps, 5000);
-  assert.equal(r.nodes["catalog-cache"].incomingRps, 5000);
+  assert.equal(r.nodes["users-db"].incomingRps, 3333.3);
+  assert.equal(r.nodes["catalog-cache"].incomingRps, 3333.3);
   const failedRoute = r.healthChecks.find((group) => group.downTargets === 1);
   assert.equal(failedRoute.healthyTargets, 0);
   assert.equal(failedRoute.downTargets, 1);
@@ -154,7 +154,7 @@ test("API gateway also excludes Down targets when distributing traffic", () => {
     edges: [edge("gateway", "healthy"), edge("gateway", "down")],
     totalRps: 1000,
   });
-  assert.equal(r.edges["gateway-healthy"].rps, 1000);
+  assert.equal(r.edges["gateway-healthy"].rps, 500);
   assert.equal(r.edges["gateway-down"].rps, 0);
 });
 
