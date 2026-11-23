@@ -93,11 +93,14 @@ export default function SystemDesignStudio({ workspace, isDarkTheme }) {
         offset={offset} getHost={getHost} actions={actions} canEdit={canEdit} />
       <TopWorkspaceBar mode={mode} onModeChange={workspace.setMode} simulate={simulate} onSimulateChange={onSimulateChange}
         loadRps={loadRps} onLoadChange={workspace.setLoadRps} onLoadBlueprint={actions.loadBlueprint} canEdit={canEdit} onClose={workspace.close}
-        inspectorOpen={inspectorOpen} onToggleInspector={() => setInspectorOpen((value) => !value)}\n        nodes={graph.nodes} edges={graph.edges} diagnostic={simulate ? diagnostic : null} />
+        inspectorOpen={inspectorOpen} onToggleInspector={() => setInspectorOpen((value) => !value)}
+        nodes={graph.nodes} edges={graph.edges} diagnostic={simulate ? diagnostic : null} />
       {toast && <div className="sd-toast" role="status" aria-live="polite">{toast}</div>}
       <CollapsibleQuickDock onAdd={actions.addNode} onAutoLayout={actions.autoLayout}
         snapEnabled={workspace.gridEnabled} onSnapChange={workspace.setGridEnabled} canEdit={canEdit} />
-      <ContextualInspectorDrawer selection={selection} mode={mode} simulation={simulation} simulate={simulate} actions={actions} canEdit={canEdit}\n        open={inspectorOpen} tab={inspectorTab} onTabChange={setInspectorTab}\n        onOpenInspector={(nextTab = "config") => { setInspectorTab(nextTab); setInspectorOpen(true); }} onClose={() => setInspectorOpen(false)} />
+      <ContextualInspectorDrawer selection={selection} mode={mode} simulation={simulation} simulate={simulate} actions={actions} canEdit={canEdit}
+        open={inspectorOpen} tab={inspectorTab} onTabChange={setInspectorTab}
+        onOpenInspector={(nextTab = "config") => { setInspectorTab(nextTab); setInspectorOpen(true); }} onClose={() => setInspectorOpen(false)} />
     </div>
   );
 }
