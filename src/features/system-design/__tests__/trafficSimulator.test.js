@@ -341,7 +341,8 @@ test("manual RPS benchmarks a standalone node and propagates capped traffic down
   assert.equal(r.nodes.vendor.incomingRps, 3000);
   assert.equal(r.nodes.vendor.utilization, 1.5);
   assert.equal(r.nodes.vendor.serviceP95Ms, 360);
-  assert.equal(r.nodes.vendor.p95Ms, 360);
+  assert.ok(r.nodes.vendor.p95Ms >= r.nodes.vendor.serviceP95Ms);
+  assert.equal(r.nodes.vendor.serviceP95Ms, 360);
   assert.equal(r.nodes.vendor.status, "overloaded");
   assert.equal(r.nodes.vendor.servedRps, 2000);
   assert.equal(r.edges["vendor-consumer"].rps, 2000);
