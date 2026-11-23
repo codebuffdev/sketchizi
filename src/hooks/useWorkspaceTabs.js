@@ -15,7 +15,7 @@ import { recordWorkspaceItemOpened } from "../features/workspace/workspacePresen
 import { buildChapterEditorUrl } from "../features/workspace/useChapterNavigation.js";
 import { readDiagramRows, findDuplicateDiagramName } from "../features/workspace/diagramNames.js";
 import { resolveChapterSequence, readChapterLayout, appendChapter, writeChapterLayout, buildChapterLayout } from "../features/workspace/chapterSequence.js";
-import { DEFAULT_SYSTEM_DESIGN_TAB_STATE } from "../features/system-design/systemDesignTabState.js";
+import { DEFAULT_SYSTEM_DESIGN_TAB_STATE, persistSystemDesignTabState } from "../features/system-design/systemDesignTabState.js";
 
 /**
  * Tab & workspace lifecycle, phase 2: everything that acts on the open canvas tabs.
@@ -134,9 +134,7 @@ export function useWorkspaceTabs({
 
   const persistSystemDesignState = useCallback((tabId, systemDesign) => {
     if (!tabId || !canvasTabsRestoredRef.current) return;
-    const nextTabs = canvasTabsRef.current.map((tab) => tab.id === tabId
-      ? { ...tab, snapshot: { ...(tab.snapshot || {}), systemDesign } }
-      : tab);
+    const nextTabs = persistSystemDesignTabState(canvasTabsRef.current, tabId, systemDesign);
     persistCanvasTabs(nextTabs);
   }, [persistCanvasTabs]);
 
