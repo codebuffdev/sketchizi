@@ -87,6 +87,7 @@ export function useWorkspaceTabs({
   skipDraftPromptRef,
   startupChoiceMadeRef,
   toolStyles,
+  systemDesignRef,
 } = {}) {
   // Read volatile UI state through a ref so captureCanvasTabSnapshot (and every
   // callback built on it, including Excalidraw's onChange) keeps a stable
@@ -195,6 +196,7 @@ export function useWorkspaceTabs({
     if (!api?.updateScene) return;
     const snapshot = tab?.snapshot || {};
     if (tab?.id) toolStyles.hydrateCanvas(tab.id, snapshot.toolStylePresets);
+    if (tab?.id) systemDesignRef?.current?.restoreTabState?.(tab.id, snapshot.systemDesign);
     const elements = restoreElements(Array.isArray(snapshot.elements) ? snapshot.elements : [], null, { repairBindings: true });
     documentMetadataRef.current = {
       metadata: snapshot.metadata || {},
