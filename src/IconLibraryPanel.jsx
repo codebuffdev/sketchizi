@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { PRIMITIVES } from "./features/system-design/primitives.js";
+import { PrimitiveIcon } from "./features/system-design/PrimitiveIcon.jsx";
 import {
   SEARCH_STORAGE_KEY,
   VIEW_MODE_STORAGE_KEY,
@@ -155,9 +157,33 @@ export default function IconLibraryPanel({
     }
   });
 
+  const systemDesignIcons = useMemo(() => PRIMITIVES.map((primitive) => ({
+    id: primitive.kind,
+    kind: primitive.kind,
+    name: primitive.label,
+    subtitle: primitive.subtitle,
+    category: "System Design",
+    source: "system-design",
+    tags: [primitive.category, primitive.shortLabel, primitive.defaultProtocol, primitive.image],
+    searchAliases: ({
+      redis: ["redis", "cache", "in-memory"],
+      queue: ["kafka", "message queue", "broker"],
+      sql: ["postgres", "postgresql", "mysql", "database", "db"],
+      "load-balancer": ["lb", "balancer"],
+      "api-gateway": ["gateway", "api"],
+      "nosql": ["mongo", "mongodb", "document database"],
+      "object-storage": ["s3", "bucket", "storage"],
+      dns: ["route53", "route 53"],
+      client: ["web", "mobile", "browser"],
+      observability: ["metrics", "logging", "prometheus", "logs"],
+    }[primitive.kind] || []),
+    // The SVG preview is rendered by PrimitiveIcon; this data URI keeps the
+    // shared icon-library search/favorites/recent pipeline source-agnostic.
+    src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3C/svg%3E",
+  })), []);
   const allIcons = useMemo(
-    () => mixAllIcons([eraserCatalog, awsIcons, kubernetesIcons, mindMapIcons, umlIcons, networkingIcons]),
-    [eraserCatalog, awsIcons, kubernetesIcons, mindMapIcons, umlIcons, networkingIcons],
+    () => mixAllIcons([eraserCatalog, awsIcons, kubernetesIcons, mindMapIcons, umlIcons, networkingIcons, systemDesignIcons]),
+    [eraserCatalog, awsIcons, kubernetesIcons, mindMapIcons, umlIcons, networkingIcons, systemDesignIcons],
   );
 
   useEffect(() => {
@@ -224,7 +250,7 @@ export default function IconLibraryPanel({
       setActiveCategory("Favorites");
       setActiveKubernetesCategory("All");
       setActiveAwsCategory("All");
-    } else if (source === "recent") {
+    } else if (source === "system-design") {\n      setActiveCategory("System Design");\n      setActiveKubernetesCategory("All");\n      setActiveAwsCategory("All");\n    } else if (source === "recent") {
       setActiveCategory("Recently Used");
       setActiveKubernetesCategory("All");
       setActiveAwsCategory("All");
@@ -241,7 +267,7 @@ export default function IconLibraryPanel({
 
   const displayedIcons = useMemo(() => {
     const query = search.trim();
-    if (activeSource === "all" || activeSource === "eraser" || activeSource === "favorites" || activeSource === "recent") {
+    if (activeSource === "system-design") {\n      const query = search.trim().toLowerCase();\n      return query ? systemDesignIcons.filter((icon) => [icon.name, icon.id, ...icon.tags, ...icon.searchAliases].join(" ").toLowerCase().includes(query)) : systemDesignIcons;\n    }\n    if (activeSource === "all" || activeSource === "eraser" || activeSource === "favorites" || activeSource === "recent") {
       return resolveDisplayedIcons({
         activeSource,
         search: query,
@@ -305,7 +331,7 @@ export default function IconLibraryPanel({
     { id: "mindmaps", label: "Mind Maps" },
     { id: "uml", label: "UML" },
     { id: "eraser", label: "Essentials" },
-    { id: "all", label: "All" },
+    { id: "all", label: "All" },\n    { id: "system-design", label: "System Design (16)" },
   ];
 
   const collectionTitle = getActiveCollectionTitle(activeSource);
@@ -461,7 +487,7 @@ export default function IconLibraryPanel({
             }}
           >
             <option value="all">All icons ({allIcons.length.toLocaleString()})</option>
-            <optgroup label="Collections">
+            <option value="system-design">System Design (16)</option>\n            <optgroup label="Collections">
               {sourceTabs.filter((tab) => tab.id !== "all").map((tab) => (
                 <option key={tab.id} value={tab.id}>{tab.label}</option>
               ))}
