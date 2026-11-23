@@ -115,12 +115,12 @@ try {
   await openStudioFromCommandPalette(blank.page, "System Design Studio");
   await blank.page.locator('[data-testid="system-design-studio"]').waitFor({ state: "visible" });
   const primitiveDock = blank.page.getByRole("navigation", { name: "System design primitives" });
-  for (const label of ["Web/Mobile Client", "Microservice", "SQL Database"]) {
+  for (const label of ["Web/Mobile Client", "Microservice", "SQL Database", "Redis Cache"]) {
     await primitiveDock.getByRole("button", { name: `Add ${label}` }).click();
     await blank.page.keyboard.press("Escape");
   }
   const cards = blank.page.locator(".sd-node[data-node-id]");
-  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-node[data-node-id]").length === 3);
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-node[data-node-id]").length === 4);
   const initialCards = await cards.evaluateAll((items) => items.map((item) => ({
     id: item.dataset.nodeId, width: item.style.width, height: item.style.height,
   })));
@@ -167,15 +167,34 @@ try {
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 2);
   console.log("PASS: port drag-to-card and click-port-to-card create single orthogonal connectors without resizing nodes.");
 
+  // Port-to-port: select the destination first so its ports remain exposed while
+  // the pointer is over the source, then click source and destination ports.
+  const portPoolSource = cards.nth(2);
+  const portPoolTarget = cards.nth(3);
+  const portPoolTargetBox = await portPoolTarget.boundingBox();
   await blank.page.keyboard.press("v");
-  await blank.page.mouse.click(clickTargetBox.x + 18, clickTargetBox.y + 18);
-  const clickTargetId = await clickTarget.getAttribute("data-node-id");
+  await blank.page.mouse.click(portPoolTargetBox.x + 18, portPoolTargetBox.y + 18);
+  const portPoolTargetId = await portPoolTarget.getAttribute("data-node-id");
   await blank.page.waitForFunction((id) =>
     document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-selected"),
-  clickTargetId);
+  portPoolTargetId);
+  const portPoolSourceBox = await portPoolSource.boundingBox();
+  await blank.page.mouse.move(portPoolSourceBox.x + portPoolSourceBox.width / 2, portPoolSourceBox.y + portPoolSourceBox.height / 2);
+  const portPoolFrom = portPoolSource.locator(".sd-port.is-right.is-visible");
+  await portPoolFrom.waitFor({ state: "visible" });
+  await portPoolFrom.click();
+  await portPoolSource.locator(".sd-port.is-armed").waitFor({ state: "visible" });
+  const portPoolTo = portPoolTarget.locator(".sd-port.is-left.is-visible");
+  await portPoolTo.waitFor({ state: "visible" });
+  await portPoolTo.click();
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 3);
+  console.log("PASS: click-port-to-click-port creates a single orthogonal connector.");
+
+  // C reuses the selected destination node as the source and connects it to
+  // the next card, without requiring a visible port click.
   await blank.page.keyboard.press("c");
   await blank.page.mouse.click(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
-  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 3);
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 4);
   console.log("PASS: C arms the selected node and connects it to the next clicked card.");
 
 
