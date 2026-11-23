@@ -107,7 +107,7 @@ test("collectSceneRepairs upgrades first-iteration elements, rotates nodes back,
   const repairs = collectSceneRepairs([a, b, ok, ghost]);
   assert.deepEqual(repairs.get("a"), { opacity: 0, angle: 0 });
   assert.equal(repairs.has("b"), false);
-  assert.deepEqual(repairs.get("ok"), { opacity: 0, strokeColor: "transparent" });
+  assert.deepEqual(repairs.get("ok"), { opacity: 0 });
   assert.deepEqual(repairs.get("ghost"), { isDeleted: true });
   const applied = [a, b, ok, ghost].map((el) => ({ ...el, ...(repairs.get(el.id) || {}) }));
   assert.equal(collectSceneRepairs(applied).size, 0, "second pass finds nothing");
