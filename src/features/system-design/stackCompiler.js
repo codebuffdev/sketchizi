@@ -3,7 +3,7 @@ import { serviceNames } from "./yamlPreview.js";
 const RUNNABLE = (node) => node.kind !== "client" && node.kind !== "dns" && node.kind !== "cdn" && node.image && !String(node.image).startsWith("n/a");
 const quote = (value) => JSON.stringify(String(value ?? ""));
 function stackServiceNames(nodes) {
-  const names = stackServiceNames(nodes);
+  const names = serviceNames(nodes);
   const used = new Set();
   const canonical = { sql: "postgres", queue: "kafka" };
   for (const node of nodes) {
