@@ -194,8 +194,8 @@
   .auth-account-menu {
     position: fixed;
     top: calc(54px + var(--safe-top, 0px));
-    right: calc(10px + var(--safe-right, 0px));
-    left: auto;
+    right: auto;
+    left: max(0px, calc(100vw - var(--safe-right, 0px) - 10px - min(280px, calc(100vw - 32px))));
     width: min(280px, calc(100vw - 32px));
   }
 }
