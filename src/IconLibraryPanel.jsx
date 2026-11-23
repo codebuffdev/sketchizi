@@ -459,6 +459,14 @@ export default function IconLibraryPanel({
           </button>
           <button
             type="button"
+            className={`sk-scope-tab ${activeSource === "system-design" ? "is-active" : ""}`}
+            aria-pressed={activeSource === "system-design"}
+            onClick={() => chooseSource("system-design")}
+          >
+            System Design (16)
+          </button>
+          <button
+            type="button"
             className={`sk-scope-tab ${activeSource === "favorites" ? "is-active" : ""}`}
             aria-pressed={activeSource === "favorites"}
             onClick={() => chooseSource("favorites")}
