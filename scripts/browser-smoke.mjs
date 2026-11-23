@@ -115,7 +115,7 @@ try {
   await openStudioFromCommandPalette(blank.page, "System Design Studio");
   await blank.page.locator('[data-testid="system-design-studio"]').waitFor({ state: "visible" });
   const primitiveDock = blank.page.getByRole("navigation", { name: "System design primitives" });
-  for (const label of ["Client", "Microservice", "SQL Database"]) {
+  for (const label of ["Web/Mobile Client", "Microservice", "SQL Database"]) {
     await primitiveDock.getByRole("button", { name: `Add ${label}` }).click();
     await blank.page.keyboard.press("Escape");
   }
