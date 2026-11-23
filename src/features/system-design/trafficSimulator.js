@@ -91,6 +91,8 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
   const isEntry = (node) => node.entry ?? getPrimitive(node.kind)?.entry ?? false;
   const isCache = (node) => node.cache ?? getPrimitive(node.kind)?.cache ?? false;
   const isQueue = (node) => node.kind === "queue";
+  const isPubSub = (node) => node.kind === "pubsub";
+  const isExternalApi = (node) => node.kind === "external-api";
   const isBalancer = (node) => node.kind === "load-balancer" || node.kind === "api-gateway";
   const isIngress = (node) => isEntry(node) || INGRESS_KINDS.has(node.kind);
   const indegree = new Map(nodes.map((node) => [node.id, 0]));
@@ -107,6 +109,7 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
   const metrics = new Map();
   const cacheStampedes = [];
   const queueLags = [];
+  const rateLimitWarnings = [];
   const retryEdges = [];
   const healthChecks = [];
   const effectiveIncoming = new Map();
@@ -120,6 +123,8 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
     const initialStatus = deriveStatus(utilization, node.health);
     const cache = isCache(node);
     const queueNode = isQueue(node);
+    const pubSubNode = isPubSub(node);
+    const externalApiNode = isExternalApi(node);
     const cacheUnavailable = cache && (down || initialStatus === "overloaded");
     const hitRate = cacheUnavailable ? 0 : cache ? clamp01(node.cacheHitRate ?? getPrimitive(node.kind)?.cacheHitRate ?? 0) : 0;
     if (cacheUnavailable && arriving > 0) {
@@ -128,6 +133,9 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
 
     const served = down ? 0 : queueNode ? arriving : Math.min(arriving, capacity);
     const forwardable = cache && cacheUnavailable ? arriving : down ? 0 : cache ? arriving * (1 - hitRate) : served;
+    if (externalApiNode && !down && arriving > capacity) {
+      rateLimitWarnings.push({ nodeId: id, nodeLabel: node.label || "External 3rd-Party API", incomingRps: arriving, capacityRps: capacity, rejectedRps: round(arriving - capacity, 1), statusCode: 429, message: "429 Too Many Requests: " + round(arriving - capacity, 1) + " RPS exceeded the " + capacity + " RPS external API limit." });
+    }
     const branches = outgoing.get(id) || [];
     const outgoingShares = new Map();
     let queueLag = null;
@@ -152,6 +160,16 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
         const consumerShare = targetAvailable ? Math.min(each, nodeCapacity(target)) : 0;
         outgoingShares.set(edge.id, consumerShare);
         edgeMeta.set(edge.id, targetAvailable ? {} : { consumerDown: true, bufferedRps: arriving / Math.max(1, branches.length) });
+      }
+    } else if (pubSubNode) {
+      // Pub/Sub is broadcast, not competing-consumer delivery: every healthy subscriber receives
+      // the full topic rate. Subscriber capacity is measured at the subscriber itself.
+      for (const edge of branches) {
+        const target = byId.get(edge.to);
+        const targetAvailable = target.health !== "down";
+        outgoingShares.set(edge.id, targetAvailable ? forwardable : 0);
+        if (!targetAvailable) edgeMeta.set(edge.id, { subscriberDown: true, inactiveReason: "Subscriber unavailable" });
+        else edgeMeta.set(edge.id, { delivery: "broadcast" });
       }
     } else if (isBalancer(node)) {
       // Different normalized labels are independent domain routes. Identical labels form an HA replica pool.
@@ -237,7 +255,7 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
     diagnostics: {
       noHealthyUpstreams,
       failovers: healthChecks.filter((group) => group.downTargets > 0 && group.healthyTargets > 0),
-      cacheStampedes, queueLags, retryEdges, cycles: cycleWarnings, depthWarnings: depthWarningsFormatted,
+      cacheStampedes, queueLags, rateLimitWarnings, retryEdges, cycles: cycleWarnings, depthWarnings: depthWarningsFormatted,
     },
     totalRps: Number(totalRps) || 0,
   };
