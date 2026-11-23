@@ -401,6 +401,7 @@ function App() {
     openCloudWorkspace,
     openWorkspaceDiagram,
     createWorkspaceChapter,
+  const systemDesignRef = useRef(null);
   } = useWorkspaceTabs({
     activeCanvasId,
     activeCanvasIdRef,
@@ -519,7 +520,6 @@ function App() {
   const collaborationCanEdit = (!collaborationRoom && !collaborationEndedSession) || collaborationEndedSession?.returned === true || (Boolean(collaborationRoom) && collaborationStatus === "connected" && collaborationHostRecovery?.state !== "recovering" && (collaborationPermission === "host" || collaborationPermission === "editor"));
   const moreTools = useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, canEdit: collaborationCanEdit });
   const { anchor: moreToolsAnchor, position: positionMoreToolsButton, activate: activateMoreTool } = moreTools;
-  const systemDesignRef = useRef(null);
   const iconInsertion = useIconInsertion({ apiRef, gridEnabled, gridSize, markRecentlyUsed, canEdit: collaborationCanEdit, systemDesignRef });
   const { draggingIcon, handleDragStart, handleIconMouseDown, handleIconPointerDown, handleIconClick, handleDragOver, handleDrop, createStarterMindMap } = iconInsertion;
 
