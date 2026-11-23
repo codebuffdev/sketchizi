@@ -170,6 +170,7 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
           outgoingShares.set(edge.id, targetDown ? 0 : replicaShare);
           if (targetDown) edgeMeta.set(edge.id, {
             serviceUnavailable: poolEdges.length === 1,
+            healthCheckFailed: true,
             replicaFailed: poolEdges.length > 1,
             inactiveReason: poolEdges.length === 1 ? "503 Dropped" : "Replica Health Check Failed",
           });
