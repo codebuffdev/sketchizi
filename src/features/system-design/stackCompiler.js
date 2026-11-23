@@ -76,8 +76,9 @@ export function compileKubernetesStack(nodes = [], edges = []) {
       ...(stateful ? [`  serviceName: ${name}`] : []),
       "  selector:", "    matchLabels:", `      app: ${name}`, "  template:", "    metadata:", "      labels:", `        app: ${name}`,
       "    spec:", "      containers:", `        - name: ${name}`, `          image: ${node.image}`,
-      ...(node.kind === "pubsub" ? ["          args: [\"--jetstream\"]"] : []),
+      ...(node.kind === "pubsub" ? ["          args: [\"-js\", \"--store_dir\", \"/data\"]"] : []),
       ...(node.kind === "stream-processor" ? ["          env:", "            - name: FLINK_PROPERTIES", "              value: \"jobmanager.rpc.address: flink\""] : []),
+      ...(node.kind === "read-replica" ? ["          env:", "            - name: POSTGRES_REPLICATION_MODE", "              value: replica", "            - name: POSTGRES_PRIMARY_HOST", "              value: postgres"] : []),
       "          ports:",
       `            - name: app`, `              containerPort: ${Number(node.port) || 8080}`,
       "          resources:", "            requests:", "              cpu: 100m", "              memory: 128Mi", "            limits:", "              cpu: 1000m", "              memory: 512Mi",
@@ -141,7 +142,7 @@ export function compileDockerCompose(nodes = [], edges = []) {
       volumeNames.add(volume);
       lines.push("    volumes:", `      - ${volume}:${path}`);
     }
-    if (node.kind === "pubsub") lines.push("    command:", "      [\"-js\"]");
+    if (node.kind === "pubsub") lines.push("    command:", "      [\"-js\", \"--store_dir\", \"/data\"]");
     if (node.kind === "websocket-gateway") lines.push("    labels:", "      - \"traefik.http.middlewares.websocket.headers.customrequestheaders.Connection=Upgrade\"", "      - \"traefik.http.middlewares.websocket.headers.customrequestheaders.Upgrade=websocket\"");
     if (Number(node.replicas) > 1) lines.push("    deploy:", `      replicas: ${Number(node.replicas)}`);
     lines.push("    networks:", "      - sketchizi");
