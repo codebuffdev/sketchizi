@@ -41,6 +41,16 @@ test("empty or fully deleted canvases are not archived", () => {
   assert.equal(snapshotHasContent({ elements: [el("1")] }), true);
 });
 
+test("active empty System Design tabs are archived and recover their exact studio state", () => {
+  const systemDesign = { active: true, studioMode: "compose", simRunning: true, baseRps: 50000, inspectorOpen: true };
+  const source = { elements: [], systemDesign, appState: {}, files: {}, metadata: {}, extensions: {}, format: "excalidraw" };
+  assert.equal(snapshotHasContent(source), true);
+  const record = buildClosedTabRecord({ id: "studio", name: "Canvas Studio", snapshot: source }, source, 10);
+  assert.deepEqual(record.snapshot.systemDesign, systemDesign);
+  const restored = restoreClosedTab(record, [], 20);
+  assert.deepEqual(restored.snapshot.systemDesign, systemDesign);
+});
+
 test("a closed record keeps elements, appState, files, title and a timestamp", () => {
   const record = buildClosedTabRecord(tab("a", [el("1"), el("2")]), null, 1000);
   assert.equal(record.closedAt, 1000);
