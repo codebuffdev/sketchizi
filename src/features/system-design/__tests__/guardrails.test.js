@@ -60,8 +60,11 @@ test("studio chrome: one top-centre pill, no duplicated Sketchizi controls", () 
   assert.match(dock, /morePrimitivesByCategory\(\)/);
   const insp = read(path.join(dir, "ContextualInspectorDrawer.jsx"));
   for (const text of ["Replicas", "Capacity", "Cache hit rate", "Health override", "Line style", "Accent", "YAML", "Inspect"]) assert.ok(insp.includes(text), text);
-  assert.match(insp, /if \(!selection\) return null/);
-  assert.match(insp, /useState\(false\)/, "drawer must start closed");
+  assert.match(insp, /\{selection && <div className="sd-surface sd-pill-bar"/);
+  assert.doesNotMatch(insp, /if \(!selection\) return null/);
+  const studio = read(path.join(dir, "SystemDesignStudio.jsx"));
+  assert.match(studio, /useState\(false\)/, "inspector must start closed");
+  assert.match(read(path.join(dir, "TopWorkspaceBar.jsx")), /Inspector/);
   assert.match(insp, /\{open && \(\s*<aside/, "drawer only mounts when explicitly opened");
   const overlay = read(path.join(dir, "SystemDesignNodeOverlay.jsx"));
   assert.match(overlay, /PORTS\.map/);
@@ -73,7 +76,7 @@ test("studio chrome: one top-centre pill, no duplicated Sketchizi controls", () 
 
 test("single-visual contract: no ring on the card, Sketchizi bottom palette hidden, chrome clears Sketchizi's header", () => {
   const css = read(path.join(dir, "systemDesign.css"));
-  assert.match(css, /\.app \.sd-active \.sketchizi-tool-options-dock \{ display: none !important; \}/);
+  assert.match(css, /\.app \.sd-active\.sd-has-system-selection \.sketchizi-tool-options-dock \{ display: none !important; \}/);
   const selected = css.match(/\.sd-node\.is-selected \{[^}]*\}/)[0];
   assert.doesNotMatch(selected, /border-color|(?<!inset )0 0 0 \d+px/, "selected card must not draw a second outline next to Excalidraw's selection box");
   // Studio bar sits below Sketchizi's first row and derives from ITS variables.
