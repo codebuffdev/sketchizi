@@ -123,7 +123,7 @@ try {
     await systemLibrary.getByRole("button", { name: `Add ${label} to canvas` }).click();
   }
   await systemLibrary.getByRole("button", { name: "Close icon library" }).click();
-  await systemLibrary.waitFor({ state: "detached" });
+  await systemLibrary.waitFor({ state: "hidden" });
   await blank.page.getByRole("button", { name: "Auto-Layout components" }).waitFor({ state: "visible" });
   if (await blank.page.locator(".sd-dock").count()) throw new Error("The removed floating primitive dock is still mounted.");
   const cards = blank.page.locator(".sd-node[data-node-id]");
