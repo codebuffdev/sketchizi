@@ -18,9 +18,10 @@ test("browser smoke covers configured AWS template creation and editor handoff",
   }
 });
 
-test("browser drawing smoke waits for the current active-tab status marker", () => {
-  assert.match(script, /\.canvas-tab\.is-active \.canvas-tab-status-dot/);
-  assert.doesNotMatch(script, /canvas-tab-status-dot\.is-ready/);
+test("browser drawing smoke waits for the current active-tab status marker", async () => {
+  const drawingScript = await readFile(new URL("../scripts/browser-drawing-smoke.mjs", import.meta.url), "utf8");
+  assert.match(drawingScript, /\.canvas-tab\.is-active \.canvas-tab-status-dot/);
+  assert.doesNotMatch(drawingScript, /canvas-tab-status-dot\.is-ready/);
 });
 
 test("browser smoke covers blank canvas and narrow viewport overflow", () => {
