@@ -100,7 +100,7 @@ export default function TopWorkspaceBar({ mode, onModeChange, simulate, onSimula
 
         <button type="button" className={`sd-inspector-trigger${inspectorOpen ? " is-active" : ""}`} aria-pressed={inspectorOpen}
           onClick={onToggleInspector} title={inspectorOpen ? "Close inspector" : "Open telemetry and YAML inspector"}>
-          <Icon name="panel-right" size={14} /><span>Inspector</span>
+          <Icon name="layout" size={14} /><span>Inspector</span>
         </button>
 
         <span className="sd-divider" aria-hidden="true" />
