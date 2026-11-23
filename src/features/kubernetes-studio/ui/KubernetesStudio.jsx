@@ -796,7 +796,7 @@ spec:
     <div className="k8s-studio-overlay" role="presentation">
       <section className="k8s-studio" role="dialog" aria-modal="true" aria-labelledby="k8s-studio-title">
         <header className="k8s-studio-header k8s-studio-header-compact">
-          <div className="k8s-studio-brand">K8s</div>
+          <div className="k8s-studio-brand"><img src="/sketchizi-favicon.svg" alt="" /></div>
           <h1 id="k8s-studio-title">K8s Studio</h1>
           <div className="k8s-studio-actions" role="group" aria-label="Import Kubernetes manifests">
           <button type="button" className="k8s-studio-primary" disabled={isKubeLab} onClick={() => fileInputRef.current?.click()}>Import YAML</button>
