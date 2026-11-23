@@ -23,9 +23,11 @@ export default function SystemDesignStudio({ workspace, isDarkTheme, onOpenIconL
   const getHost = useCallback(() => rootRef.current?.parentElement?.querySelector(".excalidraw") || null, []);
   const graph = useMemo(() => readGraph(snapshot.elements), [snapshot.elements]);
   const simulation = useMemo(
-    () => (simulate ? simulateTraffic({ nodes: graph.nodes, edges: graph.edges, totalRps: loadRps }) : null),
+    () => simulateTraffic({ nodes: graph.nodes, edges: graph.edges, totalRps: simulate ? loadRps : 0 }),
     [simulate, graph, loadRps],
   );
+  const hasManualLoad = graph.nodes.some((node) => Number(node.manualRps) > 0);
+  const showTelemetry = simulate || hasManualLoad;
   const diagnostic = useMemo(() => deriveArchitectureDiagnostic(graph.nodes, simulation, graph.edges), [graph.nodes, simulation]);
 
   // Brief, non-blocking hint. Auto-dismisses; never steals focus or blocks the canvas.
@@ -79,15 +81,16 @@ export default function SystemDesignStudio({ workspace, isDarkTheme, onOpenIconL
 
   return (
     <div ref={rootRef} className={`sd-root${isDarkTheme ? " is-dark" : ""}`} data-testid="system-design-studio" data-mode={mode}>
-      <SystemDesignNodeOverlay graph={graph} simulation={simulation} simulate={simulate} mode={mode} snapshot={snapshot}
+      <SystemDesignNodeOverlay graph={graph} simulation={simulation} simulate={showTelemetry} mode={mode} snapshot={snapshot}
         offset={offset} getHost={getHost} actions={actions} canEdit={canEdit} />
       <TopWorkspaceBar mode={mode} onModeChange={workspace.setMode} simulate={simulate} onSimulateChange={onSimulateChange}
         loadRps={loadRps} onLoadChange={workspace.setLoadRps} onLoadBlueprint={actions.loadBlueprint} canEdit={canEdit} onClose={workspace.close}
         inspectorOpen={inspectorOpen} onToggleInspector={() => setInspectorOpen((value) => !value)}
-        nodes={graph.nodes} edges={graph.edges} diagnostic={simulate ? diagnostic : null}
+        nodes={graph.nodes} edges={graph.edges} diagnostic={showTelemetry ? diagnostic : null}
         onOpenIconLibrary={onOpenIconLibrary} />
       {toast && <div className="sd-toast" role="status" aria-live="polite">{toast}</div>}
       <ContextualInspectorDrawer selection={selection} mode={mode} simulation={simulation} simulate={simulate} actions={actions} canEdit={canEdit}
+        hasUpstreamConnections={selection?.kind === "node" && graph.edges.some((edge) => edge.to === selection.item.id)}
         open={inspectorOpen} tab={inspectorTab} onTabChange={setInspectorTab}
         onOpenInspector={(nextTab = "config") => { setInspectorTab(nextTab); setInspectorOpen(true); }} onClose={() => setInspectorOpen(false)} />
     </div>
