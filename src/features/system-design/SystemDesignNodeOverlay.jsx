@@ -141,7 +141,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           {routes.map(({ edge, points }) => {
             const live = simulation?.edges[edge.id];
             const targetStatus = simulation?.nodes[edge.to]?.status;
-            const tone = !simulate ? "idle" : !live || live.rps <= 0 ? "idle" : targetStatus === "overloaded" || targetStatus === "down" ? "hot" : targetStatus === "elevated" ? "warm" : "ok";
+            const tone = !simulate ? "idle" : live?.healthCheckFailed ? "hot" : !live || live.rps <= 0 ? "idle" : targetStatus === "overloaded" || targetStatus === "down" ? "hot" : targetStatus === "elevated" ? "warm" : "ok";
             const d = roundedPath(points);
             const selected = selectedIds.includes(edge.id);
             const packets = simulate && live ? packetCountForRps(live.rps) : 0;
@@ -167,11 +167,12 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           const mid = pointAlong(points, 0.5);
           const live = simulate ? simulation?.edges[edge.id] : null;
           const flowing = Boolean(live && live.rps > 0);
-          const tone = !live ? "" : !flowing ? " is-idle" : ` is-${simulation?.nodes[edge.to]?.status === "overloaded" || simulation?.nodes[edge.to]?.status === "down" ? "hot" : simulation?.nodes[edge.to]?.status === "elevated" ? "warm" : "ok"}`;
-          if (!flowing) return null;
+          const healthFailed = Boolean(live?.healthCheckFailed);
+          const tone = !live ? "" : healthFailed ? " is-hot" : !flowing ? " is-idle" : ` is-${simulation?.nodes[edge.to]?.status === "overloaded" || simulation?.nodes[edge.to]?.status === "down" ? "hot" : simulation?.nodes[edge.to]?.status === "elevated" ? "warm" : "ok"}`;
+          if (!flowing && !healthFailed) return null;
           return (
-            <span key={edge.id} className={`sd-badge sd-mono is-live${tone}`} style={{ left: mid.x, top: mid.y }}>
-              {edge.protocol} · <b>{formatRps(live.rps)}/s</b>{live.cacheHitRate > 0 && <> · {Math.round(live.cacheHitRate * 100)}% cached</>}
+            <span key={edge.id} className={`sd-badge sd-mono is-live${tone}${healthFailed ? " is-health-failed" : ""}`} style={{ left: mid.x, top: mid.y }}>
+              {healthFailed ? <>0/s · Health Check Failed</> : <>{edge.protocol} · <b>{formatRps(live.rps)}/s</b>{live.cacheHitRate > 0 && <> · {Math.round(live.cacheHitRate * 100)}% cached</>}</>}
             </span>
           );
         })}
