@@ -26,7 +26,7 @@ export default function SystemDesignStudio({ workspace, isDarkTheme }) {
     () => (simulate ? simulateTraffic({ nodes: graph.nodes, edges: graph.edges, totalRps: loadRps }) : null),
     [simulate, graph, loadRps],
   );
-  const diagnostic = useMemo(() => deriveArchitectureDiagnostic(graph.nodes, simulation), [graph.nodes, simulation]);
+  const diagnostic = useMemo(() => deriveArchitectureDiagnostic(graph.nodes, simulation, graph.edges), [graph.nodes, simulation]);
 
   // Brief, non-blocking hint. Auto-dismisses; never steals focus or blocks the canvas.
   useEffect(() => {
