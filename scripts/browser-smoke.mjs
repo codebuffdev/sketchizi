@@ -140,9 +140,10 @@ try {
   await blank.page.mouse.down();
   await blank.page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, { steps: 12 });
   await blank.page.locator(".sd-edge-preview.is-snapped").waitFor({ state: "attached" });
-  await dragTarget.evaluate((element) => {
-    if (!element.classList.contains("is-drop-target")) throw new Error("Target card did not show magnetic focus feedback.");
-  });
+  const dragTargetId = await dragTarget.getAttribute("data-node-id");
+  await blank.page.waitForFunction((id) =>
+    document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-drop-target"),
+  dragTargetId);
   await blank.page.mouse.up();
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 1);
   const [sourceAfter, targetAfter] = await Promise.all([dragSource.boundingBox(), dragTarget.boundingBox()]);
