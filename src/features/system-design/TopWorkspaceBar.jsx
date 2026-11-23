@@ -13,7 +13,7 @@ import ExportStackModal from "./ExportStackModal.jsx";
  * Everything lives in the top-centre on purpose. Sketchizi's own header already owns the top-left (documents, save
  * status) and the top-right/right rail (zoom, date, AI, account), so the studio adds nothing in either corner.
  */
-export default function TopWorkspaceBar({ mode, onModeChange, simulate, onSimulateChange, loadRps, onLoadChange, onLoadBlueprint, canEdit = true, onClose, nodes = [], edges = [], diagnostic = null }) {
+export default function TopWorkspaceBar({ mode, onModeChange, simulate, onSimulateChange, loadRps, onLoadChange, onLoadBlueprint, canEdit = true, onClose, nodes = [], edges = [], diagnostic = null, inspectorOpen = false, onToggleInspector }) {
   const [loadOpen, setLoadOpen] = useState(false);
   const [blueprintsOpen, setBlueprintsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -95,6 +95,13 @@ export default function TopWorkspaceBar({ mode, onModeChange, simulate, onSimula
             </div>
           )}
         </div>
+
+        <span className="sd-divider" aria-hidden="true" />
+
+        <button type="button" className={`sd-inspector-trigger${inspectorOpen ? " is-active" : ""}`} aria-pressed={inspectorOpen}
+          onClick={onToggleInspector} title={inspectorOpen ? "Close inspector" : "Open telemetry and YAML inspector"}>
+          <Icon name="panel-right" size={14} /><span>Inspector</span>
+        </button>
 
         <span className="sd-divider" aria-hidden="true" />
 
