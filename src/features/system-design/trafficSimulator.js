@@ -32,9 +32,11 @@ export function computeP95(baseLatencyMs, utilization, health = "healthy") {
   if (health === "down") return null;
   const base = Math.max(0.5, Number(baseLatencyMs) || 1);
   const rho = Math.max(0, utilization);
-  const multiplier = rho <= 1
-    ? 1 + (rho * rho) / Math.max(0.05, 1 - Math.min(rho, 0.95)) * 0.6
-    : 1 + 0.95 * 0.95 / 0.05 * 0.6 + (rho - 1) * 60;
+  // Once capacity is exceeded, expose the proportional overload penalty directly. This keeps
+  // isolated component previews interpretable (e.g. 150% load on a 240ms API => 360ms p95).
+  const multiplier = rho > 1
+    ? rho
+    : 1 + (rho * rho) / Math.max(0.05, 1 - Math.min(rho, 0.95)) * 0.6;
   return round(base * (health === "degraded" ? 1.8 : 1) * multiplier, 1);
 }
 
@@ -116,7 +118,10 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
 
   for (const id of order) {
     const node = byId.get(id);
-    const arriving = round((incoming.get(id) || 0) + (entryIds.has(id) ? entryShare : 0), 1);
+    const upstreamRps = (incoming.get(id) || 0) + (entryIds.has(id) ? entryShare : 0);
+    const manualRps = Math.max(0, Number(node.manualRps) || 0);
+    // A manual load floor can benchmark any node in isolation or raise traffic above its upstream flow.
+    const arriving = round(Math.max(upstreamRps, manualRps), 1);
     const capacity = nodeCapacity(node);
     const down = node.health === "down";
     const utilization = down ? 0 : capacity > 0 ? arriving / capacity : arriving > 0 ? Infinity : 0;
