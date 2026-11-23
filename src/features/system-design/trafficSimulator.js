@@ -173,9 +173,7 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
             inactiveReason: poolEdges.length === 1 ? "503 Dropped" : "Replica Health Check Failed",
           });
         }
-        if (true) {
-          healthChecks.push({ nodeId: id, nodeLabel: node.label || "Load Balancer", poolLabel, incomingRps: round(routeShare, 1), healthyTargets: healthy.length, downTargets: poolEdges.length - healthy.length, allTargetsDown: healthy.length === 0, targetIds: healthy.map((edge) => edge.to), downTargetIds: poolEdges.filter((edge) => byId.get(edge.to).health === "down").map((edge) => edge.to), redistributedRpsPerTarget: round(replicaShare, 1) });
-        }
+        healthChecks.push({ nodeId: id, nodeLabel: node.label || "Load Balancer", poolLabel, incomingRps: round(routeShare, 1), healthyTargets: healthy.length, downTargets: poolEdges.length - healthy.length, allTargetsDown: healthy.length === 0, targetIds: healthy.map((edge) => edge.to), downTargetIds: poolEdges.filter((edge) => byId.get(edge.to).health === "down").map((edge) => edge.to), redistributedRpsPerTarget: round(replicaShare, 1) });
       }
     } else {
       const share = branches.length ? forwardable / branches.length : 0;
