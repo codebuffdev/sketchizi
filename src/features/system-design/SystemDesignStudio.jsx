@@ -86,7 +86,7 @@ export default function SystemDesignStudio({ workspace, isDarkTheme, onOpenIconL
         loadRps={loadRps} onLoadChange={workspace.setLoadRps} onLoadBlueprint={actions.loadBlueprint} canEdit={canEdit} onClose={workspace.close}
         inspectorOpen={inspectorOpen} onToggleInspector={() => setInspectorOpen((value) => !value)}
         nodes={graph.nodes} edges={graph.edges} diagnostic={simulate ? diagnostic : null}
-        onOpenIconLibrary={onOpenIconLibrary} onAutoLayout={actions.autoLayout} />
+        onOpenIconLibrary={onOpenIconLibrary} />
       {toast && <div className="sd-toast" role="status" aria-live="polite">{toast}</div>}
       <ContextualInspectorDrawer selection={selection} mode={mode} simulation={simulation} simulate={simulate} actions={actions} canEdit={canEdit}
         open={inspectorOpen} tab={inspectorTab} onTabChange={setInspectorTab}
