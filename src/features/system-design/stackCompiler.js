@@ -116,6 +116,7 @@ export function compileDockerCompose(nodes = [], edges = []) {
       ...(node.kind === "sql" ? { POSTGRES_DB: "app", POSTGRES_USER: "postgres", POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before starting the stack}" } : {}),
       ...(node.kind === "read-replica" ? { POSTGRES_REPLICATION_MODE: "replica", POSTGRES_PRIMARY_HOST: "${POSTGRES_PRIMARY_HOST:?Set POSTGRES_PRIMARY_HOST}" } : {}),
       ...(node.kind === "pubsub" ? { NATS_ENABLE_JETSTREAM: "true" } : {}),
+      ...(node.kind === "stream-processor" ? { FLINK_PROPERTIES: "jobmanager.rpc.address: flink" } : {}),
       ...(node.kind === "external-api" ? { UPSTREAM_API_URL: "${EXTERNAL_API_URL:?Set EXTERNAL_API_URL}", RATE_LIMIT_RPS: String(node.capacityPerReplica || 2000) } : {}),
       ...(environments.get(node.id) || {}),
     };
@@ -135,7 +136,6 @@ export function compileDockerCompose(nodes = [], edges = []) {
       lines.push("    volumes:", `      - ${volume}:${path}`);
     }
     if (node.kind === "pubsub") lines.push("    command:", "      [\"-js\"]");
-    if (node.kind === "stream-processor") lines.push("    environment:", "      FLINK_PROPERTIES: \"jobmanager.rpc.address: flink\"");
     if (node.kind === "websocket-gateway") lines.push("    labels:", "      - \"traefik.http.middlewares.websocket.headers.customrequestheaders.Connection=Upgrade\"", "      - \"traefik.http.middlewares.websocket.headers.customrequestheaders.Upgrade=websocket\"");
     if (Number(node.replicas) > 1) lines.push("    deploy:", `      replicas: ${Number(node.replicas)}`);
     lines.push("    networks:", "      - sketchizi");
