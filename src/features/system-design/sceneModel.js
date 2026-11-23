@@ -194,7 +194,7 @@ export function createEdgeSkeleton(fromNode, toNode, options = {}, id) {
 const isSolid = (color) => Boolean(color) && color !== "transparent";
 
 /**
- * Patches that bring elements written by older builds in line with the single-visual contract (visible native
+ * Patches that bring elements written by older builds in line with the single-visual contract (invisible native
  * rectangles/arrows, rotated nodes) plus removal of connectors whose endpoint node is gone (a plain Delete key press
  * removes only the node, which would otherwise leave an invisible, still-clickable ghost connector).
  * Returns Map<elementId, patch>; empty when the scene is already clean, so applying it is idempotent.
@@ -213,17 +213,21 @@ export function collectSceneRepairs(elements) {
       if (Object.keys(patch).length) repairs.set(element.id, patch);
     } else if (isSystemDesignEdge(element)) {
       const data = element.customData[CUSTOM_KEY];
-      if (!nodeIds.has(data.from) || !nodeIds.has(data.to)) {
+      const edge = readEdge(element, live.map(readNode).filter(Boolean));
+      if (!edge || !nodeIds.has(edge.from) || !nodeIds.has(edge.to)) {
         repairs.set(element.id, { isDeleted: true });
         continue;
       }
-      const pair = JSON.stringify([data.from, data.to]);
+      const pair = JSON.stringify([edge.from, edge.to]);
       if (seenPairs.has(pair)) {
         repairs.set(element.id, { isDeleted: true });
         continue;
       }
       seenPairs.add(pair);
       const patch = {};
+      if (data.from !== edge.from || data.to !== edge.to) {
+        Object.assign(patch, edgePatch(element, { from: edge.from, to: edge.to }));
+      }
       if (element.opacity !== 0) patch.opacity = 0;
       if (element.strokeColor !== "transparent") patch.strokeColor = "transparent";
       if (element.startArrowhead != null) patch.startArrowhead = null;
