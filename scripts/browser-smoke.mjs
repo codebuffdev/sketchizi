@@ -548,7 +548,7 @@ try {
   await firstCloudTab.waitFor();
   await cloudTabs.page.getByRole("button", { name: "Open application menu" }).click();
   await cloudTabs.page.getByRole("button", { name: "Cloud Files", exact: true }).click();
-  await cloudTabs.page.getByRole("article").filter({ hasText: diagrams[1].name })
+  await cloudTabs.page.locator(`[data-chapter-id="${diagrams[1].id}"]`)
     .getByRole("button", { name: "Open", exact: true }).click();
   await secondCloudTab.waitFor();
   await firstCloudTab.click();

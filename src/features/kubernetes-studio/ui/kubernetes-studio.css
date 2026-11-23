@@ -365,3 +365,6 @@ body.k8s-studio-resizing *{cursor:col-resize!important;user-select:none!importan
   .k8s-lab-workspace .k8s-studio-preview { grid-row: 1; border-bottom: 1px solid #29384d; }
   .k8s-lab-workspace .k8s-studio-editor { grid-row: 2; }
 }
+
+.k8s-studio-header-compact .k8s-studio-brand{display:grid;place-items:center;overflow:hidden;background:#030a1b;border:1px solid rgba(68,222,245,.28)}
+.k8s-studio-header-compact .k8s-studio-brand img{display:block;width:100%;height:100%;object-fit:cover;border-radius:7px}

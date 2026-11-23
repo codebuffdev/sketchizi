@@ -1,26 +1,20 @@
 {
   "name": "Sketchizi",
   "short_name": "Sketchizi",
-  "description": "Draw \u2022 Connect \u2022 Visualize",
+  "description": "Draw • Connect • Visualize",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "theme_color": "#0b1230",
-  "background_color": "#020617",
+  "theme_color": "#0b0f17",
+  "background_color": "#0b0f17",
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/sketchizi-icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/sketchizi-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/sketchizi-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }
