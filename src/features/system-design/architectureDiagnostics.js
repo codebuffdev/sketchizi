@@ -76,6 +76,12 @@ export function deriveArchitectureDiagnostic(nodes = [], simulation = null, edge
     };
   }
 
+  const singlePoint = nodes
+    .map((node) => ({ node, metrics: simulation.nodes[node.id] }))
+    .filter(({ node, metrics }) => metrics?.incomingRps > 0 && Number(node.replicas) <= 1 && node.kind !== "client")
+    .sort((a, b) => b.metrics.incomingRps - a.metrics.incomingRps)[0];
+  if (singlePoint) return { tone: "warning", message: `Single Point of Failure: ${singlePoint.node.label} has ${singlePoint.node.replicas} replica under ${formatRps(singlePoint.metrics.incomingRps)}/s load — add a replica.` };
+
   const cacheNodes = nodes.filter((node) => node.kind === "redis" || node.kind === "cdn" || node.cache);
   const hit = cacheNodes.reduce((sum, node) => sum + (simulation.nodes[node.id]?.shieldedRps || 0), 0);
   const incoming = cacheNodes.reduce((sum, node) => sum + (simulation.nodes[node.id]?.incomingRps || 0), 0);
