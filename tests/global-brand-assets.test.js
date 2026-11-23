@@ -9,14 +9,14 @@ test("document metadata uses the unified Sketchizi brand", () => {
   assert.match(html, /<title>Sketchizi<\/title>/);
   assert.match(html, /href="\/sketchizi-icon\.svg"/);
   assert.match(html, /content="#0b0f17"/);
-  assert.match(html, /sketchizi-logo\.svg/);
+  assert.match(html, /sketchizi-icon\\.svg/);
 });
 
 test("PWA manifest uses the unified dark brand theme and scalable icon", () => {
   const manifest = JSON.parse(read("../public/manifest.webmanifest"));
   assert.equal(manifest.theme_color, "#0b0f17");
   assert.equal(manifest.background_color, "#0b0f17");
-  assert.ok(manifest.icons.some((icon) => icon.src === "/sketchizi-favicon.svg" && icon.type === "image/svg+xml"));
+  assert.ok(manifest.icons.some((icon) => icon.src === "/sketchizi-icon.svg" && icon.type === "image/svg+xml"));
 });
 
 test("main app and both studios render the Sketchizi brand mark", () => {
