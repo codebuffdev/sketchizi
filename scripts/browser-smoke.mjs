@@ -188,9 +188,10 @@ try {
   // C uses the hovered destination node (or a selected node) as the source
   // and connects it to the next card without requiring a visible port click.
   await blank.page.keyboard.press("c");
-  await portPoolTarget.locator(".sd-node.is-connect-armed").waitFor({ state: "visible" }).catch(async () => {
-    await blank.page.locator(".sd-node.is-connect-armed").waitFor({ state: "attached" });
-  });
+  const portPoolTargetId = await portPoolTarget.getAttribute("data-node-id");
+  await blank.page.waitForFunction((id) =>
+    document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-connect-armed"),
+  portPoolTargetId);
   await blank.page.mouse.click(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 4);
   console.log("PASS: C arms the selected node and connects it to the next clicked card.");
