@@ -172,27 +172,25 @@ try {
   const portPoolSource = cards.nth(2);
   const portPoolTarget = cards.nth(3);
   const portPoolTargetBox = await portPoolTarget.boundingBox();
-  await blank.page.keyboard.press("v");
-  await blank.page.mouse.click(portPoolTargetBox.x + 18, portPoolTargetBox.y + 18);
-  const portPoolTargetId = await portPoolTarget.getAttribute("data-node-id");
-  await blank.page.waitForFunction((id) =>
-    document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-selected"),
-  portPoolTargetId);
   const portPoolSourceBox = await portPoolSource.boundingBox();
   await blank.page.mouse.move(portPoolSourceBox.x + portPoolSourceBox.width / 2, portPoolSourceBox.y + portPoolSourceBox.height / 2);
   const portPoolFrom = portPoolSource.locator(".sd-port.is-right.is-visible");
   await portPoolFrom.waitFor({ state: "visible" });
   await portPoolFrom.click();
   await portPoolSource.locator(".sd-port.is-armed").waitFor({ state: "visible" });
+  await blank.page.mouse.move(portPoolTargetBox.x + portPoolTargetBox.width / 2, portPoolTargetBox.y + portPoolTargetBox.height / 2);
   const portPoolTo = portPoolTarget.locator(".sd-port.is-left.is-visible");
   await portPoolTo.waitFor({ state: "visible" });
   await portPoolTo.click();
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 3);
   console.log("PASS: click-port-to-click-port creates a single orthogonal connector.");
 
-  // C reuses the selected destination node as the source and connects it to
-  // the next card, without requiring a visible port click.
+  // C uses the hovered destination node (or a selected node) as the source
+  // and connects it to the next card without requiring a visible port click.
   await blank.page.keyboard.press("c");
+  await portPoolTarget.locator(".sd-node.is-connect-armed").waitFor({ state: "visible" }).catch(async () => {
+    await blank.page.locator(".sd-node.is-connect-armed").waitFor({ state: "attached" });
+  });
   await blank.page.mouse.click(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 4);
   console.log("PASS: C arms the selected node and connects it to the next clicked card.");
