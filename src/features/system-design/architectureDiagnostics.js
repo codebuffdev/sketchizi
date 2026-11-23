@@ -1,6 +1,6 @@
 import { formatRps } from "./trafficSimulator.js";
 
-export function deriveArchitectureDiagnostic(nodes = [], simulation = null) {
+export function deriveArchitectureDiagnostic(nodes = [], simulation = null, edges = []) {
   if (!simulation || !nodes.length) return null;
   const overloaded = nodes
     .map((node) => ({ node, metrics: simulation.nodes[node.id] }))
@@ -21,10 +21,31 @@ export function deriveArchitectureDiagnostic(nodes = [], simulation = null) {
     .filter(({ node, metrics }) => metrics?.incomingRps > 0 && Number(node.replicas) <= 1 && node.kind !== "client")
     .sort((a, b) => b.metrics.incomingRps - a.metrics.incomingRps)[0];
   if (singlePoint) return { tone: "warning", message: `Single Point of Failure: ${singlePoint.node.label} has ${singlePoint.node.replicas} replica under ${formatRps(singlePoint.metrics.incomingRps)}/s load — add a replica.` };
-  const caches = nodes.map((node) => simulation.nodes[node.id]).filter(Boolean);
-  const hit = caches.reduce((sum, item) => sum + item.shieldedRps, 0);
-  const incoming = caches.reduce((sum, item) => sum + item.incomingRps, 0);
+  const cacheNodes = nodes.filter((node) => node.kind === "redis" || node.kind === "cdn" || node.cache);
+  const hit = cacheNodes.reduce((sum, node) => sum + (simulation.nodes[node.id]?.shieldedRps || 0), 0);
+  const incoming = cacheNodes.reduce((sum, node) => sum + (simulation.nodes[node.id]?.incomingRps || 0), 0);
   const shield = incoming ? Math.round((hit / incoming) * 100) : 0;
-  const p95 = Math.max(0, ...nodes.map((node) => simulation.nodes[node.id]?.p95Ms || 0));
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const outgoing = new Map(nodes.map((node) => [node.id, []]));
+  const indegree = new Map(nodes.map((node) => [node.id, 0]));
+  for (const edge of edges) {
+    if (!byId.has(edge.from) || !byId.has(edge.to) || edge.from === edge.to) continue;
+    outgoing.get(edge.from).push(edge.to);
+    indegree.set(edge.to, indegree.get(edge.to) + 1);
+  }
+  const memo = new Map();
+  const visiting = new Set();
+  const pathLatency = (id) => {
+    if (memo.has(id)) return memo.get(id);
+    if (visiting.has(id)) return 0;
+    visiting.add(id);
+    const own = simulation.nodes[id]?.p95Ms || 0;
+    const downstream = Math.max(0, ...(outgoing.get(id) || []).map(pathLatency));
+    visiting.delete(id);
+    memo.set(id, own + downstream);
+    return memo.get(id);
+  };
+  const roots = nodes.filter((node) => indegree.get(node.id) === 0);
+  const p95 = Math.max(0, ...roots.map((node) => pathLatency(node.id)), ...nodes.map((node) => pathLatency(node.id)));
   return { tone: "healthy", message: `System Healthy · End-to-End p95: ${Math.round(p95)}ms · Cache shielding ${shield}% of reads.` };
 }
