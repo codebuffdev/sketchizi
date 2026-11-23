@@ -104,6 +104,8 @@ export function createNodeMeta(kind, overrides = {}) {
     protocol: primitive.defaultProtocol,
     replicas: primitive.replicas,
     capacityPerReplica: primitive.capacityPerReplica,
+    manualRps: 0,
+    baseLatencyMs: primitive.baseLatencyMs,
     cacheHitRate: primitive.cacheHitRate,
     port: primitive.port,
     image: primitive.image,
