@@ -53,7 +53,7 @@ export const PRIMITIVES = Object.freeze([
   p({ kind: "observability", icon: "activity", shortLabel: "Metrics", label: "Metrics & Logging", category: "messaging", accent: "slate", defaultProtocol: "HTTPS", replicas: 1, capacityPerReplica: 20000, port: 9090, image: "prom/prometheus:v2.53.0", subtitle: "Prometheus · Loki", terminal: true, baseLatencyMs: 6 }),
   // External integrations are represented by a local egress proxy in generated stacks.
   p({ kind: "websocket-gateway", icon: "websocket", shortLabel: "WebSocket", label: "WebSocket Gateway", category: "edge", accent: "emerald", defaultProtocol: "HTTPS", replicas: 2, capacityPerReplica: 15000, port: 8080, image: "nginx:1.27-alpine", subtitle: "Stateful · Live push", baseLatencyMs: 9 }),
-  p({ kind: "external-api", icon: "external-api", shortLabel: "External API", label: "External 3rd-Party API", category: "integration", accent: "amber", defaultProtocol: "HTTPS", replicas: 1, capacityPerReplica: 2000, port: 10000, image: "envoyproxy/envoy:v1.31-latest", subtitle: "Stripe · LLM · Rate-limited", baseLatencyMs: 240 }),
+  p({ kind: "external-api", icon: "external-api", shortLabel: "External API", label: "External 3rd-Party API", category: "integration", accent: "amber", defaultProtocol: "HTTPS", replicas: 1, capacityPerReplica: 2000, port: 10000, image: "n/a (external managed API)", subtitle: "Stripe · LLM · Rate-limited", baseLatencyMs: 240 }),
 ]);
 
 // The catalog is role-based; the icon library groups every primitive by its architectural category.
