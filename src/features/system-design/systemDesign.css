@@ -244,6 +244,11 @@
 .sd-export-secondary { border: 1px solid var(--sd-border); color: var(--sd-text); background: var(--sd-card); }
 .sd-export-primary { color: white; background: var(--sd-emerald); }
 .sd-export-primary:hover { background: #047857; }
+@media (max-width: 1100px) {
+  .sd-components-trigger span, .sd-auto-layout-trigger span { display: none; }
+  .sd-components-trigger, .sd-auto-layout-trigger { padding: 0 7px; }
+}
+
 @media (max-width: 760px) {
   .sd-topbar-pill { max-width: calc(100vw - 12px); overflow-x: auto; }
   .sd-export-trigger span, .sd-components-trigger span, .sd-auto-layout-trigger span { display: none; }
