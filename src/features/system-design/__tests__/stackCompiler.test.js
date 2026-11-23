@@ -92,10 +92,11 @@ test("all six new architectural roles compile to concrete Compose and Kubernetes
     { id: "stream", kind: "stream-processor", label: "Stream Processor", replicas: 2, port: 8081, image: "flink:1.19" },
     { id: "olap", kind: "warehouse", label: "Warehouse", replicas: 1, port: 8123, image: "clickhouse/clickhouse-server:24.8" },
     { id: "ws", kind: "websocket-gateway", label: "Live Gateway", replicas: 2, port: 8080, image: "nginx:1.27-alpine" },
-    { id: "vendor", kind: "external-api", label: "Vendor API", replicas: 1, port: 10000, image: "envoyproxy/envoy:v1.31-latest", capacityPerReplica: 2000 },
+    { id: "vendor", kind: "external-api", label: "Vendor API", replicas: 1, port: 443, image: "n/a (external managed API)", capacityPerReplica: 2000 },
   ];
-  const compose = compileDockerCompose(additions, []);
-  const kubernetes = compileKubernetesStack(additions, []);
+  const edges = [{ id: "stream-vendor", from: "stream", to: "vendor" }];
+  const compose = compileDockerCompose(additions, edges);
+  const kubernetes = compileKubernetesStack(additions, edges);
   for (const service of ["postgres-read-replica", "nats", "flink", "clickhouse", "websocket-gateway", "external-api-proxy"]) {
     assert.ok(compose.includes(service), "Compose missing " + service);
     assert.ok(kubernetes.includes(service), "Kubernetes missing " + service);
@@ -103,7 +104,11 @@ test("all six new architectural roles compile to concrete Compose and Kubernetes
   assert.match(compose, /POSTGRES_REPLICATION_MODE: "replica"/);
   assert.match(compose, /NATS_ENABLE_JETSTREAM: "true"/);
   assert.match(compose, /FLINK_PROPERTIES:/);
-  assert.match(compose, /RATE_LIMIT_RPS: "2000"/);
+  assert.match(compose, /rate_limit_rps: 2000/);
+  assert.match(compose, /x-external-dependencies:/);
+  assert.match(compose, /THIRD_PARTY_API_URL: "https:\/\/api.example.com"/);
+  assert.match(kubernetes, /kind: ExternalName/);
+  assert.match(kubernetes, /externalName: api.example.com/);
   assert.match(kubernetes, /kind: Ingress/);
   assert.match(kubernetes, /proxy-read-timeout: "3600"/);
   assert.match(kubernetes, /kind: StatefulSet/);
