@@ -90,3 +90,19 @@ test("command registry exposes the studio and every feature file exists", () => 
   const files = readdirSync(dir);
   for (const f of ["primitives.js", "trafficSimulator.js", "orthogonalRouter.js", "useSystemDesignWorkspace.js", "TopWorkspaceBar.jsx", "CollapsibleQuickDock.jsx", "SystemDesignNodeOverlay.jsx", "ContextualInspectorDrawer.jsx"]) assert.ok(files.includes(f), f);
 });
+
+
+test("connector UX has pointer-captured ports, whole-card snapping, click-to-connect, and minimum card sizing", () => {
+  const overlay = read(path.join(dir, "SystemDesignNodeOverlay.jsx"));
+  const css = read(path.join(dir, "systemDesign.css"));
+  assert.match(overlay, /event\.currentTarget\.setPointerCapture\(event\.pointerId\)/);
+  assert.match(overlay, /event\.stopPropagation\(\)/);
+  assert.match(overlay, /nodeAt\(graph\.nodes, point, drag\.fromId, 20\)/);
+  assert.match(overlay, /host\.addEventListener\("click", onClick, true\)/);
+  assert.match(overlay, /event\.key\.toLowerCase\(\) !== "c"/);
+  assert.match(overlay, /sd-edge-preview/);
+  assert.match(css, /\.sd-port \{ position: absolute; width: 24px; height: 24px/);
+  assert.match(css, /\.sd-port::before \{ content: ""; position: absolute; inset: 7px/);
+  assert.match(css, /\.sd-node \{ min-width: 204px; min-height: 88px/);
+  assert.match(css, /\.sd-node-foot \.sd-status \{ flex-shrink: 0; white-space: nowrap; \}/);
+});
