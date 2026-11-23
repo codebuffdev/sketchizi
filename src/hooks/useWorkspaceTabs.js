@@ -114,7 +114,8 @@ export function useWorkspaceTabs({
       cloudSaveState: { ...live.cloudSaveState },
       cloudDocumentName: live.cloudDocumentName,
       // Per-tool style memory travels with the tab so it survives tab switches and reloads.
-      toolStylePresets: toolStyles.exportCanvas(activeCanvasIdRef.current) || undefined,\n      systemDesign: systemDesignRef?.current?.getTabState?.(activeCanvasIdRef.current),
+      toolStylePresets: toolStyles.exportCanvas(activeCanvasIdRef.current) || undefined,
+      systemDesign: systemDesignRef?.current?.getTabState?.(activeCanvasIdRef.current),
     };
   }, [apiRef, currentFileRef, getCurrentFileSceneSignature, toolStyles, systemDesignRef]);
 
