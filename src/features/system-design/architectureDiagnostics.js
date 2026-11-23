@@ -47,7 +47,6 @@ export function deriveArchitectureDiagnostic(nodes = [], simulation = null, edge
   const hit = cacheNodes.reduce((sum, node) => sum + (simulation.nodes[node.id]?.shieldedRps || 0), 0);
   const incoming = cacheNodes.reduce((sum, node) => sum + (simulation.nodes[node.id]?.incomingRps || 0), 0);
   const shield = incoming ? Math.round((hit / incoming) * 100) : 0;
-  const byId = new Map(nodes.map((node) => [node.id, node]));
   const outgoing = new Map(nodes.map((node) => [node.id, []]));
   const indegree = new Map(nodes.map((node) => [node.id, 0]));
   for (const edge of edges) {
