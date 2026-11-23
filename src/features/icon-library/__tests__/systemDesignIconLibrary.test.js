@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
 
 test("Icon Library exposes all 16 System Design primitives in tabs and category", () => {
