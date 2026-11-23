@@ -107,7 +107,7 @@ test("all six new architectural roles compile to concrete Compose and Kubernetes
   assert.match(compose, /rate_limit_rps: 2000/);
   assert.match(compose, /x-external-dependencies:/);
   assert.match(compose, /THIRD_PARTY_API_URL: "https:\/\/api.example.com"/);
-  assert.match(kubernetes, /kind: ExternalName/);
+  assert.match(kubernetes, /type: ExternalName/);
   assert.match(kubernetes, /externalName: api.example.com/);
   assert.match(kubernetes, /kind: Ingress/);
   assert.match(kubernetes, /proxy-read-timeout: "3600"/);
