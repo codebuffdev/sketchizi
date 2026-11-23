@@ -11,6 +11,8 @@ test("Icon Library exposes all 16 System Design primitives in tabs and category"
   const panel = read("IconLibraryPanel.jsx");
   const primitives = read("features/system-design/primitives.js");
   assert.match(panel, /System Design \(16\)/);
+  assert.match(panel, /onClick=\\{\\(\\) => chooseSource\\("system-design"\\)\\}/);
+  assert.match(panel, /initialSource = "all"/);
   assert.match(panel, /source === "system-design" \? <PrimitiveIcon/);
   assert.match(panel, /searchAliases/);
   assert.match(primitives, /export const PRIMITIVES = Object\.freeze\(\[/);
