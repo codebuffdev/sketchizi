@@ -2,6 +2,8 @@ import { formatRps } from "./trafficSimulator.js";
 
 export function deriveArchitectureDiagnostic(nodes = [], simulation = null, edges = []) {
   if (!simulation || !nodes.length) return null;
+  const failed = nodes.find((node) => simulation.nodes[node.id]?.status === "down");
+  if (failed) return { tone: "danger", message: `Single Point of Failure: ${failed.label} is down — restore it or add healthy replicas.` };
   const overloaded = nodes
     .map((node) => ({ node, metrics: simulation.nodes[node.id] }))
     .filter(({ metrics }) => metrics && (metrics.status === "overloaded" || metrics.status === "down"))
