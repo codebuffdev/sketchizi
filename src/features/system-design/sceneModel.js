@@ -51,7 +51,7 @@ function sanitizeMeta(meta) {
 // A *solid* background is what makes Excalidraw hit-test the whole interior (a transparent fill only hits the outline),
 // so click-and-drag anywhere on the card works. Opacity 0 keeps it invisible. Hit-testing does not look at opacity.
 const NODE_HIT_BOX = Object.freeze({ strokeColor: "#94a3b8", backgroundColor: "#ffffff", fillStyle: "solid", opacity: 0, angle: 0 });
-const EDGE_HIT_BOX = Object.freeze({ opacity: 0 });
+const EDGE_HIT_BOX = Object.freeze({ opacity: 0, strokeColor: "transparent", endArrowhead: null, startArrowhead: null });
 
 /** Excalidraw element skeleton for a node. Visuals are drawn by the overlay; the rectangle is the hit-target + anchor. */
 export function createNodeSkeleton(kind, position, overrides = {}, id) {
@@ -121,7 +121,14 @@ export function readEdge(element, nodes = []) {
 export function readGraph(elements) {
   const nodes = (elements || []).map(readNode).filter(Boolean);
   const ids = new Set(nodes.map((node) => node.id));
-  const edges = (elements || []).map((element) => readEdge(element, nodes)).filter((edge) => edge && ids.has(edge.from) && ids.has(edge.to));
+  const seenPairs = new Set();
+  const edges = (elements || []).map((element) => readEdge(element, nodes)).filter((edge) => {
+    if (!edge || !ids.has(edge.from) || !ids.has(edge.to)) return false;
+    const pair = JSON.stringify([edge.from, edge.to]);
+    if (seenPairs.has(pair)) return false;
+    seenPairs.add(pair);
+    return true;
+  });
   return { nodes, edges };
 }
 
@@ -163,7 +170,7 @@ export function createEdgeSkeleton(fromNode, toNode, options = {}, id) {
     ...(id ? { id } : {}),
     type: "arrow",
     ...patch,
-    strokeColor: "#94a3b8",
+    strokeColor: "transparent",
     strokeWidth: 1,
     roughness: 0,
     ...EDGE_HIT_BOX,
@@ -196,6 +203,7 @@ export function collectSceneRepairs(elements) {
   const repairs = new Map();
   const live = (elements || []).filter((element) => element && !element.isDeleted);
   const nodeIds = new Set(live.filter(isSystemDesignNode).map((element) => element.id));
+  const seenPairs = new Set();
   for (const element of live) {
     if (isSystemDesignNode(element)) {
       const patch = {};
@@ -205,8 +213,22 @@ export function collectSceneRepairs(elements) {
       if (Object.keys(patch).length) repairs.set(element.id, patch);
     } else if (isSystemDesignEdge(element)) {
       const data = element.customData[CUSTOM_KEY];
-      if (!nodeIds.has(data.from) || !nodeIds.has(data.to)) repairs.set(element.id, { isDeleted: true });
-      else if (element.opacity !== 0) repairs.set(element.id, { opacity: 0 });
+      if (!nodeIds.has(data.from) || !nodeIds.has(data.to)) {
+        repairs.set(element.id, { isDeleted: true });
+        continue;
+      }
+      const pair = JSON.stringify([data.from, data.to]);
+      if (seenPairs.has(pair)) {
+        repairs.set(element.id, { isDeleted: true });
+        continue;
+      }
+      seenPairs.add(pair);
+      const patch = {};
+      if (element.opacity !== 0) patch.opacity = 0;
+      if (element.strokeColor !== "transparent") patch.strokeColor = "transparent";
+      if (element.startArrowhead != null) patch.startArrowhead = null;
+      if (element.endArrowhead != null) patch.endArrowhead = null;
+      if (Object.keys(patch).length) repairs.set(element.id, patch);
     }
   }
   return repairs;
