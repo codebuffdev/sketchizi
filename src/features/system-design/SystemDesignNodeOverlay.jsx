@@ -256,6 +256,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
                     <>
                       <span className="sd-pill sd-mono" title="Incoming requests per second">RPS {formatRps(telemetry.incomingRps)}</span>
                       <span className="sd-pill sd-mono" title="p95 latency">{telemetry.p95Ms == null ? "p95 —" : `p95 ${telemetry.p95Ms}ms`}</span>
+                      <span className="sd-pill sd-mono" title="Utilization">{"UTIL " + (Number.isFinite(telemetry.utilization) ? Math.round(telemetry.utilization * 100) : "∞") + "%"}</span>
                       <span className={`sd-status sd-mono s-${telemetry.status}`}>{STATUS_LABEL[telemetry.status]}</span>
                     </>
                   ) : (
