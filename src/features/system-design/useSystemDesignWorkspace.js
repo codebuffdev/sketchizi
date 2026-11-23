@@ -11,6 +11,7 @@ import { isRectInView, planPlacement, scrollToReveal } from "./placement.js";
 import { computeAutoLayout } from "./autoLayout.js";
 import { LOAD_PRESETS } from "./trafficSimulator.js";
 import { BLUEPRINT_GRID, blueprintExtent, getBlueprint } from "./blueprints.js";
+import { createSystemDesignWorkspaceByTabId, normalizeSystemDesignTabState, readSystemDesignTabState, updateSystemDesignWorkspaceTab } from "./systemDesignTabState.js";
 
 const newId = (prefix) => `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 
@@ -23,19 +24,61 @@ function isTypingTarget(target) {
  * All System Design Studio state lives here so `App.jsx` only mounts a thin boundary.
  * High-frequency scene data goes through `store` (external store), not React state in App.
  */
-export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize = 20, canEdit = true }) {
-  const storeRef = useRef(null);
-  if (!storeRef.current) storeRef.current = createSceneStore();
-  const store = storeRef.current;
+export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize = 20, canEdit = true, canvasTabsRef, persistSystemDesignState }) {
+  // Each document owns an independent scene subscription and workspace state.
+  const storesRef = useRef(new Map());
+  if (!storesRef.current.has(activeCanvasId)) storesRef.current.set(activeCanvasId, createSceneStore());
+  const store = storesRef.current.get(activeCanvasId);
 
-  const [enabled, setEnabled] = useState(false);
-  const [mode, setMode] = useState("canvas");
-  const [simulate, setSimulate] = useState(false);
-  const [loadRps, setLoadRps] = useState(LOAD_PRESETS[1]);
-  const enabledRef = useRef(false);
+  const [workspaceByTabId, setWorkspaceByTabId] = useState(() => createSystemDesignWorkspaceByTabId(canvasTabsRef?.current || [], activeCanvasId));
+  const workspaceByTabIdRef = useRef(workspaceByTabId);
+  workspaceByTabIdRef.current = workspaceByTabId;
+  const activeWorkspace = normalizeSystemDesignTabState(
+    workspaceByTabId[activeCanvasId] || readSystemDesignTabState(canvasTabsRef?.current || [], activeCanvasId),
+  );
+  const enabled = activeWorkspace.active;
+  const mode = activeWorkspace.studioMode;
+  const simulate = activeWorkspace.simRunning;
+  const loadRps = activeWorkspace.baseRps;
+  const inspectorOpen = activeWorkspace.inspectorOpen;
+  const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
-  // A freshly opened canvas/tab always starts quiet: simulation is something the person turns on, never inherited.
-  useEffect(() => { setSimulate(false); }, [activeCanvasId]);
+
+  const updateActiveTabState = useCallback((patch) => {
+    if (!activeCanvasId) return normalizeSystemDesignTabState({});
+    const nextMap = updateSystemDesignWorkspaceTab(workspaceByTabIdRef.current, activeCanvasId, patch);
+    workspaceByTabIdRef.current = nextMap;
+    setWorkspaceByTabId(nextMap);
+    const nextState = nextMap[activeCanvasId];
+    persistSystemDesignState?.(activeCanvasId, nextState);
+    return nextState;
+  }, [activeCanvasId, persistSystemDesignState]);
+
+  const setEnabled = useCallback((value) => {
+    updateActiveTabState((current) => ({ active: typeof value === "function" ? value(current.active) : value }));
+  }, [updateActiveTabState]);
+  const setMode = useCallback((value) => {
+    updateActiveTabState((current) => ({ studioMode: typeof value === "function" ? value(current.studioMode) : value }));
+  }, [updateActiveTabState]);
+  const setSimulate = useCallback((value) => {
+    updateActiveTabState((current) => ({ simRunning: typeof value === "function" ? value(current.simRunning) : value }));
+  }, [updateActiveTabState]);
+  const setLoadRps = useCallback((value) => {
+    updateActiveTabState((current) => ({ baseRps: typeof value === "function" ? value(current.baseRps) : value }));
+  }, [updateActiveTabState]);
+  const setInspectorOpen = useCallback((value) => {
+    updateActiveTabState((current) => ({ inspectorOpen: typeof value === "function" ? value(current.inspectorOpen) : value }));
+  }, [updateActiveTabState]);
+
+  const getTabState = useCallback((tabId = activeCanvasId) => (
+    normalizeSystemDesignTabState(workspaceByTabIdRef.current[tabId] || readSystemDesignTabState(canvasTabsRef?.current || [], tabId))
+  ), [activeCanvasId, canvasTabsRef]);
+  const restoreTabState = useCallback((tabId, value) => {
+    if (!tabId) return;
+    const nextMap = { ...workspaceByTabIdRef.current, [tabId]: normalizeSystemDesignTabState(value) };
+    workspaceByTabIdRef.current = nextMap;
+    setWorkspaceByTabId(nextMap);
+  }, []);
   const reroutingRef = useRef(false);
   const lastRectsRef = useRef(new Map());
   const pushRef = useRef(null);
@@ -346,14 +389,15 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [enabled, addNode]);
 
-  const open = useCallback(() => setEnabled(true), []);
-  const close = useCallback(() => { setEnabled(false); setSimulate(false); setMode("canvas"); }, []);
+  const open = useCallback(() => setEnabled(true), [setEnabled]);
+  const close = useCallback(() => updateActiveTabState({ active: false, simRunning: false, studioMode: "canvas", inspectorOpen: false }), [updateActiveTabState]);
   const toggle = useCallback(() => (enabledRef.current ? close() : open()), [close, open]);
 
   return useMemo(() => ({
     store, enabled, open, close, toggle,
-    mode, setMode, simulate, setSimulate, loadRps, setLoadRps,
+    mode, setMode, simulate, setSimulate, loadRps, setLoadRps, inspectorOpen, setInspectorOpen,
+    getTabState, restoreTabState,
     gridEnabled, setGridEnabled, gridSize, canEdit,
     actions: { addNode, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint },
-  }), [store, enabled, open, close, toggle, mode, simulate, loadRps, gridEnabled, setGridEnabled, gridSize, canEdit, addNode, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint]);
+  }), [store, enabled, open, close, toggle, mode, setMode, simulate, setSimulate, loadRps, setLoadRps, inspectorOpen, setInspectorOpen, getTabState, restoreTabState, gridEnabled, setGridEnabled, gridSize, canEdit, addNode, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint]);
 }
