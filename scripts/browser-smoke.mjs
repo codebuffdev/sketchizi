@@ -129,7 +129,9 @@ try {
   }
   const dragSource = cards.nth(0);
   const dragTarget = cards.nth(1);
-  await dragSource.hover();
+  const sourceBox = await dragSource.boundingBox();
+  if (!sourceBox) throw new Error("Connector source card has no hit area.");
+  await blank.page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
   const dragPort = dragSource.locator(".sd-port.is-right.is-visible");
   await dragPort.waitFor({ state: "visible" });
   const [portBox, targetBox] = await Promise.all([dragPort.boundingBox(), dragTarget.boundingBox()]);
@@ -137,29 +139,36 @@ try {
   await blank.page.mouse.move(portBox.x + portBox.width / 2, portBox.y + portBox.height / 2);
   await blank.page.mouse.down();
   await blank.page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, { steps: 12 });
+  await blank.page.locator(".sd-edge-preview.is-snapped").waitFor({ state: "attached" });
+  await dragTarget.evaluate((element) => {
+    if (!element.classList.contains("is-drop-target")) throw new Error("Target card did not show magnetic focus feedback.");
+  });
   await blank.page.mouse.up();
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 1);
-  const dragAfter = await Promise.all([dragSource.boundingBox(), dragTarget.boundingBox()]);
-  if (Math.abs(dragAfter[0].width - targetBox.width) > 0.5 ||
-      Math.abs(dragAfter[0].height - targetBox.height) > 0.5 ||
-      Math.abs(dragAfter[1].width - targetBox.width) > 0.5 ||
-      Math.abs(dragAfter[1].height - targetBox.height) > 0.5) {
+  const [sourceAfter, targetAfter] = await Promise.all([dragSource.boundingBox(), dragTarget.boundingBox()]);
+  if (Math.abs(sourceAfter.width - sourceBox.width) > 0.5 ||
+      Math.abs(sourceAfter.height - sourceBox.height) > 0.5 ||
+      Math.abs(targetAfter.width - targetBox.width) > 0.5 ||
+      Math.abs(targetAfter.height - targetBox.height) > 0.5) {
     throw new Error("Dragging a connector resized a node card.");
   }
 
   const clickSource = cards.nth(1);
   const clickTarget = cards.nth(2);
-  await clickSource.hover();
+  const clickSourceBox = await clickSource.boundingBox();
+  await blank.page.mouse.move(clickSourceBox.x + clickSourceBox.width / 2, clickSourceBox.y + clickSourceBox.height / 2);
   const clickPort = clickSource.locator(".sd-port.is-right.is-visible");
+  await clickPort.waitFor({ state: "visible" });
   await clickPort.click();
   await clickSource.locator(".sd-port.is-armed").waitFor({ state: "visible" });
-  await clickTarget.click();
+  const clickTargetBox = await clickTarget.boundingBox();
+  await blank.page.mouse.click(clickTargetBox.x + clickTargetBox.width / 2, clickTargetBox.y + clickTargetBox.height / 2);
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 2);
   console.log("PASS: port drag-to-card and click-port-to-card create single orthogonal connectors without resizing nodes.");
 
-  await clickTarget.click();
+  await blank.page.mouse.click(clickTargetBox.x + clickTargetBox.width / 2, clickTargetBox.y + clickTargetBox.height / 2);
   await blank.page.keyboard.press("c");
-  await dragSource.click();
+  await blank.page.mouse.click(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 3);
   console.log("PASS: C arms the selected node and connects it to the next clicked card.");
 
