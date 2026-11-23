@@ -177,6 +177,12 @@ export default function IconLibraryPanel({
       dns: ["route53", "route 53"],
       client: ["web", "mobile", "browser"],
       observability: ["metrics", "logging", "prometheus", "logs"],
+      "read-replica": ["read replica", "postgres replica", "read scaling"],
+      pubsub: ["pub/sub", "event bus", "fan out", "topics"],
+      "stream-processor": ["stream processing", "flink", "kafka streams", "real time aggregation"],
+      warehouse: ["olap", "clickhouse", "bigquery", "analytics database"],
+      "websocket-gateway": ["websocket", "web sockets", "live push", "realtime gateway"],
+      "external-api": ["third party api", "external dependency", "stripe", "llm", "rate limit"],
     }[primitive.kind] || []),
     // The SVG preview is rendered by PrimitiveIcon; this data URI keeps the
     // shared icon-library search/favorites/recent pipeline source-agnostic.
