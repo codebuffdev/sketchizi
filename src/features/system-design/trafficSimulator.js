@@ -11,7 +11,7 @@ const round = (value, digits = 1) => {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
 };
-const normalizedLabel = (node) => String(node?.label || node?.kind || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
+const normalizedLabel = (node) => String(node?.label || node?.id || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
 
 export function nodeCapacity(node) {
   const primitive = getPrimitive(node.kind);
