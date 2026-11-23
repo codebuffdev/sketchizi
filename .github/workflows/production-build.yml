@@ -36,6 +36,9 @@ jobs:
       - name: Verify build prerequisites
         run: npm run check:build-prerequisites
 
+      - name: Run System Design Studio unit tests
+        run: npm run test:system-design
+
       - name: Run automated regression suite
         id: regression
         continue-on-error: true
