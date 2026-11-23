@@ -13,7 +13,7 @@ import "./systemDesign.css";
  * App.jsx still passes saveStatus/canvasTabs/onSelectTab/onCreateTab from the first iteration. They are intentionally
  * ignored: Sketchizi's own header already renders documents and save status, so the studio no longer duplicates them.
  */
-export default function SystemDesignStudio({ workspace, isDarkTheme }) {
+export default function SystemDesignStudio({ workspace, isDarkTheme, onOpenIconLibrary }) {
   const { store, enabled, mode, simulate, loadRps, actions, canEdit } = workspace;
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const rootRef = useRef(null);
@@ -96,7 +96,7 @@ export default function SystemDesignStudio({ workspace, isDarkTheme }) {
         inspectorOpen={inspectorOpen} onToggleInspector={() => setInspectorOpen((value) => !value)}
         nodes={graph.nodes} edges={graph.edges} diagnostic={simulate ? diagnostic : null} />
       {toast && <div className="sd-toast" role="status" aria-live="polite">{toast}</div>}
-      <CollapsibleQuickDock onAdd={actions.addNode} onAutoLayout={actions.autoLayout}
+      <CollapsibleQuickDock onAdd={actions.addNode} onOpenIconLibrary={onOpenIconLibrary} onAutoLayout={actions.autoLayout}
         snapEnabled={workspace.gridEnabled} onSnapChange={workspace.setGridEnabled} canEdit={canEdit} />
       <ContextualInspectorDrawer selection={selection} mode={mode} simulation={simulation} simulate={simulate} actions={actions} canEdit={canEdit}
         open={inspectorOpen} tab={inspectorTab} onTabChange={setInspectorTab}
