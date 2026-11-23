@@ -84,10 +84,13 @@ test("UI contract: Simulate is opt-in, drawer is 380/640 with tabs + copy, measu
   const dir = new URL("..", import.meta.url);
   const read = (f) => readFileSync(new URL(f, dir), "utf8");
   const hook = read("useSystemDesignWorkspace.js");
-  assert.match(hook, /useState\(false\);\n  const \[loadRps/, "simulate starts OFF");
-  assert.match(hook, /setSimulate\(false\); \}, \[activeCanvasId\]/);
+  const tabState = read("systemDesignTabState.js");
+  assert.match(tabState, /simRunning: false/, "new tabs start with simulation OFF");
+  assert.match(hook, /workspaceByTabId/);
+  assert.match(hook, /activeWorkspace\.simRunning/);
+  assert.match(hook, /restoreTabState/);
   const top = read("TopWorkspaceBar.jsx");
-  for (const text of ["Blueprints", "Stop Simulation", "Simulate", "BLUEPRINTS"]) assert.ok(top.includes(text), text);
+  for (const text of ["Blueprints", "Stop simulation", "Simulate", "BLUEPRINTS"]) assert.ok(top.includes(text), text);
   assert.ok(top.indexOf("Blueprints") < top.indexOf("Studio mode"), "Blueprints sits left of the mode switch");
   assert.match(read("SystemDesignStudio.jsx"), /Add a Client or Gateway node \(or load a Blueprint\) to simulate traffic\./);
   const drawer = read("ContextualInspectorDrawer.jsx");
