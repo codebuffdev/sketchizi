@@ -185,3 +185,17 @@
 .app:has(.auth-dialog-backdrop) .sketchizi-tool-sidebar {
   pointer-events: none !important;
 }
+
+
+/* On phone widths the account control is fixed to the viewport corner. Keep its
+   menu fixed to the same viewport edge as well: transformed header ancestors
+   must not shift the dropdown beyond the narrow screen. */
+@media (max-width: 760px) {
+  .auth-account-menu {
+    position: fixed;
+    top: calc(54px + var(--safe-top, 0px));
+    right: calc(10px + var(--safe-right, 0px));
+    left: auto;
+    width: min(280px, calc(100vw - 32px));
+  }
+}
