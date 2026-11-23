@@ -10,6 +10,7 @@ import { choosePorts } from "./orthogonalRouter.js";
 import { isRectInView, planPlacement, scrollToReveal } from "./placement.js";
 import { computeAutoLayout } from "./autoLayout.js";
 import { LOAD_PRESETS } from "./trafficSimulator.js";
+import { BLUEPRINT_GRID, blueprintExtent, getBlueprint } from "./blueprints.js";
 
 const newId = (prefix) => `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 
@@ -33,6 +34,8 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
   const [loadRps, setLoadRps] = useState(LOAD_PRESETS[1]);
   const enabledRef = useRef(false);
   enabledRef.current = enabled;
+  // A freshly opened canvas/tab always starts quiet: simulation is something the person turns on, never inherited.
+  useEffect(() => { setSimulate(false); }, [activeCanvasId]);
   const reroutingRef = useRef(false);
   const lastRectsRef = useRef(new Map());
   const pushRef = useRef(null);
@@ -269,6 +272,57 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     api.scrollToContent?.([...moved.values()], { fitToContent: true, animate: true });
   }, [apiRef, canEdit, commit, gridEnabled, gridSize]);
 
+  /**
+   * Drop a starter architecture into the scene as ONE undo step. On an empty canvas it is centred in view; on a canvas
+   * that already has nodes it is placed below them, so loading a blueprint never overwrites or overlaps existing work.
+   */
+  const loadBlueprint = useCallback((id) => {
+    const api = apiRef.current;
+    const blueprint = getBlueprint(id);
+    if (!api || !canEdit || !blueprint) return false;
+    setEnabled(true);
+    const existing = api.getSceneElements().map(readNode).filter(Boolean);
+    const extent = blueprintExtent(blueprint, NODE_SIZE);
+    const center = viewportCenterScene();
+    const snap = (value) => Math.round(value / 20) * 20;
+    const origin = existing.length
+      ? { x: snap(Math.min(...existing.map((n) => n.x))), y: snap(Math.max(...existing.map((n) => n.y + n.height)) + 140) }
+      : { x: snap(center.x - extent.width / 2), y: snap(center.y - extent.height / 2) };
+
+    const ids = new Map(blueprint.nodes.map((n) => [n.key, newId("sd")]));
+    const nodeSkeletons = blueprint.nodes.map((n) => createNodeSkeleton(
+      n.kind,
+      { x: origin.x + n.at[0] * BLUEPRINT_GRID.columnWidth, y: origin.y + n.at[1] * BLUEPRINT_GRID.rowHeight },
+      n.overrides || {},
+      ids.get(n.key),
+    ));
+    const rects = new Map(nodeSkeletons.map((sk) => [sk.id, {
+      id: sk.id, x: sk.x, y: sk.y, width: sk.width, height: sk.height, protocol: sk.customData[CUSTOM_KEY].meta.protocol,
+    }]));
+    const edgeSkeletons = blueprint.edges.map((e) => createEdgeSkeleton(
+      rects.get(ids.get(e.from)), rects.get(ids.get(e.to)), e.protocol ? { protocol: e.protocol } : {}, newId("sdedge"),
+    ));
+    const created = restoreElements(convertToExcalidrawElements([...nodeSkeletons, ...edgeSkeletons]), null);
+    commit([...api.getSceneElementsIncludingDeleted(), ...created]);
+    api.updateScene({ appState: { selectedElementIds: {} }, captureUpdate: CaptureUpdateAction.NEVER });
+    api.scrollToContent?.(created.filter(isSystemDesignNode), { fitToContent: true, animate: true });
+    return true;
+  }, [apiRef, canEdit, commit, viewportCenterScene]);
+
+  // While the studio is open, anything drawn with Excalidraw's own arrow tool should also be a 90-degree elbow rather
+  // than a raw diagonal. The previous arrow type is restored on close so the plain canvas is left exactly as it was.
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!enabled || !api?.updateScene) return undefined;
+    const previous = api.getAppState?.().currentItemArrowType;
+    try { api.updateScene({ appState: { currentItemArrowType: "elbow" }, captureUpdate: CaptureUpdateAction.NEVER }); } catch { /* older builds: connectors are still drawn orthogonally by the overlay */ }
+    return () => {
+      const current = apiRef.current;
+      if (!current?.updateScene || !previous) return;
+      try { current.updateScene({ appState: { currentItemArrowType: previous }, captureUpdate: CaptureUpdateAction.NEVER }); } catch { /* ignore */ }
+    };
+  }, [enabled, apiRef, apiReady, activeCanvasId]);
+
   /* ---------- 1-9 shortcuts + delete (only while the studio is open) ---------- */
   useEffect(() => {
     if (!enabled) return undefined;
@@ -293,6 +347,6 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     store, enabled, open, close, toggle,
     mode, setMode, simulate, setSimulate, loadRps, setLoadRps,
     gridEnabled, setGridEnabled, gridSize, canEdit,
-    actions: { addNode, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout },
-  }), [store, enabled, open, close, toggle, mode, simulate, loadRps, gridEnabled, setGridEnabled, gridSize, canEdit, addNode, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout]);
+    actions: { addNode, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint },
+  }), [store, enabled, open, close, toggle, mode, simulate, loadRps, gridEnabled, setGridEnabled, gridSize, canEdit, addNode, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint]);
 }

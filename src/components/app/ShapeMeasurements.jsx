@@ -6,8 +6,13 @@ import "./ShapeMeasurements.css";
 const CM_PER_CSS_PX = 2.54 / 96;
 const formatCm = (value) => `${(Math.abs(value) * CM_PER_CSS_PX).toFixed(2)} cm`;
 
+// System Design nodes and connectors are architecture objects, not drawn shapes: a "5.29 cm x 2.22 cm" ruler on them is
+// noise. They carry this marker in customData (see features/system-design/sceneModel.js CUSTOM_KEY).
+const isSystemDesignElement = (element) => Boolean(element?.customData?.sketchiziSystemDesign);
+
 // Measurements use scene coordinates; zoom and scroll only position the labels.
 export function getSelectedShapeBounds(elements) {
+  if ((elements || []).some((element) => element && !element.isDeleted && isSystemDesignElement(element))) return null;
   const shapes = (elements || []).filter((element) =>
     element && !element.isDeleted && !element.deleted &&
     !["text", "image", "freedraw", "arrow", "line"].includes(element.type) &&

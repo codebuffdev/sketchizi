@@ -64,6 +64,15 @@
 .sd-load-menu button:hover { background: var(--sd-soft); }
 .sd-load-menu button.is-active { background: rgba(5,150,105,.10); color: var(--sd-emerald); font-weight: 700; }
 
+.sd-blueprints { position: relative; display: flex; }
+.sd-blueprints-btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px 0 10px; border-radius: 9px; font-size: 12px; font-weight: 600; color: var(--sd-text-2); white-space: nowrap; }
+.sd-blueprints-btn:hover, .sd-blueprints-btn.is-active { background: var(--sd-soft); color: var(--sd-text); }
+.sd-blueprint-menu { top: calc(100% + 10px); left: 0; width: 300px; display: flex; flex-direction: column; gap: 2px; }
+.sd-blueprint-menu button { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 9px; text-align: left; }
+.sd-blueprint-menu button strong { font-size: 12px; font-weight: 600; } .sd-blueprint-menu button small { font-size: 11px; line-height: 1.35; color: var(--sd-text-2); }
+.sd-blueprint-menu button:hover:not(:disabled) { background: var(--sd-soft); }
+.sd-toast { position: absolute; z-index: 4; top: var(--sd-ctx-top); left: 50%; transform: translateX(-50%); max-width: calc(100% - 32px); padding: 8px 14px; border-radius: 12px; font-size: 12px; font-weight: 500; color: var(--sd-text); background: var(--sd-card); border: 1px solid rgba(217,119,6,.55); box-shadow: var(--sd-shadow); pointer-events: none; animation: sd-rise .16s ease-out; }
+
 /* Quick dock: compact, bottom-centre, always visible. Six primitives + "+ More" + layout/snap. */
 .sd-dock { position: absolute; z-index: 3; left: 50%; bottom: var(--sd-dock-bottom); transform: translateX(-50%); display: flex; align-items: center; gap: 2px; box-sizing: border-box; height: var(--sd-dock-h); padding: 0 8px; max-width: calc(100% - 24px); }
 .sd-dock-quick, .sd-dock-tools { display: flex; align-items: center; gap: 2px; }
@@ -85,20 +94,34 @@
 .sd-edge.is-dashed path { stroke-dasharray: 6 5; }
 .sd-edge.is-ok path { stroke: var(--sd-emerald); } .sd-edge.is-warm path { stroke: var(--sd-amber); } .sd-edge.is-hot path { stroke: var(--sd-red); }
 .sd-edge.is-selected path { stroke-width: 2.6; stroke: var(--sd-emerald); }
-.sd-packet { fill: var(--sd-emerald); } .is-warm .sd-packet { fill: var(--sd-amber); } .is-hot .sd-packet { fill: var(--sd-red); }
+.sd-edge.is-ok path, .sd-edge.is-warm path, .sd-edge.is-hot path { stroke-width: 2.4; }
+.sd-arrow-head { stroke: #94a3b8; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.sd-packet { fill: var(--sd-emerald); stroke: var(--sd-card); stroke-width: 1.2; } .is-warm .sd-packet { fill: var(--sd-amber); } .is-hot .sd-packet { fill: var(--sd-red); }
 .sd-edge-preview { stroke: var(--sd-emerald); stroke-width: 1.8; stroke-dasharray: 4 4; }
+.sd-badge b { font-weight: 700; color: var(--sd-text); }
+.sd-badge.is-live { font-size: 11px; padding: 2px 9px; border-color: rgba(5,150,105,.55); background: var(--sd-card); color: var(--sd-text); box-shadow: 0 1px 3px rgba(15,23,42,.14); }
+.sd-badge.is-ok b { color: var(--sd-emerald); } .sd-badge.is-warm { border-color: rgba(217,119,6,.65); } .sd-badge.is-warm b { color: var(--sd-amber); }
+.sd-badge.is-hot { border-color: rgba(220,38,38,.7); } .sd-badge.is-hot b { color: var(--sd-red); }
+.sd-badge.is-idle { border-color: var(--sd-border); color: var(--sd-text-2); box-shadow: none; } .sd-badge.is-idle b { color: var(--sd-text-2); font-weight: 500; }
 .sd-badge { position: absolute; transform: translate(-50%, -50%); padding: 1px 7px; border-radius: 999px; font-size: 10px; color: var(--sd-text-2); background: var(--sd-card); border: 1px solid var(--sd-border); white-space: nowrap; box-shadow: 0 1px 2px rgba(15,23,42,.08); }
 
 /* Node cards. The card is the ONLY thing drawn for a node: the native Excalidraw rectangle underneath is an invisible
    hit-target, and Excalidraw's own selection box (dashed outline + resize handles) is the ONE selection indicator.
    So a selected card draws no outline or ring of its own, only a faint tint. */
-.sd-node { position: absolute; box-sizing: border-box; padding: 10px 12px; border-radius: 14px; background: var(--sd-card); border: 1px solid var(--sd-border); box-shadow: 0 4px 14px rgba(15,23,42,.09), 0 1px 2px rgba(15,23,42,.08); pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; overflow: visible; }
+.sd-node { position: absolute; box-sizing: border-box; padding: 10px 12px 14px; border-radius: 14px; background: var(--sd-card); border: 1px solid var(--sd-border); box-shadow: 0 4px 14px rgba(15,23,42,.09), 0 1px 2px rgba(15,23,42,.08); pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; overflow: visible; }
 .sd-node.is-selected { box-shadow: inset 0 0 0 999px rgba(5,150,105,.045), 0 4px 14px rgba(15,23,42,.09), 0 1px 2px rgba(15,23,42,.08); }
 .sd-node.is-drop-target { border-color: var(--sd-emerald); }
 .sd-node-head { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .sd-node-icon { flex: none; }
 .sd-node-label { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 auto; min-width: 56px; }
 .sd-mode-badge { font-size: 10px; color: var(--sd-text-2); background: var(--sd-soft); padding: 1px 6px; border-radius: 6px; white-space: nowrap; flex: 0 1 auto; min-width: 0; max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
+.sd-mode-badge.is-ok { color: var(--sd-emerald); background: rgba(5,150,105,.12); }
+.sd-mode-badge.is-warn { color: var(--sd-amber); background: rgba(217,119,6,.14); }
+.sd-mode-badge.is-down { color: var(--sd-red); background: rgba(220,38,38,.12); }
+.sd-pill.is-quiet { color: var(--sd-text-2); }
+.sd-util { position: absolute; left: 12px; right: 12px; bottom: 5px; height: 4px; border-radius: 999px; background: var(--sd-soft); overflow: hidden; }
+.sd-util i { display: block; height: 100%; border-radius: inherit; background: var(--sd-emerald); transition: width .25s ease-out; }
+.sd-util.s-elevated i { background: var(--sd-amber); } .sd-util.s-overloaded i, .sd-util.s-down i { background: var(--sd-red); }
 .sd-node-sub { font-size: 11px; color: var(--sd-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sd-node-foot { display: flex; gap: 5px; align-items: center; flex-wrap: nowrap; overflow: hidden; }
 .sd-pill { font-size: 10px; padding: 1px 6px; border-radius: 6px; background: var(--sd-soft); color: var(--sd-text); white-space: nowrap; }
@@ -132,9 +155,25 @@
 .sd-swatch.is-active { box-shadow: 0 0 0 2px var(--sd-card), 0 0 0 4px currentColor; color: var(--sd-text-2); }
 
 /* Drawer: closed by default, opened only by YAML / Inspect. Stops short of Sketchizi's right header rail and the dock. */
-.sd-drawer { position: absolute; right: var(--sd-rail-clear); top: var(--sd-drawer-top); width: 288px; max-height: calc(100% - var(--sd-drawer-top) - var(--sd-dock-clear)); display: flex; flex-direction: column; overflow: hidden; animation: sd-slide .18s ease-out; }
+.sd-drawer { position: absolute; right: var(--sd-rail-clear); top: var(--sd-drawer-top); width: min(380px, calc(100% - var(--sd-rail-clear) - 12px)); max-height: calc(100% - var(--sd-drawer-top) - var(--sd-dock-clear)); display: flex; flex-direction: column; overflow: hidden; transition: width .18s ease-out; animation: sd-slide .18s ease-out; }
+.sd-drawer.is-wide { width: min(640px, calc(100% - var(--sd-rail-clear) - 12px)); }
+.sd-drawer.is-yaml { height: min(620px, calc(100% - var(--sd-drawer-top) - var(--sd-dock-clear))); }
 .sd-drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--sd-border); }
 .sd-drawer-head strong { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sd-drawer-actions { display: flex; align-items: center; gap: 4px; flex: none; }
+.sd-expand-btn, .sd-copy-btn { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px; border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--sd-text-2); white-space: nowrap; }
+.sd-expand-btn:hover, .sd-copy-btn:hover { background: var(--sd-soft); color: var(--sd-text); }
+.sd-expand-btn[aria-pressed="true"] { color: var(--sd-emerald); background: rgba(5,150,105,.10); }
+.sd-copy-btn { border: 1px solid var(--sd-border); background: var(--sd-card); color: var(--sd-text); margin-left: auto; }
+.sd-copy-btn.is-done { color: var(--sd-emerald); border-color: rgba(5,150,105,.55); }
+.sd-inspector-tabs { display: flex; gap: 2px; padding: 6px 8px 0; border-bottom: 1px solid var(--sd-border); }
+.sd-inspector-tabs button { padding: 7px 12px; font-size: 12px; font-weight: 500; color: var(--sd-text-2); border-bottom: 2px solid transparent; margin-bottom: -1px; border-radius: 8px 8px 0 0; }
+.sd-inspector-tabs button:hover { color: var(--sd-text); background: var(--sd-soft); }
+.sd-inspector-tabs button.is-active { color: var(--sd-emerald); border-bottom-color: var(--sd-emerald); font-weight: 600; }
+.sd-hint { margin: 0; font-size: 11px; line-height: 1.45; color: var(--sd-text-2); } .sd-hint b { color: var(--sd-text); }
+.sd-yaml-panel { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; }
+.sd-yaml-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sd-yaml-file { font-size: 10px; color: var(--sd-text-2); }
 .sd-drawer-body { overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; scrollbar-width: thin; }
 .sd-readouts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .sd-readouts > div { background: var(--sd-soft); border-radius: 10px; padding: 7px 10px; display: flex; flex-direction: column; }
@@ -148,8 +187,8 @@
 .sd-field .sd-seg-mini { align-self: flex-start; }
 .sd-field select { padding: 5px 8px; border: 1px solid var(--sd-border); border-radius: 8px; background: var(--sd-card); color: var(--sd-text); }
 .sd-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; color: var(--sd-text-2); } .sd-meta span { background: var(--sd-soft); padding: 2px 7px; border-radius: 6px; }
-.sd-yaml-head { font-size: 10px; color: var(--sd-text-2); }
-.sd-yaml { margin: 0; padding: 10px; border-radius: 10px; background: var(--sd-soft); font-size: 11px; line-height: 1.5; overflow: auto; max-height: 260px; white-space: pre; }
+/* The manifest takes every pixel the drawer has. Long lines wrap (indentation kept) instead of scrolling sideways, so nothing is ever clipped. */
+.sd-yaml { flex: 1 1 auto; min-height: 160px; margin: 0; padding: 12px; border-radius: 10px; background: var(--sd-soft); font-size: 12px; line-height: 1.55; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; user-select: text; }
 
 @keyframes sd-pulse { 50% { opacity: .35; } }
 @keyframes sd-rise { from { opacity: 0; transform: translate(-50%, 6px); } }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PORTS, choosePorts, getPortPoint, nearestPort, pointAlong, roundedPath, routeOrthogonal } from "./orthogonalRouter.js";
-import { modeBadge } from "./yamlPreview.js";
+import { nodeFacets, serviceNames } from "./yamlPreview.js";
 import { formatRps, packetCountForRps } from "./trafficSimulator.js";
 import { PrimitiveIcon } from "./PrimitiveIcon.jsx";
 
@@ -100,6 +100,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
   }, [getHost, toScene, canEdit]);
 
   const byId = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph.nodes]);
+  const names = useMemo(() => serviceNames(graph.nodes), [graph.nodes]);
   const routes = useMemo(() => graph.edges.map((edge) => {
     const a = byId.get(edge.from); const b = byId.get(edge.to);
     return { edge, points: routeOrthogonal(a, edge.fromPort, b, edge.toPort) };
@@ -132,6 +133,11 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
     <div className="sd-overlay" aria-hidden={false}>
       <div className="sd-layer" style={layerStyle}>
         <svg className="sd-edges" width="1" height="1" overflow="visible" aria-hidden="true">
+          <defs>
+            <marker id="sd-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+              <path d="M1.5 1.5 8 5 1.5 8.5" className="sd-arrow-head" fill="none" />
+            </marker>
+          </defs>
           {routes.map(({ edge, points }) => {
             const live = simulation?.edges[edge.id];
             const targetStatus = simulation?.nodes[edge.to]?.status;
@@ -142,9 +148,9 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
             const duration = Math.max(1.2, 3.4 - Math.log10((live?.rps || 1) + 1) * 0.5);
             return (
               <g key={edge.id} className={`sd-edge is-${tone}${selected ? " is-selected" : ""}${edge.lineStyle === "dashed" ? " is-dashed" : ""}`}>
-                <path id={`sd-path-${edge.id}`} d={d} fill="none" />
+                <path id={`sd-path-${edge.id}`} d={d} fill="none" markerEnd="url(#sd-arrow)" />
                 {packets > 0 && Array.from({ length: packets }, (_, i) => (
-                  <circle key={i} r="3.2" className="sd-packet">
+                  <circle key={i} r="3.6" className="sd-packet">
                     <animateMotion dur={`${duration}s`} begin={`${-(duration / packets) * i}s`} repeatCount="indefinite"><mpath href={`#sd-path-${edge.id}`} /></animateMotion>
                   </circle>
                 ))}
@@ -159,10 +165,12 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
 
         {routes.map(({ edge, points }) => {
           const mid = pointAlong(points, 0.5);
-          const live = simulation?.edges[edge.id];
+          const live = simulate ? simulation?.edges[edge.id] : null;
+          const flowing = Boolean(live && live.rps > 0);
+          const tone = !live ? "" : !flowing ? " is-idle" : ` is-${simulation?.nodes[edge.to]?.status === "overloaded" || simulation?.nodes[edge.to]?.status === "down" ? "hot" : simulation?.nodes[edge.to]?.status === "elevated" ? "warm" : "ok"}`;
           return (
-            <span key={edge.id} className="sd-badge sd-mono" style={{ left: mid.x, top: mid.y }}>
-              {edge.protocol}{simulate && live ? ` · ${formatRps(live.rps)}/s` : ""}
+            <span key={edge.id} className={`sd-badge sd-mono${live ? " is-live" : ""}${tone}`} style={{ left: mid.x, top: mid.y }}>
+              {edge.protocol}{live ? <> · <b>{flowing ? `${formatRps(live.rps)}/s` : "idle"}</b></> : null}
             </span>
           );
         })}
@@ -172,6 +180,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           const selected = selectedIds.includes(node.id);
           const isDropTarget = dropTarget?.id === node.id;
           const showPorts = canEdit && (selected || hoverId === node.id || drag?.fromId === node.id || isDropTarget);
+          const facets = nodeFacets(node, mode, names);
           const status = simulate && telemetry ? telemetry.status : node.health === "down" ? "down" : node.health === "degraded" ? "elevated" : "healthy";
           return (
             <div key={node.id} className={`sd-node is-${node.accent} s-${status}${selected ? " is-selected" : ""}${isDropTarget ? " is-drop-target" : ""}`}
@@ -181,25 +190,40 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
                 {editingId === node.id
                   ? <LabelEditor initial={node.label} onDone={(value) => { setEditingId(null); if (value) actions.updateNodeMeta(node.id, { label: value }); }} />
                   : <strong className="sd-node-label">{node.label}</strong>}
-                {/* Canvas mode's badge would repeat the subtitle line below, so it only appears where it adds information (pods / port). */}
-                {mode !== "canvas" && <span className="sd-mode-badge sd-mono">{modeBadge(node, mode)}</span>}
+                {facets.badge && <span className={`sd-mode-badge sd-mono is-${facets.badgeTone}`}>{facets.badge}</span>}
               </div>
-              <div className="sd-node-sub">{node.subtitle}</div>
+              <div className={`sd-node-sub${mode === "compose" ? " sd-mono" : ""}`}>{facets.sub}</div>
               <div className="sd-node-foot">
-                {simulate && telemetry ? (
-                  <>
-                    <span className="sd-pill sd-mono" title="Incoming requests per second">RPS {formatRps(telemetry.incomingRps)}</span>
-                    <span className="sd-pill sd-mono" title="p95 latency">{telemetry.p95Ms == null ? "p95 —" : `p95 ${telemetry.p95Ms}ms`}</span>
-                    <span className={`sd-status sd-mono s-${telemetry.status}`}>{STATUS_LABEL[telemetry.status]}</span>
-                  </>
+                {mode === "canvas" ? (
+                  simulate && telemetry ? (
+                    <>
+                      <span className="sd-pill sd-mono" title="Incoming requests per second">RPS {formatRps(telemetry.incomingRps)}</span>
+                      <span className="sd-pill sd-mono" title="p95 latency">{telemetry.p95Ms == null ? "p95 —" : `p95 ${telemetry.p95Ms}ms`}</span>
+                      <span className={`sd-status sd-mono s-${telemetry.status}`}>{STATUS_LABEL[telemetry.status]}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="sd-pill sd-mono is-quiet" title="Starts when you press Simulate">RPS —</span>
+                      <span className="sd-pill sd-mono is-quiet" title="Starts when you press Simulate">p95 —</span>
+                      {node.health !== "healthy" && <span className={`sd-status sd-mono s-${status}`}>{STATUS_LABEL[status]}</span>}
+                    </>
+                  )
                 ) : (
                   <>
-                    <span className="sd-pill sd-mono">{node.protocol}</span>
-                    <span className="sd-pill sd-mono">×{node.replicas}</span>
-                    {node.health !== "healthy" && <span className={`sd-status sd-mono s-${status}`}>{STATUS_LABEL[status]}</span>}
+                    {facets.chips.map((chip) => <span key={chip} className="sd-pill sd-mono">{chip}</span>)}
+                    {simulate && telemetry
+                      ? <span className={`sd-status sd-mono s-${telemetry.status}`}>{STATUS_LABEL[telemetry.status]}</span>
+                      : node.health !== "healthy" && <span className={`sd-status sd-mono s-${status}`}>{STATUS_LABEL[status]}</span>}
                   </>
                 )}
               </div>
+              {simulate && telemetry && (
+                <div className={`sd-util s-${telemetry.status}`} role="meter" aria-label={`${node.label} utilization`}
+                  aria-valuemin={0} aria-valuemax={100} aria-valuenow={Number.isFinite(telemetry.utilization) ? Math.round(telemetry.utilization * 100) : 100}
+                  title={`Utilization ${Number.isFinite(telemetry.utilization) ? Math.round(telemetry.utilization * 100) : "∞"}%`}>
+                  <i style={{ width: `${Math.min(100, Number.isFinite(telemetry.utilization) ? telemetry.utilization * 100 : 100)}%` }} />
+                </div>
+              )}
               {PORTS.map((port) => (
                 <button key={port} type="button" tabIndex={-1}
                   className={`sd-port is-${port}${showPorts ? " is-visible" : ""}${isDropTarget && dropPort === port ? " is-target" : ""}`}

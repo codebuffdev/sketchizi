@@ -7,6 +7,8 @@ import { getPrimitive } from "./primitives.js";
 
 export const LOAD_PRESETS = Object.freeze([1000, 10000, 50000]);
 export const HEALTHY_MAX = 0.75;
+/** Kinds that originate traffic when nothing upstream feeds them (in addition to primitives flagged `entry`). */
+export const INGRESS_KINDS = Object.freeze(new Set(["client", "cdn", "dns", "api-gateway", "load-balancer"]));
 
 const clamp01 = (value) => Math.min(1, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 0));
 const round = (value, digits = 1) => {
@@ -58,10 +60,20 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
 
   const isEntry = (node) => node.entry ?? getPrimitive(node.kind)?.entry ?? false;
   const isCache = (node) => node.cache ?? getPrimitive(node.kind)?.cache ?? false;
-  const entries = nodes.filter(isEntry);
-  // Only entries with no inbound edges are true roots; a CDN behind a client is fed by it.
-  const roots = entries.filter((node) => indegree.get(node.id) === 0);
-  const entryIds = new Set((roots.length ? roots : entries).map((node) => node.id));
+  const isIngress = (node) => isEntry(node) || INGRESS_KINDS.has(node.kind);
+  // Traffic sources, most specific first, so a freshly dropped `Load Balancer -> Service` never sits at RPS 0:
+  //   1. Client / CDN / DNS roots (nothing feeds them),  2. API Gateway / Load Balancer roots,
+  //   3. any other node with no incoming edge,           4. (cycles only) flagged entries, then the first node.
+  const roots = nodes.filter((node) => indegree.get(node.id) === 0);
+  const entryIds = new Set(
+    [
+      roots.filter(isEntry),
+      roots.filter(isIngress),
+      roots,
+      nodes.filter(isEntry),
+      nodes.slice(0, 1),
+    ].find((tier) => tier.length)?.map((node) => node.id) || [],
+  );
 
   const incoming = new Map(nodes.map((node) => [node.id, 0]));
   const edgeRps = new Map();

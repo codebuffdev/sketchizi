@@ -46,6 +46,12 @@ export const ICON_SHAPES = Object.freeze({
   // --- UI glyphs used by the studio chrome (same construction, same 16x16 render size)
   play: [["polygon", { points: "6 4 20 12 6 20 6 4" }]],
   pause: [["rect", { x: 6, y: 4, width: 4, height: 16, rx: 1 }], ["rect", { x: 14, y: 4, width: 4, height: 16, rx: 1 }]],
+  stop: [["rect", { x: 5, y: 5, width: 14, height: 14, rx: 2 }]],
+  layers: [["polygon", { points: "12 2 2 7 12 12 22 7 12 2" }], ["polyline", { points: "2 17 12 22 22 17" }], ["polyline", { points: "2 12 12 17 22 12" }]],
+  copy: [["rect", { x: 9, y: 9, width: 12, height: 12, rx: 2 }], ["path", { d: "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" }]],
+  check: [["path", { d: "M20 6 9 17l-5-5" }]],
+  expand: [["path", { d: "M15 3h6v6" }], ["path", { d: "M9 21H3v-6" }], ["path", { d: "m21 3-7 7" }], ["path", { d: "m3 21 7-7" }]],
+  shrink: [["path", { d: "M4 14h6v6" }], ["path", { d: "M20 10h-6V4" }], ["path", { d: "m14 10 7-7" }], ["path", { d: "m3 21 7-7" }]],
   plus: [["path", { d: "M12 5v14M5 12h14" }]],
   close: [["path", { d: "M18 6 6 18M6 6l12 12" }]],
   chevronDown: [["path", { d: "m6 9 6 6 6-6" }]],
