@@ -99,13 +99,16 @@ function nodeAtArrowEndpoint(point, nodes, excludeId) {
 }
 
 export function readEdge(element, nodes = []) {
-  if (!isSystemDesignEdge(element)) return null;
-  const data = element.customData[CUSTOM_KEY];
+  // Accept legacy/native Excalidraw arrows only when their bindings or endpoints resolve to
+  // System Design nodes. Ordinary canvas arrows remain outside the System Design graph.
+  if (!element || element.isDeleted || element.type !== "arrow") return null;
+  const data = element.customData?.[CUSTOM_KEY] || {};
+  const isTaggedEdge = data.role === "edge";
   const start = arrowEndpoint(element, "start");
   const end = arrowEndpoint(element, "end");
   const from = start?.id || data.from || nodeAtArrowEndpoint(start, nodes);
   const to = end?.id || data.to || nodeAtArrowEndpoint(end, nodes, from);
-  if (!from || !to) return null;
+  if (!from || !to || (!isTaggedEdge && !nodes.some((node) => node.id === from) || !nodes.some((node) => node.id === to))) return null;
   return {
     id: element.id,
     from,
@@ -113,7 +116,7 @@ export function readEdge(element, nodes = []) {
     fromPort: data.fromPort || "right",
     toPort: data.toPort || "left",
     protocol: PROTOCOLS.includes(data.protocol) ? data.protocol : "HTTPS",
-    lineStyle: data.lineStyle === "dashed" ? "dashed" : "solid",
+    lineStyle: data.lineStyle === "dashed" || element.strokeStyle === "dashed" ? "dashed" : "solid",
   };
 }
 
@@ -212,13 +215,10 @@ export function collectSceneRepairs(elements) {
       if (!isSolid(element.backgroundColor) || element.fillStyle !== "solid") { patch.backgroundColor = "#ffffff"; patch.fillStyle = "solid"; }
       if (element.angle) patch.angle = 0; // A rotated hit-box would drift away from the unrotated card.
       if (Object.keys(patch).length) repairs.set(element.id, patch);
-    } else if (isSystemDesignEdge(element)) {
-      const data = element.customData[CUSTOM_KEY];
+    } else if (element.type === "arrow") {
+      const data = element.customData?.[CUSTOM_KEY] || {};
       const edge = readEdge(element, nodes);
-      if (!edge || !nodeIds.has(edge.from) || !nodeIds.has(edge.to)) {
-        repairs.set(element.id, { isDeleted: true });
-        continue;
-      }
+      if (!edge || !nodeIds.has(edge.from) || !nodeIds.has(edge.to)) continue;
       const pair = JSON.stringify([edge.from, edge.to]);
       if (seenPairs.has(pair)) {
         repairs.set(element.id, { isDeleted: true });
@@ -226,8 +226,26 @@ export function collectSceneRepairs(elements) {
       }
       seenPairs.add(pair);
       const patch = {};
-      if (data.from !== edge.from || data.to !== edge.to) {
-        Object.assign(patch, edgePatch(element, { from: edge.from, to: edge.to }));
+      const normalized = {
+        role: "edge",
+        version: 1,
+        from: edge.from,
+        to: edge.to,
+        fromPort: edge.fromPort,
+        toPort: edge.toPort,
+        protocol: edge.protocol,
+        lineStyle: edge.lineStyle,
+      };
+      if (!isSystemDesignEdge(element) || Object.keys(normalized).some((key) => data[key] !== normalized[key])) {
+        patch.customData = {
+          ...element.customData,
+          [CUSTOM_KEY]: { ...data, ...normalized },
+        };
+      }
+      if (!isSystemDesignEdge(element)) {
+        const from = nodes.find((node) => node.id === edge.from);
+        const to = nodes.find((node) => node.id === edge.to);
+        Object.assign(patch, arrowGeometry(from, edge.fromPort, to, edge.toPort).patch);
       }
       if (element.opacity !== 0) patch.opacity = 0;
       if (element.strokeColor !== "transparent") patch.strokeColor = "transparent";
