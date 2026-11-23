@@ -192,10 +192,6 @@
 @keyframes sd-pop { from { opacity: 0; transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .sd-packet { display: none; } .sd-root *, .sd-root *::before { animation: none !important; transition: none !important; } }
 
-.sd-components-trigger, .sd-auto-layout-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 28px; padding: 0 9px; border-radius: 9px; color: var(--sd-text-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
-.sd-components-trigger:hover:not(:disabled), .sd-auto-layout-trigger:hover:not(:disabled) { color: var(--sd-emerald); background: var(--sd-soft); }
-.sd-inspector-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 28px; padding: 0 9px; border-radius: 9px; color: var(--sd-text-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
-.sd-inspector-trigger:hover, .sd-inspector-trigger.is-active { color: var(--sd-emerald); background: rgba(5,150,105,.10); }
 .sd-replica-stepper { display: inline-flex; align-items: center; gap: 5px; color: var(--sd-text-2); font-size: 11px; white-space: nowrap; }
 .sd-replica-stepper > span { font-weight: 600; }
 .sd-replica-stepper b { min-width: 14px; text-align: center; color: var(--sd-text); font-size: 11px; }
@@ -220,9 +216,6 @@
 
 /* Whole-stack compiler modal and live architecture diagnostics. */
 .sd-topbar { flex-direction: column; align-items: center; gap: 7px; }
-.sd-export-trigger { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 9px; border-radius: 9px; color: var(--sd-text-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
-.sd-export-trigger:hover:not(:disabled) { color: var(--sd-emerald); background: var(--sd-soft); }
-.sd-export-trigger:disabled { opacity: .45; cursor: not-allowed; }
 .sd-diagnostic { max-width: min(850px, calc(100vw - 32px)); padding: 7px 13px; border: 1px solid var(--sd-border); border-radius: 999px; background: var(--sd-card); box-shadow: var(--sd-shadow); color: var(--sd-text); font-size: 11px; line-height: 1.35; text-align: center; pointer-events: auto; }
 .sd-diagnostic.is-danger { color: var(--sd-red); border-color: rgba(220,38,38,.45); }
 .sd-diagnostic.is-warning { color: var(--sd-amber); border-color: rgba(217,119,6,.5); }
@@ -245,15 +238,11 @@
 .sd-export-primary { color: white; background: var(--sd-emerald); }
 .sd-export-primary:hover { background: #047857; }
 @media (max-width: 1100px) {
-  .sd-components-trigger span, .sd-auto-layout-trigger span { display: none; }
-  .sd-components-trigger, .sd-auto-layout-trigger { padding: 0 7px; }
 }
 
 @media (max-width: 760px) {
   .sd-topbar-pill { max-width: calc(100vw - 12px); overflow-x: auto; }
-  .sd-export-trigger span, .sd-components-trigger span, .sd-auto-layout-trigger span { display: none; }
   .sd-topbar-pill { gap: 1px; padding-inline: 4px; }
-  .sd-components-trigger, .sd-auto-layout-trigger { padding: 0 7px; }
   .sd-export-foot { align-items: stretch; }
   .sd-export-foot > div { width: 100%; }
   .sd-export-foot button { flex: 1; justify-content: center; }
