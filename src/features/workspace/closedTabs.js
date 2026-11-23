@@ -12,9 +12,10 @@ function isLiveElement(element) {
   return Boolean(element) && !element.isDeleted;
 }
 
-/** True when the tab snapshot has at least one non-deleted element. */
+/** True when the tab has scene content or an explicitly active studio session to recover. */
 export function snapshotHasContent(snapshot) {
-  return Array.isArray(snapshot?.elements) && snapshot.elements.some(isLiveElement);
+  return Boolean(snapshot?.systemDesign?.active)
+    || (Array.isArray(snapshot?.elements) && snapshot.elements.some(isLiveElement));
 }
 
 /**
