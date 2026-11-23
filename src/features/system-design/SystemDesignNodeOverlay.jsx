@@ -141,7 +141,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           {routes.map(({ edge, points }) => {
             const live = simulation?.edges[edge.id];
             const targetStatus = simulation?.nodes[edge.to]?.status;
-            const tone = !simulate ? "idle" : (live?.serviceUnavailable || live?.replicaFailed || live?.consumerDown || live?.cycleBlocked) ? "hot" : !live || live.rps <= 0 ? "idle" : targetStatus === "overloaded" || targetStatus === "down" ? "hot" : targetStatus === "elevated" ? "warm" : "ok";
+            const tone = !simulate ? "idle" : (live?.serviceUnavailable || live?.replicaFailed || live?.cycleBlocked) ? "hot" : live?.consumerDown ? "warm" : !live || live.rps <= 0 ? "idle" : targetStatus === "overloaded" || targetStatus === "down" ? "hot" : targetStatus === "elevated" ? "warm" : "ok";
             const d = roundedPath(points);
             const selected = selectedIds.includes(edge.id);
             const packets = simulate && live ? packetCountForRps(live.rps) : 0;
@@ -167,11 +167,11 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           const mid = pointAlong(points, 0.5);
           const live = simulate ? simulation?.edges[edge.id] : null;
           const flowing = Boolean(live && live.rps > 0);
-          const healthFailed = Boolean(live?.serviceUnavailable || live?.replicaFailed || live?.consumerDown || live?.cycleBlocked);
+          const healthFailed = Boolean(live?.serviceUnavailable || live?.replicaFailed || live?.cycleBlocked);
           const tone = !live ? "" : healthFailed ? " is-hot" : !flowing ? " is-idle" : ` is-${simulation?.nodes[edge.to]?.status === "overloaded" || simulation?.nodes[edge.to]?.status === "down" ? "hot" : simulation?.nodes[edge.to]?.status === "elevated" ? "warm" : "ok"}`;
           if (!flowing && !healthFailed) return null;
           return (
-            <span key={edge.id} className={`sd-badge sd-mono is-live${tone}${healthFailed ? " is-health-failed" : ""}`} style={{ left: mid.x, top: mid.y }}>
+            <span key={edge.id} className={`sd-badge sd-mono is-live${tone}${healthFailed ? " is-health-failed" : live.consumerDown ? " is-buffered" : ""}`} style={{ left: mid.x, top: mid.y }}>
               {live.serviceUnavailable ? <>0/s · 503 Dropped</> : live.replicaFailed ? <>0/s · Replica Unhealthy</> : live.consumerDown ? <>Buffered · Consumer Down</> : live.cycleBlocked ? <>0/s · Cycle Blocked</> : <>{edge.protocol} · <b>{formatRps(live.rps)}/s</b>{live.retryAmplification && <> · Retries · +25%</>}{live.cacheHitRate > 0 && <> · {Math.round(live.cacheHitRate * 100)}% cached</>}</>}
             </span>
           );
