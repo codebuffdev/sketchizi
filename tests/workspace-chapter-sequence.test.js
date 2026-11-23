@@ -133,6 +133,7 @@ test("Grid view sorts by sequence by default and by recency on request", () => {
 });
 
 import { readFile } from "node:fs/promises";
+import { readAppSource } from "./helpers/app-source.js";
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("dashboard wires sequence flow, inline rename/delete, drag reorder and trailing add card", async () => {
@@ -150,7 +151,7 @@ test("dashboard wires sequence flow, inline rename/delete, drag reorder and trai
 
 test("editor header exposes the chapter switcher and app wires navigation", async () => {
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
-  const app = await read("../src/App.jsx");
+  const app = await readAppSource();
   assert.match(header, /Chapter \{chapterNav\.index \+ 1\} of \{chapterNav\.total\}/);
   assert.match(header, /onNavigateChapter\?\.\(chapterNav\.previous\)/);
   assert.match(app, /useChapterNavigation/);

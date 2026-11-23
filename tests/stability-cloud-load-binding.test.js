@@ -2,8 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolveCloudLoadTarget } from "../src/features/workspace/cloudSavePolicy.js";
+import { readAppSourceSync } from "./helpers/app-source.js";
 
-const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+const app = readAppSourceSync();
 const start = app.indexOf("const targetTabId = cloudRestoringTabIdRef.current");
 const effect = app.slice(start - 600, start + 7200);
 

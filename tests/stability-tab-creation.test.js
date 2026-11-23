@@ -2,8 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createCanvasTabId } from "../src/features/workspace/tabSnapshot.js";
+import { readAppSourceSync } from "./helpers/app-source.js";
 
-const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+const app = readAppSourceSync();
 
 test("issue 5: tab ids created in the same millisecond are unique", () => {
   const ids = [];

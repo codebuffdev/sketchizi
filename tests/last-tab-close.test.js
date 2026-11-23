@@ -2,8 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolveTabClose, hasMountableCanvas } from "../src/features/workspace/tabClose.js";
+import { readAppSourceSync } from "./helpers/app-source.js";
 
-const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+const app = readAppSourceSync();
 const tab = (id) => ({ id, name: id });
 
 test("closing the only tab returns to the welcome screen with no active tab", () => {

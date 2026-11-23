@@ -6,8 +6,9 @@ import {
   isCloudSceneRestoring,
 } from "../src/features/workspace/cloudSavePolicy.js";
 import { createCloudDocument } from "../src/features/workspace/cloudDocument.js";
+import { readAppSourceSync } from "./helpers/app-source.js";
 
-const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+const app = readAppSourceSync();
 
 // Extract the body of one `useCallback`/function by its declaration line.
 function sliceFrom(source, marker, length = 2600) {

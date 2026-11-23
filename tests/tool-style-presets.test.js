@@ -12,6 +12,7 @@ import {
 } from "../src/features/canvas/toolStylePresets.js";
 import { createToolStyleController } from "../src/features/canvas/toolStyleController.js";
 import { prepareTabsForPersistence } from "../src/features/workspace/tabSnapshot.js";
+import { readAppSourceSync } from "./helpers/app-source.js";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const flushMicrotasks = () => new Promise((resolve) => queueMicrotask(resolve));
@@ -405,7 +406,7 @@ test("presets can be exported per canvas, hydrated later, and forgotten", () => 
 // --------------------------------------------------------- source contracts
 
 test("App owns the per-canvas store and routes it through tools, scene, canvas and snapshots", () => {
-  const app = read("../src/App.jsx");
+  const app = readAppSourceSync();
   assert.ok(app.includes("useToolStylePresets({ apiRef, activeCanvasIdRef })"));
   assert.ok(app.includes("toolStylePresets: toolStyles"));
   assert.ok(app.includes("onToolStyleChange={toolStyles.recordToolStyle}"));

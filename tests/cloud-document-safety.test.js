@@ -6,8 +6,9 @@ import {
   isActiveCloudSession,
   usesLocalAutosave,
 } from "../src/features/workspace/cloudSavePolicy.js";
+import { readAppSourceSync } from "./helpers/app-source.js";
 
-const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+const app = readAppSourceSync();
 const preferences = readFileSync(new URL("../src/features/navigation/useSketchiziPreferences.js", import.meta.url), "utf8");
 const files = readFileSync(new URL("../src/features/files/useFileManager.js", import.meta.url), "utf8");
 

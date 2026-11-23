@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createCloudDocument, sanitizeCloudAppState } from "../src/features/workspace/cloudDocument.js";
+import { readAppSource } from "./helpers/app-source.js";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -23,7 +24,7 @@ test("Tool menu only contains tools not already on the dock and uses labeled SVG
 });
 
 test("editor toolbar uses recognizable icons for workspaces, AI Ask, and validation", async () => {
-  const app = await read("../src/App.jsx");
+  const app = await readAppSource();
   assert.match(app, /aria-label="AI Ask"\s+aria-expanded=\{aiAskOpen\}\s*>\s*<AiAskIcon className="ai-ask-toggle-icon"\s*\/>/);
   const registry = await read("../src/features/commands/commandRegistry.js");
   assert.doesNotMatch(registry, /Validate Architecture|architecture-validation/);
@@ -46,7 +47,7 @@ test("Cloud Workspace opens the existing sign-in dialog for anonymous or unavail
 
 
 test("Cloud Workspace is reachable from the editor Workspaces menu", async () => {
-  const app = await read("../src/App.jsx");
+  const app = await readAppSource();
   const root = await read("../src/main.jsx");
   assert.match(app, /Cloud Workspace/);
   assert.match(app, /window\.location\.assign\("\/workspace"\)/);
@@ -97,7 +98,7 @@ test("service worker always sends Workspace API requests to the network", async 
 
 test("New file detaches from an open Cloud Workspace diagram before clearing the canvas", async () => {
   const files = await read("../src/features/files/useFileManager.js");
-  const app = await read("../src/App.jsx");
+  const app = await readAppSource();
   assert.match(files, /dispatchEvent\(new CustomEvent\("sketchizi:detach-cloud-document"\)\)/);
   assert.match(files, /searchParams\.delete\("cloudDiagramId"\)/);
   assert.match(files, /searchParams\.delete\("cloudProjectId"\)/);
@@ -107,7 +108,7 @@ test("New file detaches from an open Cloud Workspace diagram before clearing the
 });
 
 test("cloud diagrams open in the existing editor and autosave with revision protection", async () => {
-  const app = await read("../src/App.jsx");
+  const app = await readAppSource();
   const dashboard = await read("../src/features/workspace/WorkspaceDashboard.jsx");
   const client = await read("../src/features/workspace/workspaceClient.js");
   assert.match(app, /cloudDiagramId/);
@@ -137,7 +138,7 @@ test("authenticated users keep the editor as the default route; Workspace is opt
 });
 
 test("cloud-opened diagrams use their saved name in the editor identity", async () => {
-  const source = await read("../src/App.jsx");
+  const source = await readAppSource();
   assert.match(source, /currentDocumentName=\{cloudSessionRef\.current\.active && !cloudDetached \? cloudDocumentName/);
   assert.match(source, /setCloudDetached\(true\)/);
   assert.match(source, /setCloudDocumentName\(loadedCloudName\)/);
@@ -148,7 +149,7 @@ test("cloud-opened diagrams use their saved name in the editor identity", async 
 
 
 test("editor exposes an explicit Save to Cloud action and creates a cloud diagram from the current document", async () => {
-  const app = await read("../src/App.jsx");
+  const app = await readAppSource();
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   const dialog = await read("../src/features/workspace/CloudSaveDialog.jsx");
   assert.match(header, /desktop-app-save-to-cloud-button/);
@@ -165,7 +166,7 @@ test("editor exposes an explicit Save to Cloud action and creates a cloud diagra
 test("Workspace API requests time out instead of leaving save operations pending forever", async () => {
   const client = await read("../src/features/workspace/workspaceClient.js");
   const dialog = await read("../src/features/workspace/CloudSaveDialog.jsx");
-  const app = await read("../src/App.jsx");
+  const app = await readAppSource();
   assert.match(client, /REQUEST_TIMEOUT_MS = 12000/);
   assert.match(client, /signal: timeoutSignal\(\)/);
   assert.match(client, /Cloud Workspace request timed out/);
@@ -263,7 +264,7 @@ test("cloud document sanitizes Excalidraw runtime appState before persistence an
 
 
 test("admin cloud-save path bypasses the standard 2 MiB frontend document limit", async () => {
-  const app = await read("../src/App.jsx");
+  const app = await readAppSource();
   const dialog = await read("../src/features/workspace/CloudSaveDialog.jsx");
   assert.match(app, /if \(!limits\?\.admin\) \{/);
   assert.match(app, /standard accounts/);
@@ -274,7 +275,7 @@ test("admin cloud-save path bypasses the standard 2 MiB frontend document limit"
 
 
 test("reopening an existing cloud tab always fetches the authoritative cloud document", async () => {
-  const app = await read("../src/App.jsx");
+  const app = await readAppSource();
   const existingTabBranch = app.slice(
     app.indexOf("if (existingCloudTab) {"),
     app.indexOf("} else {", app.indexOf("if (existingCloudTab) {")),
@@ -288,7 +289,7 @@ test("reopening an existing cloud tab always fetches the authoritative cloud doc
 });
 
 test("cloud deep-link hydration is not overwritten by the generic active-tab snapshot effect", async () => {
-  const app = await read("../src/App.jsx");
+  const app = await readAppSource();
   assert.match(app, /cloudHydrationPendingTabIdRef = useRef\(""\)/);
   assert.match(app, /cloudHydrationPendingTabIdRef\.current = existingCloudTab\.id/);
   const activeTabEffectStart = app.indexOf("useEffect(() => {\n    if (!apiReady || !apiRef.current) return;");

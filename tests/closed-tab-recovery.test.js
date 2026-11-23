@@ -6,6 +6,7 @@ import {
   normalizeClosedTabs, snapshotHasContent, isTabBackedByFileOrCloud, describeClosedAt,
 } from "../src/features/workspace/closedTabs.js";
 import { getTabCloudMeta, describeTabSync, getTabStatusClass, BROWSER_DRAFT_LABEL } from "../src/features/workspace/tabCloudState.js";
+import { readAppSourceSync } from "./helpers/app-source.js";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const el = (id, extra = {}) => ({ id, type: "rectangle", isDeleted: false, ...extra });
@@ -100,7 +101,7 @@ test("relative closed-at labels", () => {
 });
 
 test("wiring: App archives before closing, offers the 6s toast, and binds Ctrl/Cmd+Shift+T", () => {
-  const app = read("../src/App.jsx");
+  const app = readAppSourceSync();
   const start = app.indexOf("const performCloseCanvasTab");
   const body = app.slice(start, app.indexOf("const closeCanvasTab", start));
   assert.ok(body.indexOf("archiveClosedTab(tabId)") > 0, "close must archive the tab");
@@ -117,7 +118,7 @@ test("wiring: App archives before closing, offers the 6s toast, and binds Ctrl/C
 
 test("wiring: recovery entry points exist in tab bar, startup chooser, hamburger menu and command palette", () => {
   assert.match(read("../src/components/app/CanvasTabs.jsx"), /Recently closed/);
-  assert.match(read("../src/App.jsx"), /Local drafts · recently closed/);
+  assert.match(readAppSourceSync(), /Local drafts · recently closed/);
   assert.match(read("../src/features/navigation/useNativeSketchiziMenu.js"), /data-closed-tabs-list/);
   const registry = read("../src/features/commands/commandRegistry.js");
   assert.match(registry, /files\.reopen-closed-tab/);
