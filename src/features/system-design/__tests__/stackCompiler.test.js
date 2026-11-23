@@ -74,3 +74,13 @@ test("architecture diagnostic reports cache shielding and single-replica SPOFs",
   const singleSimulation = simulateTraffic({ nodes: single, edges: singleEdges, totalRps: 10000 });
   assert.match(deriveArchitectureDiagnostic(single, singleSimulation, singleEdges).message, /Single Point of Failure: Read API/);
 });
+
+test("architecture diagnostic flags a manually failed node as a single point of failure", () => {
+  const graph = [
+    { id: "client", kind: "client", replicas: 1, capacityPerReplica: 100000, health: "healthy" },
+    { id: "api", kind: "microservice", label: "Read API", replicas: 1, capacityPerReplica: 60000, health: "down" },
+  ];
+  const edges = [{ id: "request", from: "client", to: "api" }];
+  const simulation = simulateTraffic({ nodes: graph, edges, totalRps: 10000 });
+  assert.match(deriveArchitectureDiagnostic(graph, simulation, edges).message, /Read API is down/);
+});
