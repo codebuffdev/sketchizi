@@ -38,7 +38,7 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
   const copyTimer = useRef(0);
   useEffect(() => () => window.clearTimeout(copyTimer.current), []);
   const selectedId = selection?.item?.id;
-  useEffect(() => { onTabChange("config"); setCopied(false); }, [selectedId]);
+  useEffect(() => { onTabChange("config"); setCopied(false); }, [selectedId, onTabChange]);
 
   const item = selection?.item || null;
   const isNode = selection?.kind === "node";
