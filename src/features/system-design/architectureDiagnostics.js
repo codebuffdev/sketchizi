@@ -28,7 +28,7 @@ export function deriveArchitectureDiagnostic(nodes = [], simulation = null, edge
   }
 
   const cycle = diagnostics.cycles?.[0];
-  if (cycle) return { tone: "warning", message: `⚠ ${cycle.message}` };
+  if (cycle) return { tone: "warning", message: `⚠ Circular dependency detected between ${cycle.labels.slice(0, -1).join(" and ")}.` };
   const depthWarning = diagnostics.depthWarnings?.[0];
   if (depthWarning) return { tone: "warning", message: `⚠ ${depthWarning.message}` };
 
