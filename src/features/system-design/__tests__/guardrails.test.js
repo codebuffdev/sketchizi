@@ -63,7 +63,6 @@ test("studio chrome: one top-centre pill, no duplicated Sketchizi controls", () 
   for (const text of ["Replicas", "Capacity", "Cache hit rate", "Health override", "Line style", "Accent", "YAML", "Inspect"]) assert.ok(insp.includes(text), text);
   assert.match(insp, /\{selection && <div className="sd-surface sd-pill-bar"/);
   assert.doesNotMatch(insp, /if \(!selection\) return null/);
-  const studio = read(path.join(dir, "SystemDesignStudio.jsx"));
   assert.match(studio, /useState\(false\)/, "inspector must start closed");
   assert.match(read(path.join(dir, "TopWorkspaceBar.jsx")), /Inspector/);
   assert.match(insp, /\{open && \(\s*<aside/, "drawer only mounts when explicitly opened");
