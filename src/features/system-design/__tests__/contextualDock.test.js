@@ -7,13 +7,13 @@ import path from "node:path";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const read = (name) => readFileSync(path.join(here, "..", name), "utf8");
 
-test("native formatting dock is hidden only for selected System Design nodes and connectors", () => {
+test("native drawing and contextual docks remain visible for every selection in System Design mode", () => {
   const studio = read("SystemDesignStudio.jsx");
   const css = read("systemDesign.css");
   assert.match(studio, /isSystemDesignEdge\(selectedElement\)/);
-  assert.match(studio, /sd-has-system-selection/);
-  assert.match(css, /\.app \.sd-active\.sd-has-system-selection \.sketchizi-tool-options-dock/);
-  assert.doesNotMatch(css, /\.app \.sd-active \.sketchizi-tool-options-dock/);
+  assert.doesNotMatch(studio, /sd-has-system-selection|CollapsibleQuickDock/);
+  assert.doesNotMatch(css, /sketchizi-tool-options-dock|display:\s*none\s*!important/);
+  assert.doesNotMatch(css, /\.sd-dock|\.sd-more-menu/);
 });
 
 test("standard canvas arrows are not mistaken for System Design orthogonal connectors", () => {
