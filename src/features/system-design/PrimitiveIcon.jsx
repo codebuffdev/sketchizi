@@ -10,7 +10,7 @@ export const Icon = memo(function Icon({ name, size = 16, className = "" }) {
   if (!shapes) return <span className={`sd-icon ${className}`} style={{ width: size, height: size }} aria-hidden="true" />;
   return (
     <svg className={`sd-icon ${className}`.trim()} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
       {shapes.map(([tag, attrs], index) => {
         if (!ICON_TAGS.includes(tag)) return null;
         const Tag = TAGS[tag];
