@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CUSTOM_KEY, collectSceneRepairs, createEdgeSkeleton, createNodeSkeleton, deserializeSystemDesign, edgePatch, hasSystemDesignContent, metaPatch, readGraph, readNode, serializeSystemDesign } from "../sceneModel.js";
+import { CUSTOM_KEY, NODE_SIZE, collectSceneRepairs, createEdgeSkeleton, createNodeSkeleton, deserializeSystemDesign, edgePatch, hasSystemDesignContent, metaPatch, readGraph, readNode, serializeSystemDesign } from "../sceneModel.js";
 import { isOrthogonal } from "../orthogonalRouter.js";
 import { computeAutoLayout } from "../autoLayout.js";
 import { createSceneStore } from "../sceneStore.js";
@@ -228,4 +228,16 @@ test("every blueprint edge is materialized with the exact generated System Desig
       assert.ok(graph.edges.some((actual) => actual.from === ids.get(edge.from) && actual.to === ids.get(edge.to)), blueprint.id);
     }
   }
+});
+
+
+test("System Design nodes use 204x88 minimum geometry and migrate undersized legacy hit boxes", () => {
+  assert.deepEqual(NODE_SIZE, { width: 204, height: 88 });
+  const legacy = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "legacy");
+  legacy.width = 200;
+  legacy.height = 84;
+  const patch = collectSceneRepairs([legacy]).get("legacy");
+  assert.deepEqual(patch, { width: 204, height: 88 });
+  const migrated = { ...legacy, ...patch };
+  assert.equal(collectSceneRepairs([migrated]).size, 0);
 });
