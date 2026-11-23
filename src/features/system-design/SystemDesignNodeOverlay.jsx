@@ -168,9 +168,10 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           const live = simulate ? simulation?.edges[edge.id] : null;
           const flowing = Boolean(live && live.rps > 0);
           const tone = !live ? "" : !flowing ? " is-idle" : ` is-${simulation?.nodes[edge.to]?.status === "overloaded" || simulation?.nodes[edge.to]?.status === "down" ? "hot" : simulation?.nodes[edge.to]?.status === "elevated" ? "warm" : "ok"}`;
+          if (!flowing) return null;
           return (
-            <span key={edge.id} className={`sd-badge sd-mono${live ? " is-live" : ""}${tone}`} style={{ left: mid.x, top: mid.y }}>
-              {edge.protocol}{live ? <> · <b>{flowing ? `${formatRps(live.rps)}/s` : "idle"}</b>{live.cacheHitRate > 0 && <> · {Math.round(live.cacheHitRate * 100)}% cached</>}</> : null}
+            <span key={edge.id} className={`sd-badge sd-mono is-live${tone}`} style={{ left: mid.x, top: mid.y }}>
+              {edge.protocol} · <b>{formatRps(live.rps)}/s</b>{live.cacheHitRate > 0 && <> · {Math.round(live.cacheHitRate * 100)}% cached</>}
             </span>
           );
         })}
