@@ -111,6 +111,7 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
         allTargetsDown: eligible.length === 0,
         redistributedRpsPerTarget: round(share, 1),
         targetIds: eligible.map((edge) => edge.to),
+        downTargetIds: branches.filter((edge) => byId.get(edge.to)?.health === "down").map((edge) => edge.to),
       });
     }
     for (const edge of branches) {
