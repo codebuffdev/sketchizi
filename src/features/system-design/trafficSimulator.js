@@ -123,7 +123,7 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
 
   return {
     nodes: Object.fromEntries(result),
-    edges: Object.fromEntries(validEdges.map((edge) => [edge.id, { rps: round(edgeRps.get(edge.id) || 0, 1), protocol: edge.protocol }])),
+    edges: Object.fromEntries(validEdges.map((edge) => { const source = byId.get(edge.from); return [edge.id, { rps: round(edgeRps.get(edge.id) || 0, 1), protocol: edge.protocol, cacheHitRate: isCache(source) ? clamp01(source.cacheHitRate) : 0 }]; })),
     totalRps: Number(totalRps) || 0,
   };
 }
