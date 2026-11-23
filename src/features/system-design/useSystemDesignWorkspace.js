@@ -299,8 +299,15 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     const rects = new Map(nodeSkeletons.map((sk) => [sk.id, {
       id: sk.id, x: sk.x, y: sk.y, width: sk.width, height: sk.height, protocol: sk.customData[CUSTOM_KEY].meta.protocol,
     }]));
-    const edgeSkeletons = blueprint.edges.map((e) => createEdgeSkeleton(
-      rects.get(ids.get(e.from)), rects.get(ids.get(e.to)), e.protocol ? { protocol: e.protocol } : {}, newId("sdedge"),
+    const blueprintPairs = new Set();
+    const edgeSkeletons = blueprint.edges.filter((edge) => {
+      const pair = JSON.stringify([edge.from, edge.to]);
+      if (blueprintPairs.has(pair)) return false;
+      blueprintPairs.add(pair);
+      return true;
+    }).map((edge) => createEdgeSkeleton(
+      rects.get(ids.get(edge.from)), rects.get(ids.get(edge.to)),
+      edge.protocol ? { protocol: edge.protocol } : {}, newId("sdedge"),
     ));
     const created = restoreElements(convertToExcalidrawElements([...nodeSkeletons, ...edgeSkeletons]), null);
     commit([...api.getSceneElementsIncludingDeleted(), ...created]);
