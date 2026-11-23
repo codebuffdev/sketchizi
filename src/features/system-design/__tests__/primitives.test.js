@@ -54,3 +54,22 @@ test("createNodeMeta copies defaults and rejects unknown kinds", () => {
   assert.throws(() => createNodeMeta("nope"));
   assert.equal(primitivesByCategory().flatMap((c) => c.items).length, 22);
 });
+
+test("six added primitives preserve their role, category, capacity and p95 defaults", () => {
+  const expected = {
+    "read-replica": ["data", "Async read scaling", 6000, 12],
+    pubsub: ["messaging", "Fan-out topics", 25000, 6],
+    "stream-processor": ["compute", "Flink · Kafka Streams", 12000, 22],
+    warehouse: ["data", "ClickHouse · BigQuery", 8000, 45],
+    "websocket-gateway": ["edge", "Stateful · Live push", 15000, 9],
+    "external-api": ["integration", "Stripe · LLM · Rate-limited", 2000, 240],
+  };
+  for (const [kind, [category, subtitle, capacity, p95]] of Object.entries(expected)) {
+    const primitive = PRIMITIVES.find((item) => item.kind === kind);
+    assert.ok(primitive, kind);
+    assert.equal(primitive.category, category);
+    assert.equal(primitive.subtitle, subtitle);
+    assert.equal(primitive.capacityPerReplica, capacity);
+    assert.equal(primitive.baseLatencyMs, p95);
+  }
+});
