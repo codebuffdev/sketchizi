@@ -4,6 +4,7 @@ import { CUSTOM_KEY, collectSceneRepairs, createEdgeSkeleton, createNodeSkeleton
 import { isOrthogonal } from "../orthogonalRouter.js";
 import { computeAutoLayout } from "../autoLayout.js";
 import { createSceneStore } from "../sceneStore.js";
+import { BLUEPRINTS } from "../blueprints.js";
 
 const asElement = (skeleton, id) => ({ id, isDeleted: false, version: 1, ...skeleton });
 function scene() {
@@ -173,4 +174,58 @@ test("scene repair keeps binding-resolved arrows and persists their endpoint met
   assert.deepEqual(patch.customData[CUSTOM_KEY], {
     role: "edge", protocol: "gRPC", from: "client", to: "orders",
   });
+});
+
+
+test("legacy native arrows between System Design nodes normalize into hidden graph edges", () => {
+  const a = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "client");
+  const b = asElement(createNodeSkeleton("microservice", { x: 400, y: 0 }), "orders");
+  const native = {
+    id: "legacy-native-arrow", type: "arrow", x: 200, y: 42, width: 200, height: 0,
+    points: [[0, 0], [200, 0]], opacity: 100, strokeColor: "#000000",
+    startBinding: { elementId: "client" }, endBinding: { elementId: "orders" },
+    endArrowhead: "arrow",
+  };
+  const graph = readGraph([a, b, native]);
+  assert.deepEqual([graph.edges.length, graph.edges[0].from, graph.edges[0].to], [1, "client", "orders"]);
+  const repair = collectSceneRepairs([a, b, native]).get(native.id);
+  assert.equal(repair.opacity, 0);
+  assert.equal(repair.strokeColor, "transparent");
+  assert.equal(repair.endArrowhead, null);
+  assert.deepEqual(
+    { role: repair.customData[CUSTOM_KEY].role, from: repair.customData[CUSTOM_KEY].from, to: repair.customData[CUSTOM_KEY].to },
+    { role: "edge", from: "client", to: "orders" },
+  );
+  const migrated = { ...native, ...repair };
+  assert.equal(readGraph([a, b, migrated]).edges.length, 1);
+  assert.equal(collectSceneRepairs([a, b, migrated]).size, 0);
+});
+
+test("unrelated native canvas arrows are not imported into the System Design graph", () => {
+  const a = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "client");
+  const b = asElement(createNodeSkeleton("microservice", { x: 400, y: 0 }), "orders");
+  const unrelated = { id: "plain-arrow", type: "arrow", x: 0, y: 300, points: [[0, 0], [100, 100]] };
+  assert.equal(readGraph([a, b, unrelated]).edges.length, 0);
+  assert.equal(collectSceneRepairs([a, b, unrelated]).has(unrelated.id), false);
+});
+
+test("every blueprint edge is materialized with the exact generated System Design node IDs", () => {
+  for (const blueprint of BLUEPRINTS) {
+    const ids = new Map(blueprint.nodes.map((node) => [node.key, `node-${node.key}`]));
+    const nodes = blueprint.nodes.map((node) => asElement(
+      createNodeSkeleton(node.kind, { x: node.at[0] * 300, y: node.at[1] * 130 }, node.overrides || {}, ids.get(node.key)),
+      ids.get(node.key),
+    ));
+    const rects = new Map(nodes.map((element) => [element.id, readNode(element)]));
+    const edges = blueprint.edges.map((edge, index) => asElement(
+      createEdgeSkeleton(rects.get(ids.get(edge.from)), rects.get(ids.get(edge.to)), edge.protocol ? { protocol: edge.protocol } : {}, `edge-${index}`),
+      `edge-${index}`,
+    ));
+    const graph = readGraph([...nodes, ...edges]);
+    assert.equal(graph.nodes.length, blueprint.nodes.length, blueprint.id);
+    assert.equal(graph.edges.length, blueprint.edges.length, blueprint.id);
+    for (const edge of blueprint.edges) {
+      assert.ok(graph.edges.some((actual) => actual.from === ids.get(edge.from) && actual.to === ids.get(edge.to)), blueprint.id);
+    }
+  }
 });
