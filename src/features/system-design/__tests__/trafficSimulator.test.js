@@ -115,7 +115,7 @@ test("load balancer keeps distinct domain routes isolated when one target is dow
   assert.equal(r.edges["lb-orders"].rps, 0);
   assert.equal(r.edges["lb-catalog"].rps, 3333.3);
   assert.equal(r.edges["lb-orders"].healthCheckFailed, true);
-  assert.equal(r.edges["lb-orders"].inactiveReason, "Health Check Failed");
+  assert.equal(r.edges["lb-orders"].inactiveReason, "503 Dropped");
   assert.equal(r.nodes.users.incomingRps, 3333.3);
   assert.equal(r.nodes.catalog.incomingRps, 3333.3);
   assert.equal(r.nodes.orders.incomingRps, 0);
