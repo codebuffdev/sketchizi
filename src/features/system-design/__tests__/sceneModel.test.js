@@ -92,6 +92,9 @@ test("native shapes are invisible hit-targets (single visual contract) with a so
   assert.notEqual(node.backgroundColor, "transparent");
   const edge = createEdgeSkeleton({ id: "a", x: 0, y: 0, width: 200, height: 84, protocol: "SQL" }, { id: "b", x: 420, y: 0, width: 200, height: 84 });
   assert.equal(edge.opacity, 0);
+  assert.equal(edge.strokeColor, "transparent");
+  assert.equal(edge.startArrowhead, null);
+  assert.equal(edge.endArrowhead, null);
 });
 
 test("collectSceneRepairs upgrades first-iteration elements, rotates nodes back, drops ghost connectors, and is idempotent", () => {
@@ -104,7 +107,7 @@ test("collectSceneRepairs upgrades first-iteration elements, rotates nodes back,
   const repairs = collectSceneRepairs([a, b, ok, ghost]);
   assert.deepEqual(repairs.get("a"), { opacity: 0, angle: 0 });
   assert.equal(repairs.has("b"), false);
-  assert.deepEqual(repairs.get("ok"), { opacity: 0 });
+  assert.deepEqual(repairs.get("ok"), { opacity: 0, strokeColor: "transparent" });
   assert.deepEqual(repairs.get("ghost"), { isDeleted: true });
   const applied = [a, b, ok, ghost].map((el) => ({ ...el, ...(repairs.get(el.id) || {}) }));
   assert.equal(collectSceneRepairs(applied).size, 0, "second pass finds nothing");
@@ -131,4 +134,25 @@ test("readGraph falls back to arrow endpoint proximity within 24 scene pixels", 
   };
   const graph = readGraph([a, b, arrow]);
   assert.deepEqual([graph.edges[0].from, graph.edges[0].to], ["client", "orders"]);
+});
+
+
+test("readGraph exposes only one visual connector for duplicate source-target pairs", () => {
+  const [a, b, first] = scene();
+  const duplicate = asElement(createEdgeSkeleton(readNode(a), readNode(b), { protocol: "HTTPS" }), "duplicate");
+  const graph = readGraph([a, b, first, duplicate]);
+  assert.equal(graph.edges.length, 1);
+  assert.equal(graph.edges[0].id, "e");
+});
+
+test("collectSceneRepairs hides native arrow strokes and deletes duplicate connectors", () => {
+  const [a, b, first] = scene();
+  Object.assign(first, { opacity: 100, strokeColor: "#000000", endArrowhead: "arrow" });
+  const duplicate = asElement(createEdgeSkeleton(readNode(a), readNode(b), {}), "duplicate");
+  Object.assign(duplicate, { opacity: 100, strokeColor: "#111111" });
+  const repairs = collectSceneRepairs([a, b, first, duplicate]);
+  assert.deepEqual(repairs.get("e"), {
+    opacity: 0, strokeColor: "transparent", endArrowhead: null,
+  });
+  assert.deepEqual(repairs.get("duplicate"), { isDeleted: true });
 });
