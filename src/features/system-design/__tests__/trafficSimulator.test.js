@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { simulateTraffic, deriveStatus, computeP95, packetCountForRps, nodeCapacity } from "../trafficSimulator.js";
+import { simulateTraffic, deriveStatus, computeP95, packetCountForRps, nodeCapacity, MAX_HOPS } from "../trafficSimulator.js";
 
 const node = (id, kind, extra = {}) => ({ id, kind, replicas: 2, capacityPerReplica: 10000, cacheHitRate: 0, health: "healthy", ...extra });
 const edge = (from, to) => ({ id: `${from}-${to}`, from, to, protocol: "HTTPS" });
@@ -210,6 +210,7 @@ test("overloaded cache bypasses hit-rate shielding instead of shedding read traf
   assert.equal(r.nodes.cache.cacheHitRate, 0);
   assert.equal(r.edges["cache-db"].rps, 10000);
   assert.equal(r.nodes.db.incomingRps, 10000);
+  assert.ok(r.diagnostics.cacheStampedes.length > 0);
 });
 
 test("queue buffers consumer outage without making the producer unhealthy", async () => {
@@ -267,4 +268,25 @@ test("degraded synchronous dependency amplifies edge traffic by 25 percent", () 
   });
   assert.equal(r.edges["service-db"].rps, 1250);
   assert.equal(r.edges["service-db"].retryAmplification, 1.25);
+});
+
+
+test("queue marks slow consumers as lagging and buffers excess messages", async () => {
+  const { deriveArchitectureDiagnostic } = await import("../architectureDiagnostics.js");
+  const nodes = [node("producer", "microservice", { label: "Order Service" }), node("queue", "queue", { label: "Order Events" }), node("worker", "worker", { label: "Notification Worker", replicas: 1, capacityPerReplica: 1000 })];
+  const edges = [edge("producer", "queue"), edge("queue", "worker")];
+  const r = simulateTraffic({ nodes, edges, totalRps: 5000 });
+  assert.equal(r.nodes.producer.status, "healthy");
+  assert.equal(r.nodes.queue.status, "lagging");
+  assert.equal(r.edges["queue-worker"].rps, 1000);
+  assert.match(deriveArchitectureDiagnostic(nodes, r, edges).message, /Notification Worker is down\/slow/);
+});
+
+test("path traversal stops at MAX_HOPS and reports a depth warning", () => {
+  const nodes = Array.from({ length: MAX_HOPS + 2 }, (_, index) => node(`svc-${index}`, "microservice", { label: `Service ${index}` }));
+  const edges = nodes.slice(0, -1).map((item, index) => edge(item.id, nodes[index + 1].id));
+  const r = simulateTraffic({ nodes, edges, totalRps: 1000 });
+  assert.equal(r.diagnostics.depthWarnings.length, 1);
+  assert.equal(r.edges[`svc-${MAX_HOPS}-svc-${MAX_HOPS + 1}`].cycleBlocked, true);
+  assert.match(r.diagnostics.depthWarnings[0].message, /12-hop safety limit/);
 });
