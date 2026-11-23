@@ -68,12 +68,6 @@ export default function SystemDesignStudio({ workspace, isDarkTheme }) {
     return () => { region?.classList.remove("sd-active"); region?.classList.remove("sd-has-system-selection"); };
   }, [enabled]);
 
-  useLayoutEffect(() => {
-    const region = rootRef.current?.parentElement;
-    region?.classList.toggle("sd-has-system-selection", Boolean(selection));
-    return () => region?.classList.remove("sd-has-system-selection");
-  }, [selection]);
-
   const selection = useMemo(() => {
     if (snapshot.selectedIds.length !== 1) return null;
     const id = snapshot.selectedIds[0];
@@ -82,6 +76,13 @@ export default function SystemDesignStudio({ workspace, isDarkTheme }) {
     const edge = graph.edges.find((e) => e.id === id);
     return edge ? { kind: "edge", item: edge } : null;
   }, [snapshot.selectedIds, graph]);
+
+  useLayoutEffect(() => {
+    if (!enabled) return undefined;
+    const region = rootRef.current?.parentElement;
+    region?.classList.toggle("sd-has-system-selection", Boolean(selection));
+    return () => region?.classList.remove("sd-has-system-selection");
+  }, [enabled, selection]);
 
   if (!enabled) return <div ref={rootRef} hidden />;
 
