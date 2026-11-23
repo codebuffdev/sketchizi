@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { STUDIO_MODES, composeYaml, kubernetesYaml, modeBadge, serviceNames, studioYaml, slugify } from "../yamlPreview.js";
 import { createNodeMeta } from "../primitives.js";
-import { persistencePill } from "../persistencePill.js";
 
 const n = (id, kind, extra = {}) => ({ id, ...createNodeMeta(kind), ...extra });
 
@@ -44,11 +43,4 @@ test("duplicate labels get unique service names; empty scenes explain themselves
   assert.deepEqual([...names.values()], ["api", "api-2"]);
   assert.equal(slugify("  !!  "), "service");
   assert.match(kubernetesYaml([]), /^#/);
-});
-
-test("persistence pill maps Sketchizi save states", () => {
-  assert.equal(persistencePill({ state: "saved" }).label, "Saved · IndexedDB");
-  assert.equal(persistencePill({ state: "saving" }).label, "Saving...");
-  assert.equal(persistencePill({ state: "pending" }).label, "Saving...");
-  assert.equal(persistencePill({ state: "error" }).tone, "red");
 });

@@ -1,17 +1,32 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PORTS, choosePorts, nearestPort, pointAlong, roundedPath, routeOrthogonal } from "./orthogonalRouter.js";
+import { PORTS, choosePorts, getPortPoint, nearestPort, pointAlong, roundedPath, routeOrthogonal } from "./orthogonalRouter.js";
 import { modeBadge } from "./yamlPreview.js";
 import { formatRps, packetCountForRps } from "./trafficSimulator.js";
+import { PrimitiveIcon } from "./PrimitiveIcon.jsx";
 
 const STATUS_LABEL = { healthy: "Healthy", elevated: "Elevated", overloaded: "Overloaded", down: "Down" };
 const stop = (event) => event.stopPropagation();
 
-function nodeAt(nodes, point, excludeId) {
+// `margin` (scene px) widens the hit area so ports, which straddle the card edge, stay reachable: the pointer
+// is still "on" the node while it travels from the card body onto a port that sits half outside it.
+function nodeAt(nodes, point, excludeId, margin = 0) {
   for (let i = nodes.length - 1; i >= 0; i -= 1) {
     const n = nodes[i];
-    if (n.id !== excludeId && point.x >= n.x && point.x <= n.x + n.width && point.y >= n.y && point.y <= n.y + n.height) return n;
+    if (n.id !== excludeId && point.x >= n.x - margin && point.x <= n.x + n.width + margin && point.y >= n.y - margin && point.y <= n.y + n.height + margin) return n;
   }
   return null;
+}
+const PORT_REACH = 14;
+const PORT_SNAP = 28; // a drop this close to a port means "that port"
+
+/**
+ * Which port of `target` a connector dropped at `point` should enter. Near a port (<= PORT_SNAP): that port, because the
+ * person aimed at it. Anywhere else on the card: the port facing the source, which gives the cleanest elbow.
+ */
+function dropPortFor(source, target, point) {
+  const nearest = nearestPort(target, point);
+  const p = getPortPoint(target, nearest);
+  return Math.hypot(p.x - point.x, p.y - point.y) <= PORT_SNAP ? nearest : choosePorts(source, target).toPort;
 }
 
 function LabelEditor({ initial, onDone }) {
@@ -60,7 +75,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
       const { clientX, clientY } = event;
       frame = requestAnimationFrame(() => {
         frame = 0;
-        const hit = nodeAt(nodesRef.current, toScene(clientX, clientY));
+        const hit = nodeAt(nodesRef.current, toScene(clientX, clientY), null, PORT_REACH);
         setHoverId((current) => (current === (hit?.id || null) ? current : hit?.id || null));
       });
     };
@@ -98,16 +113,20 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
     setDrag({ fromId: node.id, fromPort: port, point: toScene(event.clientX, event.clientY) });
   };
   const moveConnect = (event) => { if (drag) setDrag({ ...drag, point: toScene(event.clientX, event.clientY) }); };
+  // Dropping anywhere on a target card connects (to its nearest cardinal port), so one press-drag-release is enough.
   const endConnect = (event) => {
     if (!drag) return;
     const point = toScene(event.clientX, event.clientY);
-    const target = nodeAt(graph.nodes, point, drag.fromId);
-    if (target) actions.connect(drag.fromId, target.id, { fromPort: drag.fromPort, toPort: nearestPort(target, point) });
+    const target = nodeAt(graph.nodes, point, drag.fromId, 10);
+    const source = byId.get(drag.fromId);
+    if (target && source) actions.connect(drag.fromId, target.id, { fromPort: drag.fromPort, toPort: dropPortFor(source, target, point) });
     setDrag(null);
   };
+  const dragFrom = drag ? byId.get(drag.fromId) : null;
+  const dropTarget = drag ? nodeAt(graph.nodes, drag.point, drag.fromId, 10) : null;
+  const dropPort = dropTarget && dragFrom ? dropPortFor(dragFrom, dropTarget, drag.point) : null;
 
   const layerStyle = { transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom}) translate(${scrollX}px, ${scrollY}px)` };
-  const dragFrom = drag ? byId.get(drag.fromId) : null;
 
   return (
     <div className="sd-overlay" aria-hidden={false}>
@@ -151,17 +170,19 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
         {graph.nodes.map((node) => {
           const telemetry = simulation?.nodes[node.id];
           const selected = selectedIds.includes(node.id);
-          const showPorts = canEdit && (selected || hoverId === node.id || drag?.fromId === node.id || (drag && hoverId === node.id));
+          const isDropTarget = dropTarget?.id === node.id;
+          const showPorts = canEdit && (selected || hoverId === node.id || drag?.fromId === node.id || isDropTarget);
           const status = simulate && telemetry ? telemetry.status : node.health === "down" ? "down" : node.health === "degraded" ? "elevated" : "healthy";
           return (
-            <div key={node.id} className={`sd-node is-${node.accent} s-${status}${selected ? " is-selected" : ""}`}
+            <div key={node.id} className={`sd-node is-${node.accent} s-${status}${selected ? " is-selected" : ""}${isDropTarget ? " is-drop-target" : ""}`}
               style={{ left: node.x, top: node.y, width: node.width, height: node.height }} data-node-id={node.id} data-kind={node.kind}>
               <div className="sd-node-head">
-                <span className="sd-node-dot" aria-hidden="true" />
+                <PrimitiveIcon kind={node.kind} accent={node.accent} className="sd-node-icon" />
                 {editingId === node.id
                   ? <LabelEditor initial={node.label} onDone={(value) => { setEditingId(null); if (value) actions.updateNodeMeta(node.id, { label: value }); }} />
                   : <strong className="sd-node-label">{node.label}</strong>}
-                <span className="sd-mode-badge sd-mono">{modeBadge(node, mode)}</span>
+                {/* Canvas mode's badge would repeat the subtitle line below, so it only appears where it adds information (pods / port). */}
+                {mode !== "canvas" && <span className="sd-mode-badge sd-mono">{modeBadge(node, mode)}</span>}
               </div>
               <div className="sd-node-sub">{node.subtitle}</div>
               <div className="sd-node-foot">
@@ -180,8 +201,10 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
                 )}
               </div>
               {PORTS.map((port) => (
-                <button key={port} type="button" tabIndex={-1} className={`sd-port is-${port}${showPorts ? " is-visible" : ""}`}
+                <button key={port} type="button" tabIndex={-1}
+                  className={`sd-port is-${port}${showPorts ? " is-visible" : ""}${isDropTarget && dropPort === port ? " is-target" : ""}`}
                   aria-label={`${node.label} ${port} connector`}
+                  onPointerEnter={() => setHoverId(node.id)}
                   onPointerDown={(e) => beginConnect(e, node, port)} onPointerMove={moveConnect} onPointerUp={endConnect} onPointerCancel={() => setDrag(null)} />
               ))}
             </div>

@@ -3,6 +3,10 @@
 // Nodes are rectangles and edges are arrows carrying `customData.sketchiziSystemDesign`.
 // Because they are ordinary scene elements, tabs, undo/redo, IndexedDB persistence,
 // recovery and collaboration need no special handling. This module is pure.
+//
+// SINGLE VISUAL CONTRACT: the React overlay is the only thing that *draws* a node or connector. The native Excalidraw
+// rectangle/arrow is an invisible hit-target (opacity 0) that still gives us native selection, drag, resize, undo and
+// multi-select, with exactly one selection box. Drawing both is what produced the "smaller duplicate card" bug.
 
 import { createNodeMeta, getPrimitive, ACCENTS, HEALTH_OVERRIDES, PROTOCOLS } from "./primitives.js";
 import { choosePorts, routeOrthogonal } from "./orthogonalRouter.js";
@@ -44,7 +48,10 @@ function sanitizeMeta(meta) {
   };
 }
 
-const NEUTRAL = { strokeColor: "#94a3b8", backgroundColor: "transparent" };
+// A *solid* background is what makes Excalidraw hit-test the whole interior (a transparent fill only hits the outline),
+// so click-and-drag anywhere on the card works. Opacity 0 keeps it invisible. Hit-testing does not look at opacity.
+const NODE_HIT_BOX = Object.freeze({ strokeColor: "#94a3b8", backgroundColor: "#ffffff", fillStyle: "solid", opacity: 0, angle: 0 });
+const EDGE_HIT_BOX = Object.freeze({ opacity: 0 });
 
 /** Excalidraw element skeleton for a node. Visuals are drawn by the overlay; the rectangle is the hit-target + anchor. */
 export function createNodeSkeleton(kind, position, overrides = {}, id) {
@@ -57,10 +64,9 @@ export function createNodeSkeleton(kind, position, overrides = {}, id) {
     width: NODE_SIZE.width,
     height: NODE_SIZE.height,
     roundness: { type: 3, value: 14 },
-    ...NEUTRAL,
+    ...NODE_HIT_BOX,
     strokeWidth: 1,
     roughness: 0,
-    opacity: 100,
     customData: { [CUSTOM_KEY]: { role: "node", version: 1, meta } },
   };
 }
@@ -136,6 +142,7 @@ export function createEdgeSkeleton(fromNode, toNode, options = {}, id) {
     strokeColor: "#94a3b8",
     strokeWidth: 1,
     roughness: 0,
+    ...EDGE_HIT_BOX,
     endArrowhead: null,
     startArrowhead: null,
     customData: {
@@ -151,6 +158,34 @@ export function createEdgeSkeleton(fromNode, toNode, options = {}, id) {
       },
     },
   };
+}
+
+const isSolid = (color) => Boolean(color) && color !== "transparent";
+
+/**
+ * Patches that bring elements written by older builds in line with the single-visual contract (visible native
+ * rectangles/arrows, rotated nodes) plus removal of connectors whose endpoint node is gone (a plain Delete key press
+ * removes only the node, which would otherwise leave an invisible, still-clickable ghost connector).
+ * Returns Map<elementId, patch>; empty when the scene is already clean, so applying it is idempotent.
+ */
+export function collectSceneRepairs(elements) {
+  const repairs = new Map();
+  const live = (elements || []).filter((element) => element && !element.isDeleted);
+  const nodeIds = new Set(live.filter(isSystemDesignNode).map((element) => element.id));
+  for (const element of live) {
+    if (isSystemDesignNode(element)) {
+      const patch = {};
+      if (element.opacity !== 0) patch.opacity = 0;
+      if (!isSolid(element.backgroundColor) || element.fillStyle !== "solid") { patch.backgroundColor = "#ffffff"; patch.fillStyle = "solid"; }
+      if (element.angle) patch.angle = 0; // A rotated hit-box would drift away from the unrotated card.
+      if (Object.keys(patch).length) repairs.set(element.id, patch);
+    } else if (isSystemDesignEdge(element)) {
+      const data = element.customData[CUSTOM_KEY];
+      if (!nodeIds.has(data.from) || !nodeIds.has(data.to)) repairs.set(element.id, { isDeleted: true });
+      else if (element.opacity !== 0) repairs.set(element.id, { opacity: 0 });
+    }
+  }
+  return repairs;
 }
 
 /** Serialise only the system design slice of a scene (what IndexedDB persists inside the sketch). */

@@ -47,20 +47,42 @@ test("App.jsx stays thin: one hook call, one lazy studio mount, no workspace sta
   assert.doesNotMatch(app, /simulateTraffic|orthogonalRouter|useState\([^)]*loadRps/);
 });
 
-test("studio chrome exposes the required controls", () => {
+test("studio chrome: one top-centre pill, no duplicated Sketchizi controls", () => {
   const top = read(path.join(dir, "TopWorkspaceBar.jsx"));
-  for (const text of ["Canvas", "Simulate Traffic", "Snap", "Zoom in", "Zoom out", "New tab"]) assert.ok(top.includes(text), text);
+  for (const text of ["Simulate", "Studio mode", "Close system design studio"]) assert.ok(top.includes(text), text);
   assert.match(top, /STUDIO_MODES/);
+  // Sketchizi's header owns tabs, save status, zoom (top-left / top-right). The studio must not render its own.
+  for (const text of ["New tab", "Zoom in", "Zoom out", "sd-topbar-right", "sd-topbar-left", "persistencePill"]) assert.ok(!top.includes(text), `duplicate control: ${text}`);
   const dock = read(path.join(dir, "CollapsibleQuickDock.jsx"));
-  assert.match(dock, /Auto-Layout/);
-  assert.match(dock, /onPointerEnter/);
+  assert.match(dock, /Auto-layout/);
+  assert.match(dock, /More/);
+  assert.match(dock, /quickPrimitives\(\)/);
+  assert.match(dock, /morePrimitivesByCategory\(\)/);
   const insp = read(path.join(dir, "ContextualInspectorDrawer.jsx"));
-  for (const text of ["Replicas", "Capacity", "Cache hit rate", "Health override", "Line style", "Accent"]) assert.ok(insp.includes(text), text);
+  for (const text of ["Replicas", "Capacity", "Cache hit rate", "Health override", "Line style", "Accent", "YAML", "Inspect"]) assert.ok(insp.includes(text), text);
   assert.match(insp, /if \(!selection\) return null/);
+  assert.match(insp, /useState\(false\)/, "drawer must start closed");
+  assert.match(insp, /\{open && \(\s*<aside/, "drawer only mounts when explicitly opened");
   const overlay = read(path.join(dir, "SystemDesignNodeOverlay.jsx"));
   assert.match(overlay, /PORTS\.map/);
   assert.match(overlay, /animateMotion/);
   assert.match(overlay, /dblclick/);
+  assert.match(overlay, /PrimitiveIcon/);
+  assert.doesNotMatch(overlay, /sd-node-dot/, "plain colour dots were replaced by icons");
+});
+
+test("single-visual contract: no ring on the card, Sketchizi bottom palette hidden, chrome clears Sketchizi's header", () => {
+  const css = read(path.join(dir, "systemDesign.css"));
+  assert.match(css, /\.app \.sd-active \.sketchizi-tool-options-dock \{ display: none !important; \}/);
+  const selected = css.match(/\.sd-node\.is-selected \{[^}]*\}/)[0];
+  assert.doesNotMatch(selected, /border-color|(?<!inset )0 0 0 \d+px/, "selected card must not draw a second outline next to Excalidraw's selection box");
+  // Studio bar sits below Sketchizi's first row and derives from ITS variables.
+  assert.match(css, /--sd-bar-top: calc\(var\(--header-top, 12px\) \+ var\(--top-row-height, 42px\)/);
+  assert.match(css, /--sd-rail-clear: calc\(var\(--header-rail-right, 12px\) \+ var\(--header-rail-width, 56px\)/);
+  // Dropdowns live inside the dock / top bar stacking contexts, which must sit above the drawer or the popover is clipped by it.
+  assert.match(css, /\.sd-topbar \{ position: absolute; z-index: 3;/);
+  assert.match(css, /\.sd-dock \{ position: absolute; z-index: 3;/);
+  assert.doesNotMatch(css, /\.sd-sim-btn|\.sd-topbar-right|\.sd-zoom|\.sd-tabs|\.sd-persist/);
 });
 
 test("command registry exposes the studio and every feature file exists", () => {

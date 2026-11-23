@@ -7,8 +7,12 @@ import { readGraph } from "./sceneModel.js";
 import { simulateTraffic } from "./trafficSimulator.js";
 import "./systemDesign.css";
 
-/** Thin integration boundary mounted by App.jsx inside the canvas region. */
-export default function SystemDesignStudio({ workspace, saveStatus, canvasTabs, activeCanvasId, onSelectTab, onCreateTab, isDarkTheme }) {
+/**
+ * Thin integration boundary mounted by App.jsx inside the canvas region.
+ * App.jsx still passes saveStatus/canvasTabs/onSelectTab/onCreateTab from the first iteration. They are intentionally
+ * ignored: Sketchizi's own header already renders documents and save status, so the studio no longer duplicates them.
+ */
+export default function SystemDesignStudio({ workspace, isDarkTheme }) {
   const { store, enabled, mode, simulate, loadRps, actions, canEdit } = workspace;
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const rootRef = useRef(null);
@@ -32,7 +36,8 @@ export default function SystemDesignStudio({ workspace, saveStatus, canvasTabs, 
     setOffset((current) => (current.x === next.x && current.y === next.y ? current : next));
   }, [getHost, snapshot.revision, enabled]);
 
-  // Re-theme Excalidraw's selection/primary accents (default violet) while the studio is open: zero purple.
+  // While the studio is open this class (a) re-themes Excalidraw's selection accents (default violet) and (b) hides
+  // Sketchizi's bottom stroke/fill palette, which would otherwise sit on top of the studio dock (see systemDesign.css).
   useLayoutEffect(() => {
     if (!enabled) return undefined;
     const region = rootRef.current?.parentElement;
@@ -55,12 +60,10 @@ export default function SystemDesignStudio({ workspace, saveStatus, canvasTabs, 
     <div ref={rootRef} className={`sd-root${isDarkTheme ? " is-dark" : ""}`} data-testid="system-design-studio" data-mode={mode}>
       <SystemDesignNodeOverlay graph={graph} simulation={simulation} simulate={simulate} mode={mode} snapshot={snapshot}
         offset={offset} getHost={getHost} actions={actions} canEdit={canEdit} />
-      <TopWorkspaceBar canvasTabs={canvasTabs} activeCanvasId={activeCanvasId} onSelectTab={onSelectTab} onCreateTab={onCreateTab}
-        saveStatus={saveStatus} mode={mode} onModeChange={workspace.setMode} simulate={simulate} onSimulateChange={workspace.setSimulate}
-        loadRps={loadRps} onLoadChange={workspace.setLoadRps} snapEnabled={workspace.gridEnabled} onSnapChange={workspace.setGridEnabled}
-        zoom={snapshot.zoom} onZoom={actions.setZoom} onClose={workspace.close} />
-      <CollapsibleQuickDock pinned={workspace.dockPinned} onPinnedChange={workspace.setDockPinned} onAdd={actions.addNode}
-        onAutoLayout={actions.autoLayout} canEdit={canEdit} />
+      <TopWorkspaceBar mode={mode} onModeChange={workspace.setMode} simulate={simulate} onSimulateChange={workspace.setSimulate}
+        loadRps={loadRps} onLoadChange={workspace.setLoadRps} onClose={workspace.close} />
+      <CollapsibleQuickDock onAdd={actions.addNode} onAutoLayout={actions.autoLayout}
+        snapEnabled={workspace.gridEnabled} onSnapChange={workspace.setGridEnabled} canEdit={canEdit} />
       <ContextualInspectorDrawer selection={selection} mode={mode} simulation={simulation} simulate={simulate} actions={actions} canEdit={canEdit} />
     </div>
   );

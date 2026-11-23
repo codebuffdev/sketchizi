@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CUSTOM_KEY, createEdgeSkeleton, createNodeSkeleton, deserializeSystemDesign, edgePatch, hasSystemDesignContent, metaPatch, readGraph, readNode, serializeSystemDesign } from "../sceneModel.js";
+import { CUSTOM_KEY, collectSceneRepairs, createEdgeSkeleton, createNodeSkeleton, deserializeSystemDesign, edgePatch, hasSystemDesignContent, metaPatch, readGraph, readNode, serializeSystemDesign } from "../sceneModel.js";
 import { isOrthogonal } from "../orthogonalRouter.js";
 import { computeAutoLayout } from "../autoLayout.js";
 import { createSceneStore } from "../sceneStore.js";
@@ -83,4 +83,29 @@ test("scene store notifies subscribers and bumps revision", () => {
   off();
   store.set({ elements: [], selectedIds: [] });
   assert.equal(calls, 1);
+});
+
+test("native shapes are invisible hit-targets (single visual contract) with a solid fill so the interior is draggable", () => {
+  const node = createNodeSkeleton("sql", { x: 0, y: 0 });
+  assert.equal(node.opacity, 0);
+  assert.equal(node.fillStyle, "solid");
+  assert.notEqual(node.backgroundColor, "transparent");
+  const edge = createEdgeSkeleton({ id: "a", x: 0, y: 0, width: 200, height: 84, protocol: "SQL" }, { id: "b", x: 420, y: 0, width: 200, height: 84 });
+  assert.equal(edge.opacity, 0);
+});
+
+test("collectSceneRepairs upgrades first-iteration elements, rotates nodes back, drops ghost connectors, and is idempotent", () => {
+  const a = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "a");
+  const b = asElement(createNodeSkeleton("redis", { x: 400, y: 0 }), "b");
+  const ok = asElement(createEdgeSkeleton(readNode(a), readNode(b), {}), "ok");
+  const ghost = asElement(createEdgeSkeleton(readNode(a), { ...readNode(b), id: "gone" }, {}), "ghost");
+  Object.assign(a, { opacity: 100, backgroundColor: "#f8fafc", angle: 0.7 }); // legacy visible + rotated
+  Object.assign(ok, { opacity: 100 });
+  const repairs = collectSceneRepairs([a, b, ok, ghost]);
+  assert.deepEqual(repairs.get("a"), { opacity: 0, angle: 0 });
+  assert.equal(repairs.has("b"), false);
+  assert.deepEqual(repairs.get("ok"), { opacity: 0 });
+  assert.deepEqual(repairs.get("ghost"), { isDeleted: true });
+  const applied = [a, b, ok, ghost].map((el) => ({ ...el, ...(repairs.get(el.id) || {}) }));
+  assert.equal(collectSceneRepairs(applied).size, 0, "second pass finds nothing");
 });

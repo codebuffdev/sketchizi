@@ -1,12 +1,27 @@
 /* Sketchizi System Design Studio. Palette: slate / emerald / amber (+ red only for overloaded/down). */
 .sd-root {
   --sd-slate: #64748b; --sd-emerald: #059669; --sd-amber: #d97706; --sd-red: #dc2626;
-  --sd-text: #1e293b; --sd-text-2: #64748b; --sd-border: #e2e8f0; --sd-surface: rgba(255,255,255,.82);
+  --sd-text: #1e293b; --sd-text-2: #64748b; --sd-border: #e2e8f0; --sd-surface: rgba(255,255,255,.86);
   --sd-card: #ffffff; --sd-soft: #f1f5f9; --sd-shadow: 0 8px 28px rgba(15,23,42,.10), 0 1px 3px rgba(15,23,42,.08);
+
+  /* Layout contract with Sketchizi's own chrome (all offsets derive from ITS variables, with the same fallbacks it uses):
+       row 1  y = --header-top .. +--top-row-height   Sketchizi: document tabs (left) and zoom/date/AI (right)  -> studio never enters it
+       row 2  studio bar (centre), then the contextual pill below it, then the on-demand drawer
+       right  Sketchizi's header rail occupies the right edge, so the drawer stops short of it
+       bottom the studio dock sits where Sketchizi's stroke/fill palette would be (that palette is hidden while the studio is open) */
+  --sd-bar-h: 40px;
+  --sd-bar-top: calc(var(--header-top, 12px) + var(--top-row-height, 42px) + 8px);
+  --sd-ctx-top: calc(var(--sd-bar-top) + var(--sd-bar-h) + 8px);
+  --sd-drawer-top: calc(var(--sd-ctx-top) + var(--sd-bar-h) + 8px);
+  --sd-rail-clear: calc(var(--header-rail-right, 12px) + var(--header-rail-width, 56px) + 12px);
+  --sd-dock-bottom: 20px;
+  --sd-dock-h: 46px;
+  --sd-dock-clear: calc(var(--sd-dock-bottom) + var(--sd-dock-h) + 14px);
+
   position: absolute; inset: 0; pointer-events: none; z-index: 30; font-family: Inter, -apple-system, "Segoe UI", system-ui, sans-serif; color: var(--sd-text);
 }
 .sd-root.is-dark {
-  --sd-text: #e2e8f0; --sd-text-2: #94a3b8; --sd-border: #334155; --sd-surface: rgba(30,41,59,.82);
+  --sd-text: #e2e8f0; --sd-text-2: #94a3b8; --sd-border: #334155; --sd-surface: rgba(30,41,59,.86);
   --sd-card: #1e293b; --sd-soft: #0f172a; --sd-shadow: 0 8px 28px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.4);
 }
 .sd-mono, .sd-root kbd, .sd-yaml { font-family: "JetBrains Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
@@ -15,48 +30,52 @@
 .sd-root button { cursor: pointer; border: 0; background: transparent; }
 .sd-root button:disabled { opacity: .45; cursor: not-allowed; }
 .sd-root :focus-visible { outline: 2px solid var(--sd-emerald); outline-offset: 2px; }
-
-/* Top bar */
-.sd-topbar { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; pointer-events: none; }
-.sd-topbar-left, .sd-topbar-right { display: flex; align-items: center; gap: 8px; padding: 5px 8px; max-width: 34vw; }
-.sd-topbar-right { max-width: none; }
-.sd-tabs { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: none; max-width: 22vw; }
-.sd-tab { padding: 4px 10px; border-radius: 9px; font-size: 12px; color: var(--sd-text-2); white-space: nowrap; max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
-.sd-tab.is-active { background: var(--sd-soft); color: var(--sd-text); font-weight: 600; }
-.sd-icon-btn { width: 26px; height: 26px; border-radius: 8px; font-size: 15px; line-height: 1; color: var(--sd-text-2); }
+.sd-icon { display: block; flex: none; }
+.sd-prim-icon.is-slate { color: var(--sd-slate); } .sd-prim-icon.is-emerald { color: var(--sd-emerald); } .sd-prim-icon.is-amber { color: var(--sd-amber); }
+.sd-divider { width: 1px; height: 20px; margin: 0 4px; background: var(--sd-border); flex: none; }
+.sd-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; color: var(--sd-text-2); flex: none; }
 .sd-icon-btn:hover:not(:disabled) { background: var(--sd-soft); color: var(--sd-text); }
 .sd-icon-btn.is-danger:hover:not(:disabled) { color: var(--sd-red); }
-.sd-persist { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-family: "JetBrains Mono", Consolas, monospace; color: var(--sd-text-2); white-space: nowrap; padding-left: 8px; border-left: 1px solid var(--sd-border); }
-.sd-persist i { width: 7px; height: 7px; border-radius: 50%; background: var(--sd-slate); }
-.sd-persist.is-emerald i { background: var(--sd-emerald); } .sd-persist.is-amber i { background: var(--sd-amber); } .sd-persist.is-red i { background: var(--sd-red); }
-.sd-persist.is-busy i { animation: sd-pulse 1s ease-in-out infinite; }
-.sd-segmented { position: absolute; left: 50%; transform: translateX(-50%); display: flex; padding: 3px; gap: 2px; }
-.sd-segmented button { padding: 5px 14px; border-radius: 11px; font-size: 12px; font-weight: 500; color: var(--sd-text-2); transition: background .15s, color .15s; }
-.sd-segmented button.is-active { background: var(--sd-card); color: var(--sd-text); box-shadow: 0 1px 3px rgba(15,23,42,.14); font-weight: 600; }
-.sd-sim-btn { padding: 5px 11px; border-radius: 10px; font-size: 12px; font-weight: 600; color: var(--sd-text-2); border: 1px solid var(--sd-border) !important; }
-.sd-sim-btn.is-on { color: #fff; background: var(--sd-emerald); border-color: var(--sd-emerald) !important; }
-.sd-presets { display: flex; align-items: center; gap: 2px; }
-.sd-presets button { padding: 3px 8px; border-radius: 8px; font-size: 11px; color: var(--sd-text-2); }
-.sd-presets button.is-active { background: var(--sd-soft); color: var(--sd-text); font-weight: 700; }
-.sd-unit { font-size: 10px; color: var(--sd-text-2); padding-left: 2px; }
-.sd-chip { padding: 4px 9px; border-radius: 9px; font-size: 11px; color: var(--sd-text-2); border: 1px solid var(--sd-border) !important; }
-.sd-chip.is-on { color: var(--sd-emerald); border-color: var(--sd-emerald) !important; background: rgba(5,150,105,.08); }
-.sd-zoom { display: flex; align-items: center; } .sd-zoom-value { font-size: 11px; padding: 3px 4px; min-width: 42px; }
+.sd-icon-btn.is-on { color: var(--sd-emerald); background: rgba(5,150,105,.10); }
 
-/* Quick dock */
-.sd-dock { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; padding: 6px; max-height: calc(100% - 140px); overflow: hidden; transition: width .18s ease; width: 44px; }
-.sd-dock.is-expanded { width: 232px; }
-.sd-dock-handle { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 10px; font-size: 12px; font-weight: 600; color: var(--sd-text-2); }
-.sd-dock-body { overflow-y: auto; padding-top: 4px; scrollbar-width: thin; }
-.sd-dock-group h3 { margin: 8px 8px 3px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--sd-text-2); font-weight: 600; }
-.sd-dock-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 8px; border-radius: 9px; font-size: 12px; text-align: left; }
-.sd-dock-item:hover:not(:disabled) { background: var(--sd-soft); }
-.sd-dock-item i { width: 8px; height: 8px; border-radius: 3px; background: var(--sd-slate); flex: none; }
-.sd-dock-item.is-emerald i { background: var(--sd-emerald); } .sd-dock-item.is-amber i { background: var(--sd-amber); }
-.sd-dock-item span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sd-dock-item kbd { font-size: 10px; padding: 1px 5px; border: 1px solid var(--sd-border); border-radius: 5px; color: var(--sd-text-2); }
-.sd-dock-layout { margin: 8px 4px 2px; padding: 7px; border-radius: 10px; font-size: 12px; font-weight: 600; border: 1px solid var(--sd-border) !important; width: calc(100% - 8px); }
-.sd-dock-layout:hover:not(:disabled) { border-color: var(--sd-emerald) !important; color: var(--sd-emerald); }
+/* Popovers (load presets, "+ More") */
+.sd-popover { position: absolute; z-index: 2; padding: 6px; background: var(--sd-card); border: 1px solid var(--sd-border); border-radius: 14px; box-shadow: var(--sd-shadow); animation: sd-pop .14s ease-out; }
+
+/* Studio bar: ONE centred pill, second row (clear of Sketchizi's top row) */
+.sd-topbar { position: absolute; z-index: 3; top: var(--sd-bar-top); left: 0; right: 0; display: flex; justify-content: center; pointer-events: none; }
+.sd-topbar-pill { display: flex; align-items: center; gap: 2px; height: var(--sd-bar-h); box-sizing: border-box; padding: 0 6px 0 4px; max-width: calc(100% - 24px); }
+.sd-segmented { display: flex; gap: 2px; padding: 3px; background: var(--sd-soft); border-radius: 11px; }
+.sd-segmented button { padding: 4px 13px; border-radius: 9px; font-size: 12px; font-weight: 500; color: var(--sd-text-2); white-space: nowrap; transition: background .15s, color .15s; }
+.sd-segmented button:hover:not(.is-active) { color: var(--sd-text); }
+.sd-segmented button.is-active { background: var(--sd-card); color: var(--sd-text); box-shadow: 0 1px 3px rgba(15,23,42,.14); font-weight: 600; }
+.sd-sim { position: relative; display: flex; align-items: center; }
+.sd-sim-main, .sd-sim-caret { display: inline-flex; align-items: center; height: 28px; color: var(--sd-text-2); }
+.sd-sim-main { gap: 6px; padding: 0 8px 0 10px; border-radius: 9px 0 0 9px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.sd-sim-main .sd-icon { width: 13px; height: 13px; }
+.sd-sim-load-label { font-weight: 500; color: var(--sd-text-2); }
+.sd-sim-caret { padding: 0 5px; border-radius: 0 9px 9px 0; }
+.sd-sim-main:hover, .sd-sim-caret:hover { background: var(--sd-soft); color: var(--sd-text); }
+.sd-sim-main.is-on, .sd-sim-caret.is-on { color: #fff; background: var(--sd-emerald); }
+.sd-sim-main.is-on .sd-sim-load-label { color: rgba(255,255,255,.85); }
+.sd-sim-main.is-on:hover, .sd-sim-caret.is-on:hover { background: #047857; color: #fff; }
+.sd-load-menu { top: calc(100% + 10px); right: 0; min-width: 132px; display: flex; flex-direction: column; gap: 2px; }
+.sd-load-menu button { display: flex; justify-content: space-between; gap: 14px; padding: 6px 10px; border-radius: 9px; font-size: 12px; text-align: left; }
+.sd-load-menu button small { color: var(--sd-text-2); font-size: 10px; align-self: center; }
+.sd-load-menu button:hover { background: var(--sd-soft); }
+.sd-load-menu button.is-active { background: rgba(5,150,105,.10); color: var(--sd-emerald); font-weight: 700; }
+
+/* Quick dock: compact, bottom-centre, always visible. Six primitives + "+ More" + layout/snap. */
+.sd-dock { position: absolute; z-index: 3; left: 50%; bottom: var(--sd-dock-bottom); transform: translateX(-50%); display: flex; align-items: center; gap: 2px; box-sizing: border-box; height: var(--sd-dock-h); padding: 0 8px; max-width: calc(100% - 24px); }
+.sd-dock-quick, .sd-dock-tools { display: flex; align-items: center; gap: 2px; }
+.sd-dock-item { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 10px; border-radius: 10px; font-size: 12px; font-weight: 500; color: var(--sd-text); white-space: nowrap; }
+.sd-dock-item:hover:not(:disabled), .sd-dock-item.is-active { background: var(--sd-soft); }
+.sd-more { position: relative; display: flex; }
+.sd-more-menu { bottom: calc(100% + 14px); left: 50%; transform: translateX(-50%); width: 420px; padding: 6px 8px 10px; animation-name: sd-pop-up; }
+.sd-more-menu h3 { margin: 8px 8px 3px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--sd-text-2); font-weight: 600; }
+.sd-more-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.sd-more-item { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px 8px; border-radius: 9px; font-size: 12px; text-align: left; }
+.sd-more-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sd-more-item:hover { background: var(--sd-soft); }
 
 /* Overlay layer (scene-space) */
 .sd-overlay { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
@@ -70,14 +89,16 @@
 .sd-edge-preview { stroke: var(--sd-emerald); stroke-width: 1.8; stroke-dasharray: 4 4; }
 .sd-badge { position: absolute; transform: translate(-50%, -50%); padding: 1px 7px; border-radius: 999px; font-size: 10px; color: var(--sd-text-2); background: var(--sd-card); border: 1px solid var(--sd-border); white-space: nowrap; box-shadow: 0 1px 2px rgba(15,23,42,.08); }
 
-/* Node cards */
+/* Node cards. The card is the ONLY thing drawn for a node: the native Excalidraw rectangle underneath is an invisible
+   hit-target, and Excalidraw's own selection box (dashed outline + resize handles) is the ONE selection indicator.
+   So a selected card draws no outline or ring of its own, only a faint tint. */
 .sd-node { position: absolute; box-sizing: border-box; padding: 10px 12px; border-radius: 14px; background: var(--sd-card); border: 1px solid var(--sd-border); box-shadow: 0 4px 14px rgba(15,23,42,.09), 0 1px 2px rgba(15,23,42,.08); pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; overflow: visible; }
-.sd-node.is-selected { border-color: var(--sd-emerald); box-shadow: 0 0 0 2px rgba(5,150,105,.35), 0 6px 18px rgba(15,23,42,.12); }
+.sd-node.is-selected { box-shadow: inset 0 0 0 999px rgba(5,150,105,.045), 0 4px 14px rgba(15,23,42,.09), 0 1px 2px rgba(15,23,42,.08); }
+.sd-node.is-drop-target { border-color: var(--sd-emerald); }
 .sd-node-head { display: flex; align-items: center; gap: 7px; min-width: 0; }
-.sd-node-dot { width: 9px; height: 9px; border-radius: 3px; flex: none; background: var(--sd-slate); }
-.sd-node.is-emerald .sd-node-dot { background: var(--sd-emerald); } .sd-node.is-amber .sd-node-dot { background: var(--sd-amber); }
-.sd-node-label { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-.sd-mode-badge { font-size: 10px; color: var(--sd-text-2); background: var(--sd-soft); padding: 1px 6px; border-radius: 6px; white-space: nowrap; }
+.sd-node-icon { flex: none; }
+.sd-node-label { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 auto; min-width: 56px; }
+.sd-mode-badge { font-size: 10px; color: var(--sd-text-2); background: var(--sd-soft); padding: 1px 6px; border-radius: 6px; white-space: nowrap; flex: 0 1 auto; min-width: 0; max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
 .sd-node-sub { font-size: 11px; color: var(--sd-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sd-node-foot { display: flex; gap: 5px; align-items: center; flex-wrap: nowrap; overflow: hidden; }
 .sd-pill { font-size: 10px; padding: 1px 6px; border-radius: 6px; background: var(--sd-soft); color: var(--sd-text); white-space: nowrap; }
@@ -89,26 +110,32 @@
 .sd-node.s-down { opacity: .72; }
 .sd-label-input { pointer-events: auto; flex: 1; min-width: 0; font-size: 13px; font-weight: 600; background: var(--sd-soft); border: 1px solid var(--sd-emerald); border-radius: 6px; padding: 1px 5px; }
 
-/* Ports */
-.sd-port { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: var(--sd-card); border: 2px solid var(--sd-emerald); padding: 0; opacity: 0; pointer-events: none; transition: opacity .12s, transform .12s; transform: translate(-50%, -50%); }
+/* Ports: 10px so they never reach into Excalidraw's resize handles, which sit 4-12px outside each edge. */
+.sd-port { position: absolute; width: 10px; height: 10px; box-sizing: border-box; border-radius: 50%; background: var(--sd-card); border: 2px solid var(--sd-emerald); padding: 0; opacity: 0; pointer-events: none; transition: opacity .12s, transform .12s, background .12s; transform: translate(-50%, -50%); }
 .sd-port.is-visible { opacity: 1; pointer-events: auto; cursor: crosshair; }
-.sd-port.is-visible:hover { transform: translate(-50%, -50%) scale(1.35); background: var(--sd-emerald); }
+.sd-port.is-visible:hover, .sd-port.is-target { transform: translate(-50%, -50%) scale(1.45); background: var(--sd-emerald); }
 .sd-port.is-top { left: 50%; top: 0; } .sd-port.is-bottom { left: 50%; top: 100%; } .sd-port.is-left { left: 0; top: 50%; } .sd-port.is-right { left: 100%; top: 50%; }
 
-/* Inspector */
-.sd-pill-bar { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 5px 8px; animation: sd-rise .16s ease-out; }
+/* Contextual pill (only while one node / connector is selected) */
+.sd-pill-bar { position: absolute; top: var(--sd-ctx-top); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; box-sizing: border-box; height: var(--sd-bar-h); padding: 0 6px 0 10px; max-width: calc(100% - 24px); animation: sd-rise .16s ease-out; }
 .sd-pill-title { font-size: 12px; font-weight: 600; padding: 0 6px; }
-.sd-inline-input { font-size: 12px; font-weight: 600; width: 150px; border: 1px solid var(--sd-border); border-radius: 8px; padding: 4px 8px; background: var(--sd-card); }
+.sd-inline-input { font-size: 12px; font-weight: 600; width: 140px; height: 26px; box-sizing: border-box; border: 1px solid transparent; border-radius: 8px; padding: 0 6px; background: transparent; }
+.sd-inline-input:hover:not(:disabled) { border-color: var(--sd-border); }
+.sd-inline-input:focus { border-color: var(--sd-emerald); background: var(--sd-card); outline: none; }
+.sd-pill-toggle { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px 0 10px; border-radius: 9px; font-size: 12px; font-weight: 600; color: var(--sd-text-2); }
+.sd-pill-toggle:hover, .sd-pill-toggle.is-active { background: var(--sd-soft); color: var(--sd-text); }
 .sd-seg-mini { display: flex; gap: 2px; padding: 2px; background: var(--sd-soft); border-radius: 9px; }
-.sd-seg-mini button:not(.sd-swatch) { padding: 3px 8px; font-size: 11px; border-radius: 7px; color: var(--sd-text-2); text-transform: capitalize; }
+.sd-seg-mini button:not(.sd-swatch) { padding: 3px 9px; font-size: 11px; border-radius: 7px; color: var(--sd-text-2); text-transform: capitalize; }
 .sd-seg-mini button.is-active:not(.sd-swatch) { background: var(--sd-card); color: var(--sd-text); font-weight: 600; box-shadow: 0 1px 2px rgba(15,23,42,.14); }
 .sd-seg-mini .is-health-degraded.is-active { color: var(--sd-amber) !important; } .sd-seg-mini .is-health-down.is-active { color: var(--sd-red) !important; } .sd-seg-mini .is-health-healthy.is-active { color: var(--sd-emerald) !important; }
 .sd-swatch { width: 18px; height: 18px; border-radius: 50%; margin: 3px; background: var(--sd-slate) !important; } .sd-swatch.is-emerald { background: var(--sd-emerald) !important; } .sd-swatch.is-amber { background: var(--sd-amber) !important; }
 .sd-swatch.is-active { box-shadow: 0 0 0 2px var(--sd-card), 0 0 0 4px currentColor; color: var(--sd-text-2); }
-.sd-drawer { position: absolute; right: 12px; top: 58px; bottom: 16px; width: 288px; display: flex; flex-direction: column; overflow: hidden; animation: sd-slide .18s ease-out; }
-.sd-drawer.is-collapsed { width: 44px; bottom: auto; }
-.sd-drawer-toggle { display: flex; gap: 8px; align-items: center; padding: 10px 12px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid var(--sd-border) !important; }
-.sd-drawer-body { overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Drawer: closed by default, opened only by YAML / Inspect. Stops short of Sketchizi's right header rail and the dock. */
+.sd-drawer { position: absolute; right: var(--sd-rail-clear); top: var(--sd-drawer-top); width: 288px; max-height: calc(100% - var(--sd-drawer-top) - var(--sd-dock-clear)); display: flex; flex-direction: column; overflow: hidden; animation: sd-slide .18s ease-out; }
+.sd-drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--sd-border); }
+.sd-drawer-head strong { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sd-drawer-body { overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; scrollbar-width: thin; }
 .sd-readouts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .sd-readouts > div { background: var(--sd-soft); border-radius: 10px; padding: 7px 10px; display: flex; flex-direction: column; }
 .sd-readouts small { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--sd-text-2); }
@@ -118,6 +145,7 @@
 .sd-slider span { display: flex; justify-content: space-between; color: var(--sd-text-2); } .sd-slider b { color: var(--sd-text); font-weight: 600; }
 .sd-slider input { accent-color: var(--sd-emerald); width: 100%; }
 .sd-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--sd-text-2); }
+.sd-field .sd-seg-mini { align-self: flex-start; }
 .sd-field select { padding: 5px 8px; border: 1px solid var(--sd-border); border-radius: 8px; background: var(--sd-card); color: var(--sd-text); }
 .sd-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; color: var(--sd-text-2); } .sd-meta span { background: var(--sd-soft); padding: 2px 7px; border-radius: 6px; }
 .sd-yaml-head { font-size: 10px; color: var(--sd-text-2); }
@@ -126,8 +154,21 @@
 @keyframes sd-pulse { 50% { opacity: .35; } }
 @keyframes sd-rise { from { opacity: 0; transform: translate(-50%, 6px); } }
 @keyframes sd-slide { from { opacity: 0; transform: translateX(12px); } }
+@keyframes sd-pop { from { opacity: 0; transform: translateY(-4px); } }
+@keyframes sd-pop-up { from { opacity: 0; transform: translate(-50%, 4px); } }
 @media (prefers-reduced-motion: reduce) { .sd-packet { display: none; } .sd-root *, .sd-root *::before { animation: none !important; transition: none !important; } }
-@media (max-width: 1100px) { .sd-topbar { flex-wrap: wrap; } .sd-segmented { position: static; transform: none; } .sd-topbar-left { max-width: none; } }
+
+/* Narrower canvases: dock shows icons only (labels stay in tooltips / aria-labels). */
+@media (max-width: 1100px) {
+  .sd-dock-item span { display: none; }
+  .sd-dock-item { padding: 0 9px; }
+  .sd-more-menu { width: min(420px, calc(100vw - 48px)); }
+}
+
+/* While the studio is open, Sketchizi's bottom stroke/fill/freehand palette (.sketchizi-tool-options-dock, which it pins at
+   bottom-centre with z-index 10045) is hidden so only the studio dock is visible. Selector is more specific than its
+   `.app .sketchizi-tool-options-dock { ... !important }` rules, so no cascade-order dependence. */
+.app .sd-active .sketchizi-tool-options-dock { display: none !important; }
 
 /* Remap Excalidraw's default primary/selection accent to emerald while the studio is open. */
 .sd-active .excalidraw, .sd-active .excalidraw.theme--dark {
