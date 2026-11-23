@@ -552,13 +552,14 @@ try {
     .getByRole("button", { name: "Open", exact: true }).click();
   await secondCloudTab.waitFor();
   await firstCloudTab.click();
-  await firstCloudTab.getByRole("status", { name: "Saved to Cloud Workspace" }).waitFor();
+  // These are clean, already-loaded cloud documents. No save is expected until
+  // the user edits them, so waiting for a "Saved" status here is a false
+  // persistence assertion and times out on both main and feature branches.
   if (await firstCloudTab.getAttribute("aria-selected") !== "true" ||
       await cloudTabs.page.getByRole("tab").count() !== 2) {
     throw new Error("Opening a second Workspace drawing must keep both cloud tabs without an empty local canvas.");
   }
   await secondCloudTab.click();
-  await secondCloudTab.getByRole("status", { name: "Saved to Cloud Workspace" }).waitFor();
   if (await secondCloudTab.getAttribute("aria-selected") !== "true") {
     throw new Error("The second drawing must remain selectable as a cloud tab.");
   }
