@@ -243,6 +243,26 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     return id;
   }, [apiRef, canEdit, commit, gridEnabled, gridSize, viewportCenterScene, setEnabled]);
 
+  const addUpstreamClient = useCallback((targetId) => {
+    const api = apiRef.current;
+    if (!api || !canEdit) return null;
+    const { nodes, edges } = readGraph(api.getSceneElements());
+    const target = nodes.find((node) => node.id === targetId);
+    if (!target || nodes.some((node) => node.kind === "client" && edges.some((edge) => edge.from === node.id && edge.to === targetId))) return null;
+    let position = { x: target.x - NODE_SIZE.width - 100, y: target.y };
+    while (nodes.some((node) => position.x < node.x + node.width && position.x + NODE_SIZE.width > node.x && position.y < node.y + node.height && position.y + NODE_SIZE.height > node.y)) {
+      position.y += NODE_SIZE.height + 32;
+    }
+    const clientId = newId("sd");
+    const client = createNodeSkeleton("client", position, { manualRps: 10000 }, clientId);
+    const sourceRect = { id: clientId, ...position, width: NODE_SIZE.width, height: NODE_SIZE.height, protocol: "HTTPS" };
+    const connector = createEdgeSkeleton(sourceRect, target, { protocol: "HTTPS" }, newId("sdedge"));
+    const created = restoreElements(convertToExcalidrawElements([client, connector]), null);
+    commit([...api.getSceneElementsIncludingDeleted(), ...created]);
+    api.updateScene({ appState: { selectedElementIds: { [targetId]: true } }, captureUpdate: CaptureUpdateAction.NEVER });
+    return clientId;
+  }, [apiRef, canEdit, commit]);
+
   const connect = useCallback((fromId, toId, ports = null) => {
     const api = apiRef.current;
     if (!api || !canEdit || fromId === toId) return null;
@@ -398,6 +418,6 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     mode, setMode, simulate, setSimulate, loadRps, setLoadRps, inspectorOpen, setInspectorOpen,
     getTabState, restoreTabState,
     gridEnabled, setGridEnabled, gridSize, canEdit,
-    actions: { addNode, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint },
-  }), [store, enabled, open, close, toggle, mode, setMode, simulate, setSimulate, loadRps, setLoadRps, inspectorOpen, setInspectorOpen, getTabState, restoreTabState, gridEnabled, setGridEnabled, gridSize, canEdit, addNode, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint]);
+    actions: { addNode, addUpstreamClient, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint },
+  }), [store, enabled, open, close, toggle, mode, setMode, simulate, setSimulate, loadRps, setLoadRps, inspectorOpen, setInspectorOpen, getTabState, restoreTabState, gridEnabled, setGridEnabled, gridSize, canEdit, addNode, addUpstreamClient, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint]);
 }
