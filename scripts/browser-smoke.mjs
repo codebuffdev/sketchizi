@@ -186,6 +186,10 @@ try {
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 3);
   console.log("PASS: click-port-to-click-port creates a single orthogonal connector.");
 
+  // Return the pointer to the card body so its hover target is unambiguous
+  // after leaving the port button, then exercise the keyboard connect mode.
+  await blank.page.mouse.move(portPoolTargetBox.x + portPoolTargetBox.width / 2, portPoolTargetBox.y + portPoolTargetBox.height / 2);
+  await portPoolTarget.locator(".sd-port.is-visible").first().waitFor({ state: "visible" });
   // C uses the hovered destination node (or a selected node) as the source
   // and connects it to the next card without requiring a visible port click.
   await blank.page.keyboard.press("c");
