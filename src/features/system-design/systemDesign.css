@@ -217,3 +217,37 @@
   --color-surface-primary-container: #d1fae5; --color-on-primary-container: #065f46;
   --select-highlight-color: #059669; --color-promo: #059669;
 }
+
+/* Whole-stack compiler modal and live architecture diagnostics. */
+.sd-topbar { flex-direction: column; align-items: center; gap: 7px; }
+.sd-export-trigger { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 9px; border-radius: 9px; color: var(--sd-text-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.sd-export-trigger:hover:not(:disabled) { color: var(--sd-emerald); background: var(--sd-soft); }
+.sd-export-trigger:disabled { opacity: .45; cursor: not-allowed; }
+.sd-diagnostic { max-width: min(850px, calc(100vw - 32px)); padding: 7px 13px; border: 1px solid var(--sd-border); border-radius: 999px; background: var(--sd-card); box-shadow: var(--sd-shadow); color: var(--sd-text); font-size: 11px; line-height: 1.35; text-align: center; pointer-events: auto; }
+.sd-diagnostic.is-danger { color: var(--sd-red); border-color: rgba(220,38,38,.45); }
+.sd-diagnostic.is-warning { color: var(--sd-amber); border-color: rgba(217,119,6,.5); }
+.sd-diagnostic.is-healthy { color: var(--sd-emerald); border-color: rgba(5,150,105,.4); }
+.sd-modal-backdrop { position: fixed; inset: 0; z-index: 10050; display: grid; place-items: center; padding: 24px; background: rgba(15,23,42,.48); backdrop-filter: blur(5px); pointer-events: auto; }
+.sd-export-modal { width: min(720px, calc(100vw - 32px)); max-height: min(820px, calc(100vh - 48px)); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 80px rgba(15,23,42,.3); }
+.sd-export-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--sd-border); }
+.sd-export-head > div { display: flex; flex-direction: column; gap: 4px; }
+.sd-export-head strong { font-size: 15px; }
+.sd-export-head small { font-size: 11px; color: var(--sd-text-2); }
+.sd-export-tabs { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--sd-border); }
+.sd-export-tabs button { padding: 7px 11px; border-radius: 8px; color: var(--sd-text-2); font-size: 12px; }
+.sd-export-tabs button.is-active { color: var(--sd-emerald); background: rgba(5,150,105,.1); font-weight: 700; }
+.sd-export-tabs .sd-yaml-file { margin-left: auto; }
+.sd-export-code { min-height: 240px; max-height: min(590px, 62vh); flex: 1 1 auto; overflow: auto; margin: 0; padding: 16px 18px; background: var(--sd-soft); color: var(--sd-text); font-size: 11px; line-height: 1.55; white-space: pre; tab-size: 2; user-select: text; }
+.sd-export-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--sd-border); color: var(--sd-text-2); font-size: 11px; }
+.sd-export-foot > div { display: flex; gap: 7px; }
+.sd-export-secondary, .sd-export-primary { display: inline-flex; align-items: center; gap: 6px; padding: 8px 11px; border-radius: 9px; font-size: 11px; font-weight: 600; }
+.sd-export-secondary { border: 1px solid var(--sd-border); color: var(--sd-text); background: var(--sd-card); }
+.sd-export-primary { color: white; background: var(--sd-emerald); }
+.sd-export-primary:hover { background: #047857; }
+@media (max-width: 760px) {
+  .sd-topbar-pill { max-width: calc(100vw - 12px); overflow-x: auto; }
+  .sd-export-trigger span { display: none; }
+  .sd-export-foot { align-items: stretch; }
+  .sd-export-foot > div { width: 100%; }
+  .sd-export-foot button { flex: 1; justify-content: center; }
+}
