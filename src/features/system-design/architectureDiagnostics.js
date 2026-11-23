@@ -40,11 +40,16 @@ export function deriveArchitectureDiagnostic(nodes = [], simulation = null, edge
   const failover = (simulation.healthChecks || []).find((group) => group.downTargets > 0 && group.healthyTargets > 0);
   if (failover) {
     const survivors = failover.targetIds.map((id) => simulation.nodes[id]).filter(Boolean);
-    const overloaded = survivors.find((metrics) => ["elevated", "overloaded"].includes(metrics.status));
+    const overloaded = survivors.find((metrics) => metrics.status === "overloaded");
+    const elevated = survivors.find((metrics) => metrics.status === "elevated");
     const down = failover.downTargetIds.map((id) => byId.get(id)?.label).filter(Boolean);
     if (overloaded) return {
       tone: "danger",
       message: `⚠ Failover Overload: ${down.join(", ") || failover.poolLabel} replica is down — surviving replicas absorbing ${formatRps(failover.redistributedRpsPerTarget)}/s each.`,
+    };
+    if (elevated) return {
+      tone: "warning",
+      message: `Failover Pressure: ${down.join(", ") || failover.poolLabel} replica is down — surviving replicas are elevated but remain within capacity.`,
     };
     return {
       tone: "warning",
