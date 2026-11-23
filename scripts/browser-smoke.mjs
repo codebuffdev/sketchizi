@@ -114,11 +114,18 @@ try {
   // point on a target card, then verify click-port-to-click-card and C-to-card.
   await openStudioFromCommandPalette(blank.page, "System Design Studio");
   await blank.page.locator('[data-testid="system-design-studio"]').waitFor({ state: "visible" });
-  const primitiveDock = blank.page.getByRole("navigation", { name: "System design primitives" });
+  // The floating primitive dock was removed: create nodes through the shared Icon Library.
+  await blank.page.getByRole("button", { name: "Open System Design components" }).click();
+  const systemLibrary = blank.page.getByRole("dialog", { name: "Icon Library" });
+  await systemLibrary.waitFor({ state: "visible" });
+  await systemLibrary.getByRole("button", { name: "System Design (16)", exact: true }).click();
   for (const label of ["Web/Mobile Client", "Microservice", "SQL Database", "Redis Cache"]) {
-    await primitiveDock.getByRole("button", { name: `Add ${label}` }).click();
-    await blank.page.keyboard.press("Escape");
+    await systemLibrary.getByRole("button", { name: `Add ${label} to canvas` }).click();
   }
+  await systemLibrary.getByRole("button", { name: "Close icon library" }).click();
+  await systemLibrary.waitFor({ state: "detached" });
+  await blank.page.getByRole("button", { name: "Auto-Layout components" }).waitFor({ state: "visible" });
+  if (await blank.page.locator(".sd-dock").count()) throw new Error("The removed floating primitive dock is still mounted.");
   const cards = blank.page.locator(".sd-node[data-node-id]");
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-node[data-node-id]").length === 4);
   const initialCards = await cards.evaluateAll((items) => items.map((item) => ({
