@@ -379,6 +379,8 @@ function App() {
   // Late-bind the file-manager values the persistence hook reads (see useDocumentPersistence).
   fileManagerBridgeRef.current = { currentFileRef, getCurrentFileSceneSignature };
 
+  const systemDesignRef = useRef(null);
+
   const {
     persistCanvasTabs,
     persistSystemDesignState,
@@ -401,7 +403,6 @@ function App() {
     openCloudWorkspace,
     openWorkspaceDiagram,
     createWorkspaceChapter,
-  const systemDesignRef = useRef(null);
   } = useWorkspaceTabs({
     activeCanvasId,
     activeCanvasIdRef,
