@@ -31,25 +31,20 @@ function Slider({ label, value, min, max, step = 1, format = (v) => v, onLive, o
  *       connector:  Connector          |  Solid · Dashed            |  Inspect ▾ | trash
  *  2. The telemetry / YAML drawer on the right. It is CLOSED by default and opens only when the person clicks YAML / Inspect.
  */
-export default function ContextualInspectorDrawer({ selection, mode, simulation, simulate, actions, canEdit }) {
-  const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState("config");
+export default function ContextualInspectorDrawer({ selection, mode, simulation, simulate, actions, canEdit, open, tab, onTabChange, onOpenInspector, onClose }) {
   const [wide, setWide] = useState(false); // 380px default, 640px expanded; remembered while the studio is open
   const [yamlKind, setYamlKind] = useState(null); // null = follow the studio mode
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef(0);
   useEffect(() => () => window.clearTimeout(copyTimer.current), []);
-  const hasSelection = Boolean(selection);
-  // Deselecting closes the drawer, so the next selection starts from the quiet default again.
-  useEffect(() => { if (!hasSelection) { setOpen(false); setTab("config"); } }, [hasSelection]);
   const selectedId = selection?.item?.id;
-  useEffect(() => { setTab("config"); setCopied(false); }, [selectedId]); // a new selection always starts on the quick controls
-  if (!selection) return null; // Hidden when nothing (or more than one thing) is selected.
+  useEffect(() => { onTabChange("config"); setCopied(false); }, [selectedId]);
 
-  const { kind, item } = selection;
-  const isNode = kind === "node";
+  const item = selection?.item || null;
+  const isNode = selection?.kind === "node";
+  const isEdge = selection?.kind === "edge";
   const telemetry = isNode ? simulation?.nodes[item.id] : null;
-  const edgeLive = !isNode ? simulation?.edges[item.id] : null;
+  const edgeLive = isEdge ? simulation?.edges[item.id] : null;
   const yamlMode = yamlKind || (mode === "compose" ? "compose" : "k8s");
   const yamlFile = YAML_KINDS.find((k) => k.id === yamlMode)?.file;
   const yamlText = isNode ? nodeYaml(yamlMode, item) || "# External node — no container image." : "";
@@ -91,18 +86,35 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
               className={`is-health-${h}${item.health === h ? " is-active" : ""}`} onClick={() => patchNode({ health: h })}>{HEALTH_LABEL[h]}</button>)}
           </div>
         ) : (
+          <select className="sd-edge-protocol" aria-label="Protocol" value={item.protocol} disabled={!canEdit}
+            onChange={(event) => actions.updateEdge(item.id, { protocol: event.target.value })}>
+            {PROTOCOLS.map((protocol) => <option key={protocol} value={protocol}>{protocol}</option>)}
+          </select>
           <div className="sd-seg-mini" role="radiogroup" aria-label="Line style">
             {["solid", "dashed"].map((s) => <button key={s} type="button" role="radio" aria-checked={item.lineStyle === s} disabled={!canEdit}
               className={item.lineStyle === s ? "is-active" : ""} onClick={() => actions.updateEdge(item.id, { lineStyle: s })}>{s}</button>)}
           </div>
         )}
 
+        {isNode && <>
+          <span className="sd-divider" aria-hidden="true" />
+          <div className="sd-replica-stepper" role="group" aria-label="Replicas">
+            <span>Replicas</span>
+            <button type="button" aria-label="Decrease replicas" disabled={!canEdit || item.replicas <= 0}
+              onClick={() => patchNode({ replicas: Math.max(0, item.replicas - 1) })}>−</button>
+            <b className="sd-mono">{item.replicas}</b>
+            <button type="button" aria-label="Increase replicas" disabled={!canEdit || item.replicas >= 500}
+              onClick={() => patchNode({ replicas: Math.min(500, item.replicas + 1) })}>+</button>
+          </div>
+        </>}
+
         <span className="sd-divider" aria-hidden="true" />
 
-        <button type="button" className={`sd-pill-toggle${open ? " is-active" : ""}`} aria-expanded={open} aria-controls="sd-inspector-drawer" onClick={() => { if (!open && isNode) setTab("yaml"); setOpen((v) => !v); }}>
+        <button type="button" className={`sd-pill-toggle${open ? " is-active" : ""}`} aria-expanded={open} aria-controls="sd-inspector-drawer"
+          onClick={() => onOpenInspector?.(isNode ? "yaml" : "config")}>
           {toggleLabel}<Icon name={open ? "chevronUp" : "chevronDown"} size={14} />
         </button>
-        <button type="button" className="sd-icon-btn is-danger" aria-label="Delete" title="Delete" disabled={!canEdit} onClick={actions.deleteSelection}>
+        <button type="button" className="sd-icon-btn is-danger" aria-label="Delete" title="Delete" disabled={!canEdit || !selection} onClick={actions.deleteSelection}>
           <Icon name="trash" />
         </button>
       </div>
@@ -110,24 +122,33 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
       {open && (
         <aside id="sd-inspector-drawer" className={`sd-surface sd-drawer${wide ? " is-wide" : ""}${activeTab === "yaml" ? " is-yaml" : ""}`} aria-label="Telemetry and YAML">
           <header className="sd-drawer-head">
-            <strong>{isNode ? item.label : `${item.protocol} connector`}</strong>
+            <strong>{isNode ? item.label : isEdge ? `${item.protocol} connector` : "Telemetry & YAML"}</strong>
             <span className="sd-drawer-actions">
               <button type="button" className="sd-expand-btn" aria-pressed={wide} onClick={() => setWide((v) => !v)}
                 title={wide ? "Back to the compact 380px drawer" : "Widen the drawer to 640px"}>
                 <Icon name={wide ? "shrink" : "expand"} size={13} />{wide ? "Compact" : "Expand"}
               </button>
-              <button type="button" className="sd-icon-btn" aria-label="Close inspector" title="Close" onClick={() => setOpen(false)}><Icon name="close" /></button>
+              <button type="button" className="sd-icon-btn" aria-label="Close inspector" title="Close" onClick={onClose}><Icon name="close" /></button>
             </span>
           </header>
           {isNode && (
             <div className="sd-inspector-tabs" role="tablist" aria-label="Inspector sections">
               {DRAWER_TABS.map((t) => (
                 <button key={t.id} type="button" role="tab" id={`sd-tab-${t.id}`} aria-selected={tab === t.id} aria-controls={`sd-panel-${t.id}`}
-                  className={tab === t.id ? "is-active" : ""} onClick={() => setTab(t.id)}>{t.label}</button>
+                  className={tab === t.id ? "is-active" : ""} onClick={() => onTabChange(t.id)}>{t.label}</button>
               ))}
             </div>
           )}
-          {isNode && activeTab === "yaml" ? (
+          {!selection ? (
+            <div className="sd-drawer-body sd-inspector-empty">
+              <strong>System Design Inspector</strong>
+              <p>Select a node or connector to inspect live telemetry, configuration, and YAML. This panel stays available while you work on the canvas.</p>
+              <div className="sd-readouts">
+                <div><small>Simulation</small><b className="sd-mono">{simulate ? "Running" : "Idle"}</b></div>
+                <div><small>Selected item</small><b className="sd-mono">None</b></div>
+              </div>
+            </div>
+          ) : isNode && activeTab === "yaml" ? (
             <div className="sd-yaml-panel" role="tabpanel" id="sd-panel-yaml" aria-labelledby="sd-tab-yaml">
               <div className="sd-yaml-bar">
                 <div className="sd-seg-mini" role="radiogroup" aria-label="Manifest format">
@@ -166,7 +187,7 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
                   </div>
                   <div className="sd-meta sd-mono"><span>{item.protocol}</span><span>:{item.port}</span><span>{item.image}</span></div>
                 </>
-              ) : (
+              ) : isEdge ? (
                 <>
                   <div className="sd-readouts">
                     <div><small>RPS</small><b className="sd-mono">{simulate && edgeLive ? formatRps(edgeLive.rps) : "—"}</b></div>
@@ -178,7 +199,7 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
                     </select>
                   </label>
                 </>
-              )}
+              ) : <p className="sd-hint">Select a System Design node or connector to inspect its configuration.</p>}
             </div>
           )}
         </aside>
