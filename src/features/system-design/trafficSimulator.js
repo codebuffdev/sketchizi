@@ -173,7 +173,7 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
             inactiveReason: poolEdges.length === 1 ? "503 Dropped" : "Replica Health Check Failed",
           });
         }
-        if (poolEdges.length > 1 || healthy.length !== poolEdges.length) {
+        if (true) {
           healthChecks.push({ nodeId: id, nodeLabel: node.label || "Load Balancer", poolLabel, incomingRps: round(routeShare, 1), healthyTargets: healthy.length, downTargets: poolEdges.length - healthy.length, allTargetsDown: healthy.length === 0, targetIds: healthy.map((edge) => edge.to), downTargetIds: poolEdges.filter((edge) => byId.get(edge.to).health === "down").map((edge) => edge.to), redistributedRpsPerTarget: round(replicaShare, 1) });
         }
       }
@@ -227,7 +227,7 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
       ...(skipped.has(edge.id) ? { cycleBlocked: true, inactiveReason: "Circular dependency" } : {}),
     }];
   }));
-  const noHealthyUpstreams = healthChecks.some((group) => group.allTargetsDown);
+  const noHealthyUpstreams = healthChecks.length > 0 && healthChecks.every((group) => group.allTargetsDown);
   const cycleWarnings = cycles.map((cycle) => ({ ...cycle, message: `Circular dependency detected between ${cycle.labels.join(" and ")}.` }));
   const depthWarningsFormatted = depthWarnings.map((warning) => ({ ...warning, message: `Traversal stopped at the ${MAX_HOPS}-hop safety limit.` }));
   return {
