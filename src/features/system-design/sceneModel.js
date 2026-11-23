@@ -202,7 +202,8 @@ const isSolid = (color) => Boolean(color) && color !== "transparent";
 export function collectSceneRepairs(elements) {
   const repairs = new Map();
   const live = (elements || []).filter((element) => element && !element.isDeleted);
-  const nodeIds = new Set(live.filter(isSystemDesignNode).map((element) => element.id));
+  const nodes = live.map(readNode).filter(Boolean);
+  const nodeIds = new Set(nodes.map((node) => node.id));
   const seenPairs = new Set();
   for (const element of live) {
     if (isSystemDesignNode(element)) {
@@ -213,7 +214,7 @@ export function collectSceneRepairs(elements) {
       if (Object.keys(patch).length) repairs.set(element.id, patch);
     } else if (isSystemDesignEdge(element)) {
       const data = element.customData[CUSTOM_KEY];
-      const edge = readEdge(element, live.map(readNode).filter(Boolean));
+      const edge = readEdge(element, nodes);
       if (!edge || !nodeIds.has(edge.from) || !nodeIds.has(edge.to)) {
         repairs.set(element.id, { isDeleted: true });
         continue;
