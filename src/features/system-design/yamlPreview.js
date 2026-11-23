@@ -17,7 +17,7 @@ export function slugify(label, fallback = "service") {
 export function serviceNames(nodes) {
   const seen = new Map();
   return new Map(nodes.map((node) => {
-    const base = ({ sql: "postgres", queue: "kafka" })[node.kind] || slugify(node.label, node.kind);
+    const base = ({ sql: "postgres", "read-replica": "postgres-read-replica", queue: "kafka", pubsub: "nats", warehouse: "clickhouse", "stream-processor": "flink", "websocket-gateway": "websocket-gateway", "external-api": "external-api-proxy" })[node.kind] || slugify(node.label, node.kind);
     const count = (seen.get(base) || 0) + 1;
     seen.set(base, count);
     return [node.id, count === 1 ? base : `${base}-${count}`];
@@ -27,7 +27,7 @@ export function serviceNames(nodes) {
 const isRunnable = (node) => node.kind !== "client" && node.kind !== "dns" && node.kind !== "cdn" && node.image && !String(node.image).startsWith("n/a");
 
 export const K8S_NAMESPACE = "prod";
-const STATEFUL_KINDS = new Set(["sql", "nosql", "redis", "queue", "search", "object-storage"]);
+const STATEFUL_KINDS = new Set(["sql", "read-replica", "nosql", "redis", "queue", "pubsub", "warehouse", "search", "object-storage"]);
 
 /** Kubernetes workload kind a primitive maps to: data stores and brokers are StatefulSets, everything else a Deployment. */
 export function k8sKind(node) {
