@@ -335,7 +335,7 @@ export default function IconLibraryPanel({
   const shownIcons = displayedIcons.slice(0, iconDisplayLimit);
 
   const sourceTabs = [
-    { id: "system-design", label: "System Design (16)" },
+    { id: "system-design", label: "System Design (22)" },
     { id: "aws", label: "AWS" },
     { id: "networking", label: "Networking" },
     { id: "kubernetes", label: "Kubernetes" },
@@ -463,7 +463,7 @@ export default function IconLibraryPanel({
             aria-pressed={activeSource === "system-design"}
             onClick={() => chooseSource("system-design")}
           >
-            System Design (16)
+            System Design (22)
           </button>
           <button
             type="button"
@@ -508,7 +508,7 @@ export default function IconLibraryPanel({
               if (source === "kubernetes") setActiveKubernetesCategory(category);
             }}
           >
-            <option value="system-design">System Design (16)</option>
+            <option value="system-design">System Design (22)</option>
             <option value="all">All icons ({allIcons.length.toLocaleString()})</option>
             <optgroup label="Collections">
               {sourceTabs.filter((tab) => tab.id !== "all" && tab.id !== "system-design").map((tab) => (
