@@ -9,9 +9,8 @@ const shortcutFor = (kind) => {
 /**
  * Compact floating dock, bottom-centre:  [ Client  Gateway  Service  Database  Cache  Queue ] | + More | layout, snap
  *
- * Only the six most common primitives are always visible. The other ten live in the "+ More" popover (collapsed by
- * default), so there is no 16-item list parked on the canvas. Clicking a primitive places it next to the selected
- * node and connects the two (see planPlacement / addNode); with nothing selected it lands in free space near the centre.
+ * The six most common primitives stay on the dock. "+ More" opens the shared Icon Library directly on System Design,
+ * where all sixteen primitives use the same search, Recent, click-to-insert and drag-to-place workflow.
  */
 export default function CollapsibleQuickDock({ onAdd, onOpenIconLibrary, onAutoLayout, snapEnabled, onSnapChange, canEdit }) {
   const add = (kind) => onAdd(kind);
