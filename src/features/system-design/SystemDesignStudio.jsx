@@ -13,12 +13,11 @@ import "./systemDesign.css";
  * ignored: Sketchizi's own header already renders documents and save status, so the studio no longer duplicates them.
  */
 export default function SystemDesignStudio({ workspace, isDarkTheme, onOpenIconLibrary }) {
-  const { store, enabled, mode, simulate, loadRps, actions, canEdit } = workspace;
+  const { store, enabled, mode, simulate, loadRps, actions, canEdit, inspectorOpen, setInspectorOpen } = workspace;
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const rootRef = useRef(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [toast, setToast] = useState("");
-  const [inspectorOpen, setInspectorOpen] = useState(false);
   const [inspectorTab, setInspectorTab] = useState("config");
 
   const getHost = useCallback(() => rootRef.current?.parentElement?.querySelector(".excalidraw") || null, []);
