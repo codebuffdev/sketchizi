@@ -53,12 +53,12 @@ test("studio chrome: one top-centre pill, no duplicated Sketchizi controls", () 
   assert.match(top, /STUDIO_MODES/);
   // Sketchizi's header owns tabs, save status, zoom (top-left / top-right). The studio must not render its own.
   for (const text of ["New tab", "Zoom in", "Zoom out", "sd-topbar-right", "sd-topbar-left", "persistencePill"]) assert.ok(!top.includes(text), `duplicate control: ${text}`);
-  const dock = read(path.join(dir, "CollapsibleQuickDock.jsx"));
-  assert.match(dock, /Auto-layout/);
-  assert.match(dock, /More/);
-  assert.match(dock, /quickPrimitives\(\)/);
-  assert.match(dock, /onOpenIconLibrary/);
-  assert.doesNotMatch(dock, /morePrimitivesByCategory|sd-more-menu/, "More must open the shared Icon Library, not a duplicate popover");
+  assert.match(top, /className="sd-components-trigger"/);
+  assert.match(top, /onClick=\{onOpenIconLibrary\}/);
+  assert.match(top, /className="sd-auto-layout-trigger"/);
+  assert.match(top, /onClick=\{onAutoLayout\}/);
+  const studio = read(path.join(dir, "SystemDesignStudio.jsx"));
+  assert.doesNotMatch(studio, /CollapsibleQuickDock|sd-dock/);
   const insp = read(path.join(dir, "ContextualInspectorDrawer.jsx"));
   for (const text of ["Replicas", "Capacity", "Cache hit rate", "Health override", "Line style", "Accent", "YAML", "Inspect"]) assert.ok(insp.includes(text), text);
   assert.match(insp, /\{selection && <div className="sd-surface sd-pill-bar"/);
@@ -75,9 +75,10 @@ test("studio chrome: one top-centre pill, no duplicated Sketchizi controls", () 
   assert.doesNotMatch(overlay, /sd-node-dot/, "plain colour dots were replaced by icons");
 });
 
-test("single-visual contract: no ring on the card, Sketchizi bottom palette hidden, chrome clears Sketchizi's header", () => {
+test("single-visual contract: no ring on the card and Sketchizi native toolbars remain visible", () => {
   const css = read(path.join(dir, "systemDesign.css"));
-  assert.match(css, /\.app \.sd-active\.sd-has-system-selection \.sketchizi-tool-options-dock \{ display: none !important; \}/);
+  assert.doesNotMatch(css, /sketchizi-tool-options-dock|display:\s*none\s*!important/);
+  assert.doesNotMatch(css, /\.sd-dock|\.sd-more-menu/);
   const selected = css.match(/\.sd-node\.is-selected \{[^}]*\}/)[0];
   assert.doesNotMatch(selected, /border-color|(?<!inset )0 0 0 \d+px/, "selected card must not draw a second outline next to Excalidraw's selection box");
   // Studio bar sits below Sketchizi's first row and derives from ITS variables.
@@ -92,7 +93,7 @@ test("single-visual contract: no ring on the card, Sketchizi bottom palette hidd
 test("command registry exposes the studio and every feature file exists", () => {
   assert.match(read(path.join(root, "src/features/commands/commandRegistry.js")), /studios\.system-design/);
   const files = readdirSync(dir);
-  for (const f of ["primitives.js", "trafficSimulator.js", "orthogonalRouter.js", "useSystemDesignWorkspace.js", "TopWorkspaceBar.jsx", "CollapsibleQuickDock.jsx", "SystemDesignNodeOverlay.jsx", "ContextualInspectorDrawer.jsx"]) assert.ok(files.includes(f), f);
+  for (const f of ["primitives.js", "trafficSimulator.js", "orthogonalRouter.js", "useSystemDesignWorkspace.js", "TopWorkspaceBar.jsx", "SystemDesignNodeOverlay.jsx", "ContextualInspectorDrawer.jsx"]) assert.ok(files.includes(f), f);
 });
 
 
