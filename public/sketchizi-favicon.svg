@@ -1,22 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">Sketchizi logo</title>
-  <desc id="desc">A geometric connected S mark representing collaborative drawing and diagrams.</desc>
-  <defs>
-    <linearGradient id="stroke" x1="118" y1="104" x2="404" y2="408" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#6D5EF4"/>
-      <stop offset="0.52" stop-color="#4F8CFF"/>
-      <stop offset="1" stop-color="#18B8A7"/>
-    </linearGradient>
-    <linearGradient id="node" x1="126" y1="116" x2="394" y2="394" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#8B7CFF"/>
-      <stop offset="1" stop-color="#20C8B5"/>
-    </linearGradient>
-  </defs>
-  <path d="M378 128H214C173 128 146 151 146 184C146 217 173 240 214 240H298C339 240 366 263 366 296C366 329 339 352 298 352H134"
-        fill="none" stroke="url(#stroke)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="378" cy="128" r="24" fill="url(#node)"/>
-  <circle cx="214" cy="240" r="20" fill="#ffffff" stroke="#4F8CFF" stroke-width="10"/>
-  <circle cx="134" cy="352" r="24" fill="url(#node)"/>
-  <path d="M397 107l20 20" stroke="#6D5EF4" stroke-width="12" stroke-linecap="round"/>
-  <path d="M417 107l-20 20" stroke="#6D5EF4" stroke-width="12" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#071a31"/><stop offset="1" stop-color="#020817"/></linearGradient><linearGradient id="c" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9af5ff"/><stop offset=".5" stop-color="#08d8f2"/><stop offset="1" stop-color="#0874d7"/></linearGradient><linearGradient id="g"><stop stop-color="#63ffd0"/><stop offset="1" stop-color="#00b889"/></linearGradient></defs>
+<rect width="512" height="512" rx="96" fill="url(#b)"/>
+<rect x="68" y="64" width="330" height="250" rx="28" fill="#0b2941" stroke="#58eaff" stroke-width="8"/><path d="M68 122h330" stroke="#31dff5" stroke-width="7"/>
+<circle cx="106" cy="93" r="11" fill="#11c9ed"/><circle cx="142" cy="93" r="11" fill="#16d8a5"/><circle cx="178" cy="93" r="11" fill="#16d8a5"/>
+<rect x="100" y="154" width="95" height="62" fill="none" stroke="#17cce9" stroke-width="6"/><path d="m100 154 95 62m0-62-95 62" stroke="#17cce9" stroke-width="5"/><rect x="220" y="154" width="100" height="62" fill="none" stroke="#13d6ad" stroke-width="6"/>
+<path d="M270 260h68q25 0 25 25v15m0 0-18-18m18 18 18-18" fill="none" stroke="url(#g)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M100 420 330 190l52 52-230 230-62 12z" fill="url(#c)" stroke="#a6f8ff" stroke-width="9" stroke-linejoin="round"/><path d="m100 420 52 52-62 12z" fill="#eaffff" stroke="#12cde9" stroke-width="7"/><path d="m152 472 230-230" stroke="#eaffff" stroke-width="6"/>
+<circle cx="360" cy="170" r="22" fill="#05d4f1" stroke="#a2f7ff" stroke-width="7"/><circle cx="360" cy="170" r="39" fill="none" stroke="#19d9b0" stroke-width="7"/>
 </svg>
