@@ -78,14 +78,38 @@ export function readNode(element) {
   return { id: element.id, x: element.x, y: element.y, width: element.width, height: element.height, ...meta };
 }
 
-export function readEdge(element) {
+function arrowEndpoint(element, end) {
+  const binding = end === "start" ? element.startBinding : element.endBinding;
+  if (binding?.elementId) return { id: binding.elementId, bound: true };
+  const points = Array.isArray(element.points) ? element.points : [];
+  if (!points.length) return null;
+  const point = points[end === "start" ? 0 : points.length - 1];
+  return { x: Number(element.x || 0) + Number(point?.[0] || 0), y: Number(element.y || 0) + Number(point?.[1] || 0) };
+}
+
+function nodeAtArrowEndpoint(point, nodes, excludeId) {
+  if (!point || point.id) return point?.id || null;
+  const candidates = nodes.map((node) => {
+    const x = Math.max(node.x, Math.min(point.x, node.x + node.width));
+    const y = Math.max(node.y, Math.min(point.y, node.y + node.height));
+    return { node, distance: Math.hypot(point.x - x, point.y - y) };
+  }).filter(({ node, distance }) => node.id !== excludeId && distance <= 24)
+    .sort((a, b) => a.distance - b.distance);
+  return candidates[0]?.node.id || null;
+}
+
+export function readEdge(element, nodes = []) {
   if (!isSystemDesignEdge(element)) return null;
   const data = element.customData[CUSTOM_KEY];
-  if (!data.from || !data.to) return null;
+  const start = arrowEndpoint(element, "start");
+  const end = arrowEndpoint(element, "end");
+  const from = start?.id || data.from || nodeAtArrowEndpoint(start, nodes);
+  const to = end?.id || data.to || nodeAtArrowEndpoint(end, nodes, from);
+  if (!from || !to) return null;
   return {
     id: element.id,
-    from: data.from,
-    to: data.to,
+    from,
+    to,
     fromPort: data.fromPort || "right",
     toPort: data.toPort || "left",
     protocol: PROTOCOLS.includes(data.protocol) ? data.protocol : "HTTPS",
@@ -97,7 +121,7 @@ export function readEdge(element) {
 export function readGraph(elements) {
   const nodes = (elements || []).map(readNode).filter(Boolean);
   const ids = new Set(nodes.map((node) => node.id));
-  const edges = (elements || []).map(readEdge).filter((edge) => edge && ids.has(edge.from) && ids.has(edge.to));
+  const edges = (elements || []).map((element) => readEdge(element, nodes)).filter((edge) => edge && ids.has(edge.from) && ids.has(edge.to));
   return { nodes, edges };
 }
 
