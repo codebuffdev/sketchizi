@@ -166,14 +166,18 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
       if (selectedNodes.length >= 2) {
         event.preventDefault(); event.stopPropagation();
         actions.connect(selectedNodes[0], selectedNodes[1]); armConnect(null);
-      } else if (selectedNodes.length === 1) {
+      } else {
+        // Selection is authoritative; when nothing is selected, the hovered card
+        // is a convenient fallback for keyboard-first connect workflows.
+        const sourceId = selectedNodes[0] || (selectedIds.length === 0 ? hoverId : null);
+        if (!sourceId) return;
         event.preventDefault(); event.stopPropagation();
-        armConnect({ nodeId: selectedNodes[0], port: null });
+        armConnect({ nodeId: sourceId, port: null });
       }
     };
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [canEdit, selectedIds, byId, actions]);
+  }, [canEdit, selectedIds, byId, hoverId, actions]);
 
   const layerStyle = { transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom}) translate(${scrollX}px, ${scrollY}px)` };
 
