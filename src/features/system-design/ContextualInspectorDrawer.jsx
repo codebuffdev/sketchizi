@@ -105,6 +105,7 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
               {PROTOCOLS.map((protocol) => <option key={protocol} value={protocol}>{protocol}</option>)}
             </select>
           </label>
+          <span className="sd-edge-line-label">Line</span>
           <div className="sd-seg-mini" role="radiogroup" aria-label="Line style">
             {["solid", "dashed"].map((s) => <button key={s} type="button" role="radio" aria-checked={item.lineStyle === s} disabled={!canEdit}
               className={item.lineStyle === s ? "is-active" : ""} onClick={() => actions.updateEdge(item.id, { lineStyle: s })}>{s}</button>)}
