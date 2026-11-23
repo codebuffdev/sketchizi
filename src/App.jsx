@@ -654,7 +654,7 @@ function App() {
     const rect = canvas.getBoundingClientRect();
     iconInsertion.addIconToCanvas(icon, rect.left + rect.width / 2, rect.top + rect.height / 2);
   };
-  const systemDesign = useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize, canEdit: collaborationCanEdit, canvasTabsRef, persistSystemDesignState });
+  const systemDesign = useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize, canEdit: collaborationCanEdit, canvasTabsRef, activeCanvasIdRef, persistSystemDesignState });
   systemDesignRef.current = systemDesign;
   const openSystemDesignIconLibrary = () => {
     // Force a fresh source transition even if the library was already opened on System Design.
