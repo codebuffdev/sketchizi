@@ -29,7 +29,7 @@ const dependencyEnv = (target, name) => {
 };
 
 export function inferStackDependencies(nodes = [], edges = []) {
-  const names = serviceNames(nodes);
+  const names = stackServiceNames(nodes);
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const dependencies = new Map(nodes.map((node) => [node.id, []]));
   const environments = new Map(nodes.map((node) => [node.id, {}]));
@@ -70,7 +70,10 @@ export function compileKubernetesStack(nodes = [], edges = []) {
       "  selector:", "    matchLabels:", `      app: ${name}`, "  template:", "    metadata:", "      labels:", `        app: ${name}`,
       "    spec:", "      containers:", `        - name: ${name}`, `          image: ${node.image}`, "          ports:",
       `            - name: app`, `              containerPort: ${Number(node.port) || 8080}`,
+      "          resources:", "            requests:", "              cpu: 100m", "              memory: 128Mi", "            limits:", "              cpu: 1000m", "              memory: 512Mi",
+      ...(stateful && volumePath(node.kind) ? ["          volumeMounts:", "            - name: data", `              mountPath: ${volumePath(node.kind)}`] : []),
       ...((Object.keys(env).length || node.kind === "sql") ? ["          envFrom:", ...(Object.keys(env).length ? ["            - configMapRef:", `                name: ${name}-config`] : []), ...(node.kind === "sql" ? ["            - secretRef:", `                name: ${name}-credentials`] : [])] : []),
+      ...(stateful && volumePath(node.kind) ? ["  volumeClaimTemplates:", "    - metadata:", "        name: data", "      spec:", "        accessModes: [ReadWriteOnce]", "        resources:", "          requests:", "            storage: 10Gi"] : []),
     ].join("\n"));
     const serviceType = node.kind === "load-balancer" ? "LoadBalancer" : "ClusterIP";
     docs.push([
