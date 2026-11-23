@@ -52,6 +52,9 @@ export function compileKubernetesStack(nodes = [], edges = []) {
   for (const node of runnable) {
     const name = names.get(node.id);
     const env = environments.get(node.id) || {};
+    if (node.kind === "sql") {
+      docs.push(["apiVersion: v1", "kind: Secret", "metadata:", `  name: ${name}-credentials`, "  namespace: prod", "type: Opaque", "stringData:", "  POSTGRES_PASSWORD: CHANGE_ME_BEFORE_DEPLOY"].join("\n"));
+    }
     if (Object.keys(env).length) {
       docs.push([
         "apiVersion: v1", "kind: ConfigMap", "metadata:", `  name: ${name}-config`, "  namespace: prod", "data:",
@@ -67,7 +70,7 @@ export function compileKubernetesStack(nodes = [], edges = []) {
       "  selector:", "    matchLabels:", `      app: ${name}`, "  template:", "    metadata:", "      labels:", `        app: ${name}`,
       "    spec:", "      containers:", `        - name: ${name}`, `          image: ${node.image}`, "          ports:",
       `            - name: app`, `              containerPort: ${Number(node.port) || 8080}`,
-      ...(Object.keys(env).length ? ["          envFrom:", "            - configMapRef:", `                name: ${name}-config`] : []),
+      ...((Object.keys(env).length || node.kind === "sql") ? ["          envFrom:", ...(Object.keys(env).length ? ["            - configMapRef:", `                name: ${name}-config`] : []), ...(node.kind === "sql" ? ["            - secretRef:", `                name: ${name}-credentials`] : [])] : []),
     ].join("\n"));
     const serviceType = node.kind === "load-balancer" ? "LoadBalancer" : "ClusterIP";
     docs.push([
@@ -94,7 +97,10 @@ export function compileDockerCompose(nodes = [], edges = []) {
   for (const node of runnable) {
     const name = names.get(node.id);
     lines.push(`  ${name}:`, `    image: ${quote(node.image)}`, "    restart: unless-stopped", "    ports:", `      - ${quote(`${Number(node.port) || 8080}:${Number(node.port) || 8080}`)}`);
-    const env = environments.get(node.id) || {};
+    const env = {
+      ...(node.kind === "sql" ? { POSTGRES_DB: "app", POSTGRES_USER: "postgres", POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before starting the stack}" } : {}),
+      ...(environments.get(node.id) || {}),
+    };
     if (Object.keys(env).length) {
       lines.push("    environment:");
       for (const [key, value] of Object.entries(env)) lines.push(`      ${key}: ${quote(value)}`);
