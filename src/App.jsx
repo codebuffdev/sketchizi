@@ -15,6 +15,7 @@ import { applyCanvasAppearance, getCanvasAppearanceFromBackground, getCanvasAppe
 import { useSketchiziEscape, useSketchiziCanvasDismissal } from "./features/navigation/useSketchiziEscape";
 import { useDrawerPresence } from "./features/navigation/useDrawerPresence";
 import { useDocumentPersistence } from "./hooks/useDocumentPersistence";
+import { useSystemDesignWorkspace } from "./features/system-design/useSystemDesignWorkspace.js";
 import { useWorkspaceTabState } from "./hooks/useWorkspaceTabState";
 import { useWorkspaceTabs } from "./hooks/useWorkspaceTabs";
 import { useCollaboration } from "./features/collaboration/useCollaboration";
@@ -56,6 +57,7 @@ import { AWS_RELATIONSHIP_TYPES, getAwsRelationship, updateRelationshipType } fr
 import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, getKubernetesRelationshipGuidance, updateKubernetesRelationshipMetadata } from "./features/kubernetes-relationships/kubernetesRelationshipService";
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
+const SystemDesignStudio = lazy(() => import("./features/system-design/SystemDesignStudio.jsx"));
 const DockerComposeStudio = lazy(() => import("./features/docker-compose/ui/DockerComposeStudio.jsx"));
 const KubernetesStudio = lazy(() => import("./features/kubernetes-studio/ui/KubernetesStudio.jsx"));
 const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"));
@@ -648,6 +650,7 @@ function App() {
     const rect = canvas.getBoundingClientRect();
     iconInsertion.addIconToCanvas(icon, rect.left + rect.width / 2, rect.top + rect.height / 2);
   };
+  const systemDesign = useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize, canEdit: collaborationCanEdit });
   const commands = createSketchiziCommandRegistry({
     apiRef,
     canEdit: collaborationCanEdit,
@@ -674,6 +677,8 @@ function App() {
     openExportStudio: () => setExportStudioOpen(true),
     openKubernetesStudio: () => setKubernetesStudioOpen(true),
     openDockerComposeStudio: () => setDockerStudioOpen(true),
+    toggleSystemDesignStudio: systemDesign.toggle,
+    systemDesignStudioOpen: systemDesign.enabled,
     openIconLibrary: () => { if (!libraryOpen) togglePanel("icon-library"); requestAnimationFrame(() => searchRef.current?.focus()); },
     insertCatalogIcon: insertCatalogIconAtViewportCenter,
     insertArchitecturePack: (pack) => insertArchitecturePackIntoScene(apiRef.current, pack, { captureUpdate: CaptureUpdateAction.IMMEDIATELY }),
@@ -1989,6 +1994,9 @@ function App() {
           />
           )}
           </div>
+          {systemDesign.enabled && <Suspense fallback={null}>
+            <SystemDesignStudio workspace={systemDesign} saveStatus={saveStatus} canvasTabs={canvasTabs} activeCanvasId={activeCanvasId} onSelectTab={selectWorkspaceTab} onCreateTab={createCanvasTab} isDarkTheme={isDarkTheme} />
+          </Suspense>}
           {activeWorkspaceTabId.startsWith("todo:") && (
             <>
               <nav className={`sketchizi-primary-dock${isDarkTheme ? " is-dark" : ""}`} aria-label="Todo workspace dock">

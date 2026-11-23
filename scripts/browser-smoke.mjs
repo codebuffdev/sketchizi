@@ -50,6 +50,21 @@ const openDesignStudio = async (page) => {
   await page.getByRole("heading", { name: "What are you designing?" }).waitFor();
 };
 
+// The Smart Studio pill (and its "Studio quick launch" menu) was retired. The
+// lazy engineering studios are now launched from the Ctrl/Cmd+K command
+// palette, which is available in every scene. Control+K is recognised on all
+// platforms. Labels here are pinned to the source by
+// tests/browser-smoke-workflow.test.js so this script cannot drift silently.
+const openStudioFromCommandPalette = async (page, commandLabel) => {
+  await page.keyboard.press("Control+K");
+  const palette = page.getByRole("dialog", { name: "Sketchizi command palette" });
+  await palette.waitFor({ state: "visible", timeout: 15000 });
+  await palette.getByRole("searchbox", { name: "Search commands" }).fill(commandLabel);
+  await palette.getByRole("option", { name: new RegExp(`Open ${commandLabel}`) }).click();
+  // The palette closes itself on execute; wait so the next call starts clean.
+  await palette.waitFor({ state: "detached", timeout: 15000 });
+};
+
 try {
   // Template journey at desktop width, then verify the creation screen at narrow widths.
   const desktop = await makePage({ width: 1440, height: 1000 });
@@ -69,25 +84,18 @@ try {
   await page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: configured AWS template opens the editor.");
 
-  // Optional engineering studios are launched from the scene-aware Smart
-  // Studio pill, which is only rendered while an infrastructure scene is active.
-  const smartStudio = page.locator(".smart-studio-pill");
-  await smartStudio.waitFor({ state: "visible", timeout: 15000 });
-  await smartStudio.click();
-  let studioMenu = page.getByRole("menu", { name: "Studio quick launch" });
-  await studioMenu.getByRole("menuitem", { name: /Docker Compose Studio/ }).click();
+  // Optional engineering studios launch from the Ctrl/Cmd+K command palette.
+  await openStudioFromCommandPalette(page, "Docker Compose Studio");
   await page.getByRole("dialog", { name: "Docker Compose Studio" }).waitFor({ timeout: 30000 });
   await page.getByRole("button", { name: "Close Docker Compose Studio" }).click();
   await page.getByRole("dialog", { name: "Docker Compose Studio" }).waitFor({ state: "detached" });
-  console.log("PASS: lazy Docker Compose Studio opens and closes from Smart Studio.");
+  console.log("PASS: lazy Docker Compose Studio opens and closes from the command palette.");
 
-  await smartStudio.click();
-  studioMenu = page.getByRole("menu", { name: "Studio quick launch" });
-  await studioMenu.getByRole("menuitem", { name: /Kubernetes Studio/ }).click();
+  await openStudioFromCommandPalette(page, "Kubernetes Studio");
   await page.getByRole("dialog", { name: "K8s Studio" }).waitFor({ timeout: 30000 });
   await page.getByRole("button", { name: "Close K8s Studio" }).click();
   await page.getByRole("dialog", { name: "K8s Studio" }).waitFor({ state: "detached" });
-  console.log("PASS: lazy Kubernetes Studio opens and closes from Smart Studio.");
+  console.log("PASS: lazy Kubernetes Studio opens and closes from the command palette.");
 
   // A populated canvas stays intact while the plus action opens a new canvas tab.
   await page.getByRole("button", { name: "Create new canvas" }).click();

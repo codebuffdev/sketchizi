@@ -42,3 +42,36 @@ test("production workflow builds and performs browser smoke even when unrelated 
   const enforce = workflow.indexOf("name: Enforce regression suite result");
   assert.ok(build > 0 && smoke > build && enforce > smoke);
 });
+
+test("browser smoke launches studios from the command palette, not the retired Smart Studio pill", async () => {
+  // Regression guard: the pill was removed from the header, but the smoke script
+  // kept waiting on `.smart-studio-pill` because it only runs in the build job.
+  assert.doesNotMatch(script, /locator\(["'`]\.smart-studio-pill/);
+  assert.doesNotMatch(script, /name: "Studio quick launch"/);
+  assert.match(script, /press\("Control\+K"\)/);
+
+  // Every accessible name the script relies on must exist in the real source,
+  // so selector drift fails fast in unit tests instead of in the browser job.
+  const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+  const palette = await read("src/components/app/CommandPalette.jsx");
+  const registry = await read("src/features/commands/commandRegistry.js");
+  const docker = await read("src/features/docker-compose/ui/DockerComposeStudio.jsx");
+  const k8s = await read("src/features/kubernetes-studio/ui/KubernetesStudio.jsx");
+
+  assert.match(script, /name: "Sketchizi command palette"/);
+  assert.match(script, /name: "Search commands"/);
+  assert.ok(palette.includes('aria-label="Sketchizi command palette"'));
+  assert.ok(palette.includes('aria-label="Search commands"'));
+
+  for (const [commandLabel, dialogTitle, closeLabel, source] of [
+    ["Docker Compose Studio", "Docker Compose Studio", "Close Docker Compose Studio", docker],
+    ["Kubernetes Studio", "K8s Studio", "Close K8s Studio", k8s],
+  ]) {
+    assert.ok(script.includes(`openStudioFromCommandPalette(page, "${commandLabel}")`), commandLabel);
+    assert.ok(registry.includes(`label: "Open ${commandLabel}"`), `registry command: ${commandLabel}`);
+    assert.ok(script.includes(`name: "${dialogTitle}"`), `script dialog: ${dialogTitle}`);
+    assert.match(source, new RegExp(`<h1 id="[a-z0-9-]+-title">${dialogTitle}</h1>`), `dialog title: ${dialogTitle}`);
+    assert.ok(script.includes(`name: "${closeLabel}"`), `script close: ${closeLabel}`);
+    assert.ok(source.includes(`aria-label="${closeLabel}"`), `close button: ${closeLabel}`);
+  }
+});

@@ -1,0 +1,139 @@
+/* Sketchizi System Design Studio. Palette: slate / emerald / amber (+ red only for overloaded/down). */
+.sd-root {
+  --sd-slate: #64748b; --sd-emerald: #059669; --sd-amber: #d97706; --sd-red: #dc2626;
+  --sd-text: #1e293b; --sd-text-2: #64748b; --sd-border: #e2e8f0; --sd-surface: rgba(255,255,255,.82);
+  --sd-card: #ffffff; --sd-soft: #f1f5f9; --sd-shadow: 0 8px 28px rgba(15,23,42,.10), 0 1px 3px rgba(15,23,42,.08);
+  position: absolute; inset: 0; pointer-events: none; z-index: 30; font-family: Inter, -apple-system, "Segoe UI", system-ui, sans-serif; color: var(--sd-text);
+}
+.sd-root.is-dark {
+  --sd-text: #e2e8f0; --sd-text-2: #94a3b8; --sd-border: #334155; --sd-surface: rgba(30,41,59,.82);
+  --sd-card: #1e293b; --sd-soft: #0f172a; --sd-shadow: 0 8px 28px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.4);
+}
+.sd-mono, .sd-root kbd, .sd-yaml { font-family: "JetBrains Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+.sd-surface { pointer-events: auto; background: var(--sd-surface); border: 1px solid var(--sd-border); border-radius: 14px; box-shadow: var(--sd-shadow); backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2); }
+.sd-root button, .sd-root input, .sd-root select { font: inherit; color: inherit; }
+.sd-root button { cursor: pointer; border: 0; background: transparent; }
+.sd-root button:disabled { opacity: .45; cursor: not-allowed; }
+.sd-root :focus-visible { outline: 2px solid var(--sd-emerald); outline-offset: 2px; }
+
+/* Top bar */
+.sd-topbar { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; pointer-events: none; }
+.sd-topbar-left, .sd-topbar-right { display: flex; align-items: center; gap: 8px; padding: 5px 8px; max-width: 34vw; }
+.sd-topbar-right { max-width: none; }
+.sd-tabs { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: none; max-width: 22vw; }
+.sd-tab { padding: 4px 10px; border-radius: 9px; font-size: 12px; color: var(--sd-text-2); white-space: nowrap; max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
+.sd-tab.is-active { background: var(--sd-soft); color: var(--sd-text); font-weight: 600; }
+.sd-icon-btn { width: 26px; height: 26px; border-radius: 8px; font-size: 15px; line-height: 1; color: var(--sd-text-2); }
+.sd-icon-btn:hover:not(:disabled) { background: var(--sd-soft); color: var(--sd-text); }
+.sd-icon-btn.is-danger:hover:not(:disabled) { color: var(--sd-red); }
+.sd-persist { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-family: "JetBrains Mono", Consolas, monospace; color: var(--sd-text-2); white-space: nowrap; padding-left: 8px; border-left: 1px solid var(--sd-border); }
+.sd-persist i { width: 7px; height: 7px; border-radius: 50%; background: var(--sd-slate); }
+.sd-persist.is-emerald i { background: var(--sd-emerald); } .sd-persist.is-amber i { background: var(--sd-amber); } .sd-persist.is-red i { background: var(--sd-red); }
+.sd-persist.is-busy i { animation: sd-pulse 1s ease-in-out infinite; }
+.sd-segmented { position: absolute; left: 50%; transform: translateX(-50%); display: flex; padding: 3px; gap: 2px; }
+.sd-segmented button { padding: 5px 14px; border-radius: 11px; font-size: 12px; font-weight: 500; color: var(--sd-text-2); transition: background .15s, color .15s; }
+.sd-segmented button.is-active { background: var(--sd-card); color: var(--sd-text); box-shadow: 0 1px 3px rgba(15,23,42,.14); font-weight: 600; }
+.sd-sim-btn { padding: 5px 11px; border-radius: 10px; font-size: 12px; font-weight: 600; color: var(--sd-text-2); border: 1px solid var(--sd-border) !important; }
+.sd-sim-btn.is-on { color: #fff; background: var(--sd-emerald); border-color: var(--sd-emerald) !important; }
+.sd-presets { display: flex; align-items: center; gap: 2px; }
+.sd-presets button { padding: 3px 8px; border-radius: 8px; font-size: 11px; color: var(--sd-text-2); }
+.sd-presets button.is-active { background: var(--sd-soft); color: var(--sd-text); font-weight: 700; }
+.sd-unit { font-size: 10px; color: var(--sd-text-2); padding-left: 2px; }
+.sd-chip { padding: 4px 9px; border-radius: 9px; font-size: 11px; color: var(--sd-text-2); border: 1px solid var(--sd-border) !important; }
+.sd-chip.is-on { color: var(--sd-emerald); border-color: var(--sd-emerald) !important; background: rgba(5,150,105,.08); }
+.sd-zoom { display: flex; align-items: center; } .sd-zoom-value { font-size: 11px; padding: 3px 4px; min-width: 42px; }
+
+/* Quick dock */
+.sd-dock { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; padding: 6px; max-height: calc(100% - 140px); overflow: hidden; transition: width .18s ease; width: 44px; }
+.sd-dock.is-expanded { width: 232px; }
+.sd-dock-handle { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 10px; font-size: 12px; font-weight: 600; color: var(--sd-text-2); }
+.sd-dock-body { overflow-y: auto; padding-top: 4px; scrollbar-width: thin; }
+.sd-dock-group h3 { margin: 8px 8px 3px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--sd-text-2); font-weight: 600; }
+.sd-dock-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 8px; border-radius: 9px; font-size: 12px; text-align: left; }
+.sd-dock-item:hover:not(:disabled) { background: var(--sd-soft); }
+.sd-dock-item i { width: 8px; height: 8px; border-radius: 3px; background: var(--sd-slate); flex: none; }
+.sd-dock-item.is-emerald i { background: var(--sd-emerald); } .sd-dock-item.is-amber i { background: var(--sd-amber); }
+.sd-dock-item span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sd-dock-item kbd { font-size: 10px; padding: 1px 5px; border: 1px solid var(--sd-border); border-radius: 5px; color: var(--sd-text-2); }
+.sd-dock-layout { margin: 8px 4px 2px; padding: 7px; border-radius: 10px; font-size: 12px; font-weight: 600; border: 1px solid var(--sd-border) !important; width: calc(100% - 8px); }
+.sd-dock-layout:hover:not(:disabled) { border-color: var(--sd-emerald) !important; color: var(--sd-emerald); }
+
+/* Overlay layer (scene-space) */
+.sd-overlay { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.sd-layer { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.sd-edges { position: absolute; left: 0; top: 0; overflow: visible; }
+.sd-edge path { stroke: #94a3b8; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.sd-edge.is-dashed path { stroke-dasharray: 6 5; }
+.sd-edge.is-ok path { stroke: var(--sd-emerald); } .sd-edge.is-warm path { stroke: var(--sd-amber); } .sd-edge.is-hot path { stroke: var(--sd-red); }
+.sd-edge.is-selected path { stroke-width: 2.6; stroke: var(--sd-emerald); }
+.sd-packet { fill: var(--sd-emerald); } .is-warm .sd-packet { fill: var(--sd-amber); } .is-hot .sd-packet { fill: var(--sd-red); }
+.sd-edge-preview { stroke: var(--sd-emerald); stroke-width: 1.8; stroke-dasharray: 4 4; }
+.sd-badge { position: absolute; transform: translate(-50%, -50%); padding: 1px 7px; border-radius: 999px; font-size: 10px; color: var(--sd-text-2); background: var(--sd-card); border: 1px solid var(--sd-border); white-space: nowrap; box-shadow: 0 1px 2px rgba(15,23,42,.08); }
+
+/* Node cards */
+.sd-node { position: absolute; box-sizing: border-box; padding: 10px 12px; border-radius: 14px; background: var(--sd-card); border: 1px solid var(--sd-border); box-shadow: 0 4px 14px rgba(15,23,42,.09), 0 1px 2px rgba(15,23,42,.08); pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; overflow: visible; }
+.sd-node.is-selected { border-color: var(--sd-emerald); box-shadow: 0 0 0 2px rgba(5,150,105,.35), 0 6px 18px rgba(15,23,42,.12); }
+.sd-node-head { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.sd-node-dot { width: 9px; height: 9px; border-radius: 3px; flex: none; background: var(--sd-slate); }
+.sd-node.is-emerald .sd-node-dot { background: var(--sd-emerald); } .sd-node.is-amber .sd-node-dot { background: var(--sd-amber); }
+.sd-node-label { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.sd-mode-badge { font-size: 10px; color: var(--sd-text-2); background: var(--sd-soft); padding: 1px 6px; border-radius: 6px; white-space: nowrap; }
+.sd-node-sub { font-size: 11px; color: var(--sd-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sd-node-foot { display: flex; gap: 5px; align-items: center; flex-wrap: nowrap; overflow: hidden; }
+.sd-pill { font-size: 10px; padding: 1px 6px; border-radius: 6px; background: var(--sd-soft); color: var(--sd-text); white-space: nowrap; }
+.sd-status { font-size: 10px; padding: 1px 6px; border-radius: 6px; margin-left: auto; white-space: nowrap; }
+.sd-status.s-healthy { color: var(--sd-emerald); background: rgba(5,150,105,.12); }
+.sd-status.s-elevated { color: var(--sd-amber); background: rgba(217,119,6,.14); }
+.sd-status.s-overloaded, .sd-status.s-down { color: var(--sd-red); background: rgba(220,38,38,.12); }
+.sd-node.s-elevated { border-color: rgba(217,119,6,.6); } .sd-node.s-overloaded, .sd-node.s-down { border-color: rgba(220,38,38,.65); }
+.sd-node.s-down { opacity: .72; }
+.sd-label-input { pointer-events: auto; flex: 1; min-width: 0; font-size: 13px; font-weight: 600; background: var(--sd-soft); border: 1px solid var(--sd-emerald); border-radius: 6px; padding: 1px 5px; }
+
+/* Ports */
+.sd-port { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: var(--sd-card); border: 2px solid var(--sd-emerald); padding: 0; opacity: 0; pointer-events: none; transition: opacity .12s, transform .12s; transform: translate(-50%, -50%); }
+.sd-port.is-visible { opacity: 1; pointer-events: auto; cursor: crosshair; }
+.sd-port.is-visible:hover { transform: translate(-50%, -50%) scale(1.35); background: var(--sd-emerald); }
+.sd-port.is-top { left: 50%; top: 0; } .sd-port.is-bottom { left: 50%; top: 100%; } .sd-port.is-left { left: 0; top: 50%; } .sd-port.is-right { left: 100%; top: 50%; }
+
+/* Inspector */
+.sd-pill-bar { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 5px 8px; animation: sd-rise .16s ease-out; }
+.sd-pill-title { font-size: 12px; font-weight: 600; padding: 0 6px; }
+.sd-inline-input { font-size: 12px; font-weight: 600; width: 150px; border: 1px solid var(--sd-border); border-radius: 8px; padding: 4px 8px; background: var(--sd-card); }
+.sd-seg-mini { display: flex; gap: 2px; padding: 2px; background: var(--sd-soft); border-radius: 9px; }
+.sd-seg-mini button:not(.sd-swatch) { padding: 3px 8px; font-size: 11px; border-radius: 7px; color: var(--sd-text-2); text-transform: capitalize; }
+.sd-seg-mini button.is-active:not(.sd-swatch) { background: var(--sd-card); color: var(--sd-text); font-weight: 600; box-shadow: 0 1px 2px rgba(15,23,42,.14); }
+.sd-seg-mini .is-health-degraded.is-active { color: var(--sd-amber) !important; } .sd-seg-mini .is-health-down.is-active { color: var(--sd-red) !important; } .sd-seg-mini .is-health-healthy.is-active { color: var(--sd-emerald) !important; }
+.sd-swatch { width: 18px; height: 18px; border-radius: 50%; margin: 3px; background: var(--sd-slate) !important; } .sd-swatch.is-emerald { background: var(--sd-emerald) !important; } .sd-swatch.is-amber { background: var(--sd-amber) !important; }
+.sd-swatch.is-active { box-shadow: 0 0 0 2px var(--sd-card), 0 0 0 4px currentColor; color: var(--sd-text-2); }
+.sd-drawer { position: absolute; right: 12px; top: 58px; bottom: 16px; width: 288px; display: flex; flex-direction: column; overflow: hidden; animation: sd-slide .18s ease-out; }
+.sd-drawer.is-collapsed { width: 44px; bottom: auto; }
+.sd-drawer-toggle { display: flex; gap: 8px; align-items: center; padding: 10px 12px; font-size: 12px; font-weight: 600; text-align: left; border-bottom: 1px solid var(--sd-border) !important; }
+.sd-drawer-body { overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.sd-readouts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.sd-readouts > div { background: var(--sd-soft); border-radius: 10px; padding: 7px 10px; display: flex; flex-direction: column; }
+.sd-readouts small { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--sd-text-2); }
+.sd-readouts b { font-size: 15px; }
+.sd-readouts .s-healthy b { color: var(--sd-emerald); } .sd-readouts .s-elevated b { color: var(--sd-amber); } .sd-readouts .s-overloaded b, .sd-readouts .s-down b { color: var(--sd-red); }
+.sd-slider { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+.sd-slider span { display: flex; justify-content: space-between; color: var(--sd-text-2); } .sd-slider b { color: var(--sd-text); font-weight: 600; }
+.sd-slider input { accent-color: var(--sd-emerald); width: 100%; }
+.sd-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--sd-text-2); }
+.sd-field select { padding: 5px 8px; border: 1px solid var(--sd-border); border-radius: 8px; background: var(--sd-card); color: var(--sd-text); }
+.sd-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; color: var(--sd-text-2); } .sd-meta span { background: var(--sd-soft); padding: 2px 7px; border-radius: 6px; }
+.sd-yaml-head { font-size: 10px; color: var(--sd-text-2); }
+.sd-yaml { margin: 0; padding: 10px; border-radius: 10px; background: var(--sd-soft); font-size: 11px; line-height: 1.5; overflow: auto; max-height: 260px; white-space: pre; }
+
+@keyframes sd-pulse { 50% { opacity: .35; } }
+@keyframes sd-rise { from { opacity: 0; transform: translate(-50%, 6px); } }
+@keyframes sd-slide { from { opacity: 0; transform: translateX(12px); } }
+@media (prefers-reduced-motion: reduce) { .sd-packet { display: none; } .sd-root *, .sd-root *::before { animation: none !important; transition: none !important; } }
+@media (max-width: 1100px) { .sd-topbar { flex-wrap: wrap; } .sd-segmented { position: static; transform: none; } .sd-topbar-left { max-width: none; } }
+
+/* Remap Excalidraw's default primary/selection accent to emerald while the studio is open. */
+.sd-active .excalidraw, .sd-active .excalidraw.theme--dark {
+  --color-primary: #059669; --color-primary-darker: #047857; --color-primary-darkest: #065f46;
+  --color-primary-light: #d1fae5; --color-primary-light-darker: #a7f3d0; --color-primary-hover: #047857;
+  --color-selection: #059669; --color-brand-hover: #047857; --color-brand-active: #065f46;
+  --color-surface-primary-container: #d1fae5; --color-on-primary-container: #065f46;
+  --select-highlight-color: #059669; --color-promo: #059669;
+}

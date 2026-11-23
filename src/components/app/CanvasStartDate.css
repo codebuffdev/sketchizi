@@ -42,13 +42,6 @@
 .app.theme-dark .canvas-start-date-reset { background:rgba(165,196,250,.13); color:#A5C4FA; }
 .app.theme-dark .canvas-start-date { border-color:rgba(255,255,255,.08); background:rgba(22,24,31,.72); color:#9aa6b7; }
 .app.theme-dark .canvas-start-date:hover, .app.theme-dark .canvas-start-date[aria-expanded="true"] { color:#eef3fa; background:rgba(22,24,31,.94); }
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  color: #7d8795;
-  transition: background-color .14s ease, color .14s ease;
-}
-.canvas-start-date-calendar-header button svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .canvas-start-date-popover {
   position: absolute;
   top: calc(100% + 8px);
