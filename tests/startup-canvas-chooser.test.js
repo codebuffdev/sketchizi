@@ -10,7 +10,7 @@ test("Start with chooser exposes all four primary workspace options", () => {
     assert.match(appSource, new RegExp(`<span>${label}</span>`), `missing ${label} option`);
   }
   assert.match(appSource, /chooseStartupCanvas\("system-design"\)/);
-  assert.match(appSource, /Architect systems, simulate load &amp; export stacks\./);
+  assert.match(chooserCss, /Architect systems, simulate load & export stacks\./);
 });
 
 test("System Design startup choice closes the chooser and opens the active workspace", () => {
