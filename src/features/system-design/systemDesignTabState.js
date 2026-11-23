@@ -37,3 +37,10 @@ export function updateSystemDesignWorkspaceTab(map, tabId, patch) {
   const next = normalizeSystemDesignTabState({ ...current, ...(typeof patch === "function" ? patch(current) : patch) });
   return { ...(map || {}), [tabId]: next };
 }
+
+export function persistSystemDesignTabState(tabs, tabId, state) {
+  if (!tabId) return Array.isArray(tabs) ? tabs : [];
+  return (Array.isArray(tabs) ? tabs : []).map((tab) => tab?.id === tabId
+    ? { ...tab, snapshot: { ...(tab.snapshot || {}), systemDesign: normalizeSystemDesignTabState(state) } }
+    : tab);
+}
