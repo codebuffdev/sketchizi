@@ -182,6 +182,13 @@
 .sd-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--sd-text-2); }
 .sd-field .sd-seg-mini { align-self: flex-start; }
 .sd-field select { padding: 5px 8px; border: 1px solid var(--sd-border); border-radius: 8px; background: var(--sd-card); color: var(--sd-text); }
+.sd-field input { width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid var(--sd-border); border-radius: 8px; background: var(--sd-card); color: var(--sd-text); font: inherit; font-variant-numeric: tabular-nums; }
+.sd-load-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sd-load-chips button, .sd-add-upstream { border: 1px solid var(--sd-border); border-radius: 8px; padding: 5px 9px; background: var(--sd-soft); color: var(--sd-text-2); font-size: 11px; font-weight: 600; }
+.sd-load-chips button:hover, .sd-load-chips button.is-active { color: var(--sd-emerald); border-color: var(--sd-emerald); background: rgba(5,150,105,.09); }
+.sd-add-upstream { align-self: flex-start; color: var(--sd-emerald); border-color: rgba(5,150,105,.35); background: rgba(5,150,105,.07); }
+.sd-add-upstream:hover:not(:disabled) { background: rgba(5,150,105,.14); }
+.sd-load-chips button:disabled, .sd-add-upstream:disabled { opacity: .5; cursor: not-allowed; }
 .sd-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; color: var(--sd-text-2); } .sd-meta span { background: var(--sd-soft); padding: 2px 7px; border-radius: 6px; }
 /* The manifest takes every pixel the drawer has. Long lines wrap (indentation kept) instead of scrolling sideways, so nothing is ever clipped. */
 .sd-yaml { flex: 1 1 auto; min-height: 160px; margin: 0; padding: 12px; border-radius: 10px; background: var(--sd-soft); font-size: 12px; line-height: 1.55; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; user-select: text; }
