@@ -574,7 +574,7 @@ export default function DesktopAppHeader({
         aria-expanded={nativeMenuOpen}
         title={nativeMenuOpen ? "Close application menu" : "Open application menu"}
       >
-        <img src="/sketchizi-favicon.svg" alt="" width="25" height="25" style={{ display: "block", objectFit: "contain", borderRadius: 6 }} />
+        <img src="/sketchizi-icon.svg" alt="" width="25" height="25" style={{ display: "block", objectFit: "contain", borderRadius: 6 }} />
       </button>
       <header
         id="desktop-app-header"
