@@ -47,7 +47,15 @@ jobs:
           set +e
           npm run test:all > /tmp/sketchizi-current-tests.tap 2>&1
           status=$?
-          tail -n 45 /tmp/sketchizi-current-tests.tap
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const lines = readFileSync("/tmp/sketchizi-current-tests.tap", "utf8").split(/\\r?\\n/);
+            for (let i = 0; i < lines.length; i += 1) {
+              if (!/^not ok \\d+ - /.test(lines[i])) continue;
+              console.log(lines.slice(i, Math.min(lines.length, i + 14)).join("\\n"));
+            }
+            console.log(lines.slice(-12).join("\\n"));
+          '
           exit "$status"
 
       - name: Compare regression failures with main
