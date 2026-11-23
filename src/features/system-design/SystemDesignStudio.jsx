@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import TopWorkspaceBar from "./TopWorkspaceBar.jsx";
-import CollapsibleQuickDock from "./CollapsibleQuickDock.jsx";
 import SystemDesignNodeOverlay from "./SystemDesignNodeOverlay.jsx";
 import ContextualInspectorDrawer from "./ContextualInspectorDrawer.jsx";
 import { readGraph, isSystemDesignEdge } from "./sceneModel.js";
@@ -59,13 +58,12 @@ export default function SystemDesignStudio({ workspace, isDarkTheme, onOpenIconL
     setOffset((current) => (current.x === next.x && current.y === next.y ? current : next));
   }, [getHost, snapshot.revision, enabled]);
 
-  // While the studio is open, re-theme Excalidraw's selection accents. The native
-  // formatting dock is suppressed separately and only while a System Design item is selected.
+  // While the studio is open, re-theme Excalidraw's selection accents. Native drawing and contextual toolbars remain untouched.
   useLayoutEffect(() => {
     if (!enabled) return undefined;
     const region = rootRef.current?.parentElement;
     region?.classList.add("sd-active");
-    return () => { region?.classList.remove("sd-active"); region?.classList.remove("sd-has-system-selection"); };
+    return () => { region?.classList.remove("sd-active"); };
   }, [enabled]);
 
   const selection = useMemo(() => {
@@ -78,13 +76,6 @@ export default function SystemDesignStudio({ workspace, isDarkTheme, onOpenIconL
     return edge && isSystemDesignEdge(selectedElement) ? { kind: "edge", item: edge } : null;
   }, [snapshot.selectedIds, graph]);
 
-  useLayoutEffect(() => {
-    if (!enabled) return undefined;
-    const region = rootRef.current?.parentElement;
-    region?.classList.toggle("sd-has-system-selection", Boolean(selection));
-    return () => region?.classList.remove("sd-has-system-selection");
-  }, [enabled, selection]);
-
   if (!enabled) return <div ref={rootRef} hidden />;
 
   return (
@@ -94,10 +85,9 @@ export default function SystemDesignStudio({ workspace, isDarkTheme, onOpenIconL
       <TopWorkspaceBar mode={mode} onModeChange={workspace.setMode} simulate={simulate} onSimulateChange={onSimulateChange}
         loadRps={loadRps} onLoadChange={workspace.setLoadRps} onLoadBlueprint={actions.loadBlueprint} canEdit={canEdit} onClose={workspace.close}
         inspectorOpen={inspectorOpen} onToggleInspector={() => setInspectorOpen((value) => !value)}
-        nodes={graph.nodes} edges={graph.edges} diagnostic={simulate ? diagnostic : null} />
+        nodes={graph.nodes} edges={graph.edges} diagnostic={simulate ? diagnostic : null}
+        onOpenIconLibrary={onOpenIconLibrary} onAutoLayout={actions.autoLayout} />
       {toast && <div className="sd-toast" role="status" aria-live="polite">{toast}</div>}
-      <CollapsibleQuickDock onAdd={actions.addNode} onOpenIconLibrary={onOpenIconLibrary} onAutoLayout={actions.autoLayout}
-        snapEnabled={workspace.gridEnabled} onSnapChange={workspace.setGridEnabled} canEdit={canEdit} />
       <ContextualInspectorDrawer selection={selection} mode={mode} simulation={simulation} simulate={simulate} actions={actions} canEdit={canEdit}
         open={inspectorOpen} tab={inspectorTab} onTabChange={setInspectorTab}
         onOpenInspector={(nextTab = "config") => { setInspectorTab(nextTab); setInspectorOpen(true); }} onClose={() => setInspectorOpen(false)} />
