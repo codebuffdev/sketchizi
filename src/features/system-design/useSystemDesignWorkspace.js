@@ -9,7 +9,6 @@ import {
 import { choosePorts } from "./orthogonalRouter.js";
 import { isRectInView, planPlacement, scrollToReveal } from "./placement.js";
 import { computeAutoLayout } from "./autoLayout.js";
-import { LOAD_PRESETS } from "./trafficSimulator.js";
 import { BLUEPRINT_GRID, blueprintExtent, getBlueprint } from "./blueprints.js";
 import { createSystemDesignWorkspaceByTabId, normalizeSystemDesignTabState, readSystemDesignTabState, updateSystemDesignWorkspaceTab } from "./systemDesignTabState.js";
 
@@ -241,7 +240,7 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
       api.updateScene({ appState: scrollToReveal(rect, viewport), captureUpdate: CaptureUpdateAction.NEVER });
     }
     return id;
-  }, [apiRef, canEdit, commit, gridEnabled, gridSize, viewportCenterScene]);
+  }, [apiRef, canEdit, commit, gridEnabled, gridSize, viewportCenterScene, setEnabled]);
 
   const connect = useCallback((fromId, toId, ports = null) => {
     const api = apiRef.current;
@@ -357,7 +356,7 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     api.updateScene({ appState: { selectedElementIds: {} }, captureUpdate: CaptureUpdateAction.NEVER });
     api.scrollToContent?.(created.filter(isSystemDesignNode), { fitToContent: true, animate: true });
     return true;
-  }, [apiRef, canEdit, commit, viewportCenterScene]);
+  }, [apiRef, canEdit, commit, viewportCenterScene, setEnabled]);
 
   // While the studio is open, anything drawn with Excalidraw's own arrow tool should also be a 90-degree elbow rather
   // than a raw diagonal. The previous arrow type is restored on close so the plain canvas is left exactly as it was.
