@@ -31,7 +31,7 @@ function Slider({ label, value, min, max, step = 1, format = (v) => v, onLive, o
  *       connector:  Connector          |  Solid · Dashed            |  Inspect ▾ | trash
  *  2. The telemetry / YAML drawer on the right. It is CLOSED by default and opens only when the person clicks YAML / Inspect.
  */
-export default function ContextualInspectorDrawer({ selection, mode, simulation, simulate, actions, canEdit, open, tab, onTabChange, onOpenInspector, onClose }) {
+export default function ContextualInspectorDrawer({ selection, mode, simulation, simulate, actions, canEdit, open, tab, onTabChange, onOpenInspector, onClose, hasUpstreamConnections = false }) {
   const [wide, setWide] = useState(false); // 380px default, 640px expanded; remembered while the studio is open
   const [yamlKind, setYamlKind] = useState(null); // null = follow the studio mode
   const [copied, setCopied] = useState(false);
@@ -45,6 +45,7 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
   const isEdge = selection?.kind === "edge";
   const telemetry = isNode ? simulation?.nodes[item.id] : null;
   const edgeLive = isEdge ? simulation?.edges[item.id] : null;
+  const hasLiveTelemetry = Boolean(simulate || Number(telemetry?.incomingRps) > 0);
   const yamlMode = yamlKind || (mode === "compose" ? "compose" : "k8s");
   const yamlFile = YAML_KINDS.find((k) => k.id === yamlMode)?.file;
   const yamlText = isNode ? nodeYaml(yamlMode, item) || "# External node — no container image." : "";
@@ -173,12 +174,31 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
               {isNode ? (
                 <>
                   <div className="sd-readouts">
-                    <div><small>RPS</small><b className="sd-mono">{simulate && telemetry ? formatRps(telemetry.incomingRps) : "—"}</b></div>
-                    <div><small>p95</small><b className="sd-mono">{simulate && telemetry ? (telemetry.p95Ms == null ? "—" : `${telemetry.p95Ms}ms`) : "—"}</b></div>
-                    <div><small>Util</small><b className="sd-mono">{simulate && telemetry ? `${Number.isFinite(telemetry.utilization) ? Math.round(telemetry.utilization * 100) : "∞"}%` : "—"}</b></div>
-                    <div className={telemetry ? `s-${telemetry.status}` : ""}><small>Status</small><b className="sd-mono">{simulate && telemetry ? STATUS_LABEL[telemetry.status] : "idle"}</b></div>
+                    <div><small>RPS</small><b className="sd-mono">{hasLiveTelemetry && telemetry ? formatRps(telemetry.incomingRps) : "—"}</b></div>
+                    <div><small>p95</small><b className="sd-mono">{hasLiveTelemetry && telemetry ? (telemetry.p95Ms == null ? "—" : telemetry.p95Ms + "ms") : "—"}</b></div>
+                    <div><small>Util</small><b className="sd-mono">{hasLiveTelemetry && telemetry ? (Number.isFinite(telemetry.utilization) ? Math.round(telemetry.utilization * 100) : "∞") + "%" : "—"}</b></div>
+                    <div className={hasLiveTelemetry && telemetry ? "s-" + telemetry.status : ""}><small>Status</small><b className="sd-mono">{hasLiveTelemetry && telemetry ? STATUS_LABEL[telemetry.status] : "idle"}</b></div>
                   </div>
-                  {!simulate && <p className="sd-hint">Press <b>Simulate</b> in the top bar to see live load on this node.</p>}
+                  {!hasLiveTelemetry && <p className="sd-hint">Set an incoming load below or press <b>Simulate</b> in the top bar to preview this node.</p>}
+                  <label className="sd-field"><span>Incoming RPS</span>
+                    <input aria-label="Incoming RPS" type="number" min="0" max="1000000000" step="100" value={item.manualRps ?? 0} disabled={!canEdit}
+                      onChange={(event) => patchNode({ manualRps: Math.max(0, Number(event.target.value) || 0) }, true)}
+                      onBlur={(event) => patchNode({ manualRps: Math.max(0, Number(event.target.value) || 0) })} />
+                  </label>
+                  <div className="sd-load-chips" role="group" aria-label="Incoming RPS presets">
+                    {[0, 1000, 5000, 10000, 25000].map((rps) => <button key={rps} type="button" disabled={!canEdit}
+                      className={(item.manualRps ?? 0) === rps ? "is-active" : ""} aria-pressed={(item.manualRps ?? 0) === rps}
+                      onClick={() => patchNode({ manualRps: rps })}>{rps === 0 ? "0" : formatRps(rps)}</button>)}
+                  </div>
+                  <label className="sd-field"><span>Base p95 (ms)</span>
+                    <input aria-label="Base p95 (ms)" type="number" min="0.5" max="60000" step="0.5" value={item.baseLatencyMs ?? 25} disabled={!canEdit}
+                      onChange={(event) => patchNode({ baseLatencyMs: Math.max(0.5, Number(event.target.value) || 0.5) }, true)}
+                      onBlur={(event) => patchNode({ baseLatencyMs: Math.max(0.5, Number(event.target.value) || 0.5) })} />
+                  </label>
+                  {!simulate && item.kind !== "client" && !hasUpstreamConnections && !(Number(item.manualRps) > 0) && (
+                    <button type="button" className="sd-add-upstream" disabled={!canEdit || !actions.addUpstreamClient}
+                      onClick={() => actions.addUpstreamClient?.(item.id)}>＋ Add Upstream Client</button>
+                  )}
                   <Slider label="Replicas" value={item.replicas} min={0} max={20} disabled={!canEdit} onLive={(v) => patchNode({ replicas: v }, true)} onCommit={(v) => patchNode({ replicas: v })} />
                   <Slider label="Capacity / replica (RPS)" value={item.capacityPerReplica} min={100} max={50000} step={100} disabled={!canEdit} format={(v) => formatRps(v)} onLive={(v) => patchNode({ capacityPerReplica: v }, true)} onCommit={(v) => patchNode({ capacityPerReplica: v })} />
                   {(item.kind === "redis" || item.kind === "cdn") && (
