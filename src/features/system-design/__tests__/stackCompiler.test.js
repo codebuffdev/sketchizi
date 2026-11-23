@@ -84,3 +84,27 @@ test("architecture diagnostic flags a manually failed node as a single point of 
   const simulation = simulateTraffic({ nodes: graph, edges, totalRps: 10000 });
   assert.match(deriveArchitectureDiagnostic(graph, simulation, edges).message, /Read API is down/);
 });
+
+test("all six new architectural roles compile to concrete Compose and Kubernetes resources", () => {
+  const additions = [
+    { id: "replica", kind: "read-replica", label: "Read Replica", replicas: 1, port: 5432, image: "postgres:16" },
+    { id: "bus", kind: "pubsub", label: "Events", replicas: 3, port: 4222, image: "nats:2.10-alpine" },
+    { id: "stream", kind: "stream-processor", label: "Stream Processor", replicas: 2, port: 8081, image: "flink:1.19" },
+    { id: "olap", kind: "warehouse", label: "Warehouse", replicas: 1, port: 8123, image: "clickhouse/clickhouse-server:24.8" },
+    { id: "ws", kind: "websocket-gateway", label: "Live Gateway", replicas: 2, port: 8080, image: "nginx:1.27-alpine" },
+    { id: "vendor", kind: "external-api", label: "Vendor API", replicas: 1, port: 10000, image: "envoyproxy/envoy:v1.31-latest", capacityPerReplica: 2000 },
+  ];
+  const compose = compileDockerCompose(additions, []);
+  const kubernetes = compileKubernetesStack(additions, []);
+  for (const service of ["postgres-read-replica", "nats", "flink", "clickhouse", "websocket-gateway", "external-api-proxy"]) {
+    assert.ok(compose.includes(service), "Compose missing " + service);
+    assert.ok(kubernetes.includes(service), "Kubernetes missing " + service);
+  }
+  assert.match(compose, /POSTGRES_REPLICATION_MODE: "replica"/);
+  assert.match(compose, /NATS_ENABLE_JETSTREAM: "true"/);
+  assert.match(compose, /FLINK_PROPERTIES:/);
+  assert.match(compose, /RATE_LIMIT_RPS: "2000"/);
+  assert.match(kubernetes, /kind: Ingress/);
+  assert.match(kubernetes, /proxy-read-timeout: "3600"/);
+  assert.match(kubernetes, /kind: StatefulSet/);
+});
