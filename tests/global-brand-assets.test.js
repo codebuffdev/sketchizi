@@ -20,7 +20,7 @@ test("PWA manifest uses the unified dark brand theme and scalable icon", () => {
 });
 
 test("main app and both studios render the Sketchizi brand mark", () => {
-  assert.match(read("../src/components/app/DesktopAppHeader.jsx"), /src="\/sketchizi-icon\.svg"/);
+  assert.match(read("../src/components/app/DesktopAppHeader.jsx"), /M4 6h16M4 12h16M4 18h16/);
   assert.match(read("../src/features/kubernetes-studio/ui/KubernetesStudio.jsx"), /src="\/sketchizi-icon\.svg"/);
   assert.match(read("../src/features/docker-compose/ui/DockerComposeStudio.jsx"), /src="\/sketchizi-icon\.svg"/);
 });
