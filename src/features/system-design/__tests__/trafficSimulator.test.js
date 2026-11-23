@@ -328,3 +328,17 @@ test("External 3rd-Party API reports HTTP 429 when incoming RPS exceeds its rate
   assert.equal(r.diagnostics.rateLimitWarnings[0].statusCode, 429);
   assert.equal(r.diagnostics.rateLimitWarnings[0].rejectedRps, 8000);
 });
+
+test("external API rate-limit telemetry becomes an actionable 429 architecture warning", async () => {
+  const { deriveArchitectureDiagnostic } = await import("../architectureDiagnostics.js");
+  const nodes = [
+    node("client", "client"),
+    node("vendor", "external-api", { label: "Payments API", replicas: 1, capacityPerReplica: 2000 }),
+  ];
+  const edges = [edge("client", "vendor")];
+  const r = simulateTraffic({ nodes, edges, totalRps: 10000 });
+  const diagnostic = deriveArchitectureDiagnostic(nodes, r, edges);
+  assert.equal(diagnostic.tone, "danger");
+  assert.match(diagnostic.message, /429 Too Many Requests/);
+  assert.match(diagnostic.message, /8k requests\/s rejected/);
+});
