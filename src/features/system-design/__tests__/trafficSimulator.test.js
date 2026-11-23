@@ -333,7 +333,9 @@ test("manual RPS benchmarks a standalone node and propagates capped traffic down
   const r = simulateTraffic({
     nodes: [
       node("vendor", "external-api", { replicas: 1, capacityPerReplica: 2000, baseLatencyMs: 240, manualRps: 3000 }),
-      node("consumer", "microservice", { replicas: 1, capacityPerReplica: 10000 }),
+      // Cache nodes terminate the synchronous latency chain, keeping this assertion focused
+      // on the standalone external API's own p95 while still verifying downstream propagation.
+      node("consumer", "redis", { replicas: 1, capacityPerReplica: 10000 }),
     ],
     edges: [edge("vendor", "consumer")],
     totalRps: 0,
@@ -341,7 +343,7 @@ test("manual RPS benchmarks a standalone node and propagates capped traffic down
   assert.equal(r.nodes.vendor.incomingRps, 3000);
   assert.equal(r.nodes.vendor.utilization, 1.5);
   assert.equal(r.nodes.vendor.serviceP95Ms, 360);
-  assert.ok(r.nodes.vendor.p95Ms >= r.nodes.vendor.serviceP95Ms);
+  assert.equal(r.nodes.vendor.p95Ms, 360);
   assert.equal(r.nodes.vendor.serviceP95Ms, 360);
   assert.equal(r.nodes.vendor.status, "overloaded");
   assert.equal(r.nodes.vendor.servedRps, 2000);
