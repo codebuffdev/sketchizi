@@ -14,9 +14,7 @@
   --sd-ctx-top: calc(var(--sd-bar-top) + var(--sd-bar-h) + 8px);
   --sd-drawer-top: calc(var(--sd-ctx-top) + var(--sd-bar-h) + 8px);
   --sd-rail-clear: calc(var(--header-rail-right, 12px) + var(--header-rail-width, 56px) + 12px);
-  --sd-dock-bottom: 20px;
-  --sd-dock-h: 46px;
-  --sd-dock-clear: calc(var(--sd-dock-bottom) + var(--sd-dock-h) + 14px);
+  --sd-bottom-clear: 14px;
 
   position: absolute; inset: 0; pointer-events: none; z-index: 30; font-family: Inter, -apple-system, "Segoe UI", system-ui, sans-serif; color: var(--sd-text);
 }
@@ -73,19 +71,6 @@
 .sd-blueprint-menu button:hover:not(:disabled) { background: var(--sd-soft); }
 .sd-toast { position: absolute; z-index: 4; top: var(--sd-ctx-top); left: 50%; transform: translateX(-50%); max-width: calc(100% - 32px); padding: 8px 14px; border-radius: 12px; font-size: 12px; font-weight: 500; color: var(--sd-text); background: var(--sd-card); border: 1px solid rgba(217,119,6,.55); box-shadow: var(--sd-shadow); pointer-events: none; animation: sd-rise .16s ease-out; }
 
-/* Quick dock: compact, bottom-centre, always visible. Six primitives + "+ More" + layout/snap. */
-.sd-dock { position: absolute; z-index: 3; left: 50%; bottom: var(--sd-dock-bottom); transform: translateX(-50%); display: flex; align-items: center; gap: 2px; box-sizing: border-box; height: var(--sd-dock-h); padding: 0 8px; max-width: calc(100% - 24px); }
-.sd-dock-quick, .sd-dock-tools { display: flex; align-items: center; gap: 2px; }
-.sd-dock-item { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 10px; border-radius: 10px; font-size: 12px; font-weight: 500; color: var(--sd-text); white-space: nowrap; }
-.sd-dock-item:hover:not(:disabled), .sd-dock-item.is-active { background: var(--sd-soft); }
-.sd-more { position: relative; display: flex; }
-.sd-more-menu { bottom: calc(100% + 14px); left: 50%; transform: translateX(-50%); width: 420px; padding: 6px 8px 10px; animation-name: sd-pop-up; }
-.sd-more-menu h3 { margin: 8px 8px 3px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--sd-text-2); font-weight: 600; }
-.sd-more-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
-.sd-more-item { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px 8px; border-radius: 9px; font-size: 12px; text-align: left; }
-.sd-more-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sd-more-item:hover { background: var(--sd-soft); }
-
 /* Overlay layer (scene-space) */
 .sd-overlay { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .sd-layer { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
@@ -101,7 +86,7 @@
 .sd-badge b { font-weight: 700; color: var(--sd-text); }
 .sd-badge.is-live { font-size: 11px; padding: 2px 9px; border-color: rgba(5,150,105,.55); background: var(--sd-card); color: var(--sd-text); box-shadow: 0 1px 3px rgba(15,23,42,.14); }
 .sd-badge.is-ok b { color: var(--sd-emerald); } .sd-badge.is-warm { border-color: rgba(217,119,6,.65); } .sd-badge.is-warm b { color: var(--sd-amber); }
-.sd-badge.is-hot { border-color: rgba(220,38,38,.7); } .sd-badge.is-hot b { color: var(--sd-red); }
+.sd-badge.is-hot { border-color: rgba(220,38,38,.7); } .sd-badge.is-hot b { color: var(--sd-red); } .sd-badge.is-health-failed { color: var(--sd-red); border-color: rgba(220,38,38,.7); background: var(--sd-card); } .sd-badge.is-buffered { color: var(--sd-amber); border-color: rgba(217,119,6,.65); background: var(--sd-card); }
 .sd-badge.is-idle { border-color: var(--sd-border); color: var(--sd-text-2); box-shadow: none; } .sd-badge.is-idle b { color: var(--sd-text-2); font-weight: 500; }
 .sd-badge { position: absolute; transform: translate(-50%, -50%); padding: 1px 7px; border-radius: 999px; font-size: 10px; color: var(--sd-text-2); background: var(--sd-card); border: 1px solid var(--sd-border); white-space: nowrap; box-shadow: 0 1px 2px rgba(15,23,42,.08); }
 
@@ -121,23 +106,34 @@
 .sd-pill.is-quiet { color: var(--sd-text-2); }
 .sd-util { position: absolute; left: 12px; right: 12px; bottom: 5px; height: 4px; border-radius: 999px; background: var(--sd-soft); overflow: hidden; }
 .sd-util i { display: block; height: 100%; border-radius: inherit; background: var(--sd-emerald); transition: width .25s ease-out; }
-.sd-util.s-elevated i { background: var(--sd-amber); } .sd-util.s-overloaded i, .sd-util.s-down i { background: var(--sd-red); }
+.sd-util.s-elevated i, .sd-util.s-lagging i { background: var(--sd-amber); } .sd-util.s-overloaded i, .sd-util.s-down i { background: var(--sd-red); }
 .sd-node-sub { font-size: 11px; color: var(--sd-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sd-node-foot { display: flex; gap: 5px; align-items: center; flex-wrap: nowrap; overflow: hidden; }
 .sd-pill { font-size: 10px; padding: 1px 6px; border-radius: 6px; background: var(--sd-soft); color: var(--sd-text); white-space: nowrap; }
-.sd-status { font-size: 10px; padding: 1px 6px; border-radius: 6px; margin-left: auto; white-space: nowrap; }
+.sd-status { flex-shrink: 0; font-size: 10px; padding: 2px 6px; border-radius: 6px; margin-left: auto; white-space: nowrap; }
 .sd-status.s-healthy { color: var(--sd-emerald); background: rgba(5,150,105,.12); }
-.sd-status.s-elevated { color: var(--sd-amber); background: rgba(217,119,6,.14); }
+.sd-status.s-elevated, .sd-status.s-lagging { color: var(--sd-amber); background: rgba(217,119,6,.14); }
 .sd-status.s-overloaded, .sd-status.s-down { color: var(--sd-red); background: rgba(220,38,38,.12); }
-.sd-node.s-elevated { border-color: rgba(217,119,6,.6); } .sd-node.s-overloaded, .sd-node.s-down { border-color: rgba(220,38,38,.65); }
+.sd-node.s-elevated, .sd-node.s-lagging { border-color: rgba(217,119,6,.6); } .sd-node.s-overloaded, .sd-node.s-down { border-color: rgba(220,38,38,.65); }
 .sd-node.s-down { opacity: .72; }
 .sd-label-input { pointer-events: auto; flex: 1; min-width: 0; font-size: 13px; font-weight: 600; background: var(--sd-soft); border: 1px solid var(--sd-emerald); border-radius: 6px; padding: 1px 5px; }
 
-/* Ports: 10px so they never reach into Excalidraw's resize handles, which sit 4-12px outside each edge. */
-.sd-port { position: absolute; width: 10px; height: 10px; box-sizing: border-box; border-radius: 50%; background: var(--sd-card); border: 2px solid var(--sd-emerald); padding: 0; opacity: 0; pointer-events: none; transition: opacity .12s, transform .12s, background .12s; transform: translate(-50%, -50%); }
-.sd-port.is-visible { opacity: 1; pointer-events: auto; cursor: crosshair; }
-.sd-port.is-visible:hover, .sd-port.is-target { transform: translate(-50%, -50%) scale(1.45); background: var(--sd-emerald); }
-.sd-port.is-top { left: 50%; top: 0; } .sd-port.is-bottom { left: 50%; top: 100%; } .sd-port.is-left { left: 0; top: 50%; } .sd-port.is-right { left: 100%; top: 50%; }
+/* Ports use a 24px transparent hit target centred 6px beyond the card edge. The visible 10px dot
+   remains crisp, while the middle-of-edge targets stay clear of Excalidraw's corner resize handles. */
+.sd-port { position: absolute; width: 24px; height: 24px; box-sizing: border-box; border: 0; border-radius: 50%; background: transparent; padding: 0; opacity: 0; pointer-events: none; cursor: crosshair; transform: translate(-50%, -50%); }
+.sd-port::before { content: ""; position: absolute; inset: 7px; box-sizing: border-box; border-radius: 50%; background: var(--sd-card); border: 2px solid var(--sd-emerald); transition: transform .12s, background .12s, box-shadow .12s; }
+.sd-port.is-visible { opacity: 1; pointer-events: auto; }
+.sd-port.is-visible:hover::before, .sd-port.is-target::before { transform: scale(1.22); background: var(--sd-emerald); box-shadow: 0 0 0 3px rgba(5,150,105,.14); }
+.sd-port.is-armed::before { background: var(--sd-emerald); box-shadow: 0 0 0 4px rgba(5,150,105,.18); animation: sd-port-pulse 1.25s ease-in-out infinite; }
+.sd-port.is-top { left: 50%; top: -6px; } .sd-port.is-bottom { left: 50%; top: calc(100% + 6px); }
+.sd-port.is-left { left: -6px; top: 50%; } .sd-port.is-right { left: calc(100% + 6px); top: 50%; }
+@keyframes sd-port-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(5,150,105,.14); } 50% { box-shadow: 0 0 0 7px rgba(5,150,105,.04); } }
+.sd-node.is-drop-target { border-color: var(--sd-emerald); box-shadow: 0 0 0 3px rgba(5,150,105,.22), 0 0 0 7px rgba(5,150,105,.08), 0 4px 14px rgba(15,23,42,.09); }
+.sd-node.is-connect-armed { box-shadow: 0 0 0 2px rgba(5,150,105,.22), 0 4px 14px rgba(15,23,42,.09); }
+.sd-edge-preview.is-snapped { stroke-width: 2.4; stroke-dasharray: none; filter: drop-shadow(0 0 2px rgba(5,150,105,.35)); }
+.sd-node { min-width: 204px; min-height: 88px; padding-left: 8px; padding-right: 8px; }
+.sd-node-foot { overflow: visible; gap: 4px; }
+.sd-node-foot .sd-status { flex-shrink: 0; white-space: nowrap; }
 
 /* Contextual pill (only while one node / connector is selected) */
 .sd-pill-bar { position: absolute; top: var(--sd-ctx-top); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; box-sizing: border-box; height: var(--sd-bar-h); padding: 0 6px 0 10px; max-width: calc(100% - 24px); animation: sd-rise .16s ease-out; }
@@ -155,9 +151,9 @@
 .sd-swatch.is-active { box-shadow: 0 0 0 2px var(--sd-card), 0 0 0 4px currentColor; color: var(--sd-text-2); }
 
 /* Drawer: closed by default, opened only by YAML / Inspect. Stops short of Sketchizi's right header rail and the dock. */
-.sd-drawer { position: absolute; right: var(--sd-rail-clear); top: var(--sd-drawer-top); width: min(380px, calc(100% - var(--sd-rail-clear) - 12px)); max-height: calc(100% - var(--sd-drawer-top) - var(--sd-dock-clear)); display: flex; flex-direction: column; overflow: hidden; transition: width .18s ease-out; animation: sd-slide .18s ease-out; }
+.sd-drawer { position: absolute; right: var(--sd-rail-clear); top: var(--sd-drawer-top); width: min(380px, calc(100% - var(--sd-rail-clear) - 12px)); max-height: calc(100% - var(--sd-drawer-top) - var(--sd-bottom-clear)); display: flex; flex-direction: column; overflow: hidden; transition: width .18s ease-out; animation: sd-slide .18s ease-out; }
 .sd-drawer.is-wide { width: min(640px, calc(100% - var(--sd-rail-clear) - 12px)); }
-.sd-drawer.is-yaml { height: min(620px, calc(100% - var(--sd-drawer-top) - var(--sd-dock-clear))); }
+.sd-drawer.is-yaml { height: min(620px, calc(100% - var(--sd-drawer-top) - var(--sd-bottom-clear))); }
 .sd-drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--sd-border); }
 .sd-drawer-head strong { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sd-drawer-actions { display: flex; align-items: center; gap: 4px; flex: none; }
@@ -186,6 +182,13 @@
 .sd-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--sd-text-2); }
 .sd-field .sd-seg-mini { align-self: flex-start; }
 .sd-field select { padding: 5px 8px; border: 1px solid var(--sd-border); border-radius: 8px; background: var(--sd-card); color: var(--sd-text); }
+.sd-field input { width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid var(--sd-border); border-radius: 8px; background: var(--sd-card); color: var(--sd-text); font: inherit; font-variant-numeric: tabular-nums; }
+.sd-load-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sd-load-chips button, .sd-add-upstream { border: 1px solid var(--sd-border); border-radius: 8px; padding: 5px 9px; background: var(--sd-soft); color: var(--sd-text-2); font-size: 11px; font-weight: 600; }
+.sd-load-chips button:hover, .sd-load-chips button.is-active { color: var(--sd-emerald); border-color: var(--sd-emerald); background: rgba(5,150,105,.09); }
+.sd-add-upstream { align-self: flex-start; color: var(--sd-emerald); border-color: rgba(5,150,105,.35); background: rgba(5,150,105,.07); }
+.sd-add-upstream:hover:not(:disabled) { background: rgba(5,150,105,.14); }
+.sd-load-chips button:disabled, .sd-add-upstream:disabled { opacity: .5; cursor: not-allowed; }
 .sd-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; color: var(--sd-text-2); } .sd-meta span { background: var(--sd-soft); padding: 2px 7px; border-radius: 6px; }
 /* The manifest takes every pixel the drawer has. Long lines wrap (indentation kept) instead of scrolling sideways, so nothing is ever clipped. */
 .sd-yaml { flex: 1 1 auto; min-height: 160px; margin: 0; padding: 12px; border-radius: 10px; background: var(--sd-soft); font-size: 12px; line-height: 1.55; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; user-select: text; }
@@ -194,20 +197,20 @@
 @keyframes sd-rise { from { opacity: 0; transform: translate(-50%, 6px); } }
 @keyframes sd-slide { from { opacity: 0; transform: translateX(12px); } }
 @keyframes sd-pop { from { opacity: 0; transform: translateY(-4px); } }
-@keyframes sd-pop-up { from { opacity: 0; transform: translate(-50%, 4px); } }
 @media (prefers-reduced-motion: reduce) { .sd-packet { display: none; } .sd-root *, .sd-root *::before { animation: none !important; transition: none !important; } }
 
-/* Narrower canvases: dock shows icons only (labels stay in tooltips / aria-labels). */
-@media (max-width: 1100px) {
-  .sd-dock-item span { display: none; }
-  .sd-dock-item { padding: 0 9px; }
-  .sd-more-menu { width: min(420px, calc(100vw - 48px)); }
-}
-
-/* While the studio is open, Sketchizi's bottom stroke/fill/freehand palette (.sketchizi-tool-options-dock, which it pins at
-   bottom-centre with z-index 10045) is hidden so only the studio dock is visible. Selector is more specific than its
-   `.app .sketchizi-tool-options-dock { ... !important }` rules, so no cascade-order dependence. */
-.app .sd-active .sketchizi-tool-options-dock { display: none !important; }
+.sd-replica-stepper { display: inline-flex; align-items: center; gap: 5px; color: var(--sd-text-2); font-size: 11px; white-space: nowrap; }
+.sd-replica-stepper > span { font-weight: 600; }
+.sd-replica-stepper b { min-width: 14px; text-align: center; color: var(--sd-text); font-size: 11px; }
+.sd-replica-stepper button { width: 22px; height: 22px; border: 1px solid var(--sd-border); border-radius: 7px; color: var(--sd-text); font-size: 15px; line-height: 1; }
+.sd-replica-stepper button:hover:not(:disabled) { color: var(--sd-emerald); background: var(--sd-soft); }
+.sd-replica-stepper button:disabled { opacity: .35; cursor: not-allowed; }
+.sd-edge-protocol-wrap { display: inline-flex; align-items: center; gap: 5px; color: var(--sd-text-2); font-size: 10px; font-weight: 600; white-space: nowrap; }
+.sd-edge-line-label { color: var(--sd-text-2); font-size: 10px; font-weight: 600; }
+.sd-edge-protocol { height: 26px; max-width: 94px; padding: 0 7px; border: 1px solid var(--sd-border); border-radius: 8px; background: var(--sd-card); color: var(--sd-text); font-size: 11px; }
+.sd-inspector-empty { gap: 10px; }
+.sd-inspector-empty > strong { color: var(--sd-text); font-size: 13px; }
+.sd-inspector-empty p { margin: 0; color: var(--sd-text-2); font-size: 12px; line-height: 1.55; }
 
 /* Remap Excalidraw's default primary/selection accent to emerald while the studio is open. */
 .sd-active .excalidraw, .sd-active .excalidraw.theme--dark {
@@ -216,4 +219,197 @@
   --color-selection: #059669; --color-brand-hover: #047857; --color-brand-active: #065f46;
   --color-surface-primary-container: #d1fae5; --color-on-primary-container: #065f46;
   --select-highlight-color: #059669; --color-promo: #059669;
+}
+
+/* Whole-stack compiler modal and live architecture diagnostics. */
+.sd-topbar { flex-direction: column; align-items: center; gap: 7px; }
+.sd-diagnostic { max-width: min(850px, calc(100vw - 32px)); padding: 7px 13px; border: 1px solid var(--sd-border); border-radius: 999px; background: var(--sd-card); box-shadow: var(--sd-shadow); color: var(--sd-text); font-size: 11px; line-height: 1.35; text-align: center; pointer-events: auto; }
+.sd-diagnostic.is-danger { color: var(--sd-red); border-color: rgba(220,38,38,.45); }
+.sd-diagnostic.is-warning { color: var(--sd-amber); border-color: rgba(217,119,6,.5); }
+.sd-diagnostic.is-healthy { color: var(--sd-emerald); border-color: rgba(5,150,105,.4); }
+.sd-modal-backdrop { position: fixed; inset: 0; z-index: 10050; display: grid; place-items: center; padding: 24px; background: rgba(15,23,42,.48); backdrop-filter: blur(5px); pointer-events: auto; }
+.sd-export-modal { width: min(720px, calc(100vw - 32px)); max-height: min(820px, calc(100vh - 48px)); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 80px rgba(15,23,42,.3); }
+.sd-export-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--sd-border); }
+.sd-export-head > div { display: flex; flex-direction: column; gap: 4px; }
+.sd-export-head strong { font-size: 15px; }
+.sd-export-head small { font-size: 11px; color: var(--sd-text-2); }
+.sd-export-tabs { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--sd-border); }
+.sd-export-tabs button { padding: 7px 11px; border-radius: 8px; color: var(--sd-text-2); font-size: 12px; }
+.sd-export-tabs button.is-active { color: var(--sd-emerald); background: rgba(5,150,105,.1); font-weight: 700; }
+.sd-export-tabs .sd-yaml-file { margin-left: auto; }
+.sd-export-code { min-height: 240px; max-height: min(590px, 62vh); flex: 1 1 auto; overflow: auto; margin: 0; padding: 16px 18px; background: var(--sd-soft); color: var(--sd-text); font-size: 11px; line-height: 1.55; white-space: pre; tab-size: 2; user-select: text; }
+.sd-export-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--sd-border); color: var(--sd-text-2); font-size: 11px; }
+.sd-export-foot > div { display: flex; gap: 7px; }
+.sd-export-secondary, .sd-export-primary { display: inline-flex; align-items: center; gap: 6px; padding: 8px 11px; border-radius: 9px; font-size: 11px; font-weight: 600; }
+.sd-export-secondary { border: 1px solid var(--sd-border); color: var(--sd-text); background: var(--sd-card); }
+.sd-export-primary { color: white; background: var(--sd-emerald); }
+.sd-export-primary:hover { background: #047857; }
+@media (max-width: 1100px) {
+}
+
+@media (max-width: 760px) {
+  .sd-topbar-pill { max-width: calc(100vw - 12px); overflow-x: auto; }
+  .sd-topbar-pill { gap: 1px; padding-inline: 4px; }
+  .sd-export-foot { align-items: stretch; }
+  .sd-export-foot > div { width: 100%; }
+  .sd-export-foot button { flex: 1; justify-content: center; }
+}
+
+/* During simulation, keep the diagnostic and selected-element controls in a single vertical stack. */
+.sd-root:has(.sd-diagnostic) .sd-topbar { display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+.sd-root:has(.sd-diagnostic) .sd-topbar > .sd-topbar-pill,
+.sd-root:has(.sd-diagnostic) .sd-topbar > .sd-diagnostic { pointer-events: auto; }
+.sd-root:has(.sd-diagnostic) .sd-pill-bar { top: calc(var(--sd-ctx-top) + 46px); }
+
+
+/* Ultra-compact, high-contrast three-zone workspace command pill. */
+.sd-topbar-pill {
+  height: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(15,23,42,.10), 0 1px 3px rgba(15,23,42,.06);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.sd-command-zone { display: inline-flex; align-items: center; gap: 4px; flex: none; }
+.sd-command-zone-start, .sd-command-zone-actions { gap: 4px; }
+.sd-command-divider { height: 22px; margin: 0 2px; background: #cbd5e1; }
+.sd-command-icon { display: block; width: 17px; height: 17px; flex: none; }
+.sd-command-icon-btn {
+  position: relative;
+  display: inline-flex;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 8px;
+  color: #1e293b;
+  background: transparent;
+  transition: background-color .14s ease, box-shadow .14s ease;
+}
+.sd-command-icon-btn:hover:not(:disabled),
+.sd-command-icon-btn:focus-visible {
+  color: #1e293b;
+  background: #f1f5f9;
+}
+.sd-command-icon-btn.is-active,
+.sd-command-icon-btn.is-open {
+  background: #e2e8f0;
+}
+.sd-command-icon-btn:disabled { opacity: .42; }
+.sd-command-icon-btn[data-tooltip]::after {
+  position: absolute;
+  z-index: 10020;
+  left: 50%;
+  top: calc(100% + 9px);
+  transform: translate(-50%, -3px);
+  width: max-content;
+  max-width: 220px;
+  padding: 6px 9px;
+  border: 1px solid #334155;
+  border-radius: 7px;
+  background: #0f172a;
+  color: #ffffff;
+  content: attr(data-tooltip);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(15,23,42,.2);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .12s ease, transform .12s ease, visibility .12s ease;
+}
+.sd-command-icon-btn[data-tooltip]:hover::after,
+.sd-command-icon-btn[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+.sd-command-modes {
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: #f1f5f9;
+}
+.sd-command-modes button {
+  min-width: 52px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 28px;
+}
+.sd-command-modes button:hover:not(.is-active) { color: #0f172a; }
+.sd-command-modes button.is-active {
+  color: #0f172a;
+  background: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(15,23,42,.14);
+}
+.sd-command-sim { gap: 0; }
+.sd-command-sim-main, .sd-command-sim-caret {
+  height: 32px;
+  color: #065f46;
+  background: #ecfdf5;
+}
+.sd-command-sim-main {
+  gap: 6px;
+  padding: 0 8px 0 10px;
+  border-radius: 9px 0 0 9px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.sd-command-sim-caret {
+  gap: 4px;
+  border-left: 1px solid rgba(6,95,70,.18);
+  padding: 0 8px 0 4px;
+  border-radius: 0 9px 9px 0;
+}
+.sd-command-load {
+  color: inherit;
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.sd-command-sim-main:hover, .sd-command-sim-caret:hover {
+  color: #064e3b;
+  background: #d1fae5;
+}
+.sd-command-sim-main.is-on, .sd-command-sim-caret.is-on {
+  color: #ffffff;
+  background: #059669;
+}
+.sd-command-sim-main.is-on:hover, .sd-command-sim-caret.is-on:hover {
+  color: #ffffff;
+  background: #047857;
+}
+.sd-command-sim-main.is-on .sd-command-icon,
+.sd-command-sim-caret.is-on .sd-command-icon { stroke: #ffffff; }
+.sd-command-sim-caret.is-on { border-left-color: rgba(255,255,255,.32); }
+.sd-command-exit:hover:not(:disabled) {
+  color: #991b1b;
+  background: #fee2e2;
+}
+@media (max-width: 760px) {
+  .sd-topbar-pill {
+    max-width: calc(100vw - 12px);
+    overflow-x: auto;
+    gap: 5px;
+    padding-inline: 6px;
+  }
+  .sd-command-modes button { min-width: 44px; padding-inline: 7px; }
+  .sd-command-divider { margin-inline: 0; }
 }

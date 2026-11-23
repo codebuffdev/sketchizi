@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { simulateTraffic, deriveStatus, computeP95, packetCountForRps, nodeCapacity } from "../trafficSimulator.js";
+import { simulateTraffic, deriveStatus, computeP95, packetCountForRps, nodeCapacity, MAX_HOPS } from "../trafficSimulator.js";
 
 const node = (id, kind, extra = {}) => ({ id, kind, replicas: 2, capacityPerReplica: 10000, cacheHitRate: 0, health: "healthy", ...extra });
 const edge = (from, to) => ({ id: `${from}-${to}`, from, to, protocol: "HTTPS" });
@@ -86,4 +86,297 @@ test("packets scale with edge RPS and idle edges have none", () => {
   assert.equal(packetCountForRps(0), 0);
   assert.ok(packetCountForRps(50000) > packetCountForRps(10));
   assert.ok(packetCountForRps(1e9) <= 6);
+});
+
+
+test("load balancer keeps distinct domain routes isolated when one target is down", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("client", "client"),
+      node("lb", "load-balancer"),
+      node("users", "microservice"),
+      node("orders", "microservice", { health: "down" }),
+      node("catalog", "microservice"),
+      node("users-db", "sql"),
+      node("catalog-cache", "redis"),
+    ],
+    edges: [
+      edge("client", "lb"),
+      edge("lb", "users"),
+      edge("lb", "orders"),
+      edge("lb", "catalog"),
+      edge("users", "users-db"),
+      edge("catalog", "catalog-cache"),
+    ],
+    totalRps: 10000,
+  });
+
+  assert.equal(r.edges["lb-users"].rps, 3333.3);
+  assert.equal(r.edges["lb-orders"].rps, 0);
+  assert.equal(r.edges["lb-catalog"].rps, 3333.3);
+  assert.equal(r.edges["lb-orders"].healthCheckFailed, true);
+  assert.equal(r.edges["lb-orders"].inactiveReason, "503 Dropped");
+  assert.equal(r.nodes.users.incomingRps, 3333.3);
+  assert.equal(r.nodes.catalog.incomingRps, 3333.3);
+  assert.equal(r.nodes.orders.incomingRps, 0);
+  assert.equal(r.nodes["users-db"].incomingRps, 3333.3);
+  assert.equal(r.nodes["catalog-cache"].incomingRps, 3333.3);
+  const failedRoute = r.healthChecks.find((group) => group.downTargets === 1);
+  assert.equal(failedRoute.healthyTargets, 0);
+  assert.equal(failedRoute.downTargets, 1);
+  assert.equal(r.diagnostics.noHealthyUpstreams, false);
+});
+
+test("load balancer with no healthy upstream targets returns zero RPS and a 503 diagnostic flag", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("client", "client"),
+      node("lb", "load-balancer"),
+      node("a", "microservice", { health: "down" }),
+      node("b", "microservice", { health: "down" }),
+    ],
+    edges: [edge("client", "lb"), edge("lb", "a"), edge("lb", "b")],
+    totalRps: 10000,
+  });
+  assert.equal(r.edges["lb-a"].rps, 0);
+  assert.equal(r.edges["lb-b"].rps, 0);
+  assert.equal(r.diagnostics.noHealthyUpstreams, true);
+  assert.equal(r.healthChecks[0].allTargetsDown, true);
+});
+
+test("API gateway also excludes Down targets when distributing traffic", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("gateway", "api-gateway"),
+      node("healthy", "microservice"),
+      node("down", "microservice", { health: "down" }),
+    ],
+    edges: [edge("gateway", "healthy"), edge("gateway", "down")],
+    totalRps: 1000,
+  });
+  assert.equal(r.edges["gateway-healthy"].rps, 500);
+  assert.equal(r.edges["gateway-down"].rps, 0);
+});
+
+
+test("distinct LB routes remain isolated while identical labels fail over as a replica pool", () => {
+  const distinct = simulateTraffic({
+    nodes: [node("client", "client"), node("lb", "load-balancer"),
+      node("users", "microservice", { label: "Users Service" }),
+      node("orders", "microservice", { label: "Orders Service", health: "down" }),
+      node("catalog", "microservice", { label: "Catalog Service" })],
+    edges: [edge("client", "lb"), edge("lb", "users"), edge("lb", "orders"), edge("lb", "catalog")],
+    totalRps: 10000,
+  });
+  assert.equal(distinct.edges["lb-users"].rps, 3333.3);
+  assert.equal(distinct.edges["lb-orders"].rps, 0);
+  assert.equal(distinct.edges["lb-orders"].serviceUnavailable, true);
+  assert.equal(distinct.edges["lb-orders"].inactiveReason, "503 Dropped");
+  assert.equal(distinct.edges["lb-catalog"].rps, 3333.3);
+  assert.equal(distinct.diagnostics.noHealthyUpstreams, false);
+
+  const replicas = simulateTraffic({
+    nodes: [node("client", "client"), node("lb", "load-balancer"),
+      node("orders-a", "microservice", { label: "Order Service", health: "down" }),
+      node("orders-b", "microservice", { label: " order   service " })],
+    edges: [edge("client", "lb"), edge("lb", "orders-a"), edge("lb", "orders-b")],
+    totalRps: 10000,
+  });
+  assert.equal(replicas.edges["lb-orders-a"].rps, 0);
+  assert.equal(replicas.edges["lb-orders-a"].replicaFailed, true);
+  assert.equal(replicas.edges["lb-orders-b"].rps, 10000);
+});
+
+test("Redis down bypasses cache and causes a full-read cache stampede", async () => {
+  const { deriveArchitectureDiagnostic } = await import("../architectureDiagnostics.js");
+  const nodes = [node("client", "client"), node("cache", "redis", { label: "Redis Cache", health: "down" }), node("db", "sql", { label: "Primary DB", replicas: 1, capacityPerReplica: 20000 })];
+  const edges = [edge("client", "cache"), edge("cache", "db")];
+  const r = simulateTraffic({ nodes, edges, totalRps: 10000 });
+  assert.equal(r.nodes.cache.cacheHitRate, 0);
+  assert.equal(r.nodes.cache.shieldedRps, 0);
+  assert.equal(r.edges["cache-db"].rps, 10000);
+  assert.equal(r.nodes.db.incomingRps, 10000);
+  const diagnostic = deriveArchitectureDiagnostic(nodes, r, edges);
+  assert.match(diagnostic.message, /Cache Stampede/);
+  assert.match(diagnostic.message, /100% of traffic \(10k\/s\) hitting Primary DB/);
+});
+
+test("overloaded cache bypasses hit-rate shielding instead of shedding read traffic", () => {
+  const r = simulateTraffic({
+    nodes: [node("client", "client"), node("cache", "redis", { replicas: 1, capacityPerReplica: 1000, cacheHitRate: 0.8 }), node("db", "sql", { replicas: 3, capacityPerReplica: 20000 })],
+    edges: [edge("client", "cache"), edge("cache", "db")], totalRps: 10000,
+  });
+  assert.equal(r.nodes.cache.status, "overloaded");
+  assert.equal(r.nodes.cache.cacheHitRate, 0);
+  assert.equal(r.edges["cache-db"].rps, 10000);
+  assert.equal(r.nodes.db.incomingRps, 10000);
+  assert.ok(r.diagnostics.cacheStampedes.length > 0);
+});
+
+test("queue buffers consumer outage without making the producer unhealthy", async () => {
+  const { deriveArchitectureDiagnostic } = await import("../architectureDiagnostics.js");
+  const nodes = [node("producer", "microservice", { label: "Order Service" }), node("queue", "queue", { label: "Order Events" }), node("worker", "worker", { label: "Notification Worker", health: "down" })];
+  const edges = [edge("producer", "queue"), edge("queue", "worker")];
+  const r = simulateTraffic({ nodes, edges, totalRps: 5000 });
+  assert.equal(r.nodes.producer.status, "healthy");
+  assert.equal(r.nodes.producer.droppedRps, 0);
+  assert.equal(r.nodes.queue.status, "lagging");
+  assert.equal(r.nodes.queue.incomingRps, 5000);
+  assert.equal(r.edges["queue-worker"].rps, 0);
+  assert.equal(r.edges["queue-worker"].consumerDown, true);
+  assert.match(deriveArchitectureDiagnostic(nodes, r, edges).message, /Consumer Lag/);
+});
+
+test("synchronous database p95 latency bubbles up into the calling service", () => {
+  const r = simulateTraffic({
+    nodes: [node("client", "client"), node("service", "microservice", { baseLatencyMs: 25 }), node("db", "sql", { replicas: 1, capacityPerReplica: 4000, baseLatencyMs: 20 })],
+    edges: [edge("client", "service"), edge("service", "db")], totalRps: 1000,
+  });
+  assert.ok(r.nodes.db.p95Ms >= 20 && r.nodes.db.p95Ms <= 25);
+  assert.ok(r.nodes.service.p95Ms > r.nodes.service.serviceP95Ms);
+  assert.equal(r.nodes.service.p95Ms, Number((r.nodes.service.serviceP95Ms + r.nodes.db.p95Ms).toFixed(1)));
+});
+
+test("cycle traversal is bounded and reports the circular dependency", async () => {
+  const { deriveArchitectureDiagnostic } = await import("../architectureDiagnostics.js");
+  const nodes = [node("a", "microservice", { label: "Service A" }), node("b", "microservice", { label: "Service B" })];
+  const edges = [edge("a", "b"), edge("b", "a")];
+  const r = simulateTraffic({ nodes, edges, totalRps: 1000 });
+  assert.ok(Number.isFinite(r.nodes.a.incomingRps));
+  assert.ok(Number.isFinite(r.nodes.b.incomingRps));
+  assert.equal(r.diagnostics.cycles.length, 1);
+  assert.match(deriveArchitectureDiagnostic(nodes, r, edges).message, /Circular dependency detected between Service A and Service B/);
+  assert.equal(r.edges["b-a"].cycleBlocked, true);
+});
+
+test("multiple client entry points sum their traffic at a shared gateway", () => {
+  const r = simulateTraffic({
+    nodes: [node("web", "client"), node("mobile", "client"), node("gateway", "api-gateway"), node("service", "microservice")],
+    edges: [edge("web", "gateway"), edge("mobile", "gateway"), edge("gateway", "service")],
+    totalRps: 10000,
+  });
+  assert.equal(r.nodes.web.incomingRps, 5000);
+  assert.equal(r.nodes.mobile.incomingRps, 5000);
+  assert.equal(r.nodes.gateway.incomingRps, 10000);
+  assert.equal(r.nodes.service.incomingRps, 10000);
+});
+
+test("degraded synchronous dependency amplifies edge traffic by 25 percent", () => {
+  const r = simulateTraffic({
+    nodes: [node("service", "microservice"), node("db", "sql", { health: "degraded" })],
+    edges: [edge("service", "db")], totalRps: 1000,
+  });
+  assert.equal(r.edges["service-db"].rps, 1250);
+  assert.equal(r.edges["service-db"].retryAmplification, 1.25);
+});
+
+
+test("queue marks slow consumers as lagging and buffers excess messages", async () => {
+  const { deriveArchitectureDiagnostic } = await import("../architectureDiagnostics.js");
+  const nodes = [node("producer", "microservice", { label: "Order Service" }), node("queue", "queue", { label: "Order Events" }), node("worker", "worker", { label: "Notification Worker", replicas: 1, capacityPerReplica: 1000 })];
+  const edges = [edge("producer", "queue"), edge("queue", "worker")];
+  const r = simulateTraffic({ nodes, edges, totalRps: 5000 });
+  assert.equal(r.nodes.producer.status, "healthy");
+  assert.equal(r.nodes.queue.status, "lagging");
+  assert.equal(r.edges["queue-worker"].rps, 1000);
+  assert.match(deriveArchitectureDiagnostic(nodes, r, edges).message, /Notification Worker is down\/slow/);
+});
+
+test("path traversal stops at MAX_HOPS and reports a depth warning", () => {
+  const nodes = Array.from({ length: MAX_HOPS + 2 }, (_, index) => node(`svc-${index}`, "microservice", { label: `Service ${index}` }));
+  const edges = nodes.slice(0, -1).map((item, index) => edge(item.id, nodes[index + 1].id));
+  const r = simulateTraffic({ nodes, edges, totalRps: 1000 });
+  assert.equal(r.diagnostics.depthWarnings.length, 1);
+  assert.equal(r.edges[`svc-${MAX_HOPS}-svc-${MAX_HOPS + 1}`].cycleBlocked, true);
+  assert.match(r.diagnostics.depthWarnings[0].message, /12-hop safety limit/);
+});
+
+test("Pub/Sub broadcasts the full 10k RPS to every subscriber instead of splitting it", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("client", "client"),
+      node("bus", "pubsub", { replicas: 1, capacityPerReplica: 25000 }),
+      node("billing", "microservice"),
+      node("analytics", "stream-processor"),
+    ],
+    edges: [edge("client", "bus"), edge("bus", "billing"), edge("bus", "analytics")],
+    totalRps: 10000,
+  });
+  assert.equal(r.nodes.bus.incomingRps, 10000);
+  assert.equal(r.edges["bus-billing"].rps, 10000);
+  assert.equal(r.edges["bus-analytics"].rps, 10000);
+  assert.equal(r.nodes.billing.incomingRps, 10000);
+  assert.equal(r.nodes.analytics.incomingRps, 10000);
+  assert.equal(r.edges["bus-billing"].delivery, "broadcast");
+  assert.equal(r.edges["bus-analytics"].delivery, "broadcast");
+});
+
+test("External 3rd-Party API reports HTTP 429 when incoming RPS exceeds its rate limit", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("client", "client"),
+      node("vendor", "external-api", { label: "Payments API", replicas: 1, capacityPerReplica: 2000 }),
+    ],
+    edges: [edge("client", "vendor")],
+    totalRps: 10000,
+  });
+  assert.equal(r.nodes.vendor.incomingRps, 10000);
+  assert.equal(r.nodes.vendor.servedRps, 2000);
+  assert.equal(r.nodes.vendor.droppedRps, 8000);
+  assert.equal(r.nodes.vendor.status, "overloaded");
+  assert.equal(r.diagnostics.rateLimitWarnings.length, 1);
+  assert.equal(r.diagnostics.rateLimitWarnings[0].statusCode, 429);
+  assert.equal(r.diagnostics.rateLimitWarnings[0].rejectedRps, 8000);
+});
+
+test("manual RPS benchmarks a standalone node and propagates capped traffic downstream", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("vendor", "external-api", { replicas: 1, capacityPerReplica: 2000, baseLatencyMs: 240, manualRps: 3000 }),
+      // Cache nodes terminate the synchronous latency chain, keeping this assertion focused
+      // on the standalone external API's own p95 while still verifying downstream propagation.
+      node("consumer", "redis", { replicas: 1, capacityPerReplica: 10000 }),
+    ],
+    edges: [edge("vendor", "consumer")],
+    totalRps: 0,
+  });
+  assert.equal(r.nodes.vendor.incomingRps, 3000);
+  assert.equal(r.nodes.vendor.utilization, 1.5);
+  assert.equal(r.nodes.vendor.serviceP95Ms, 360);
+  assert.equal(r.nodes.vendor.p95Ms, 360);
+  assert.equal(r.nodes.vendor.serviceP95Ms, 360);
+  assert.equal(r.nodes.vendor.status, "overloaded");
+  assert.equal(r.nodes.vendor.servedRps, 2000);
+  assert.equal(r.edges["vendor-consumer"].rps, 2000);
+  assert.equal(r.nodes.consumer.incomingRps, 2000);
+  assert.equal(r.diagnostics.rateLimitWarnings[0].statusCode, 429);
+  assert.equal(r.diagnostics.rateLimitWarnings[0].rejectedRps, 1000);
+});
+
+test("manual RPS is a floor over upstream traffic rather than additive load", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("client", "client"),
+      node("service", "microservice", { replicas: 1, capacityPerReplica: 10000, manualRps: 3000 }),
+      node("downstream", "microservice"),
+    ],
+    edges: [edge("client", "service"), edge("service", "downstream")],
+    totalRps: 1000,
+  });
+  assert.equal(r.nodes.service.incomingRps, 3000);
+  assert.equal(r.nodes.downstream.incomingRps, 3000);
+});
+
+test("external API rate-limit telemetry becomes an actionable 429 architecture warning", async () => {
+  const { deriveArchitectureDiagnostic } = await import("../architectureDiagnostics.js");
+  const nodes = [
+    node("client", "client"),
+    node("vendor", "external-api", { label: "Payments API", replicas: 1, capacityPerReplica: 2000 }),
+  ];
+  const edges = [edge("client", "vendor")];
+  const r = simulateTraffic({ nodes, edges, totalRps: 10000 });
+  const diagnostic = deriveArchitectureDiagnostic(nodes, r, edges);
+  assert.equal(diagnostic.tone, "danger");
+  assert.match(diagnostic.message, /429 Too Many Requests/);
+  assert.match(diagnostic.message, /8k requests\/s rejected/);
 });

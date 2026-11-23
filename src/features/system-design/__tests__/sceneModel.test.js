@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CUSTOM_KEY, collectSceneRepairs, createEdgeSkeleton, createNodeSkeleton, deserializeSystemDesign, edgePatch, hasSystemDesignContent, metaPatch, readGraph, readNode, serializeSystemDesign } from "../sceneModel.js";
+import { CUSTOM_KEY, NODE_SIZE, collectSceneRepairs, createEdgeSkeleton, createNodeSkeleton, deserializeSystemDesign, edgePatch, hasSystemDesignContent, metaPatch, readGraph, readNode, serializeSystemDesign } from "../sceneModel.js";
 import { isOrthogonal } from "../orthogonalRouter.js";
 import { computeAutoLayout } from "../autoLayout.js";
 import { createSceneStore } from "../sceneStore.js";
+import { BLUEPRINTS } from "../blueprints.js";
 
 const asElement = (skeleton, id) => ({ id, isDeleted: false, version: 1, ...skeleton });
 function scene() {
@@ -92,6 +93,9 @@ test("native shapes are invisible hit-targets (single visual contract) with a so
   assert.notEqual(node.backgroundColor, "transparent");
   const edge = createEdgeSkeleton({ id: "a", x: 0, y: 0, width: 200, height: 84, protocol: "SQL" }, { id: "b", x: 420, y: 0, width: 200, height: 84 });
   assert.equal(edge.opacity, 0);
+  assert.equal(edge.strokeColor, "transparent");
+  assert.equal(edge.startArrowhead, null);
+  assert.equal(edge.endArrowhead, null);
 });
 
 test("collectSceneRepairs upgrades first-iteration elements, rotates nodes back, drops ghost connectors, and is idempotent", () => {
@@ -108,4 +112,132 @@ test("collectSceneRepairs upgrades first-iteration elements, rotates nodes back,
   assert.deepEqual(repairs.get("ghost"), { isDeleted: true });
   const applied = [a, b, ok, ghost].map((el) => ({ ...el, ...(repairs.get(el.id) || {}) }));
   assert.equal(collectSceneRepairs(applied).size, 0, "second pass finds nothing");
+});
+
+test("readGraph resolves Excalidraw arrow bindings even without stored from/to metadata", () => {
+  const a = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "client");
+  const b = asElement(createNodeSkeleton("microservice", { x: 400, y: 0 }), "orders");
+  const arrow = {
+    id: "bound-arrow", type: "arrow", x: 200, y: 42, points: [[0, 0], [200, 0]],
+    startBinding: { elementId: "client" }, endBinding: { elementId: "orders" },
+    customData: { [CUSTOM_KEY]: { role: "edge", protocol: "gRPC" } },
+  };
+  const graph = readGraph([a, b, arrow]);
+  assert.deepEqual([graph.edges[0].from, graph.edges[0].to], ["client", "orders"]);
+});
+
+test("readGraph falls back to arrow endpoint proximity within 24 scene pixels", () => {
+  const a = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "client");
+  const b = asElement(createNodeSkeleton("microservice", { x: 400, y: 0 }), "orders");
+  const arrow = {
+    id: "near-arrow", type: "arrow", x: 198, y: 42, points: [[0, 0], [202, 0]],
+    customData: { [CUSTOM_KEY]: { role: "edge", protocol: "HTTPS" } },
+  };
+  const graph = readGraph([a, b, arrow]);
+  assert.deepEqual([graph.edges[0].from, graph.edges[0].to], ["client", "orders"]);
+});
+
+
+test("readGraph exposes only one visual connector for duplicate source-target pairs", () => {
+  const [a, b, first] = scene();
+  const duplicate = asElement(createEdgeSkeleton(readNode(a), readNode(b), { protocol: "HTTPS" }), "duplicate");
+  const graph = readGraph([a, b, first, duplicate]);
+  assert.equal(graph.edges.length, 1);
+  assert.equal(graph.edges[0].id, "e");
+});
+
+test("collectSceneRepairs hides native arrow strokes and deletes duplicate connectors", () => {
+  const [a, b, first] = scene();
+  Object.assign(first, { opacity: 100, strokeColor: "#000000", endArrowhead: "arrow" });
+  const duplicate = asElement(createEdgeSkeleton(readNode(a), readNode(b), {}), "duplicate");
+  Object.assign(duplicate, { opacity: 100, strokeColor: "#111111" });
+  const repairs = collectSceneRepairs([a, b, first, duplicate]);
+  assert.deepEqual(repairs.get("e"), {
+    opacity: 0, strokeColor: "transparent", endArrowhead: null,
+  });
+  assert.deepEqual(repairs.get("duplicate"), { isDeleted: true });
+});
+
+
+test("scene repair keeps binding-resolved arrows and persists their endpoint metadata", () => {
+  const a = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "client");
+  const b = asElement(createNodeSkeleton("microservice", { x: 400, y: 0 }), "orders");
+  const arrow = {
+    id: "bound-arrow", type: "arrow", opacity: 100, strokeColor: "#000000",
+    x: 200, y: 42, points: [[0, 0], [200, 0]],
+    startBinding: { elementId: "client" }, endBinding: { elementId: "orders" },
+    customData: { [CUSTOM_KEY]: { role: "edge", protocol: "gRPC" } },
+  };
+  const patch = collectSceneRepairs([a, b, arrow]).get("bound-arrow");
+  assert.equal(patch.opacity, 0);
+  assert.equal(patch.strokeColor, "transparent");
+  assert.deepEqual(patch.customData[CUSTOM_KEY], {
+    role: "edge", protocol: "gRPC", from: "client", to: "orders",
+  });
+});
+
+
+test("legacy native arrows between System Design nodes normalize into hidden graph edges", () => {
+  const a = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "client");
+  const b = asElement(createNodeSkeleton("microservice", { x: 400, y: 0 }), "orders");
+  const native = {
+    id: "legacy-native-arrow", type: "arrow", x: 200, y: 42, width: 200, height: 0,
+    points: [[0, 0], [200, 0]], opacity: 100, strokeColor: "#000000",
+    startBinding: { elementId: "client" }, endBinding: { elementId: "orders" },
+    endArrowhead: "arrow",
+  };
+  const graph = readGraph([a, b, native]);
+  assert.deepEqual([graph.edges.length, graph.edges[0].from, graph.edges[0].to], [1, "client", "orders"]);
+  const repair = collectSceneRepairs([a, b, native]).get(native.id);
+  assert.equal(repair.opacity, 0);
+  assert.equal(repair.strokeColor, "transparent");
+  assert.equal(repair.endArrowhead, null);
+  assert.deepEqual(
+    { role: repair.customData[CUSTOM_KEY].role, from: repair.customData[CUSTOM_KEY].from, to: repair.customData[CUSTOM_KEY].to },
+    { role: "edge", from: "client", to: "orders" },
+  );
+  const migrated = { ...native, ...repair };
+  assert.equal(readGraph([a, b, migrated]).edges.length, 1);
+  assert.equal(collectSceneRepairs([a, b, migrated]).size, 0);
+});
+
+test("unrelated native canvas arrows are not imported into the System Design graph", () => {
+  const a = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "client");
+  const b = asElement(createNodeSkeleton("microservice", { x: 400, y: 0 }), "orders");
+  const unrelated = { id: "plain-arrow", type: "arrow", x: 0, y: 300, points: [[0, 0], [100, 100]] };
+  assert.equal(readGraph([a, b, unrelated]).edges.length, 0);
+  assert.equal(collectSceneRepairs([a, b, unrelated]).has(unrelated.id), false);
+});
+
+test("every blueprint edge is materialized with the exact generated System Design node IDs", () => {
+  for (const blueprint of BLUEPRINTS) {
+    const ids = new Map(blueprint.nodes.map((node) => [node.key, `node-${node.key}`]));
+    const nodes = blueprint.nodes.map((node) => asElement(
+      createNodeSkeleton(node.kind, { x: node.at[0] * 300, y: node.at[1] * 130 }, node.overrides || {}, ids.get(node.key)),
+      ids.get(node.key),
+    ));
+    const rects = new Map(nodes.map((element) => [element.id, readNode(element)]));
+    const edges = blueprint.edges.map((edge, index) => asElement(
+      createEdgeSkeleton(rects.get(ids.get(edge.from)), rects.get(ids.get(edge.to)), edge.protocol ? { protocol: edge.protocol } : {}, `edge-${index}`),
+      `edge-${index}`,
+    ));
+    const graph = readGraph([...nodes, ...edges]);
+    assert.equal(graph.nodes.length, blueprint.nodes.length, blueprint.id);
+    assert.equal(graph.edges.length, blueprint.edges.length, blueprint.id);
+    for (const edge of blueprint.edges) {
+      assert.ok(graph.edges.some((actual) => actual.from === ids.get(edge.from) && actual.to === ids.get(edge.to)), blueprint.id);
+    }
+  }
+});
+
+
+test("System Design nodes use 204x88 minimum geometry and migrate undersized legacy hit boxes", () => {
+  assert.deepEqual(NODE_SIZE, { width: 204, height: 88 });
+  const legacy = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "legacy");
+  legacy.width = 200;
+  legacy.height = 84;
+  const patch = collectSceneRepairs([legacy]).get("legacy");
+  assert.deepEqual(patch, { width: 204, height: 88 });
+  const migrated = { ...legacy, ...patch };
+  assert.equal(collectSceneRepairs([migrated]).size, 0);
 });

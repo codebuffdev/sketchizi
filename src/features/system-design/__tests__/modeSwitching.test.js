@@ -34,7 +34,7 @@ test("YAML reflects replicas, image and port edits live", () => {
 test("compose depends_on follows edges and external nodes are excluded", () => {
   const nodes = [n("c", "client"), n("a", "microservice", { label: "API" }), n("d", "sql", { label: "DB" })];
   const yaml = composeYaml(nodes, [{ id: "1", from: "a", to: "d" }, { id: "2", from: "c", to: "a" }]);
-  assert.match(yaml, /api:[\s\S]*depends_on:\n      - db/);
+  assert.match(yaml, /api:[\s\S]*depends_on:\n      - postgres/);
   assert.ok(!yaml.includes("web-mobile-client"));
 });
 

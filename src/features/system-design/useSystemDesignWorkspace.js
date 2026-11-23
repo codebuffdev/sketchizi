@@ -9,8 +9,8 @@ import {
 import { choosePorts } from "./orthogonalRouter.js";
 import { isRectInView, planPlacement, scrollToReveal } from "./placement.js";
 import { computeAutoLayout } from "./autoLayout.js";
-import { LOAD_PRESETS } from "./trafficSimulator.js";
 import { BLUEPRINT_GRID, blueprintExtent, getBlueprint } from "./blueprints.js";
+import { createSystemDesignWorkspaceByTabId, normalizeSystemDesignTabState, readSystemDesignTabState, updateSystemDesignWorkspaceTab } from "./systemDesignTabState.js";
 
 const newId = (prefix) => `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 
@@ -23,19 +23,62 @@ function isTypingTarget(target) {
  * All System Design Studio state lives here so `App.jsx` only mounts a thin boundary.
  * High-frequency scene data goes through `store` (external store), not React state in App.
  */
-export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize = 20, canEdit = true }) {
-  const storeRef = useRef(null);
-  if (!storeRef.current) storeRef.current = createSceneStore();
-  const store = storeRef.current;
+export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize = 20, canEdit = true, canvasTabsRef, activeCanvasIdRef, persistSystemDesignState }) {
+  // Each document owns an independent scene subscription and workspace state.
+  const storesRef = useRef(new Map());
+  if (!storesRef.current.has(activeCanvasId)) storesRef.current.set(activeCanvasId, createSceneStore());
+  const store = storesRef.current.get(activeCanvasId);
 
-  const [enabled, setEnabled] = useState(false);
-  const [mode, setMode] = useState("canvas");
-  const [simulate, setSimulate] = useState(false);
-  const [loadRps, setLoadRps] = useState(LOAD_PRESETS[1]);
-  const enabledRef = useRef(false);
+  const [workspaceByTabId, setWorkspaceByTabId] = useState(() => createSystemDesignWorkspaceByTabId(canvasTabsRef?.current || [], activeCanvasId));
+  const workspaceByTabIdRef = useRef(workspaceByTabId);
+  workspaceByTabIdRef.current = workspaceByTabId;
+  const activeWorkspace = normalizeSystemDesignTabState(
+    workspaceByTabId[activeCanvasId] || readSystemDesignTabState(canvasTabsRef?.current || [], activeCanvasId),
+  );
+  const enabled = activeWorkspace.active;
+  const mode = activeWorkspace.studioMode;
+  const simulate = activeWorkspace.simRunning;
+  const loadRps = activeWorkspace.baseRps;
+  const inspectorOpen = activeWorkspace.inspectorOpen;
+  const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
-  // A freshly opened canvas/tab always starts quiet: simulation is something the person turns on, never inherited.
-  useEffect(() => { setSimulate(false); }, [activeCanvasId]);
+
+  const updateActiveTabState = useCallback((patch) => {
+    const tabId = activeCanvasIdRef?.current || activeCanvasId;
+    if (!tabId) return normalizeSystemDesignTabState({});
+    const nextMap = updateSystemDesignWorkspaceTab(workspaceByTabIdRef.current, tabId, patch);
+    workspaceByTabIdRef.current = nextMap;
+    setWorkspaceByTabId(nextMap);
+    const nextState = nextMap[tabId];
+    persistSystemDesignState?.(tabId, nextState);
+    return nextState;
+  }, [activeCanvasId, activeCanvasIdRef, persistSystemDesignState]);
+
+  const setEnabled = useCallback((value) => {
+    updateActiveTabState((current) => ({ active: typeof value === "function" ? value(current.active) : value }));
+  }, [updateActiveTabState]);
+  const setMode = useCallback((value) => {
+    updateActiveTabState((current) => ({ studioMode: typeof value === "function" ? value(current.studioMode) : value }));
+  }, [updateActiveTabState]);
+  const setSimulate = useCallback((value) => {
+    updateActiveTabState((current) => ({ simRunning: typeof value === "function" ? value(current.simRunning) : value }));
+  }, [updateActiveTabState]);
+  const setLoadRps = useCallback((value) => {
+    updateActiveTabState((current) => ({ baseRps: typeof value === "function" ? value(current.baseRps) : value }));
+  }, [updateActiveTabState]);
+  const setInspectorOpen = useCallback((value) => {
+    updateActiveTabState((current) => ({ inspectorOpen: typeof value === "function" ? value(current.inspectorOpen) : value }));
+  }, [updateActiveTabState]);
+
+  const getTabState = useCallback((tabId = (activeCanvasIdRef?.current || activeCanvasId)) => (
+    normalizeSystemDesignTabState(workspaceByTabIdRef.current[tabId] || readSystemDesignTabState(canvasTabsRef?.current || [], tabId))
+  ), [activeCanvasId, activeCanvasIdRef, canvasTabsRef]);
+  const restoreTabState = useCallback((tabId, value) => {
+    if (!tabId) return;
+    const nextMap = { ...workspaceByTabIdRef.current, [tabId]: normalizeSystemDesignTabState(value) };
+    workspaceByTabIdRef.current = nextMap;
+    setWorkspaceByTabId(nextMap);
+  }, []);
   const reroutingRef = useRef(false);
   const lastRectsRef = useRef(new Map());
   const pushRef = useRef(null);
@@ -198,7 +241,27 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
       api.updateScene({ appState: scrollToReveal(rect, viewport), captureUpdate: CaptureUpdateAction.NEVER });
     }
     return id;
-  }, [apiRef, canEdit, commit, gridEnabled, gridSize, viewportCenterScene]);
+  }, [apiRef, canEdit, commit, gridEnabled, gridSize, viewportCenterScene, setEnabled]);
+
+  const addUpstreamClient = useCallback((targetId) => {
+    const api = apiRef.current;
+    if (!api || !canEdit) return null;
+    const { nodes, edges } = readGraph(api.getSceneElements());
+    const target = nodes.find((node) => node.id === targetId);
+    if (!target || nodes.some((node) => node.kind === "client" && edges.some((edge) => edge.from === node.id && edge.to === targetId))) return null;
+    let position = { x: target.x - NODE_SIZE.width - 100, y: target.y };
+    while (nodes.some((node) => position.x < node.x + node.width && position.x + NODE_SIZE.width > node.x && position.y < node.y + node.height && position.y + NODE_SIZE.height > node.y)) {
+      position.y += NODE_SIZE.height + 32;
+    }
+    const clientId = newId("sd");
+    const client = createNodeSkeleton("client", position, { manualRps: 10000 }, clientId);
+    const sourceRect = { id: clientId, ...position, width: NODE_SIZE.width, height: NODE_SIZE.height, protocol: "HTTPS" };
+    const connector = createEdgeSkeleton(sourceRect, target, { protocol: "HTTPS" }, newId("sdedge"));
+    const created = restoreElements(convertToExcalidrawElements([client, connector]), null);
+    commit([...api.getSceneElementsIncludingDeleted(), ...created]);
+    api.updateScene({ appState: { selectedElementIds: { [targetId]: true } }, captureUpdate: CaptureUpdateAction.NEVER });
+    return clientId;
+  }, [apiRef, canEdit, commit]);
 
   const connect = useCallback((fromId, toId, ports = null) => {
     const api = apiRef.current;
@@ -299,15 +362,22 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     const rects = new Map(nodeSkeletons.map((sk) => [sk.id, {
       id: sk.id, x: sk.x, y: sk.y, width: sk.width, height: sk.height, protocol: sk.customData[CUSTOM_KEY].meta.protocol,
     }]));
-    const edgeSkeletons = blueprint.edges.map((e) => createEdgeSkeleton(
-      rects.get(ids.get(e.from)), rects.get(ids.get(e.to)), e.protocol ? { protocol: e.protocol } : {}, newId("sdedge"),
+    const blueprintPairs = new Set();
+    const edgeSkeletons = blueprint.edges.filter((edge) => {
+      const pair = JSON.stringify([edge.from, edge.to]);
+      if (blueprintPairs.has(pair)) return false;
+      blueprintPairs.add(pair);
+      return true;
+    }).map((edge) => createEdgeSkeleton(
+      rects.get(ids.get(edge.from)), rects.get(ids.get(edge.to)),
+      edge.protocol ? { protocol: edge.protocol } : {}, newId("sdedge"),
     ));
     const created = restoreElements(convertToExcalidrawElements([...nodeSkeletons, ...edgeSkeletons]), null);
     commit([...api.getSceneElementsIncludingDeleted(), ...created]);
     api.updateScene({ appState: { selectedElementIds: {} }, captureUpdate: CaptureUpdateAction.NEVER });
     api.scrollToContent?.(created.filter(isSystemDesignNode), { fitToContent: true, animate: true });
     return true;
-  }, [apiRef, canEdit, commit, viewportCenterScene]);
+  }, [apiRef, canEdit, commit, viewportCenterScene, setEnabled]);
 
   // While the studio is open, anything drawn with Excalidraw's own arrow tool should also be a 90-degree elbow rather
   // than a raw diagonal. The previous arrow type is restored on close so the plain canvas is left exactly as it was.
@@ -339,14 +409,15 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [enabled, addNode]);
 
-  const open = useCallback(() => setEnabled(true), []);
-  const close = useCallback(() => { setEnabled(false); setSimulate(false); setMode("canvas"); }, []);
+  const open = useCallback(() => setEnabled(true), [setEnabled]);
+  const close = useCallback(() => updateActiveTabState({ active: false, simRunning: false, studioMode: "canvas", inspectorOpen: false }), [updateActiveTabState]);
   const toggle = useCallback(() => (enabledRef.current ? close() : open()), [close, open]);
 
   return useMemo(() => ({
     store, enabled, open, close, toggle,
-    mode, setMode, simulate, setSimulate, loadRps, setLoadRps,
+    mode, setMode, simulate, setSimulate, loadRps, setLoadRps, inspectorOpen, setInspectorOpen,
+    getTabState, restoreTabState,
     gridEnabled, setGridEnabled, gridSize, canEdit,
-    actions: { addNode, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint },
-  }), [store, enabled, open, close, toggle, mode, simulate, loadRps, gridEnabled, setGridEnabled, gridSize, canEdit, addNode, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint]);
+    actions: { addNode, addUpstreamClient, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint },
+  }), [store, enabled, open, close, toggle, mode, setMode, simulate, setSimulate, loadRps, setLoadRps, inspectorOpen, setInspectorOpen, getTabState, restoreTabState, gridEnabled, setGridEnabled, gridSize, canEdit, addNode, addUpstreamClient, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint]);
 }

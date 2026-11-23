@@ -3,14 +3,14 @@ import assert from "node:assert/strict";
 import { ICON_SHAPES, ICON_TAGS, hasIconShape } from "../primitiveIconShapes.js";
 import { PRIMITIVES, QUICK_KINDS, morePrimitivesByCategory, quickPrimitives } from "../primitives.js";
 
-test("every one of the 16 primitives maps to a real inline SVG icon", () => {
-  assert.equal(PRIMITIVES.length, 16);
+test("every one of the 22 primitives maps to a real inline SVG icon", () => {
+  assert.equal(PRIMITIVES.length, 22);
   for (const p of PRIMITIVES) {
     assert.ok(p.icon, `${p.kind} has no icon`);
     assert.ok(hasIconShape(p.icon), `${p.kind} -> missing shape "${p.icon}"`);
     assert.ok(p.shortLabel, `${p.kind} short label`);
   }
-  assert.equal(new Set(PRIMITIVES.map((p) => p.icon)).size, 16, "each primitive is visually distinct");
+  assert.equal(new Set(PRIMITIVES.map((p) => p.icon)).size, 22, "each primitive is visually distinct");
 });
 
 test("icon shapes only use allowed tags, numeric/finite geometry and no hard-coded colours", () => {
@@ -27,10 +27,10 @@ test("icon shapes only use allowed tags, numeric/finite geometry and no hard-cod
   }
 });
 
-test("the dock shows six common primitives; + More holds the other ten, none duplicated", () => {
+test("the catalog exposes all 22 primitives through role-based category groups; the six-item quick set remains unique", () => {
   assert.deepEqual(quickPrimitives().map((p) => p.shortLabel), ["Client", "Gateway", "Service", "Database", "Cache", "Queue"]);
   const more = morePrimitivesByCategory().flatMap((c) => c.items.map((i) => i.kind));
-  assert.equal(more.length, 10);
-  assert.equal(new Set([...QUICK_KINDS, ...more]).size, 16);
+  assert.equal(more.length, 16);
+  assert.equal(new Set([...QUICK_KINDS, ...more]).size, 22);
   assert.ok(more.every((k) => !QUICK_KINDS.includes(k)));
 });

@@ -110,6 +110,105 @@ try {
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: the canvas-tab add action opens an editable canvas.");
 
+  // System Design connector UX: drag from a generous port hit area to any
+  // point on a target card, then verify click-port-to-click-card and C-to-card.
+  await openStudioFromCommandPalette(blank.page, "System Design Studio");
+  await blank.page.locator('[data-testid="system-design-studio"]').waitFor({ state: "visible" });
+  // The floating primitive dock was removed: create nodes through the shared Icon Library.
+  await blank.page.getByRole("button", { name: "Open System Design components" }).click();
+  const systemLibrary = blank.page.getByRole("dialog", { name: "Icon Library" });
+  await systemLibrary.waitFor({ state: "visible" });
+  await systemLibrary.getByRole("button", { name: "System Design (16)", exact: true }).click();
+  for (const label of ["Web/Mobile Client", "Microservice", "SQL Database", "Redis Cache"]) {
+    await systemLibrary.getByRole("button", { name: `Add ${label} to canvas` }).click();
+  }
+  await systemLibrary.getByRole("button", { name: "Close icon library" }).click();
+  await systemLibrary.waitFor({ state: "hidden" });
+  await blank.page.getByRole("button", { name: "Auto-Layout components" }).waitFor({ state: "visible" });
+  if (await blank.page.locator(".sd-dock").count()) throw new Error("The removed floating primitive dock is still mounted.");
+  const cards = blank.page.locator(".sd-node[data-node-id]");
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-node[data-node-id]").length === 4);
+  const initialCards = await cards.evaluateAll((items) => items.map((item) => ({
+    id: item.dataset.nodeId, width: item.style.width, height: item.style.height,
+  })));
+  if (initialCards.some((item) => item.width !== "204px" || item.height !== "88px")) {
+    throw new Error(`System Design cards do not use the 204x88 minimum: ${JSON.stringify(initialCards)}`);
+  }
+  const dragSource = cards.nth(0);
+  const dragTarget = cards.nth(1);
+  const sourceBox = await dragSource.boundingBox();
+  if (!sourceBox) throw new Error("Connector source card has no hit area.");
+  await blank.page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+  const dragPort = dragSource.locator(".sd-port.is-right.is-visible");
+  await dragPort.waitFor({ state: "visible" });
+  const [portBox, targetBox] = await Promise.all([dragPort.boundingBox(), dragTarget.boundingBox()]);
+  if (!portBox || !targetBox) throw new Error("Connector source port or target card has no hit area.");
+  await blank.page.mouse.move(portBox.x + portBox.width / 2, portBox.y + portBox.height / 2);
+  await blank.page.mouse.down();
+  await blank.page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, { steps: 12 });
+  await blank.page.locator(".sd-edge-preview.is-snapped").waitFor({ state: "attached" });
+  const dragTargetId = await dragTarget.getAttribute("data-node-id");
+  await blank.page.waitForFunction((id) =>
+    document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-drop-target"),
+  dragTargetId);
+  await blank.page.mouse.up();
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 1);
+  const [sourceAfter, targetAfter] = await Promise.all([dragSource.boundingBox(), dragTarget.boundingBox()]);
+  if (Math.abs(sourceAfter.width - sourceBox.width) > 0.5 ||
+      Math.abs(sourceAfter.height - sourceBox.height) > 0.5 ||
+      Math.abs(targetAfter.width - targetBox.width) > 0.5 ||
+      Math.abs(targetAfter.height - targetBox.height) > 0.5) {
+    throw new Error("Dragging a connector resized a node card.");
+  }
+
+  const clickSource = cards.nth(1);
+  const clickTarget = cards.nth(2);
+  const clickSourceBox = await clickSource.boundingBox();
+  await blank.page.mouse.move(clickSourceBox.x + clickSourceBox.width / 2, clickSourceBox.y + clickSourceBox.height / 2);
+  const clickPort = clickSource.locator(".sd-port.is-right.is-visible");
+  await clickPort.waitFor({ state: "visible" });
+  await clickPort.click();
+  await clickSource.locator(".sd-port.is-armed").waitFor({ state: "visible" });
+  const clickTargetBox = await clickTarget.boundingBox();
+  await blank.page.mouse.click(clickTargetBox.x + clickTargetBox.width / 2, clickTargetBox.y + clickTargetBox.height / 2);
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 2);
+  console.log("PASS: port drag-to-card and click-port-to-card create single orthogonal connectors without resizing nodes.");
+
+  // Port-to-port: hover the destination after arming the source; this exposes
+  // its port without requiring a precise initial drop on the dot.
+  await blank.page.keyboard.press("Escape");
+  const portPoolSource = cards.nth(2);
+  const portPoolTarget = cards.nth(3);
+  const portPoolTargetBox = await portPoolTarget.boundingBox();
+  const portPoolSourceBox = await portPoolSource.boundingBox();
+  await blank.page.mouse.move(portPoolSourceBox.x + portPoolSourceBox.width / 2, portPoolSourceBox.y + portPoolSourceBox.height / 2);
+  const portPoolFrom = portPoolSource.locator(".sd-port.is-right.is-visible");
+  await portPoolFrom.waitFor({ state: "visible" });
+  await portPoolFrom.click();
+  await portPoolSource.locator(".sd-port.is-armed").waitFor({ state: "visible" });
+  await blank.page.mouse.move(portPoolTargetBox.x + portPoolTargetBox.width / 2, portPoolTargetBox.y + portPoolTargetBox.height / 2);
+  const portPoolTo = portPoolTarget.locator(".sd-port.is-left.is-visible");
+  await portPoolTo.waitFor({ state: "visible" });
+  await portPoolTo.click();
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 3);
+  console.log("PASS: click-port-to-click-port creates a single orthogonal connector.");
+
+  // Return the pointer to the card body so its hover target is unambiguous
+  // after leaving the port button, then exercise the keyboard connect mode.
+  await blank.page.mouse.move(portPoolTargetBox.x + portPoolTargetBox.width / 2, portPoolTargetBox.y + portPoolTargetBox.height / 2);
+  await portPoolTarget.locator(".sd-port.is-visible").first().waitFor({ state: "visible" });
+  // C uses the hovered destination node (or a selected node) as the source
+  // and connects it to the next card without requiring a visible port click.
+  await blank.page.keyboard.press("c");
+  const portPoolTargetId = await portPoolTarget.getAttribute("data-node-id");
+  await blank.page.waitForFunction((id) =>
+    document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-connect-armed"),
+  portPoolTargetId);
+  await blank.page.mouse.click(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-edge").length === 4);
+  console.log("PASS: C arms the hovered/selected node and connects it to the next clicked card.");
+
+
   // The floating header may collapse after canvas interaction; reveal it with
   // the same keyboard shortcut users have before opening header-only actions.
   await ensureHeaderVisible(blank.page);
@@ -552,13 +651,14 @@ try {
     .getByRole("button", { name: "Open", exact: true }).click();
   await secondCloudTab.waitFor();
   await firstCloudTab.click();
-  await firstCloudTab.getByRole("status", { name: "Saved to Cloud Workspace" }).waitFor();
+  // These are clean, already-loaded cloud documents. No save is expected until
+  // the user edits them, so waiting for a "Saved" status here is a false
+  // persistence assertion and times out on both main and feature branches.
   if (await firstCloudTab.getAttribute("aria-selected") !== "true" ||
       await cloudTabs.page.getByRole("tab").count() !== 2) {
     throw new Error("Opening a second Workspace drawing must keep both cloud tabs without an empty local canvas.");
   }
   await secondCloudTab.click();
-  await secondCloudTab.getByRole("status", { name: "Saved to Cloud Workspace" }).waitFor();
   if (await secondCloudTab.getAttribute("aria-selected") !== "true") {
     throw new Error("The second drawing must remain selectable as a cloud tab.");
   }

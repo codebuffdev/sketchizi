@@ -75,7 +75,7 @@ test("each studio mode shows different node facts", () => {
 test("Kubernetes YAML is block-style (short lines), namespaced, and StatefulSet-aware", () => {
   const yaml = kubernetesYaml([n("a", "microservice", { label: "API" }), n("d", "sql", { label: "DB" })]);
   assert.match(yaml, /kind: Deployment[\s\S]*namespace: prod[\s\S]*kind: Service/);
-  assert.match(yaml, /kind: StatefulSet[\s\S]*serviceName: db/);
+  assert.match(yaml, /kind: StatefulSet[\s\S]*serviceName: postgres/);
   assert.doesNotMatch(yaml, /\{ /, "no flow-style braces");
   assert.ok(Math.max(...yaml.split("\n").map((l) => l.length)) <= 60);
 });
@@ -84,14 +84,17 @@ test("UI contract: Simulate is opt-in, drawer is 380/640 with tabs + copy, measu
   const dir = new URL("..", import.meta.url);
   const read = (f) => readFileSync(new URL(f, dir), "utf8");
   const hook = read("useSystemDesignWorkspace.js");
-  assert.match(hook, /useState\(false\);\n  const \[loadRps/, "simulate starts OFF");
-  assert.match(hook, /setSimulate\(false\); \}, \[activeCanvasId\]/);
+  const tabState = read("systemDesignTabState.js");
+  assert.match(tabState, /simRunning: false/, "new tabs start with simulation OFF");
+  assert.match(hook, /workspaceByTabId/);
+  assert.match(hook, /activeWorkspace\.simRunning/);
+  assert.match(hook, /restoreTabState/);
   const top = read("TopWorkspaceBar.jsx");
-  for (const text of ["Blueprints", "Stop Simulation", "Simulate", "BLUEPRINTS"]) assert.ok(top.includes(text), text);
+  for (const text of ["Blueprints", "Stop simulation", "Simulate", "BLUEPRINTS"]) assert.ok(top.includes(text), text);
   assert.ok(top.indexOf("Blueprints") < top.indexOf("Studio mode"), "Blueprints sits left of the mode switch");
   assert.match(read("SystemDesignStudio.jsx"), /Add a Client or Gateway node \(or load a Blueprint\) to simulate traffic\./);
   const drawer = read("ContextualInspectorDrawer.jsx");
-  for (const text of ["Config & Load", "Live YAML", "Copy YAML", "Expand", "Compact"]) assert.ok(drawer.includes(text), text);
+  for (const text of ["Config & Load", "Node YAML", "Copy YAML", "Expand", "Compact"]) assert.ok(drawer.includes(text), text);
   const css = read("systemDesign.css");
   assert.match(css, /\.sd-drawer \{[^}]*width: min\(380px/);
   assert.match(css, /\.sd-drawer\.is-wide \{ width: min\(640px/);

@@ -12,7 +12,7 @@ import { createNodeMeta, getPrimitive, ACCENTS, HEALTH_OVERRIDES, PROTOCOLS } fr
 import { choosePorts, routeOrthogonal } from "./orthogonalRouter.js";
 
 export const CUSTOM_KEY = "sketchiziSystemDesign";
-export const NODE_SIZE = Object.freeze({ width: 200, height: 84 });
+export const NODE_SIZE = Object.freeze({ width: 204, height: 88 });
 
 export function isSystemDesignNode(element) {
   return Boolean(element && !element.isDeleted && element.type === "rectangle" && element.customData?.[CUSTOM_KEY]?.role === "node");
@@ -40,6 +40,8 @@ function sanitizeMeta(meta) {
     protocol: PROTOCOLS.includes(meta.protocol) ? meta.protocol : primitive.defaultProtocol,
     replicas: Math.round(num(meta.replicas, primitive.replicas, 0, 500)),
     capacityPerReplica: Math.round(num(meta.capacityPerReplica, primitive.capacityPerReplica, 1, 1_000_000)),
+    manualRps: Math.round(num(meta.manualRps, 0, 0, 1_000_000_000)),
+    baseLatencyMs: num(meta.baseLatencyMs, primitive.baseLatencyMs, 0.5, 60000),
     cacheHitRate: num(meta.cacheHitRate, primitive.cacheHitRate, 0, 1),
     port: Math.round(num(meta.port, primitive.port, 1, 65535)),
     health: HEALTH_OVERRIDES.includes(meta.health) ? meta.health : "healthy",
@@ -51,7 +53,7 @@ function sanitizeMeta(meta) {
 // A *solid* background is what makes Excalidraw hit-test the whole interior (a transparent fill only hits the outline),
 // so click-and-drag anywhere on the card works. Opacity 0 keeps it invisible. Hit-testing does not look at opacity.
 const NODE_HIT_BOX = Object.freeze({ strokeColor: "#94a3b8", backgroundColor: "#ffffff", fillStyle: "solid", opacity: 0, angle: 0 });
-const EDGE_HIT_BOX = Object.freeze({ opacity: 0 });
+const EDGE_HIT_BOX = Object.freeze({ opacity: 0, strokeColor: "transparent", endArrowhead: null, startArrowhead: null });
 
 /** Excalidraw element skeleton for a node. Visuals are drawn by the overlay; the rectangle is the hit-target + anchor. */
 export function createNodeSkeleton(kind, position, overrides = {}, id) {
@@ -78,18 +80,45 @@ export function readNode(element) {
   return { id: element.id, x: element.x, y: element.y, width: element.width, height: element.height, ...meta };
 }
 
-export function readEdge(element) {
-  if (!isSystemDesignEdge(element)) return null;
-  const data = element.customData[CUSTOM_KEY];
-  if (!data.from || !data.to) return null;
+function arrowEndpoint(element, end) {
+  const binding = end === "start" ? element.startBinding : element.endBinding;
+  if (binding?.elementId) return { id: binding.elementId, bound: true };
+  const points = Array.isArray(element.points) ? element.points : [];
+  if (!points.length) return null;
+  const point = points[end === "start" ? 0 : points.length - 1];
+  return { x: Number(element.x || 0) + Number(point?.[0] || 0), y: Number(element.y || 0) + Number(point?.[1] || 0) };
+}
+
+function nodeAtArrowEndpoint(point, nodes, excludeId) {
+  if (!point || point.id) return point?.id || null;
+  const candidates = nodes.map((node) => {
+    const x = Math.max(node.x, Math.min(point.x, node.x + node.width));
+    const y = Math.max(node.y, Math.min(point.y, node.y + node.height));
+    return { node, distance: Math.hypot(point.x - x, point.y - y) };
+  }).filter(({ node, distance }) => node.id !== excludeId && distance <= 24)
+    .sort((a, b) => a.distance - b.distance);
+  return candidates[0]?.node.id || null;
+}
+
+export function readEdge(element, nodes = []) {
+  // Accept legacy/native Excalidraw arrows only when their bindings or endpoints resolve to
+  // System Design nodes. Ordinary canvas arrows remain outside the System Design graph.
+  if (!element || element.isDeleted || element.type !== "arrow") return null;
+  const data = element.customData?.[CUSTOM_KEY] || {};
+  const isTaggedEdge = data.role === "edge";
+  const start = arrowEndpoint(element, "start");
+  const end = arrowEndpoint(element, "end");
+  const from = start?.id || data.from || nodeAtArrowEndpoint(start, nodes);
+  const to = end?.id || data.to || nodeAtArrowEndpoint(end, nodes, from);
+  if (!from || !to || (!isTaggedEdge && !nodes.some((node) => node.id === from) || !nodes.some((node) => node.id === to))) return null;
   return {
     id: element.id,
-    from: data.from,
-    to: data.to,
+    from,
+    to,
     fromPort: data.fromPort || "right",
     toPort: data.toPort || "left",
     protocol: PROTOCOLS.includes(data.protocol) ? data.protocol : "HTTPS",
-    lineStyle: data.lineStyle === "dashed" ? "dashed" : "solid",
+    lineStyle: data.lineStyle === "dashed" || element.strokeStyle === "dashed" ? "dashed" : "solid",
   };
 }
 
@@ -97,7 +126,14 @@ export function readEdge(element) {
 export function readGraph(elements) {
   const nodes = (elements || []).map(readNode).filter(Boolean);
   const ids = new Set(nodes.map((node) => node.id));
-  const edges = (elements || []).map(readEdge).filter((edge) => edge && ids.has(edge.from) && ids.has(edge.to));
+  const seenPairs = new Set();
+  const edges = (elements || []).map((element) => readEdge(element, nodes)).filter((edge) => {
+    if (!edge || !ids.has(edge.from) || !ids.has(edge.to)) return false;
+    const pair = JSON.stringify([edge.from, edge.to]);
+    if (seenPairs.has(pair)) return false;
+    seenPairs.add(pair);
+    return true;
+  });
   return { nodes, edges };
 }
 
@@ -139,7 +175,7 @@ export function createEdgeSkeleton(fromNode, toNode, options = {}, id) {
     ...(id ? { id } : {}),
     type: "arrow",
     ...patch,
-    strokeColor: "#94a3b8",
+    strokeColor: "transparent",
     strokeWidth: 1,
     roughness: 0,
     ...EDGE_HIT_BOX,
@@ -163,7 +199,7 @@ export function createEdgeSkeleton(fromNode, toNode, options = {}, id) {
 const isSolid = (color) => Boolean(color) && color !== "transparent";
 
 /**
- * Patches that bring elements written by older builds in line with the single-visual contract (visible native
+ * Patches that bring elements written by older builds in line with the single-visual contract (invisible native
  * rectangles/arrows, rotated nodes) plus removal of connectors whose endpoint node is gone (a plain Delete key press
  * removes only the node, which would otherwise leave an invisible, still-clickable ghost connector).
  * Returns Map<elementId, patch>; empty when the scene is already clean, so applying it is idempotent.
@@ -171,18 +207,63 @@ const isSolid = (color) => Boolean(color) && color !== "transparent";
 export function collectSceneRepairs(elements) {
   const repairs = new Map();
   const live = (elements || []).filter((element) => element && !element.isDeleted);
-  const nodeIds = new Set(live.filter(isSystemDesignNode).map((element) => element.id));
+  const nodes = live.map(readNode).filter(Boolean);
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  const seenPairs = new Set();
   for (const element of live) {
     if (isSystemDesignNode(element)) {
       const patch = {};
       if (element.opacity !== 0) patch.opacity = 0;
       if (!isSolid(element.backgroundColor) || element.fillStyle !== "solid") { patch.backgroundColor = "#ffffff"; patch.fillStyle = "solid"; }
+      if (element.width < NODE_SIZE.width) patch.width = NODE_SIZE.width;
+      if (element.height < NODE_SIZE.height) patch.height = NODE_SIZE.height;
       if (element.angle) patch.angle = 0; // A rotated hit-box would drift away from the unrotated card.
       if (Object.keys(patch).length) repairs.set(element.id, patch);
-    } else if (isSystemDesignEdge(element)) {
-      const data = element.customData[CUSTOM_KEY];
-      if (!nodeIds.has(data.from) || !nodeIds.has(data.to)) repairs.set(element.id, { isDeleted: true });
-      else if (element.opacity !== 0) repairs.set(element.id, { opacity: 0 });
+    } else if (element.type === "arrow") {
+      const data = element.customData?.[CUSTOM_KEY] || {};
+      const edge = readEdge(element, nodes);
+      if (!edge || !nodeIds.has(edge.from) || !nodeIds.has(edge.to)) {
+        if (isSystemDesignEdge(element)) repairs.set(element.id, { isDeleted: true });
+        continue;
+      }
+      const pair = JSON.stringify([edge.from, edge.to]);
+      if (seenPairs.has(pair)) {
+        repairs.set(element.id, { isDeleted: true });
+        continue;
+      }
+      seenPairs.add(pair);
+      const patch = {};
+      const normalized = {
+        role: "edge",
+        version: 1,
+        from: edge.from,
+        to: edge.to,
+        fromPort: edge.fromPort,
+        toPort: edge.toPort,
+        protocol: edge.protocol,
+        lineStyle: edge.lineStyle,
+      };
+      if (!isSystemDesignEdge(element)) {
+        patch.customData = {
+          ...element.customData,
+          [CUSTOM_KEY]: { ...data, ...normalized },
+        };
+      } else if (data.from !== edge.from || data.to !== edge.to) {
+        patch.customData = {
+          ...element.customData,
+          [CUSTOM_KEY]: { ...data, from: edge.from, to: edge.to },
+        };
+      }
+      if (!isSystemDesignEdge(element)) {
+        const from = nodes.find((node) => node.id === edge.from);
+        const to = nodes.find((node) => node.id === edge.to);
+        Object.assign(patch, arrowGeometry(from, edge.fromPort, to, edge.toPort).patch);
+      }
+      if (element.opacity !== 0) patch.opacity = 0;
+      if (element.strokeColor !== "transparent") patch.strokeColor = "transparent";
+      if (element.startArrowhead != null) patch.startArrowhead = null;
+      if (element.endArrowhead != null) patch.endArrowhead = null;
+      if (Object.keys(patch).length) repairs.set(element.id, patch);
     }
   }
   return repairs;

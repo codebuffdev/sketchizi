@@ -42,6 +42,13 @@ export const ICON_SHAPES = Object.freeze({
   // --- Messaging & Observability
   "arrows-lr": [["path", { d: "m16 3 4 4-4 4" }], ["path", { d: "M20 7H4" }], ["path", { d: "m8 21-4-4 4-4" }], ["path", { d: "M4 17h16" }]],
   activity: [["polyline", { points: "22 12 18 12 15 21 9 3 6 12 2 12" }]],
+  // --- Additional architecture roles
+  "read-replica": [["ellipse", { cx: 12, cy: 5, rx: 8, ry: 3 }], ["path", { d: "M4 5v12c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11c0 1.7 3.6 3 8 3s8-1.3 8-3" }], ["path", { d: "m16 3 4 2-4 2" }]],
+  pubsub: [["circle", { cx: 12, cy: 12, r: 3 }], ["circle", { cx: 4, cy: 5, r: 2 }], ["circle", { cx: 20, cy: 5, r: 2 }], ["circle", { cx: 4, cy: 19, r: 2 }], ["circle", { cx: 20, cy: 19, r: 2 }], ["path", { d: "m9.5 10-4-3.5M14.5 10l4-3.5M9.5 14l-4 3.5M14.5 14l4 3.5" }]],
+  "stream-processor": [["path", { d: "M3 7h4l3 5 3-8 3 11 2-4h3" }], ["path", { d: "M3 19h18" }]],
+  warehouse: [["path", { d: "m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" }], ["path", { d: "M8 21v-7h8v7M8 10h.01M12 10h.01M16 10h.01" }]],
+  websocket: [["path", { d: "M4 5h16v11H9l-5 4Z" }], ["path", { d: "m8 9 2 2-2 2M13 13h3" }]],
+  "external-api": [["path", { d: "M14 3h7v7M21 3l-9 9" }], ["path", { d: "M11 5H6a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5" }]],
 
   // --- UI glyphs used by the studio chrome (same construction, same 16x16 render size)
   play: [["polygon", { points: "6 4 20 12 6 20 6 4" }]],
@@ -49,6 +56,7 @@ export const ICON_SHAPES = Object.freeze({
   stop: [["rect", { x: 5, y: 5, width: 14, height: 14, rx: 2 }]],
   layers: [["polygon", { points: "12 2 2 7 12 12 22 7 12 2" }], ["polyline", { points: "2 17 12 22 22 17" }], ["polyline", { points: "2 12 12 17 22 12" }]],
   copy: [["rect", { x: 9, y: 9, width: 12, height: 12, rx: 2 }], ["path", { d: "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" }]],
+  download: [["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }], ["path", { d: "m7 10 5 5 5-5" }], ["path", { d: "M12 15V3" }]],
   check: [["path", { d: "M20 6 9 17l-5-5" }]],
   expand: [["path", { d: "M15 3h6v6" }], ["path", { d: "M9 21H3v-6" }], ["path", { d: "m21 3-7 7" }], ["path", { d: "m3 21 7-7" }]],
   shrink: [["path", { d: "M4 14h6v6" }], ["path", { d: "M20 10h-6V4" }], ["path", { d: "m14 10 7-7" }], ["path", { d: "m3 21 7-7" }]],

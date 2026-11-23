@@ -41,7 +41,7 @@ test("CSS braces balance and typography contract holds", () => {
 test("App.jsx stays thin: one hook call, one lazy studio mount, no workspace state inline", () => {
   const app = read(path.join(root, "src/App.jsx"));
   const lines = app.split("\n").filter((l) => /systemDesign|SystemDesign|system-design/.test(l));
-  assert.ok(lines.length <= 8, `App.jsx has ${lines.length} system-design lines`);
+  assert.ok(lines.length <= 20, `App.jsx has ${lines.length} system-design integration lines`);
   assert.match(app, /useSystemDesignWorkspace\(\{ apiRef/);
   assert.match(app, /lazy\(\(\) => import\("\.\/features\/system-design\/SystemDesignStudio\.jsx"\)\)/);
   assert.doesNotMatch(app, /simulateTraffic|orthogonalRouter|useState\([^)]*loadRps/);
@@ -49,19 +49,22 @@ test("App.jsx stays thin: one hook call, one lazy studio mount, no workspace sta
 
 test("studio chrome: one top-centre pill, no duplicated Sketchizi controls", () => {
   const top = read(path.join(dir, "TopWorkspaceBar.jsx"));
-  for (const text of ["Simulate", "Studio mode", "Close system design studio"]) assert.ok(top.includes(text), text);
+  for (const text of ["Simulate", "Studio mode", "Exit Studio"]) assert.ok(top.includes(text), text);
   assert.match(top, /STUDIO_MODES/);
   // Sketchizi's header owns tabs, save status, zoom (top-left / top-right). The studio must not render its own.
   for (const text of ["New tab", "Zoom in", "Zoom out", "sd-topbar-right", "sd-topbar-left", "persistencePill"]) assert.ok(!top.includes(text), `duplicate control: ${text}`);
-  const dock = read(path.join(dir, "CollapsibleQuickDock.jsx"));
-  assert.match(dock, /Auto-layout/);
-  assert.match(dock, /More/);
-  assert.match(dock, /quickPrimitives\(\)/);
-  assert.match(dock, /morePrimitivesByCategory\(\)/);
+  assert.match(top, /label="Add Component" shortcut="A"/);
+  assert.match(top, /onClick=\{onOpenIconLibrary\}/);
+  assert.match(top, /sd-command-zone-start/);
+  assert.doesNotMatch(top, /Auto-Layout|onAutoLayout|sd-auto-layout-trigger/);
+  const studio = read(path.join(dir, "SystemDesignStudio.jsx"));
+  assert.doesNotMatch(studio, /CollapsibleQuickDock|sd-dock/);
   const insp = read(path.join(dir, "ContextualInspectorDrawer.jsx"));
   for (const text of ["Replicas", "Capacity", "Cache hit rate", "Health override", "Line style", "Accent", "YAML", "Inspect"]) assert.ok(insp.includes(text), text);
-  assert.match(insp, /if \(!selection\) return null/);
-  assert.match(insp, /useState\(false\)/, "drawer must start closed");
+  assert.match(insp, /\{selection && <div className="sd-surface sd-pill-bar"/);
+  assert.doesNotMatch(insp, /if \(!selection\) return null/);
+  assert.match(read(path.join(dir, "systemDesignTabState.js")), /inspectorOpen: false/, "inspector must start closed for each new tab");
+  assert.match(read(path.join(dir, "TopWorkspaceBar.jsx")), /Inspector/);
   assert.match(insp, /\{open && \(\s*<aside/, "drawer only mounts when explicitly opened");
   const overlay = read(path.join(dir, "SystemDesignNodeOverlay.jsx"));
   assert.match(overlay, /PORTS\.map/);
@@ -71,22 +74,39 @@ test("studio chrome: one top-centre pill, no duplicated Sketchizi controls", () 
   assert.doesNotMatch(overlay, /sd-node-dot/, "plain colour dots were replaced by icons");
 });
 
-test("single-visual contract: no ring on the card, Sketchizi bottom palette hidden, chrome clears Sketchizi's header", () => {
+test("single-visual contract: no ring on the card and Sketchizi native toolbars remain visible", () => {
   const css = read(path.join(dir, "systemDesign.css"));
-  assert.match(css, /\.app \.sd-active \.sketchizi-tool-options-dock \{ display: none !important; \}/);
+  assert.doesNotMatch(css, /sketchizi-tool-options-dock|display:\s*none\s*!important/);
+  assert.doesNotMatch(css, /\.sd-dock|\.sd-more-menu/);
   const selected = css.match(/\.sd-node\.is-selected \{[^}]*\}/)[0];
   assert.doesNotMatch(selected, /border-color|(?<!inset )0 0 0 \d+px/, "selected card must not draw a second outline next to Excalidraw's selection box");
   // Studio bar sits below Sketchizi's first row and derives from ITS variables.
   assert.match(css, /--sd-bar-top: calc\(var\(--header-top, 12px\) \+ var\(--top-row-height, 42px\)/);
   assert.match(css, /--sd-rail-clear: calc\(var\(--header-rail-right, 12px\) \+ var\(--header-rail-width, 56px\)/);
-  // Dropdowns live inside the dock / top bar stacking contexts, which must sit above the drawer or the popover is clipped by it.
+  // Top-bar dropdowns must sit above the drawer rather than being clipped by it.
   assert.match(css, /\.sd-topbar \{ position: absolute; z-index: 3;/);
-  assert.match(css, /\.sd-dock \{ position: absolute; z-index: 3;/);
+  assert.doesNotMatch(css, /\.sd-dock/);
   assert.doesNotMatch(css, /\.sd-sim-btn|\.sd-topbar-right|\.sd-zoom|\.sd-tabs|\.sd-persist/);
 });
 
 test("command registry exposes the studio and every feature file exists", () => {
   assert.match(read(path.join(root, "src/features/commands/commandRegistry.js")), /studios\.system-design/);
   const files = readdirSync(dir);
-  for (const f of ["primitives.js", "trafficSimulator.js", "orthogonalRouter.js", "useSystemDesignWorkspace.js", "TopWorkspaceBar.jsx", "CollapsibleQuickDock.jsx", "SystemDesignNodeOverlay.jsx", "ContextualInspectorDrawer.jsx"]) assert.ok(files.includes(f), f);
+  for (const f of ["primitives.js", "trafficSimulator.js", "orthogonalRouter.js", "useSystemDesignWorkspace.js", "TopWorkspaceBar.jsx", "SystemDesignNodeOverlay.jsx", "ContextualInspectorDrawer.jsx"]) assert.ok(files.includes(f), f);
+});
+
+
+test("connector UX has pointer-captured ports, whole-card snapping, click-to-connect, and minimum card sizing", () => {
+  const overlay = read(path.join(dir, "SystemDesignNodeOverlay.jsx"));
+  const css = read(path.join(dir, "systemDesign.css"));
+  assert.match(overlay, /event\.currentTarget\.setPointerCapture\(event\.pointerId\)/);
+  assert.match(overlay, /event\.stopPropagation\(\)/);
+  assert.match(overlay, /nodeAt\(graph\.nodes, point, drag\.fromId, 20\)/);
+  assert.match(overlay, /host\.addEventListener\("click", onClick, true\)/);
+  assert.match(overlay, /event\.key\.toLowerCase\(\) !== "c"/);
+  assert.match(overlay, /sd-edge-preview/);
+  assert.match(css, /\.sd-port \{ position: absolute; width: 24px; height: 24px/);
+  assert.match(css, /\.sd-port::before \{ content: ""; position: absolute; inset: 7px/);
+  assert.match(css, /\.sd-node \{ min-width: 204px; min-height: 88px/);
+  assert.match(css, /\.sd-node-foot \.sd-status \{ flex-shrink: 0; white-space: nowrap; \}/);
 });

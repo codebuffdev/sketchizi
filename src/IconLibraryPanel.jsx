@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { PRIMITIVES } from "./features/system-design/primitives.js";
+import { PrimitiveIcon } from "./features/system-design/PrimitiveIcon.jsx";
 import {
   SEARCH_STORAGE_KEY,
   VIEW_MODE_STORAGE_KEY,
@@ -142,6 +144,7 @@ export default function IconLibraryPanel({
   toggleFavorite,
   remoteError,
   onClose,
+  initialSource = "all",
 }) {
   const [activeSource, setActiveSource] = useState("all");
   const [viewMode, setViewMode] = useState(loadStoredViewMode);
@@ -155,9 +158,39 @@ export default function IconLibraryPanel({
     }
   });
 
+  const systemDesignIcons = useMemo(() => PRIMITIVES.map((primitive) => ({
+    id: primitive.kind,
+    kind: primitive.kind,
+    name: primitive.label,
+    subtitle: primitive.subtitle,
+    category: "System Design",
+    source: "system-design",
+    tags: [primitive.category, primitive.shortLabel, primitive.defaultProtocol, primitive.image],
+    searchAliases: ({
+      redis: ["redis", "cache", "in-memory"],
+      queue: ["kafka", "message queue", "broker"],
+      sql: ["postgres", "postgresql", "mysql", "database", "db"],
+      "load-balancer": ["lb", "balancer"],
+      "api-gateway": ["gateway", "api"],
+      "nosql": ["mongo", "mongodb", "document database"],
+      "object-storage": ["s3", "bucket", "storage"],
+      dns: ["route53", "route 53"],
+      client: ["web", "mobile", "browser"],
+      observability: ["metrics", "logging", "prometheus", "logs"],
+      "read-replica": ["read replica", "postgres replica", "read scaling"],
+      pubsub: ["pub/sub", "event bus", "fan out", "topics"],
+      "stream-processor": ["stream processing", "flink", "kafka streams", "real time aggregation"],
+      warehouse: ["olap", "clickhouse", "bigquery", "analytics database"],
+      "websocket-gateway": ["websocket", "web sockets", "live push", "realtime gateway"],
+      "external-api": ["third party api", "external dependency", "stripe", "llm", "rate limit"],
+    }[primitive.kind] || []),
+    // The SVG preview is rendered by PrimitiveIcon; this data URI keeps the
+    // shared icon-library search/favorites/recent pipeline source-agnostic.
+    src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3C/svg%3E",
+  })), []);
   const allIcons = useMemo(
-    () => mixAllIcons([eraserCatalog, awsIcons, kubernetesIcons, mindMapIcons, umlIcons, networkingIcons]),
-    [eraserCatalog, awsIcons, kubernetesIcons, mindMapIcons, umlIcons, networkingIcons],
+    () => mixAllIcons([eraserCatalog, awsIcons, kubernetesIcons, mindMapIcons, umlIcons, networkingIcons, systemDesignIcons]),
+    [eraserCatalog, awsIcons, kubernetesIcons, mindMapIcons, umlIcons, networkingIcons, systemDesignIcons],
   );
 
   useEffect(() => {
@@ -224,6 +257,10 @@ export default function IconLibraryPanel({
       setActiveCategory("Favorites");
       setActiveKubernetesCategory("All");
       setActiveAwsCategory("All");
+    } else if (source === "system-design") {
+      setActiveCategory("System Design");
+      setActiveKubernetesCategory("All");
+      setActiveAwsCategory("All");
     } else if (source === "recent") {
       setActiveCategory("Recently Used");
       setActiveKubernetesCategory("All");
@@ -241,6 +278,10 @@ export default function IconLibraryPanel({
 
   const displayedIcons = useMemo(() => {
     const query = search.trim();
+    if (activeSource === "system-design") {
+      const normalizedQuery = search.trim().toLowerCase();
+      return normalizedQuery ? systemDesignIcons.filter((icon) => [icon.name, icon.id, ...icon.tags, ...icon.searchAliases].join(" ").toLowerCase().includes(normalizedQuery)) : systemDesignIcons;
+    }
     if (activeSource === "all" || activeSource === "eraser" || activeSource === "favorites" || activeSource === "recent") {
       return resolveDisplayedIcons({
         activeSource,
@@ -294,11 +335,13 @@ export default function IconLibraryPanel({
     networkingIcons,
     umlIcons,
     mindMapIcons,
+    systemDesignIcons,
   ]);
 
   const shownIcons = displayedIcons.slice(0, iconDisplayLimit);
 
   const sourceTabs = [
+    { id: "system-design", label: "System Design (22)" },
     { id: "aws", label: "AWS" },
     { id: "networking", label: "Networking" },
     { id: "kubernetes", label: "Kubernetes" },
@@ -307,6 +350,9 @@ export default function IconLibraryPanel({
     { id: "eraser", label: "Essentials" },
     { id: "all", label: "All" },
   ];
+  useEffect(() => {
+    if (initialSource && initialSource !== activeSource) chooseSource(initialSource);
+  }, [initialSource]);
 
   const collectionTitle = getActiveCollectionTitle(activeSource);
   return (
@@ -419,6 +465,14 @@ export default function IconLibraryPanel({
           </button>
           <button
             type="button"
+            className={`sk-scope-tab ${activeSource === "system-design" ? "is-active" : ""}`}
+            aria-pressed={activeSource === "system-design"}
+            onClick={() => chooseSource("system-design")}
+          >
+            System Design (22)
+          </button>
+          <button
+            type="button"
             className={`sk-scope-tab ${activeSource === "favorites" ? "is-active" : ""}`}
             aria-pressed={activeSource === "favorites"}
             onClick={() => chooseSource("favorites")}
@@ -460,9 +514,10 @@ export default function IconLibraryPanel({
               if (source === "kubernetes") setActiveKubernetesCategory(category);
             }}
           >
+            <option value="system-design">System Design (22)</option>
             <option value="all">All icons ({allIcons.length.toLocaleString()})</option>
             <optgroup label="Collections">
-              {sourceTabs.filter((tab) => tab.id !== "all").map((tab) => (
+              {sourceTabs.filter((tab) => tab.id !== "all" && tab.id !== "system-design").map((tab) => (
                 <option key={tab.id} value={tab.id}>{tab.label}</option>
               ))}
             </optgroup>
@@ -578,7 +633,7 @@ export default function IconLibraryPanel({
                       aria-pressed={isSelected}
                     >
                       <span className="icon-preview library-icon-preview sk-icon-stage">
-                        <img src={icon.src} alt="" draggable={false} loading="lazy" />
+                        {icon.source === "system-design" ? <PrimitiveIcon kind={icon.kind} size={30} /> : <img src={icon.src} alt="" draggable={false} loading="lazy" />}
                       </span>
                       <span className="library-icon-card-content sk-icon-card-text">
                         <span className="icon-name sk-icon-name">

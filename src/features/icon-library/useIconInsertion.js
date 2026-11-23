@@ -2,12 +2,34 @@ import { useEffect, useRef, useState } from "react";
 import { createIconInserter, createStarterMindMap } from "./iconInsertionService";
 import { logger } from "../../logging/logger";
 
-export function useIconInsertion({ apiRef, gridEnabled, gridSize, markRecentlyUsed, canEdit = true }) {
+export function useIconInsertion({ apiRef, gridEnabled, gridSize, markRecentlyUsed, canEdit = true, systemDesignRef }) {
   const iconPointerDragRef = useRef(null);
   const iconMouseDragCleanupRef = useRef(null);
   const suppressIconClickRef = useRef(false);
   const [draggingIcon, setDraggingIcon] = useState(null);
   const addIconToCanvas = createIconInserter({ apiRef, gridEnabled, gridSize, markRecentlyUsed });
+  const insertIcon = (icon, clientX, clientY, options = {}) => {
+    if (icon?.source === "system-design") {
+      const workspace = systemDesignRef?.current;
+      const canvas = document.querySelector(".excalidraw");
+      const rect = canvas?.getBoundingClientRect();
+      if (!workspace?.actions?.addNode || !rect) return null;
+      let id;
+      if (Number.isFinite(clientX) && Number.isFinite(clientY)) {
+        const view = apiRef.current?.getAppState?.() || {};
+        const zoom = view.zoom?.value || 1;
+        id = workspace.actions.addNode(icon.kind, {
+          x: (clientX - rect.left) / zoom - (view.scrollX || 0),
+          y: (clientY - rect.top) / zoom - (view.scrollY || 0),
+        });
+      } else {
+        id = workspace.actions.addNode(icon.kind);
+      }
+      if (id) markRecentlyUsed?.(icon);
+      return id;
+    }
+    return addIconToCanvas(icon, clientX, clientY, options);
+  };
   const createMindMap = () => createStarterMindMap(apiRef);
 
 const handleDragStart = (event, icon) => {
@@ -88,7 +110,7 @@ const handleDragStart = (event, icon) => {
           upEvent.clientY <= rect.bottom;
 
         if (insideCanvas) {
-          addIconToCanvas(icon, upEvent.clientX, upEvent.clientY, { exact: true });
+          insertIcon(icon, upEvent.clientX, upEvent.clientY, { exact: true });
         }
 
         window.setTimeout(() => {
@@ -159,7 +181,7 @@ const handleDragStart = (event, icon) => {
           finishEvent.clientY >= rect.top &&
           finishEvent.clientY <= rect.bottom;
         if (insideCanvas) {
-          addIconToCanvas(current.icon, finishEvent.clientX, finishEvent.clientY, { exact: true });
+          insertIcon(current.icon, finishEvent.clientX, finishEvent.clientY, { exact: true });
         }
       }
 
@@ -245,7 +267,7 @@ const handleDragStart = (event, icon) => {
     const canvas = document.querySelector(".excalidraw");
     const rect = canvas?.getBoundingClientRect();
     if (!rect) return;
-    addIconToCanvas(icon, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    if (icon?.source === "system-design") insertIcon(icon); else addIconToCanvas(icon, rect.left + rect.width / 2, rect.top + rect.height / 2);
   };
 
   const handleDragOver = (event) => {
@@ -269,12 +291,12 @@ const handleDragStart = (event, icon) => {
     event.stopPropagation();
 
     try {
-      addIconToCanvas(JSON.parse(raw), event.clientX, event.clientY);
+      insertIcon(JSON.parse(raw), event.clientX, event.clientY);
     } catch (error) {
       logger.error("Could not add icon", error, { category: "canvas", operation: "icon-drop" });
     }
   };
   useEffect(() => () => iconMouseDragCleanupRef.current?.(), []);
 
-  return { draggingIcon, addIconToCanvas, createStarterMindMap: createMindMap, handleDragStart, handleIconMouseDown, handleIconPointerDown, handleIconClick, handleIconInsertAtCenter, handleDragOver, handleDrop };
+  return { draggingIcon, addIconToCanvas, insertIcon, createStarterMindMap: createMindMap, handleDragStart, handleIconMouseDown, handleIconPointerDown, handleIconClick, handleIconInsertAtCenter, handleDragOver, handleDrop };
 }

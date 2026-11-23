@@ -83,6 +83,7 @@ import "./styles/smart-studio.css";
 
 function App() {
   const iconCatalog = useIconCatalog();
+  const [iconLibraryInitialSource, setIconLibraryInitialSource] = useState("all");
   const { activeCategory, setActiveCategory, activeAwsCategory, setActiveAwsCategory, activeKubernetesCategory, setActiveKubernetesCategory, search, setSearch, eraserCatalog, eraserSyncing, eraserSyncProgress, eraserSyncError, eraserCachedCount, remoteLoading, remoteError, favorites, recentIcons, searchRef, iconListRef, iconDisplayLimit, setIconDisplayLimit, visibleIcons, networkingIcons, syncEraserLibrary, isFavorite, toggleFavorite, markRecentlyUsed } = iconCatalog;
   const [connectionMode, setConnectionMode] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
@@ -378,8 +379,11 @@ function App() {
   // Late-bind the file-manager values the persistence hook reads (see useDocumentPersistence).
   fileManagerBridgeRef.current = { currentFileRef, getCurrentFileSceneSignature };
 
+  const systemDesignRef = useRef(null);
+
   const {
     persistCanvasTabs,
+    persistSystemDesignState,
     updateActiveCanvasStartDate,
     updateCanvasActivity,
     openTodoTab,
@@ -456,6 +460,7 @@ function App() {
     skipDraftPromptRef,
     startupChoiceMadeRef,
     toolStyles,
+    systemDesignRef,
   });
 
   const renameActiveDocument = useCallback(async (name) => {
@@ -516,7 +521,7 @@ function App() {
   const collaborationCanEdit = (!collaborationRoom && !collaborationEndedSession) || collaborationEndedSession?.returned === true || (Boolean(collaborationRoom) && collaborationStatus === "connected" && collaborationHostRecovery?.state !== "recovering" && (collaborationPermission === "host" || collaborationPermission === "editor"));
   const moreTools = useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, canEdit: collaborationCanEdit });
   const { anchor: moreToolsAnchor, position: positionMoreToolsButton, activate: activateMoreTool } = moreTools;
-  const iconInsertion = useIconInsertion({ apiRef, gridEnabled, gridSize, markRecentlyUsed, canEdit: collaborationCanEdit });
+  const iconInsertion = useIconInsertion({ apiRef, gridEnabled, gridSize, markRecentlyUsed, canEdit: collaborationCanEdit, systemDesignRef });
   const { draggingIcon, handleDragStart, handleIconMouseDown, handleIconPointerDown, handleIconClick, handleDragOver, handleDrop, createStarterMindMap } = iconInsertion;
 
   const canvasTools = useCanvasTools({ apiRef, gridEnabled, setGridEnabled, gridSize, setGridSize, connectionMode, setConnectionMode, selectedConnector, setSelectedConnector, selectedElements, canEdit: collaborationCanEdit, toolStylePresets: toolStyles });
@@ -650,7 +655,17 @@ function App() {
     const rect = canvas.getBoundingClientRect();
     iconInsertion.addIconToCanvas(icon, rect.left + rect.width / 2, rect.top + rect.height / 2);
   };
-  const systemDesign = useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize, canEdit: collaborationCanEdit });
+  const systemDesign = useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize, canEdit: collaborationCanEdit, canvasTabsRef, activeCanvasIdRef, persistSystemDesignState });
+  systemDesignRef.current = systemDesign;
+  const openSystemDesignIconLibrary = () => {
+    // Force a fresh source transition even if the library was already opened on System Design.
+    setIconLibraryInitialSource("all");
+    openPanel("icon-library");
+    requestAnimationFrame(() => {
+      setIconLibraryInitialSource("system-design");
+      searchRef.current?.focus();
+    });
+  };
   const commands = createSketchiziCommandRegistry({
     apiRef,
     canEdit: collaborationCanEdit,
@@ -746,8 +761,12 @@ function App() {
       openTodoTab();
       return;
     }
+    if (mode === "system-design") {
+      systemDesign.open();
+      return;
+    }
     window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode } }));
-  }, [createCanvasTab, openTodoTab]);
+  }, [createCanvasTab, openTodoTab, systemDesign.open]);
 
   // "Open Local File" from the welcome screen: make sure a canvas exists, then
   // hand off to the normal file-open flow once its editor is mounted.
@@ -766,7 +785,7 @@ function App() {
   useEffect(() => {
     const handleWorkspaceCanvasChoice = (event) => {
       const mode = event.detail?.mode;
-      if (mode === "infinite" || mode === "pages" || mode === "todo") chooseStartupCanvas(mode);
+      if (mode === "infinite" || mode === "pages" || mode === "todo" || mode === "system-design") chooseStartupCanvas(mode);
     };
     window.addEventListener("sketchizi:workspace-canvas-choice", handleWorkspaceCanvasChoice);
     return () => window.removeEventListener("sketchizi:workspace-canvas-choice", handleWorkspaceCanvasChoice);
@@ -1920,7 +1939,7 @@ function App() {
           <aside className={`desktop-resources-region sk-icon-library-portal-host ${libraryPresence.present ? "mobile-resource-open" : "mobile-resource-closed"}`} data-edge="left" data-edge-motion={libraryPresence.phase} aria-label="Resources">
           {collaborationCanEdit && (
             <IconLibraryPanel
-              searchRef={searchRef} search={search} setSearch={setSearch}
+              searchRef={searchRef} search={search} setSearch={setSearch} initialSource={iconLibraryInitialSource}
               activeCategory={activeCategory} setActiveCategory={setActiveCategory} activeAwsCategory={activeAwsCategory} setActiveAwsCategory={setActiveAwsCategory} activeKubernetesCategory={activeKubernetesCategory} setActiveKubernetesCategory={setActiveKubernetesCategory}
               favorites={favorites} recentIcons={recentIcons} eraserCatalog={eraserCatalog}
               eraserSyncing={eraserSyncing} eraserSyncProgress={eraserSyncProgress}
@@ -1995,7 +2014,7 @@ function App() {
           )}
           </div>
           {systemDesign.enabled && <Suspense fallback={null}>
-            <SystemDesignStudio workspace={systemDesign} saveStatus={saveStatus} canvasTabs={canvasTabs} activeCanvasId={activeCanvasId} onSelectTab={selectWorkspaceTab} onCreateTab={createCanvasTab} isDarkTheme={isDarkTheme} />
+            <SystemDesignStudio workspace={systemDesign} onOpenIconLibrary={openSystemDesignIconLibrary} saveStatus={saveStatus} canvasTabs={canvasTabs} activeCanvasId={activeCanvasId} onSelectTab={selectWorkspaceTab} onCreateTab={createCanvasTab} isDarkTheme={isDarkTheme} />
           </Suspense>}
           {activeWorkspaceTabId.startsWith("todo:") && (
             <>
@@ -2094,6 +2113,10 @@ function App() {
               <button type="button" className="startup-canvas-option" onClick={() => chooseStartupCanvas("todo")}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3"/></svg>
                 <span>Todo</span>
+              </button>
+              <button type="button" className="startup-canvas-option startup-canvas-option-system-design" onClick={() => chooseStartupCanvas("system-design")}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M6 16v-4h12v4"/></svg>
+                <span>System Design</span>
               </button>
             </div>
             {closedTabs.length > 0 && (

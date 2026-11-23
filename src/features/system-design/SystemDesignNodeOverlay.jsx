@@ -4,7 +4,7 @@ import { nodeFacets, serviceNames } from "./yamlPreview.js";
 import { formatRps, packetCountForRps } from "./trafficSimulator.js";
 import { PrimitiveIcon } from "./PrimitiveIcon.jsx";
 
-const STATUS_LABEL = { healthy: "Healthy", elevated: "Elevated", overloaded: "Overloaded", down: "Down" };
+const STATUS_LABEL = { healthy: "Healthy", elevated: "Elevated", overloaded: "Overloaded", lagging: "Lagging", down: "Down" };
 const stop = (event) => event.stopPropagation();
 
 // `margin` (scene px) widens the hit area so ports, which straddle the card edge, stay reachable: the pointer
@@ -16,7 +16,7 @@ function nodeAt(nodes, point, excludeId, margin = 0) {
   }
   return null;
 }
-const PORT_REACH = 14;
+const PORT_REACH = 20;
 const PORT_SNAP = 28; // a drop this close to a port means "that port"
 
 /**
@@ -52,6 +52,9 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
   const [hoverId, setHoverId] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [drag, setDrag] = useState(null); // { fromId, fromPort, point }
+  const [armedConnect, setArmedConnect] = useState(null);
+  const armedConnectRef = useRef(null);
+  const armConnect = (next) => { armedConnectRef.current = next; setArmedConnect(next); };
   const nodesRef = useRef(graph.nodes);
   nodesRef.current = graph.nodes;
   const viewRef = useRef({ scrollX, scrollY, zoom });
@@ -88,16 +91,28 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
       event.preventDefault();
       setEditingId(hit.id);
     };
+    const onClick = (event) => {
+      const armed = armedConnectRef.current;
+      if (!canEdit || !armed) return;
+      const target = nodeAt(nodesRef.current, toScene(event.clientX, event.clientY), armed.nodeId, 20);
+      if (!target) return;
+      event.preventDefault();
+      event.stopPropagation();
+      actions.connect(armed.nodeId, target.id);
+      armConnect(null);
+    };
     host.addEventListener("pointermove", onMove);
     host.addEventListener("pointerleave", onLeave);
     host.addEventListener("dblclick", onDouble, true);
+    host.addEventListener("click", onClick, true);
     return () => {
       if (frame) cancelAnimationFrame(frame);
       host.removeEventListener("pointermove", onMove);
       host.removeEventListener("pointerleave", onLeave);
       host.removeEventListener("dblclick", onDouble, true);
+      host.removeEventListener("click", onClick, true);
     };
-  }, [getHost, toScene, canEdit]);
+  }, [getHost, toScene, canEdit, actions]);
 
   const byId = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph.nodes]);
   const names = useMemo(() => serviceNames(graph.nodes), [graph.nodes]);
@@ -110,7 +125,16 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
     if (!canEdit) return;
     event.stopPropagation();
     event.preventDefault();
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+    const armed = armedConnectRef.current;
+    if (armed && armed.nodeId !== node.id) {
+      const source = byId.get(armed.nodeId);
+      const optimal = source ? choosePorts(source, node) : null;
+      actions.connect(armed.nodeId, node.id, { fromPort: armed.port || optimal?.fromPort || "right", toPort: port });
+      armConnect(null);
+      setDrag(null);
+      return;
+    }
+    try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* pointer may already be cancelled */ }
     setDrag({ fromId: node.id, fromPort: port, point: toScene(event.clientX, event.clientY) });
   };
   const moveConnect = (event) => { if (drag) setDrag({ ...drag, point: toScene(event.clientX, event.clientY) }); };
@@ -118,14 +142,42 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
   const endConnect = (event) => {
     if (!drag) return;
     const point = toScene(event.clientX, event.clientY);
-    const target = nodeAt(graph.nodes, point, drag.fromId, 10);
+    const target = nodeAt(graph.nodes, point, drag.fromId, 20);
     const source = byId.get(drag.fromId);
-    if (target && source) actions.connect(drag.fromId, target.id, { fromPort: drag.fromPort, toPort: dropPortFor(source, target, point) });
+    if (target && source) {
+      actions.connect(drag.fromId, target.id, { fromPort: drag.fromPort, toPort: dropPortFor(source, target, point) });
+      armConnect(null);
+    } else if (source) {
+      const sourcePort = getPortPoint(source, drag.fromPort);
+      if (Math.hypot(sourcePort.x - point.x, sourcePort.y - point.y) <= 18) armConnect({ nodeId: source.id, port: drag.fromPort });
+    }
     setDrag(null);
   };
   const dragFrom = drag ? byId.get(drag.fromId) : null;
-  const dropTarget = drag ? nodeAt(graph.nodes, drag.point, drag.fromId, 10) : null;
+  const dropTarget = drag ? nodeAt(graph.nodes, drag.point, drag.fromId, 20) : null;
   const dropPort = dropTarget && dragFrom ? dropPortFor(dragFrom, dropTarget, drag.point) : null;
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (!canEdit || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey
+        || event.key.toLowerCase() !== "c"
+        || event.target?.closest?.("input, textarea, select, [contenteditable='true'], [data-sketchizi-inline-editor]")) return;
+      const selectedNodes = selectedIds.filter((id) => byId.has(id));
+      if (selectedNodes.length >= 2) {
+        event.preventDefault(); event.stopPropagation();
+        actions.connect(selectedNodes[0], selectedNodes[1]); armConnect(null);
+      } else {
+        // Selection is authoritative; when nothing is selected, the hovered card
+        // is a convenient fallback for keyboard-first connect workflows.
+        const sourceId = selectedNodes[0] || (selectedIds.length === 0 ? hoverId : null);
+        if (!sourceId) return;
+        event.preventDefault(); event.stopPropagation();
+        armConnect({ nodeId: sourceId, port: null });
+      }
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [canEdit, selectedIds, byId, hoverId, actions]);
 
   const layerStyle = { transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom}) translate(${scrollX}px, ${scrollY}px)` };
 
@@ -141,13 +193,13 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           {routes.map(({ edge, points }) => {
             const live = simulation?.edges[edge.id];
             const targetStatus = simulation?.nodes[edge.to]?.status;
-            const tone = !simulate ? "idle" : !live || live.rps <= 0 ? "idle" : targetStatus === "overloaded" || targetStatus === "down" ? "hot" : targetStatus === "elevated" ? "warm" : "ok";
+            const tone = !simulate ? "idle" : (live?.serviceUnavailable || live?.replicaFailed || live?.cycleBlocked) ? "hot" : live?.consumerDown ? "warm" : !live || live.rps <= 0 ? "idle" : targetStatus === "overloaded" || targetStatus === "down" ? "hot" : targetStatus === "elevated" ? "warm" : "ok";
             const d = roundedPath(points);
             const selected = selectedIds.includes(edge.id);
             const packets = simulate && live ? packetCountForRps(live.rps) : 0;
             const duration = Math.max(1.2, 3.4 - Math.log10((live?.rps || 1) + 1) * 0.5);
             return (
-              <g key={edge.id} className={`sd-edge is-${tone}${selected ? " is-selected" : ""}${edge.lineStyle === "dashed" ? " is-dashed" : ""}`}>
+              <g key={edge.id} className={`sd-edge is-${tone}${selected ? " is-selected" : ""}${(live?.serviceUnavailable || live?.replicaFailed || live?.consumerDown || live?.cycleBlocked) || edge.lineStyle === "dashed" || (simulate && ["elevated", "overloaded", "down"].includes(targetStatus)) ? " is-dashed" : ""}`}>
                 <path id={`sd-path-${edge.id}`} d={d} fill="none" markerEnd="url(#sd-arrow)" />
                 {packets > 0 && Array.from({ length: packets }, (_, i) => (
                   <circle key={i} r="3.6" className="sd-packet">
@@ -159,7 +211,10 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           })}
           {drag && dragFrom && (() => {
             const cursor = { x: drag.point.x, y: drag.point.y, width: 0, height: 0 };
-            return <path className="sd-edge-preview" fill="none" d={roundedPath(routeOrthogonal(dragFrom, drag.fromPort, cursor, choosePorts(dragFrom, cursor).toPort))} />;
+            const previewTarget = dropTarget || cursor;
+            const previewPort = dropTarget ? dropPort : choosePorts(dragFrom, cursor).toPort;
+            return <path className={`sd-edge-preview${dropTarget ? " is-snapped" : ""}`} fill="none"
+              d={roundedPath(routeOrthogonal(dragFrom, drag.fromPort, previewTarget, previewPort))} />;
           })()}
         </svg>
 
@@ -167,10 +222,12 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           const mid = pointAlong(points, 0.5);
           const live = simulate ? simulation?.edges[edge.id] : null;
           const flowing = Boolean(live && live.rps > 0);
-          const tone = !live ? "" : !flowing ? " is-idle" : ` is-${simulation?.nodes[edge.to]?.status === "overloaded" || simulation?.nodes[edge.to]?.status === "down" ? "hot" : simulation?.nodes[edge.to]?.status === "elevated" ? "warm" : "ok"}`;
+          const healthFailed = Boolean(live?.serviceUnavailable || live?.replicaFailed || live?.cycleBlocked);
+          const tone = !live ? "" : healthFailed ? " is-hot" : !flowing ? " is-idle" : ` is-${simulation?.nodes[edge.to]?.status === "overloaded" || simulation?.nodes[edge.to]?.status === "down" ? "hot" : simulation?.nodes[edge.to]?.status === "elevated" ? "warm" : "ok"}`;
+          if (!flowing && !healthFailed) return null;
           return (
-            <span key={edge.id} className={`sd-badge sd-mono${live ? " is-live" : ""}${tone}`} style={{ left: mid.x, top: mid.y }}>
-              {edge.protocol}{live ? <> · <b>{flowing ? `${formatRps(live.rps)}/s` : "idle"}</b></> : null}
+            <span key={edge.id} className={`sd-badge sd-mono is-live${tone}${healthFailed ? " is-health-failed" : live.consumerDown ? " is-buffered" : ""}`} style={{ left: mid.x, top: mid.y }}>
+              {live.serviceUnavailable ? <>0/s · 503 Dropped</> : live.replicaFailed ? <>0/s · Replica Unhealthy</> : live.consumerDown ? <>Buffered · Consumer Down</> : live.cycleBlocked ? <>0/s · Cycle Blocked</> : <>{edge.protocol} · <b>{formatRps(live.rps)}/s</b>{live.retryAmplification && <> · Retries · +25%</>}{live.cacheHitRate > 0 && <> · {Math.round(live.cacheHitRate * 100)}% cached</>}</>}
             </span>
           );
         })}
@@ -179,11 +236,11 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           const telemetry = simulation?.nodes[node.id];
           const selected = selectedIds.includes(node.id);
           const isDropTarget = dropTarget?.id === node.id;
-          const showPorts = canEdit && (selected || hoverId === node.id || drag?.fromId === node.id || isDropTarget);
+          const showPorts = canEdit && (selected || hoverId === node.id || drag?.fromId === node.id || armedConnect?.nodeId === node.id || isDropTarget);
           const facets = nodeFacets(node, mode, names);
           const status = simulate && telemetry ? telemetry.status : node.health === "down" ? "down" : node.health === "degraded" ? "elevated" : "healthy";
           return (
-            <div key={node.id} className={`sd-node is-${node.accent} s-${status}${selected ? " is-selected" : ""}${isDropTarget ? " is-drop-target" : ""}`}
+            <div key={node.id} className={`sd-node is-${node.accent} s-${status}${selected ? " is-selected" : ""}${isDropTarget ? " is-drop-target" : ""}${armedConnect?.nodeId === node.id ? " is-connect-armed" : ""}`}
               style={{ left: node.x, top: node.y, width: node.width, height: node.height }} data-node-id={node.id} data-kind={node.kind}>
               <div className="sd-node-head">
                 <PrimitiveIcon kind={node.kind} accent={node.accent} className="sd-node-icon" />
@@ -199,6 +256,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
                     <>
                       <span className="sd-pill sd-mono" title="Incoming requests per second">RPS {formatRps(telemetry.incomingRps)}</span>
                       <span className="sd-pill sd-mono" title="p95 latency">{telemetry.p95Ms == null ? "p95 —" : `p95 ${telemetry.p95Ms}ms`}</span>
+                      <span className="sd-pill sd-mono" title="Utilization">{"UTIL " + (Number.isFinite(telemetry.utilization) ? Math.round(telemetry.utilization * 100) : "∞") + "%"}</span>
                       <span className={`sd-status sd-mono s-${telemetry.status}`}>{STATUS_LABEL[telemetry.status]}</span>
                     </>
                   ) : (
@@ -226,7 +284,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
               )}
               {PORTS.map((port) => (
                 <button key={port} type="button" tabIndex={-1}
-                  className={`sd-port is-${port}${showPorts ? " is-visible" : ""}${isDropTarget && dropPort === port ? " is-target" : ""}`}
+                  className={`sd-port is-${port}${showPorts ? " is-visible" : ""}${isDropTarget && dropPort === port ? " is-target" : ""}${armedConnect?.nodeId === node.id && (armedConnect.port === port || armedConnect.port == null) ? " is-armed" : ""}`}
                   aria-label={`${node.label} ${port} connector`}
                   onPointerEnter={() => setHoverId(node.id)}
                   onPointerDown={(e) => beginConnect(e, node, port)} onPointerMove={moveConnect} onPointerUp={endConnect} onPointerCancel={() => setDrag(null)} />

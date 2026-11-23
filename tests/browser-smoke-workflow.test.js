@@ -18,6 +18,21 @@ test("browser smoke covers configured AWS template creation and editor handoff",
   }
 });
 
+test("System Design browser smoke uses the shared Icon Library and top-bar actions", () => {
+  assert.match(script, /Open System Design components/);
+  assert.match(script, /System Design \(16\)/);
+  assert.match(script, /Add \$\{label\} to canvas/);
+  assert.match(script, /Auto-Layout components/);
+  assert.doesNotMatch(script, /primitiveDock|System design primitives/);
+  assert.match(script, /\.sd-dock/);
+});
+
+test("browser drawing smoke waits for the current active-tab status marker", async () => {
+  const drawingScript = await readFile(new URL("../scripts/browser-drawing-smoke.mjs", import.meta.url), "utf8");
+  assert.match(drawingScript, /\.canvas-tab\.is-active \.canvas-tab-status-dot/);
+  assert.doesNotMatch(drawingScript, /canvas-tab-status-dot\.is-ready/);
+});
+
 test("browser smoke covers blank canvas and narrow viewport overflow", () => {
   assert.match(script, /Start blank/);
   assert.match(script, /width: 390, height: 844/);
