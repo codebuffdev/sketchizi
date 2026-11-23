@@ -655,9 +655,13 @@ function App() {
   const systemDesign = useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize, canEdit: collaborationCanEdit });
   systemDesignRef.current = systemDesign;
   const openSystemDesignIconLibrary = () => {
-    setIconLibraryInitialSource("system-design");
+    // Force a fresh source transition even if the library was already opened on System Design.
+    setIconLibraryInitialSource("all");
     openPanel("icon-library");
-    requestAnimationFrame(() => searchRef.current?.focus());
+    requestAnimationFrame(() => {
+      setIconLibraryInitialSource("system-design");
+      searchRef.current?.focus();
+    });
   };
   const commands = createSketchiziCommandRegistry({
     apiRef,
