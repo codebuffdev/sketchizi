@@ -10,7 +10,7 @@ export function deriveArchitectureDiagnostic(nodes = [], simulation = null, edge
     const { node, metrics } = overloaded;
     const fix = node.kind === "sql" ? "Add Redis Cache or increase database replicas"
       : node.kind === "redis" ? "Increase cache replicas or capacity"
-        : "Increase replicas or capacity, or add a cache upstream";
+        : "increase replicas or capacity, or add a cache upstream";
     return {
       tone: "danger",
       message: `Bottleneck: ${node.label} at ${Number.isFinite(metrics.utilization) ? Math.round(metrics.utilization * 100) : "∞"}% load (${formatRps(metrics.incomingRps)} / ${formatRps((Number(node.replicas) || 0) * (Number(node.capacityPerReplica) || 0))} RPS, p95: ${metrics.p95Ms ?? "—"}ms) — ${fix}.`,
