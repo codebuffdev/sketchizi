@@ -170,7 +170,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           const tone = !live ? "" : !flowing ? " is-idle" : ` is-${simulation?.nodes[edge.to]?.status === "overloaded" || simulation?.nodes[edge.to]?.status === "down" ? "hot" : simulation?.nodes[edge.to]?.status === "elevated" ? "warm" : "ok"}`;
           return (
             <span key={edge.id} className={`sd-badge sd-mono${live ? " is-live" : ""}${tone}`} style={{ left: mid.x, top: mid.y }}>
-              {edge.protocol}{live ? <> · <b>{flowing ? `${formatRps(live.rps)}/s` : "idle"}</b></> : null}
+              {edge.protocol}{live ? <> · <b>{flowing ? `${formatRps(live.rps)}/s` : "idle"}</b>{live.cacheHitRate > 0 && <> · {Math.round(live.cacheHitRate * 100)}% cached</>}</> : null}
             </span>
           );
         })}
