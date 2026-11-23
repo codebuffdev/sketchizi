@@ -101,7 +101,7 @@
 .sd-badge b { font-weight: 700; color: var(--sd-text); }
 .sd-badge.is-live { font-size: 11px; padding: 2px 9px; border-color: rgba(5,150,105,.55); background: var(--sd-card); color: var(--sd-text); box-shadow: 0 1px 3px rgba(15,23,42,.14); }
 .sd-badge.is-ok b { color: var(--sd-emerald); } .sd-badge.is-warm { border-color: rgba(217,119,6,.65); } .sd-badge.is-warm b { color: var(--sd-amber); }
-.sd-badge.is-hot { border-color: rgba(220,38,38,.7); } .sd-badge.is-hot b { color: var(--sd-red); } .sd-badge.is-health-failed { color: var(--sd-red); border-color: rgba(220,38,38,.7); background: var(--sd-card); }
+.sd-badge.is-hot { border-color: rgba(220,38,38,.7); } .sd-badge.is-hot b { color: var(--sd-red); } .sd-badge.is-health-failed { color: var(--sd-red); border-color: rgba(220,38,38,.7); background: var(--sd-card); } .sd-badge.is-buffered { color: var(--sd-amber); border-color: rgba(217,119,6,.65); background: var(--sd-card); }
 .sd-badge.is-idle { border-color: var(--sd-border); color: var(--sd-text-2); box-shadow: none; } .sd-badge.is-idle b { color: var(--sd-text-2); font-weight: 500; }
 .sd-badge { position: absolute; transform: translate(-50%, -50%); padding: 1px 7px; border-radius: 999px; font-size: 10px; color: var(--sd-text-2); background: var(--sd-card); border: 1px solid var(--sd-border); white-space: nowrap; box-shadow: 0 1px 2px rgba(15,23,42,.08); }
 
