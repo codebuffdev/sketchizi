@@ -28,12 +28,13 @@ test("System Design icon click and drag create live nodes and record Recent usag
   assert.match(insertion, /insertIcon\(icon, event\.clientX, event\.clientY\)/);
 });
 
-test("+ More opens the shared Icon Library instead of a duplicate popover", () => {
-  const dock = read("features/system-design/CollapsibleQuickDock.jsx");
+test("top workspace bar opens System Design components and invokes auto-layout", () => {
+  const top = read("features/system-design/TopWorkspaceBar.jsx");
   const studio = read("features/system-design/SystemDesignStudio.jsx");
-  assert.match(dock, /onClick=\{onOpenIconLibrary\}/);
-  assert.doesNotMatch(dock, /morePrimitivesByCategory|sd-more-menu/);
-  assert.match(studio, /onOpenIconLibrary=\{onOpenIconLibrary\}/);
+  assert.match(top, /className="sd-components-trigger" onClick=\{onOpenIconLibrary\}/);
+  assert.match(top, /className="sd-auto-layout-trigger" onClick=\{onAutoLayout\}/);
+  assert.match(studio, /onOpenIconLibrary=\{onOpenIconLibrary\} onAutoLayout=\{actions\.autoLayout\}/);
+  assert.doesNotMatch(studio, /CollapsibleQuickDock/);
 });
 
 test("standard Excalidraw contextual dock remains available outside System Design selections", () => {
