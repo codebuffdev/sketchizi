@@ -109,3 +109,26 @@ test("collectSceneRepairs upgrades first-iteration elements, rotates nodes back,
   const applied = [a, b, ok, ghost].map((el) => ({ ...el, ...(repairs.get(el.id) || {}) }));
   assert.equal(collectSceneRepairs(applied).size, 0, "second pass finds nothing");
 });
+
+test("readGraph resolves Excalidraw arrow bindings even without stored from/to metadata", () => {
+  const a = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "client");
+  const b = asElement(createNodeSkeleton("microservice", { x: 400, y: 0 }), "orders");
+  const arrow = {
+    id: "bound-arrow", type: "arrow", x: 200, y: 42, points: [[0, 0], [200, 0]],
+    startBinding: { elementId: "client" }, endBinding: { elementId: "orders" },
+    customData: { [CUSTOM_KEY]: { role: "edge", protocol: "gRPC" } },
+  };
+  const graph = readGraph([a, b, arrow]);
+  assert.deepEqual([graph.edges[0].from, graph.edges[0].to], ["client", "orders"]);
+});
+
+test("readGraph falls back to arrow endpoint proximity within 24 scene pixels", () => {
+  const a = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "client");
+  const b = asElement(createNodeSkeleton("microservice", { x: 400, y: 0 }), "orders");
+  const arrow = {
+    id: "near-arrow", type: "arrow", x: 198, y: 42, points: [[0, 0], [202, 0]],
+    customData: { [CUSTOM_KEY]: { role: "edge", protocol: "HTTPS" } },
+  };
+  const graph = readGraph([a, b, arrow]);
+  assert.deepEqual([graph.edges[0].from, graph.edges[0].to], ["client", "orders"]);
+});
