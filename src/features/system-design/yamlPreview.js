@@ -17,7 +17,7 @@ export function slugify(label, fallback = "service") {
 export function serviceNames(nodes) {
   const seen = new Map();
   return new Map(nodes.map((node) => {
-    const base = slugify(node.label, node.kind);
+    const base = ({ sql: "postgres", queue: "kafka" })[node.kind] || slugify(node.label, node.kind);
     const count = (seen.get(base) || 0) + 1;
     seen.set(base, count);
     return [node.id, count === 1 ? base : `${base}-${count}`];
