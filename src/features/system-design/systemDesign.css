@@ -366,6 +366,7 @@
 }
 .sd-command-sim-caret {
   gap: 4px;
+  border-left: 1px solid rgba(6,95,70,.18);
   padding: 0 8px 0 4px;
   border-radius: 0 9px 9px 0;
 }
@@ -390,6 +391,7 @@
 }
 .sd-command-sim-main.is-on .sd-command-icon,
 .sd-command-sim-caret.is-on .sd-command-icon { stroke: #ffffff; }
+.sd-command-sim-caret.is-on { border-left-color: rgba(255,255,255,.32); }
 .sd-command-exit:hover:not(:disabled) {
   color: #991b1b;
   background: #fee2e2;
