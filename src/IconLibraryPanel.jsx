@@ -502,7 +502,6 @@ export default function IconLibraryPanel({
           >
             <option value="system-design">System Design (16)</option>
             <option value="all">All icons ({allIcons.length.toLocaleString()})</option>
-            <option value="system-design">System Design (16)</option>
             <optgroup label="Collections">
               {sourceTabs.filter((tab) => tab.id !== "all" && tab.id !== "system-design").map((tab) => (
                 <option key={tab.id} value={tab.id}>{tab.label}</option>
