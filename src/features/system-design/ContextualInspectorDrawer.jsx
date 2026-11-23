@@ -78,6 +78,18 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
           <span className="sd-pill-title">Connector</span>
         )}
 
+        {isNode && <>
+          <span className="sd-divider" aria-hidden="true" />
+          <div className="sd-replica-stepper" role="group" aria-label="Replicas">
+            <span>Replicas</span>
+            <button type="button" aria-label="Decrease replicas" disabled={!canEdit || item.replicas <= 0}
+              onClick={() => patchNode({ replicas: Math.max(0, item.replicas - 1) })}>−</button>
+            <b className="sd-mono">{item.replicas}</b>
+            <button type="button" aria-label="Increase replicas" disabled={!canEdit || item.replicas >= 500}
+              onClick={() => patchNode({ replicas: Math.min(500, item.replicas + 1) })}>+</button>
+          </div>
+        </>}
+
         <span className="sd-divider" aria-hidden="true" />
 
         {isNode ? (
@@ -97,18 +109,6 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
           </div>
           </>
         )}
-
-        {isNode && <>
-          <span className="sd-divider" aria-hidden="true" />
-          <div className="sd-replica-stepper" role="group" aria-label="Replicas">
-            <span>Replicas</span>
-            <button type="button" aria-label="Decrease replicas" disabled={!canEdit || item.replicas <= 0}
-              onClick={() => patchNode({ replicas: Math.max(0, item.replicas - 1) })}>−</button>
-            <b className="sd-mono">{item.replicas}</b>
-            <button type="button" aria-label="Increase replicas" disabled={!canEdit || item.replicas >= 500}
-              onClick={() => patchNode({ replicas: Math.min(500, item.replicas + 1) })}>+</button>
-          </div>
-        </>}
 
         <span className="sd-divider" aria-hidden="true" />
 
