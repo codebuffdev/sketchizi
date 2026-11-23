@@ -4,6 +4,7 @@ import { BLUEPRINTS } from "./blueprints.js";
 import { LOAD_PRESETS, formatRps } from "./trafficSimulator.js";
 import { Icon } from "./PrimitiveIcon.jsx";
 import { useDismiss } from "./useDismiss.js";
+import ExportStackModal from "./ExportStackModal.jsx";
 
 /**
  * One centered pill:  [ Blueprints ▾ ]  |  [ Canvas | K8s Studio | Compose ]  |  [ ▶ Simulate ▾ ]  |  ×
@@ -12,9 +13,10 @@ import { useDismiss } from "./useDismiss.js";
  * Everything lives in the top-centre on purpose. Sketchizi's own header already owns the top-left (documents, save
  * status) and the top-right/right rail (zoom, date, AI, account), so the studio adds nothing in either corner.
  */
-export default function TopWorkspaceBar({ mode, onModeChange, simulate, onSimulateChange, loadRps, onLoadChange, onLoadBlueprint, canEdit = true, onClose }) {
+export default function TopWorkspaceBar({ mode, onModeChange, simulate, onSimulateChange, loadRps, onLoadChange, onLoadBlueprint, canEdit = true, onClose, nodes = [], edges = [], diagnostic = null }) {
   const [loadOpen, setLoadOpen] = useState(false);
   const [blueprintsOpen, setBlueprintsOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const simRef = useRef(null);
   const blueprintsRef = useRef(null);
   const closeLoad = useCallback(() => setLoadOpen(false), []);
@@ -56,6 +58,13 @@ export default function TopWorkspaceBar({ mode, onModeChange, simulate, onSimula
 
         <span className="sd-divider" aria-hidden="true" />
 
+        <button type="button" className="sd-export-trigger" onClick={() => setExportOpen(true)} disabled={!nodes.length}
+          title={nodes.length ? "Compile the complete canvas graph" : "Add nodes to export a stack"}>
+          <Icon name="download" size={14} /><span>Export Stack</span><Icon name="chevronDown" size={13} />
+        </button>
+
+        <span className="sd-divider" aria-hidden="true" />
+
         <div className="sd-sim" ref={simRef}>
           <button type="button" className={`sd-sim-main${simulate ? " is-on" : ""}`} aria-pressed={simulate}
             onClick={() => onSimulateChange(!simulate)}
@@ -93,6 +102,8 @@ export default function TopWorkspaceBar({ mode, onModeChange, simulate, onSimula
           <Icon name="close" />
         </button>
       </div>
+      {diagnostic && <div className={`sd-diagnostic is-${diagnostic.tone}`} role="status" aria-live="polite">{diagnostic.message}</div>}
+      {exportOpen && <ExportStackModal nodes={nodes} edges={edges} onClose={() => setExportOpen(false)} />}
     </div>
   );
 }
