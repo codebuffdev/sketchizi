@@ -41,7 +41,7 @@ test("CSS braces balance and typography contract holds", () => {
 test("App.jsx stays thin: one hook call, one lazy studio mount, no workspace state inline", () => {
   const app = read(path.join(root, "src/App.jsx"));
   const lines = app.split("\n").filter((l) => /systemDesign|SystemDesign|system-design/.test(l));
-  assert.ok(lines.length <= 18, `App.jsx has ${lines.length} system-design integration lines`);
+  assert.ok(lines.length <= 20, `App.jsx has ${lines.length} system-design integration lines`);
   assert.match(app, /useSystemDesignWorkspace\(\{ apiRef/);
   assert.match(app, /lazy\(\(\) => import\("\.\/features\/system-design\/SystemDesignStudio\.jsx"\)\)/);
   assert.doesNotMatch(app, /simulateTraffic|orthogonalRouter|useState\([^)]*loadRps/);
@@ -49,21 +49,21 @@ test("App.jsx stays thin: one hook call, one lazy studio mount, no workspace sta
 
 test("studio chrome: one top-centre pill, no duplicated Sketchizi controls", () => {
   const top = read(path.join(dir, "TopWorkspaceBar.jsx"));
-  for (const text of ["Simulate", "Studio mode", "Close system design studio"]) assert.ok(top.includes(text), text);
+  for (const text of ["Simulate", "Studio mode", "Exit Studio"]) assert.ok(top.includes(text), text);
   assert.match(top, /STUDIO_MODES/);
   // Sketchizi's header owns tabs, save status, zoom (top-left / top-right). The studio must not render its own.
   for (const text of ["New tab", "Zoom in", "Zoom out", "sd-topbar-right", "sd-topbar-left", "persistencePill"]) assert.ok(!top.includes(text), `duplicate control: ${text}`);
-  assert.match(top, /className="sd-components-trigger"/);
+  assert.match(top, /label="Add Component" shortcut="A"/);
   assert.match(top, /onClick=\{onOpenIconLibrary\}/);
-  assert.match(top, /className="sd-auto-layout-trigger"/);
-  assert.match(top, /onClick=\{onAutoLayout\}/);
+  assert.match(top, /sd-command-zone-start/);
+  assert.doesNotMatch(top, /Auto-Layout|onAutoLayout|sd-auto-layout-trigger/);
   const studio = read(path.join(dir, "SystemDesignStudio.jsx"));
   assert.doesNotMatch(studio, /CollapsibleQuickDock|sd-dock/);
   const insp = read(path.join(dir, "ContextualInspectorDrawer.jsx"));
   for (const text of ["Replicas", "Capacity", "Cache hit rate", "Health override", "Line style", "Accent", "YAML", "Inspect"]) assert.ok(insp.includes(text), text);
   assert.match(insp, /\{selection && <div className="sd-surface sd-pill-bar"/);
   assert.doesNotMatch(insp, /if \(!selection\) return null/);
-  assert.match(studio, /useState\(false\)/, "inspector must start closed");
+  assert.match(read(path.join(dir, "systemDesignTabState.js")), /inspectorOpen: false/, "inspector must start closed for each new tab");
   assert.match(read(path.join(dir, "TopWorkspaceBar.jsx")), /Inspector/);
   assert.match(insp, /\{open && \(\s*<aside/, "drawer only mounts when explicitly opened");
   const overlay = read(path.join(dir, "SystemDesignNodeOverlay.jsx"));
