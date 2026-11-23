@@ -5,7 +5,7 @@ const quote = (value) => JSON.stringify(String(value ?? ""));
 function stackServiceNames(nodes) {
   const names = serviceNames(nodes);
   const used = new Set();
-  const canonical = { sql: "postgres", queue: "kafka" };
+  const canonical = { sql: "postgres", "read-replica": "postgres-read-replica", queue: "kafka", pubsub: "nats", warehouse: "clickhouse", "stream-processor": "flink", "websocket-gateway": "websocket-gateway", "external-api": "external-api-proxy" };
   for (const node of nodes) {
     const base = canonical[node.kind] || names.get(node.id);
     let name = base;
@@ -16,12 +16,18 @@ function stackServiceNames(nodes) {
   }
   return names;
 }
-const volumePath = (kind) => ({ sql: "/var/lib/postgresql/data", nosql: "/data/db", redis: "/data", queue: "/bitnami/kafka", search: "/usr/share/opensearch/data", "object-storage": "/data" }[kind] || null);
+const volumePath = (kind) => ({ sql: "/var/lib/postgresql/data", "read-replica": "/var/lib/postgresql/data", nosql: "/data/db", redis: "/data", queue: "/bitnami/kafka", pubsub: "/data", warehouse: "/var/lib/clickhouse", search: "/usr/share/opensearch/data", "object-storage": "/data" }[kind] || null);
 const dependencyEnv = (target, name) => {
   const port = Number(target.port) || ({ sql: 5432, redis: 6379, queue: 9092 }[target.kind] || 80);
   if (target.kind === "sql") return ["DATABASE_URL", `postgresql://${name}:5432/app`];
+  if (target.kind === "read-replica") return ["READ_REPLICA_URL", `postgresql://${name}:${port}/app`];
   if (target.kind === "redis") return ["REDIS_URL", `redis://${name}:${port}`];
   if (target.kind === "queue") return ["KAFKA_BROKERS", `${name}:${port}`];
+  if (target.kind === "pubsub") return ["NATS_URL", `nats://${name}:${port}`];
+  if (target.kind === "stream-processor") return ["STREAM_PROCESSOR_URL", `http://${name}:${port}`];
+  if (target.kind === "warehouse") return ["CLICKHOUSE_URL", `http://${name}:${port}`];
+  if (target.kind === "websocket-gateway") return ["WEBSOCKET_URL", `ws://${name}:${port}`];
+  if (target.kind === "external-api") return ["THIRD_PARTY_API_URL", `http://${name}:${port}`];
   if (target.kind === "nosql") return ["MONGODB_URL", `mongodb://${name}:${port}/app`];
   if (target.kind === "search") return ["SEARCH_URL", `http://${name}:${port}`];
   if (target.kind === "object-storage") return ["OBJECT_STORAGE_URL", `http://${name}:${port}`];
@@ -61,14 +67,17 @@ export function compileKubernetesStack(nodes = [], edges = []) {
         ...Object.entries(env).map(([key, value]) => `  ${key}: ${quote(value)}`),
       ].join("\n"));
     }
-    const stateful = ["sql", "nosql", "redis", "queue", "search", "object-storage"].includes(node.kind);
+    const stateful = ["sql", "read-replica", "nosql", "redis", "queue", "pubsub", "warehouse", "search", "object-storage"].includes(node.kind);
     const workload = stateful ? "StatefulSet" : "Deployment";
     docs.push([
       "apiVersion: apps/v1", `kind: ${workload}`, "metadata:", `  name: ${name}`, "  namespace: prod", "spec:",
       `  replicas: ${Math.max(1, Number(node.replicas) || 1)}`,
       ...(stateful ? [`  serviceName: ${name}`] : []),
       "  selector:", "    matchLabels:", `      app: ${name}`, "  template:", "    metadata:", "      labels:", `        app: ${name}`,
-      "    spec:", "      containers:", `        - name: ${name}`, `          image: ${node.image}`, "          ports:",
+      "    spec:", "      containers:", `        - name: ${name}`, `          image: ${node.image}`,
+      ...(node.kind === "pubsub" ? ["          args: [\"--jetstream\"]"] : []),
+      ...(node.kind === "stream-processor" ? ["          env:", "            - name: FLINK_PROPERTIES", "              value: \"jobmanager.rpc.address: flink\""] : []),
+      "          ports:",
       `            - name: app`, `              containerPort: ${Number(node.port) || 8080}`,
       "          resources:", "            requests:", "              cpu: 100m", "              memory: 128Mi", "            limits:", "              cpu: 1000m", "              memory: 512Mi",
       ...(stateful && volumePath(node.kind) ? ["          volumeMounts:", "            - name: data", `              mountPath: ${volumePath(node.kind)}`] : []),
@@ -81,6 +90,9 @@ export function compileKubernetesStack(nodes = [], edges = []) {
       `  type: ${serviceType}`, ...(stateful ? ["  clusterIP: None"] : []), "  selector:", `    app: ${name}`, "  ports:", "    - name: app", "      protocol: TCP",
       `      port: ${Number(node.port) || 8080}`, `      targetPort: ${Number(node.port) || 8080}`,
     ].join("\n"));
+    if (node.kind === "websocket-gateway") {
+      docs.push(["apiVersion: networking.k8s.io/v1", "kind: Ingress", "metadata:", `  name: ${name}-ws`, "  namespace: prod", "  annotations:", "    nginx.ingress.kubernetes.io/proxy-read-timeout: \"3600\"", "    nginx.ingress.kubernetes.io/proxy-send-timeout: \"3600\"", "spec:", "  rules:", "    - http:", "        paths:", "          - path: /ws", "            pathType: Prefix", "            backend:", "              service:", `                name: ${name}`, "                port:", `                  number: ${Number(node.port) || 8080}`].join("\n"));
+    }
     docs.push([
       "apiVersion: autoscaling/v2", "kind: HorizontalPodAutoscaler", "metadata:", `  name: ${name}`, "  namespace: prod",
       "spec:", `  scaleTargetRef:`, `    apiVersion: apps/v1`, `    kind: ${workload}`, `    name: ${name}`,
@@ -102,6 +114,9 @@ export function compileDockerCompose(nodes = [], edges = []) {
     lines.push(`  ${name}:`, `    image: ${quote(node.image)}`, "    restart: unless-stopped", "    ports:", `      - ${quote(`${Number(node.port) || 8080}:${Number(node.port) || 8080}`)}`);
     const env = {
       ...(node.kind === "sql" ? { POSTGRES_DB: "app", POSTGRES_USER: "postgres", POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before starting the stack}" } : {}),
+      ...(node.kind === "read-replica" ? { POSTGRES_REPLICATION_MODE: "replica", POSTGRES_PRIMARY_HOST: "${POSTGRES_PRIMARY_HOST:?Set POSTGRES_PRIMARY_HOST}" } : {}),
+      ...(node.kind === "pubsub" ? { NATS_ENABLE_JETSTREAM: "true" } : {}),
+      ...(node.kind === "external-api" ? { UPSTREAM_API_URL: "${EXTERNAL_API_URL:?Set EXTERNAL_API_URL}", RATE_LIMIT_RPS: String(node.capacityPerReplica || 2000) } : {}),
       ...(environments.get(node.id) || {}),
     };
     if (Object.keys(env).length) {
@@ -119,6 +134,9 @@ export function compileDockerCompose(nodes = [], edges = []) {
       volumeNames.add(volume);
       lines.push("    volumes:", `      - ${volume}:${path}`);
     }
+    if (node.kind === "pubsub") lines.push("    command:", "      [\"-js\"]");
+    if (node.kind === "stream-processor") lines.push("    environment:", "      FLINK_PROPERTIES: \"jobmanager.rpc.address: flink\"");
+    if (node.kind === "websocket-gateway") lines.push("    labels:", "      - \"traefik.http.middlewares.websocket.headers.customrequestheaders.Connection=Upgrade\"", "      - \"traefik.http.middlewares.websocket.headers.customrequestheaders.Upgrade=websocket\"");
     if (Number(node.replicas) > 1) lines.push("    deploy:", `      replicas: ${Number(node.replicas)}`);
     lines.push("    networks:", "      - sketchizi");
   }
