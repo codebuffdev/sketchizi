@@ -87,3 +87,71 @@ test("packets scale with edge RPS and idle edges have none", () => {
   assert.ok(packetCountForRps(50000) > packetCountForRps(10));
   assert.ok(packetCountForRps(1e9) <= 6);
 });
+
+
+test("load balancer health checks redistribute all traffic across surviving targets", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("client", "client"),
+      node("lb", "load-balancer"),
+      node("users", "microservice"),
+      node("orders", "microservice", { health: "down" }),
+      node("catalog", "microservice"),
+      node("users-db", "sql"),
+      node("catalog-cache", "redis"),
+    ],
+    edges: [
+      edge("client", "lb"),
+      edge("lb", "users"),
+      edge("lb", "orders"),
+      edge("lb", "catalog"),
+      edge("users", "users-db"),
+      edge("catalog", "catalog-cache"),
+    ],
+    totalRps: 10000,
+  });
+
+  assert.equal(r.edges["lb-users"].rps, 5000);
+  assert.equal(r.edges["lb-orders"].rps, 0);
+  assert.equal(r.edges["lb-catalog"].rps, 5000);
+  assert.equal(r.edges["lb-orders"].healthCheckFailed, true);
+  assert.equal(r.edges["lb-orders"].inactiveReason, "Health Check Failed");
+  assert.equal(r.nodes.users.incomingRps, 5000);
+  assert.equal(r.nodes.catalog.incomingRps, 5000);
+  assert.equal(r.nodes.orders.incomingRps, 0);
+  assert.equal(r.nodes["users-db"].incomingRps, 5000);
+  assert.equal(r.nodes["catalog-cache"].incomingRps, 5000);
+  assert.equal(r.healthChecks[0].healthyTargets, 2);
+  assert.equal(r.healthChecks[0].downTargets, 1);
+});
+
+test("load balancer with no healthy upstream targets returns zero RPS and a 503 diagnostic flag", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("client", "client"),
+      node("lb", "load-balancer"),
+      node("a", "microservice", { health: "down" }),
+      node("b", "microservice", { health: "down" }),
+    ],
+    edges: [edge("client", "lb"), edge("lb", "a"), edge("lb", "b")],
+    totalRps: 10000,
+  });
+  assert.equal(r.edges["lb-a"].rps, 0);
+  assert.equal(r.edges["lb-b"].rps, 0);
+  assert.equal(r.diagnostics.noHealthyUpstreams, true);
+  assert.equal(r.healthChecks[0].allTargetsDown, true);
+});
+
+test("API gateway also excludes Down targets when distributing traffic", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("gateway", "api-gateway"),
+      node("healthy", "microservice"),
+      node("down", "microservice", { health: "down" }),
+    ],
+    edges: [edge("gateway", "healthy"), edge("gateway", "down")],
+    totalRps: 1000,
+  });
+  assert.equal(r.edges["gateway-healthy"].rps, 1000);
+  assert.equal(r.edges["gateway-down"].rps, 0);
+});
