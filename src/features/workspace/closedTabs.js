@@ -45,6 +45,8 @@ export function buildClosedTabRecord(tab, snapshot, now = Date.now()) {
       metadata: source.metadata || {},
       extensions: source.extensions || {},
       format: source.format || "excalidraw",
+      // System Design mode and controls travel with the scene into closed-tab recovery.
+      systemDesign: source.systemDesign || tab.snapshot?.systemDesign || { active: false, studioMode: "canvas", simRunning: false, baseRps: 10000, inspectorOpen: false },
       // A reopened draft is a plain browser draft: it must not silently
       // re-attach to a cloud document or file handle that may have moved on.
       file: null,
