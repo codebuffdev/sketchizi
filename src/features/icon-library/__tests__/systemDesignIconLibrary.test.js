@@ -37,10 +37,10 @@ test("top workspace bar opens System Design components and invokes auto-layout",
   assert.doesNotMatch(studio, /CollapsibleQuickDock/);
 });
 
-test("standard Excalidraw contextual dock remains available outside System Design selections", () => {
+test("native Excalidraw drawing and contextual docks are never hidden by System Design mode", () => {
   const studio = read("features/system-design/SystemDesignStudio.jsx");
   const css = read("features/system-design/systemDesign.css");
   assert.match(studio, /edge && isSystemDesignEdge\(selectedElement\)/);
-  assert.match(css, /\.app \.sd-active\.sd-has-system-selection \.sketchizi-tool-options-dock/);
-  assert.doesNotMatch(css, /\.app \.sd-active \.sketchizi-tool-options-dock/);
+  assert.doesNotMatch(studio, /sd-has-system-selection|CollapsibleQuickDock/);
+  assert.doesNotMatch(css, /sketchizi-tool-options-dock|display:\s*none\s*!important/);
 });
