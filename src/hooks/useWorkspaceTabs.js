@@ -15,6 +15,7 @@ import { recordWorkspaceItemOpened } from "../features/workspace/workspacePresen
 import { buildChapterEditorUrl } from "../features/workspace/useChapterNavigation.js";
 import { readDiagramRows, findDuplicateDiagramName } from "../features/workspace/diagramNames.js";
 import { resolveChapterSequence, readChapterLayout, appendChapter, writeChapterLayout, buildChapterLayout } from "../features/workspace/chapterSequence.js";
+import { DEFAULT_SYSTEM_DESIGN_TAB_STATE } from "../features/system-design/systemDesignTabState.js";
 
 /**
  * Tab & workspace lifecycle, phase 2: everything that acts on the open canvas tabs.
@@ -339,6 +340,7 @@ export function useWorkspaceTabs({
       snapshot: {
         elements: [], appState: { viewBackgroundColor: apiRef.current?.getAppState?.().viewBackgroundColor || "#ffffff" },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
+        systemDesign: { ...DEFAULT_SYSTEM_DESIGN_TAB_STATE },
         file: null, cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" },
         cloudDetached: true, cloudSaveState: { state: "inactive", error: "" }, cloudDocumentName: "Cloud diagram",
       },
@@ -732,6 +734,7 @@ export function useWorkspaceTabs({
             elements: [],
             appState: { viewBackgroundColor: api?.getAppState?.().viewBackgroundColor },
             files: {}, metadata: {}, extensions: {}, format: "excalidraw",
+            systemDesign: { ...DEFAULT_SYSTEM_DESIGN_TAB_STATE },
             file: null,
             cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" },
             cloudDetached: true,
@@ -780,7 +783,7 @@ export function useWorkspaceTabs({
       const initial = { id: "canvas-1", name: "Canvas 1", ...createTabDates(), dirty: false, snapshot: captureCanvasTabSnapshot() };
       const nextTabs = cloudDiagramId ? [initial, {
         id: `cloud-${cloudDiagramId}-${Date.now()}`, name: "Cloud diagram", ...createTabDates(), dirty: false,
-        snapshot: { elements: [], appState: {}, files: {}, metadata: {}, extensions: {}, format: "excalidraw", file: null,
+        snapshot: { elements: [], appState: {}, files: {}, metadata: {}, extensions: {}, format: "excalidraw", systemDesign: { ...DEFAULT_SYSTEM_DESIGN_TAB_STATE }, file: null,
           cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" }, cloudDetached: true,
           cloudSaveState: { state: "inactive", error: "" }, cloudDocumentName: "Cloud diagram" },
       }] : [initial];
