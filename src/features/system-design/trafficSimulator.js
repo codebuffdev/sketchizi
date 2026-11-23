@@ -127,7 +127,7 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
     }
 
     const served = down ? 0 : queueNode ? arriving : Math.min(arriving, capacity);
-    const forwardable = down ? 0 : cache ? arriving * (1 - hitRate) : served;
+    const forwardable = cache && cacheUnavailable ? arriving : down ? 0 : cache ? arriving * (1 - hitRate) : served;
     const branches = outgoing.get(id) || [];
     const outgoingShares = new Map();
     let queueLag = null;
@@ -136,7 +136,8 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
       const consumers = branches.map((edge) => ({ edge, node: byId.get(edge.to) }));
       const available = consumers.filter(({ node: target }) => target.health !== "down");
       const capacityTotal = available.reduce((sum, { node: target }) => sum + nodeCapacity(target), 0);
-      const slow = available.some(({ node: target }) => target.health === "degraded" || arriving > nodeCapacity(target));
+      const perConsumerRps = available.length ? arriving / available.length : 0;
+      const slow = available.some(({ node: target }) => target.health === "degraded" || perConsumerRps > nodeCapacity(target));
       const lagging = consumers.length > 0 && (available.length !== consumers.length || capacityTotal < arriving || slow);
       if (lagging) {
         const failed = consumers.filter(({ node: target }) => target.health === "down").map(({ node: target }) => target.label || target.kind);
@@ -183,7 +184,7 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
     for (const edge of branches) {
       const target = byId.get(edge.to);
       let rps = outgoingShares.get(edge.id) || 0;
-      const retryEligible = !cache && !queueNode && !isCache(target) && !isQueue(target) && target.health === "degraded";
+      const retryEligible = !cache && !queueNode && !isCache(target) && !isQueue(target) && ["microservice", "sql", "nosql"].includes(target.kind) && target.health === "degraded";
       if (retryEligible && rps > 0) {
         rps *= 1.25;
         retryEdges.push({ edgeId: edge.id, from: id, to: target.id, baseRps: round(rps / 1.25, 1), amplifiedRps: round(rps, 1), factor: 1.25 });
@@ -197,7 +198,7 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
     const serviceP95Ms = computeP95(baseLatency, Number.isFinite(utilization) ? utilization : 10, node.health);
     metrics.set(id, {
       id, incomingRps: arriving, servedRps: round(served, 1),
-      droppedRps: round(Math.max(0, arriving - (queueNode ? arriving : served)), 1),
+      droppedRps: round(cacheUnavailable || queueNode ? 0 : Math.max(0, arriving - served), 1),
       forwardedRps: round(queueNode ? arriving : forwardable, 1),
       shieldedRps: round(cache && !cacheUnavailable ? arriving * hitRate : 0, 1),
       cacheHitRate: hitRate, utilization: Number.isFinite(utilization) ? round(utilization, 4) : Infinity,
