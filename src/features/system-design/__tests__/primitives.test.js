@@ -3,19 +3,20 @@ import assert from "node:assert/strict";
 import { PRIMITIVES, CATEGORIES, ACCENTS, PROTOCOLS, createNodeMeta, getPrimitiveForShortcut, primitivesByCategory } from "../primitives.js";
 
 const EXPECTED = {
-  edge: ["Web/Mobile Client", "CDN", "DNS / Route53", "API Gateway", "Load Balancer"],
-  compute: ["Microservice", "Worker / Cron", "Serverless Function", "Auth / IAM"],
-  data: ["SQL Database", "NoSQL Store", "Redis Cache", "Object Storage (S3)", "Search Index"],
-  messaging: ["Message Queue / Kafka", "Metrics & Logging"],
+  edge: ["Web/Mobile Client", "CDN", "DNS / Route53", "API Gateway", "Load Balancer", "WebSocket Gateway"],
+  compute: ["Microservice", "Worker / Cron", "Serverless Function", "Auth / IAM", "Stream Processor"],
+  data: ["SQL Database", "NoSQL Store", "Redis Cache", "Object Storage (S3)", "Search Index", "Read Replica", "Data Warehouse (OLAP)"],
+  messaging: ["Message Queue / Kafka", "Pub/Sub Event Bus", "Metrics & Logging"],
+  integration: ["External 3rd-Party API"],
 };
 
-test("catalog ships exactly 16 primitives in 4 categories with the specified names", () => {
-  assert.equal(PRIMITIVES.length, 16);
-  assert.equal(CATEGORIES.length, 4);
+test("catalog ships exactly 22 primitives in 5 categories with the specified names", () => {
+  assert.equal(PRIMITIVES.length, 22);
+  assert.equal(CATEGORIES.length, 5);
   for (const [category, labels] of Object.entries(EXPECTED)) {
     assert.deepEqual(PRIMITIVES.filter((p) => p.category === category).map((p) => p.label), labels);
   }
-  assert.equal(new Set(PRIMITIVES.map((p) => p.kind)).size, 16);
+  assert.equal(new Set(PRIMITIVES.map((p) => p.kind)).size, 22);
 });
 
 test("every primitive defines complete default metadata", () => {
@@ -51,5 +52,5 @@ test("createNodeMeta copies defaults and rejects unknown kinds", () => {
   assert.equal(meta.label, "Session cache");
   assert.equal(meta.health, "healthy");
   assert.throws(() => createNodeMeta("nope"));
-  assert.equal(primitivesByCategory().flatMap((c) => c.items).length, 16);
+  assert.equal(primitivesByCategory().flatMap((c) => c.items).length, 22);
 });
