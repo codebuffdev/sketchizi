@@ -67,7 +67,7 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
 
   return (
     <>
-      <div className="sd-surface sd-pill-bar" role="toolbar" aria-label={isNode ? "Node options" : "Connector options"}>
+      {selection && <div className="sd-surface sd-pill-bar" role="toolbar" aria-label={isNode ? "Node options" : "Connector options"}>
         {isNode ? (
           <>
             <PrimitiveIcon kind={item.kind} accent={item.accent} />
@@ -86,6 +86,7 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
               className={`is-health-${h}${item.health === h ? " is-active" : ""}`} onClick={() => patchNode({ health: h })}>{HEALTH_LABEL[h]}</button>)}
           </div>
         ) : (
+          <>
           <select className="sd-edge-protocol" aria-label="Protocol" value={item.protocol} disabled={!canEdit}
             onChange={(event) => actions.updateEdge(item.id, { protocol: event.target.value })}>
             {PROTOCOLS.map((protocol) => <option key={protocol} value={protocol}>{protocol}</option>)}
@@ -94,6 +95,7 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
             {["solid", "dashed"].map((s) => <button key={s} type="button" role="radio" aria-checked={item.lineStyle === s} disabled={!canEdit}
               className={item.lineStyle === s ? "is-active" : ""} onClick={() => actions.updateEdge(item.id, { lineStyle: s })}>{s}</button>)}
           </div>
+          </>
         )}
 
         {isNode && <>
@@ -117,7 +119,7 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
         <button type="button" className="sd-icon-btn is-danger" aria-label="Delete" title="Delete" disabled={!canEdit || !selection} onClick={actions.deleteSelection}>
           <Icon name="trash" />
         </button>
-      </div>
+      </div>}
 
       {open && (
         <aside id="sd-inspector-drawer" className={`sd-surface sd-drawer${wide ? " is-wide" : ""}${activeTab === "yaml" ? " is-yaml" : ""}`} aria-label="Telemetry and YAML">
