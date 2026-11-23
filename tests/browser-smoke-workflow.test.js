@@ -18,6 +18,11 @@ test("browser smoke covers configured AWS template creation and editor handoff",
   }
 });
 
+test("browser drawing smoke waits for the current active-tab status marker", () => {
+  assert.match(script, /\.canvas-tab\.is-active \.canvas-tab-status-dot/);
+  assert.doesNotMatch(script, /canvas-tab-status-dot\.is-ready/);
+});
+
 test("browser smoke covers blank canvas and narrow viewport overflow", () => {
   assert.match(script, /Start blank/);
   assert.match(script, /width: 390, height: 844/);
