@@ -180,6 +180,10 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
                     <div className={hasLiveTelemetry && telemetry ? "s-" + telemetry.status : ""}><small>Status</small><b className="sd-mono">{hasLiveTelemetry && telemetry ? STATUS_LABEL[telemetry.status] : "idle"}</b></div>
                   </div>
                   {!hasLiveTelemetry && <p className="sd-hint">Set an incoming load below or press <b>Simulate</b> in the top bar to preview this node.</p>}
+                  {!simulate && item.kind !== "client" && !hasUpstreamConnections && !(Number(item.manualRps) > 0) && (
+                    <button type="button" className="sd-add-upstream" disabled={!canEdit || !actions.addUpstreamClient}
+                      onClick={() => actions.addUpstreamClient?.(item.id)}>＋ Add Upstream Client</button>
+                  )}
                   <label className="sd-field"><span>Incoming RPS</span>
                     <input aria-label="Incoming RPS" type="number" min="0" max="1000000000" step="100" value={item.manualRps ?? 0} disabled={!canEdit}
                       onChange={(event) => patchNode({ manualRps: Math.max(0, Number(event.target.value) || 0) }, true)}
@@ -195,10 +199,6 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
                       onChange={(event) => patchNode({ baseLatencyMs: Math.max(0.5, Number(event.target.value) || 0.5) }, true)}
                       onBlur={(event) => patchNode({ baseLatencyMs: Math.max(0.5, Number(event.target.value) || 0.5) })} />
                   </label>
-                  {!simulate && item.kind !== "client" && !hasUpstreamConnections && !(Number(item.manualRps) > 0) && (
-                    <button type="button" className="sd-add-upstream" disabled={!canEdit || !actions.addUpstreamClient}
-                      onClick={() => actions.addUpstreamClient?.(item.id)}>＋ Add Upstream Client</button>
-                  )}
                   <Slider label="Replicas" value={item.replicas} min={0} max={20} disabled={!canEdit} onLive={(v) => patchNode({ replicas: v }, true)} onCommit={(v) => patchNode({ replicas: v })} />
                   <Slider label="Capacity / replica (RPS)" value={item.capacityPerReplica} min={100} max={50000} step={100} disabled={!canEdit} format={(v) => formatRps(v)} onLive={(v) => patchNode({ capacityPerReplica: v }, true)} onCommit={(v) => patchNode({ capacityPerReplica: v })} />
                   {(item.kind === "redis" || item.kind === "cdn") && (
