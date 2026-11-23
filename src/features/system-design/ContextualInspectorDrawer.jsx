@@ -3,7 +3,7 @@ import { ACCENTS, HEALTH_OVERRIDES, PROTOCOLS } from "./primitives.js";
 import { formatRps } from "./trafficSimulator.js";
 import { nodeYaml } from "./yamlPreview.js";
 
-const DRAWER_TABS = [{ id: "config", label: "Config & Load" }, { id: "yaml", label: "Live YAML" }];
+const DRAWER_TABS = [{ id: "config", label: "Config & Load" }, { id: "yaml", label: "Node YAML" }];
 const YAML_KINDS = [{ id: "k8s", label: "Kubernetes", file: "deployment.yaml" }, { id: "compose", label: "Compose", file: "docker-compose.yml" }];
 import { Icon, PrimitiveIcon } from "./PrimitiveIcon.jsx";
 
