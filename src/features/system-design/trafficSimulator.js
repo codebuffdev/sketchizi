@@ -77,7 +77,9 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
 
   const incoming = new Map(nodes.map((node) => [node.id, 0]));
   const edgeRps = new Map();
+  const edgeHealth = new Map();
   const result = new Map();
+  const healthCheckGroups = [];
   const remaining = new Map(indegree);
   const queue = nodes.filter((node) => remaining.get(node.id) === 0).map((node) => node.id);
   const done = new Set();
@@ -96,10 +98,31 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
     // Cache shield: only misses continue downstream. Overloaded nodes shed excess.
     const forwardable = down ? 0 : (isCache(node) ? served * (1 - hit) : served);
     const branches = outgoing.get(id);
-    const share = branches.length ? forwardable / branches.length : 0;
+    const healthChecking = node.kind === "load-balancer" || node.kind === "api-gateway";
+    const eligible = healthChecking ? branches.filter((edge) => byId.get(edge.to)?.health !== "down") : branches;
+    const share = eligible.length ? forwardable / eligible.length : 0;
+    if (healthChecking && branches.length) {
+      healthCheckGroups.push({
+        nodeId: id,
+        nodeLabel: node.label || (node.kind === "load-balancer" ? "Load Balancer" : "API Gateway"),
+        incomingRps: round(arriving, 1),
+        healthyTargets: eligible.length,
+        downTargets: branches.length - eligible.length,
+        allTargetsDown: eligible.length === 0,
+        redistributedRpsPerTarget: round(share, 1),
+        targetIds: eligible.map((edge) => edge.to),
+      });
+    }
     for (const edge of branches) {
-      edgeRps.set(edge.id, share);
-      incoming.set(edge.to, incoming.get(edge.to) + share);
+      const targetDown = byId.get(edge.to)?.health === "down";
+      const failedHealthCheck = healthChecking && targetDown;
+      const edgeShare = failedHealthCheck ? 0 : share;
+      edgeRps.set(edge.id, edgeShare);
+      if (edgeShare > 0) incoming.set(edge.to, incoming.get(edge.to) + edgeShare);
+      if (failedHealthCheck) {
+        // The UI can render a visible inactive health-check link without animating packets.
+        edgeHealth.set(edge.id, { healthCheckFailed: true, inactiveReason: "Health Check Failed" });
+      }
     }
     result.set(id, {
       id,
@@ -121,9 +144,23 @@ export function simulateTraffic({ nodes = [], edges = [], totalRps = 0 } = {}) {
   while (queue.length) process(queue.shift());
   for (const node of nodes) process(node.id); // cycle leftovers, stable order
 
+  const edgesResult = Object.fromEntries(validEdges.map((edge) => {
+    const source = byId.get(edge.from);
+    return [edge.id, {
+      rps: round(edgeRps.get(edge.id) || 0, 1),
+      protocol: edge.protocol,
+      cacheHitRate: isCache(source) ? clamp01(source.cacheHitRate) : 0,
+      ...(edgeHealth.get(edge.id) || {}),
+    }];
+  }));
   return {
     nodes: Object.fromEntries(result),
-    edges: Object.fromEntries(validEdges.map((edge) => { const source = byId.get(edge.from); return [edge.id, { rps: round(edgeRps.get(edge.id) || 0, 1), protocol: edge.protocol, cacheHitRate: isCache(source) ? clamp01(source.cacheHitRate) : 0 }]; })),
+    edges: edgesResult,
+    healthChecks: healthCheckGroups,
+    diagnostics: {
+      noHealthyUpstreams: healthCheckGroups.some((group) => group.allTargetsDown),
+      failovers: healthCheckGroups.filter((group) => group.downTargets > 0 && group.healthyTargets > 0),
+    },
     totalRps: Number(totalRps) || 0,
   };
 }
