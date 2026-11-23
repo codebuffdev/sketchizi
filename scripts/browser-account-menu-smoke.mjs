@@ -49,6 +49,8 @@ try {
       const after = await trigger.boundingBox();
       assert.deepEqual(after, before, 'Opening the menu must not move or resize the avatar');
       const bounds = await menu.boundingBox();
+      const menuGeometry = await menu.evaluate((element) => ({ position: getComputedStyle(element).position, left: getComputedStyle(element).left, right: getComputedStyle(element).right, width: getComputedStyle(element).width, containingBlock: element.offsetParent?.getBoundingClientRect().toJSON() || null }));
+      console.log(`ACCOUNT_MENU_GEOMETRY ${JSON.stringify({ viewport: width, before, bounds, menuGeometry })}`);
       assert(bounds.x >= 0 && bounds.x + bounds.width <= width, 'Menu must fit horizontally');
       assert(bounds.y >= 0 && bounds.y + bounds.height <= 900, 'Menu must fit vertically');
       if (width >= 1025) {
