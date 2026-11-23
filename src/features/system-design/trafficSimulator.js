@@ -32,11 +32,9 @@ export function computeP95(baseLatencyMs, utilization, health = "healthy") {
   if (health === "down") return null;
   const base = Math.max(0.5, Number(baseLatencyMs) || 1);
   const rho = Math.max(0, utilization);
-  // Once capacity is exceeded, expose the proportional overload penalty directly. This keeps
-  // isolated component previews interpretable (e.g. 150% load on a 240ms API => 360ms p95).
-  const multiplier = rho > 1
-    ? rho
-    : 1 + (rho * rho) / Math.max(0.05, 1 - Math.min(rho, 0.95)) * 0.6;
+  // Keep latency monotonic with utilization while making overload previews directly interpretable:
+  // a 240ms dependency at 150% utilization reports 360ms p95.
+  const multiplier = 1 + rho / 3;
   return round(base * (health === "degraded" ? 1.8 : 1) * multiplier, 1);
 }
 
