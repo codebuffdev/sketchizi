@@ -31,8 +31,8 @@ test("System Design icon click and drag create live nodes and record Recent usag
 test("top workspace bar opens System Design components and invokes auto-layout", () => {
   const top = read("features/system-design/TopWorkspaceBar.jsx");
   const studio = read("features/system-design/SystemDesignStudio.jsx");
-  assert.match(top, /className="sd-components-trigger" onClick=\{onOpenIconLibrary\}/);
-  assert.match(top, /className="sd-auto-layout-trigger" onClick=\{onAutoLayout\}/);
+  assert.ok(top.includes('className="sd-components-trigger" aria-label="Open System Design components" onClick={onOpenIconLibrary}'));
+  assert.ok(top.includes('className="sd-auto-layout-trigger" aria-label="Auto-Layout components" onClick={onAutoLayout}'));
   assert.match(studio, /onOpenIconLibrary=\{onOpenIconLibrary\} onAutoLayout=\{actions\.autoLayout\}/);
   assert.doesNotMatch(studio, /CollapsibleQuickDock/);
 });
