@@ -1,4 +1,4 @@
-import { quickPrimitives } from "./primitives.js";
+import { PRIMITIVES, quickPrimitives } from "./primitives.js";
 import { Icon, PrimitiveIcon } from "./PrimitiveIcon.jsx";
 
 const shortcutFor = (kind) => {
