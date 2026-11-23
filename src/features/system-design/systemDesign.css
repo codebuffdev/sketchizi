@@ -264,3 +264,154 @@
 .sd-root:has(.sd-diagnostic) .sd-topbar > .sd-topbar-pill,
 .sd-root:has(.sd-diagnostic) .sd-topbar > .sd-diagnostic { pointer-events: auto; }
 .sd-root:has(.sd-diagnostic) .sd-pill-bar { top: calc(var(--sd-ctx-top) + 46px); }
+
+
+/* Ultra-compact, high-contrast three-zone workspace command pill. */
+.sd-topbar-pill {
+  height: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(15,23,42,.10), 0 1px 3px rgba(15,23,42,.06);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.sd-command-zone { display: inline-flex; align-items: center; gap: 4px; flex: none; }
+.sd-command-zone-start, .sd-command-zone-actions { gap: 4px; }
+.sd-command-divider { height: 22px; margin: 0 2px; background: #cbd5e1; }
+.sd-command-icon { display: block; width: 17px; height: 17px; flex: none; }
+.sd-command-icon-btn {
+  position: relative;
+  display: inline-flex;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 8px;
+  color: #1e293b;
+  background: transparent;
+  transition: background-color .14s ease, box-shadow .14s ease;
+}
+.sd-command-icon-btn:hover:not(:disabled),
+.sd-command-icon-btn:focus-visible {
+  color: #1e293b;
+  background: #f1f5f9;
+}
+.sd-command-icon-btn.is-active,
+.sd-command-icon-btn.is-open {
+  background: #e2e8f0;
+}
+.sd-command-icon-btn:disabled { opacity: .42; }
+.sd-command-icon-btn[data-tooltip]::after {
+  position: absolute;
+  z-index: 10020;
+  left: 50%;
+  top: calc(100% + 9px);
+  transform: translate(-50%, -3px);
+  width: max-content;
+  max-width: 220px;
+  padding: 6px 9px;
+  border: 1px solid #334155;
+  border-radius: 7px;
+  background: #0f172a;
+  color: #ffffff;
+  content: attr(data-tooltip);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(15,23,42,.2);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .12s ease, transform .12s ease, visibility .12s ease;
+}
+.sd-command-icon-btn[data-tooltip]:hover::after,
+.sd-command-icon-btn[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+.sd-command-modes {
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: #f1f5f9;
+}
+.sd-command-modes button {
+  min-width: 52px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 28px;
+}
+.sd-command-modes button:hover:not(.is-active) { color: #0f172a; }
+.sd-command-modes button.is-active {
+  color: #0f172a;
+  background: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(15,23,42,.14);
+}
+.sd-command-sim { gap: 0; }
+.sd-command-sim-main, .sd-command-sim-caret {
+  height: 32px;
+  color: #065f46;
+  background: #ecfdf5;
+}
+.sd-command-sim-main {
+  gap: 6px;
+  padding: 0 8px 0 10px;
+  border-radius: 9px 0 0 9px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.sd-command-sim-caret {
+  gap: 4px;
+  padding: 0 8px 0 4px;
+  border-radius: 0 9px 9px 0;
+}
+.sd-command-load {
+  color: inherit;
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.sd-command-sim-main:hover, .sd-command-sim-caret:hover {
+  color: #064e3b;
+  background: #d1fae5;
+}
+.sd-command-sim-main.is-on, .sd-command-sim-caret.is-on {
+  color: #ffffff;
+  background: #059669;
+}
+.sd-command-sim-main.is-on:hover, .sd-command-sim-caret.is-on:hover {
+  color: #ffffff;
+  background: #047857;
+}
+.sd-command-sim-main.is-on .sd-command-icon,
+.sd-command-sim-caret.is-on .sd-command-icon { stroke: #ffffff; }
+.sd-command-exit:hover:not(:disabled) {
+  color: #991b1b;
+  background: #fee2e2;
+}
+@media (max-width: 760px) {
+  .sd-topbar-pill {
+    max-width: calc(100vw - 12px);
+    overflow-x: auto;
+    gap: 5px;
+    padding-inline: 6px;
+  }
+  .sd-command-modes button { min-width: 44px; padding-inline: 7px; }
+  .sd-command-divider { margin-inline: 0; }
+}
