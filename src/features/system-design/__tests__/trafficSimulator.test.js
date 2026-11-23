@@ -329,6 +329,41 @@ test("External 3rd-Party API reports HTTP 429 when incoming RPS exceeds its rate
   assert.equal(r.diagnostics.rateLimitWarnings[0].rejectedRps, 8000);
 });
 
+test("manual RPS benchmarks a standalone node and propagates capped traffic downstream", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("vendor", "external-api", { replicas: 1, capacityPerReplica: 2000, baseLatencyMs: 240, manualRps: 3000 }),
+      node("consumer", "microservice", { replicas: 1, capacityPerReplica: 10000 }),
+    ],
+    edges: [edge("vendor", "consumer")],
+    totalRps: 0,
+  });
+  assert.equal(r.nodes.vendor.incomingRps, 3000);
+  assert.equal(r.nodes.vendor.utilization, 1.5);
+  assert.equal(r.nodes.vendor.serviceP95Ms, 360);
+  assert.equal(r.nodes.vendor.p95Ms, 360);
+  assert.equal(r.nodes.vendor.status, "overloaded");
+  assert.equal(r.nodes.vendor.servedRps, 2000);
+  assert.equal(r.edges["vendor-consumer"].rps, 2000);
+  assert.equal(r.nodes.consumer.incomingRps, 2000);
+  assert.equal(r.diagnostics.rateLimitWarnings[0].statusCode, 429);
+  assert.equal(r.diagnostics.rateLimitWarnings[0].rejectedRps, 1000);
+});
+
+test("manual RPS is a floor over upstream traffic rather than additive load", () => {
+  const r = simulateTraffic({
+    nodes: [
+      node("client", "client"),
+      node("service", "microservice", { replicas: 1, capacityPerReplica: 10000, manualRps: 3000 }),
+      node("downstream", "microservice"),
+    ],
+    edges: [edge("client", "service"), edge("service", "downstream")],
+    totalRps: 1000,
+  });
+  assert.equal(r.nodes.service.incomingRps, 3000);
+  assert.equal(r.nodes.downstream.incomingRps, 3000);
+});
+
 test("external API rate-limit telemetry becomes an actionable 429 architecture warning", async () => {
   const { deriveArchitectureDiagnostic } = await import("../architectureDiagnostics.js");
   const nodes = [
