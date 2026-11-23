@@ -746,8 +746,12 @@ function App() {
       openTodoTab();
       return;
     }
+    if (mode === "system-design") {
+      systemDesign.open();
+      return;
+    }
     window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode } }));
-  }, [createCanvasTab, openTodoTab]);
+  }, [createCanvasTab, openTodoTab, systemDesign.open]);
 
   // "Open Local File" from the welcome screen: make sure a canvas exists, then
   // hand off to the normal file-open flow once its editor is mounted.
@@ -766,7 +770,7 @@ function App() {
   useEffect(() => {
     const handleWorkspaceCanvasChoice = (event) => {
       const mode = event.detail?.mode;
-      if (mode === "infinite" || mode === "pages" || mode === "todo") chooseStartupCanvas(mode);
+      if (mode === "infinite" || mode === "pages" || mode === "todo" || mode === "system-design") chooseStartupCanvas(mode);
     };
     window.addEventListener("sketchizi:workspace-canvas-choice", handleWorkspaceCanvasChoice);
     return () => window.removeEventListener("sketchizi:workspace-canvas-choice", handleWorkspaceCanvasChoice);
@@ -2094,6 +2098,10 @@ function App() {
               <button type="button" className="startup-canvas-option" onClick={() => chooseStartupCanvas("todo")}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3"/></svg>
                 <span>Todo</span>
+              </button>
+              <button type="button" className="startup-canvas-option startup-canvas-option-system-design" onClick={() => chooseStartupCanvas("system-design")}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M6 16v-4h12v4"/></svg>
+                <span>System Design</span>
               </button>
             </div>
             {closedTabs.length > 0 && (
