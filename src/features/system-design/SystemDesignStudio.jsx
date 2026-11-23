@@ -5,6 +5,7 @@ import SystemDesignNodeOverlay from "./SystemDesignNodeOverlay.jsx";
 import ContextualInspectorDrawer from "./ContextualInspectorDrawer.jsx";
 import { readGraph } from "./sceneModel.js";
 import { simulateTraffic } from "./trafficSimulator.js";
+import { deriveArchitectureDiagnostic } from "./architectureDiagnostics.js";
 import "./systemDesign.css";
 
 /**
@@ -25,6 +26,7 @@ export default function SystemDesignStudio({ workspace, isDarkTheme }) {
     () => (simulate ? simulateTraffic({ nodes: graph.nodes, edges: graph.edges, totalRps: loadRps }) : null),
     [simulate, graph, loadRps],
   );
+  const diagnostic = useMemo(() => deriveArchitectureDiagnostic(graph.nodes, simulation), [graph.nodes, simulation]);
 
   // Brief, non-blocking hint. Auto-dismisses; never steals focus or blocks the canvas.
   useEffect(() => {
@@ -80,7 +82,8 @@ export default function SystemDesignStudio({ workspace, isDarkTheme }) {
       <SystemDesignNodeOverlay graph={graph} simulation={simulation} simulate={simulate} mode={mode} snapshot={snapshot}
         offset={offset} getHost={getHost} actions={actions} canEdit={canEdit} />
       <TopWorkspaceBar mode={mode} onModeChange={workspace.setMode} simulate={simulate} onSimulateChange={onSimulateChange}
-        loadRps={loadRps} onLoadChange={workspace.setLoadRps} onLoadBlueprint={actions.loadBlueprint} canEdit={canEdit} onClose={workspace.close} />
+        loadRps={loadRps} onLoadChange={workspace.setLoadRps} onLoadBlueprint={actions.loadBlueprint} canEdit={canEdit} onClose={workspace.close}
+        nodes={graph.nodes} edges={graph.edges} diagnostic={simulate ? diagnostic : null} />
       {toast && <div className="sd-toast" role="status" aria-live="polite">{toast}</div>}
       <CollapsibleQuickDock onAdd={actions.addNode} onAutoLayout={actions.autoLayout}
         snapEnabled={workspace.gridEnabled} onSnapChange={workspace.setGridEnabled} canEdit={canEdit} />
