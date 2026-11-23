@@ -21,7 +21,11 @@ export function convertComposeToKubernetes(compose) {
     const name = dnsName(serviceName);
     if (!name || names.has(name)) throw new Error("Invalid or colliding Kubernetes service name: " + serviceName);
     names.add(name);
-    if (!service || typeof service !== "object" || Array.isArray(service)) throw new TypeError("Invalid Compose service: " + serviceName);
+    if (!service || typeof service !== "object" || Array.isArray(service)) {
+      // One empty or malformed service must not abort the whole conversion.
+      warnings.push({ service: serviceName, field: "service", message: "Service has no definition (it must be a mapping with an image); it was skipped." });
+      continue;
+    }
     if (!service.image || typeof service.image !== "string") {
       warnings.push({ service: serviceName, field: "image", message: "No image defined; build-only services require an image before conversion." });
       continue;
@@ -40,15 +44,17 @@ export function convertComposeToKubernetes(compose) {
         container.env = Object.entries(service.environment).filter(([, value]) => value !== null && value !== undefined).map(([key, value]) => ({ name: key, value: String(value) }));
       }
     }
-    const ports = [...new Set((service.ports || []).map(portNumber).filter((p) => Number.isInteger(p) && p > 0 && p <= 65535))];
+    const declaredPorts = Array.isArray(service.ports) ? service.ports : [];
+    if (service.ports != null && !Array.isArray(service.ports)) warnings.push({ service: serviceName, field: "ports", message: "ports must be a list; the value was ignored." });
+    const ports = [...new Set(declaredPorts.map(portNumber).filter((p) => Number.isInteger(p) && p > 0 && p <= 65535))];
     if (ports.length) container.ports = ports.map((containerPort) => ({ containerPort }));
     manifests.push({ apiVersion: "apps/v1", kind: "Deployment", metadata: { name, labels }, spec: { replicas: 1, selector: { matchLabels: labels }, template: { metadata: { labels }, spec: { containers: [container] } } } });
     if (ports.length) manifests.push({ apiVersion: "v1", kind: "Service", metadata: { name, labels }, spec: { selector: labels, ports: ports.map((port) => ({ port, targetPort: port })) } });
     for (const field of ["build", "depends_on", "volumes", "networks", "secrets", "configs", "deploy", "healthcheck", "command", "entrypoint", "profiles", "restart", "privileged"]) {
       if (Object.hasOwn(service, field)) warnings.push({ service: serviceName, field, message: "Compose " + field + " requires manual Kubernetes review; not converted." });
     }
-    if (Array.isArray(service.ports) && service.ports.length !== ports.length) warnings.push({ service: serviceName, field: "ports", message: "Some port mappings could not be converted." });
-    if (service.ports?.length) warnings.push({ service: serviceName, field: "ports", message: "Host-published ports and protocols are not preserved; review Service exposure." });
+    if (declaredPorts.length !== ports.length) warnings.push({ service: serviceName, field: "ports", message: "Some port mappings could not be converted." });
+    if (declaredPorts.length) warnings.push({ service: serviceName, field: "ports", message: "Host-published ports and protocols are not preserved; review Service exposure." });
   }
   return { manifests, warnings };
 }

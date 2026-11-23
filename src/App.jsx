@@ -1,4 +1,5 @@
 import { planComposeDiagram, composeCardDetails } from "./features/docker-compose/composeDiagramLayout.js";
+import { describeKubernetesResource, getIngressBackendServiceNames, getIngressTlsSecretNames } from "./features/kubernetes-studio/kubernetesManifestModel.js";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import IconLibraryPanel from "./IconLibraryPanel";
@@ -1946,8 +1947,8 @@ function App() {
       kind === "Service" ? `Type: ${spec.type || "ClusterIP"}` : "",
       ports.length ? `Ports: ${ports.join(", ")}` : "",
       selector.length ? `Selector: ${selector.join(", ")}` : "",
-      kind === "Ingress" ? `Hosts: ${(spec.rules || []).map((rule) => rule.host).filter(Boolean).slice(0, 2).join(", ") || "default backend"}` : "",
-      kind === "ConfigMap" ? `Keys: ${Object.keys(manifest.data || {}).slice(0, 3).join(", ")}` : "",
+      kind === "Ingress" ? `Hosts: ${hosts.join(", ") || "default backend"}` : "",
+      kind === "ConfigMap" ? `Keys: ${dataKeys.join(", ")}` : "",
       apiVersion,
     ].filter(Boolean).join("\n");
     // Remove generated connectors involving this resource before its metadata changes.
@@ -2256,9 +2257,8 @@ function App() {
         : resource.kind === "Job" ? spec.template?.spec
         : ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"].includes(resource.kind) ? spec.template?.spec
         : spec;
-      const images = (podSpec?.containers || []).map((container) => container.image).filter(Boolean).slice(0, 2);
-      const ports = (spec.ports || []).map((port) => `${port.port}${port.targetPort ? `→${port.targetPort}` : ""}/${port.protocol || "TCP"}`).slice(0, 3);
-      const selector = Object.entries(spec.selector?.matchLabels || spec.selector || {}).map(([key, value]) => `${key}=${value}`).slice(0, 2);
+      // Null-safe summaries: sparse manifests (empty containers, odd list shapes) must not crash diagram creation.
+      const { images, ports, selector, hosts, dataKeys } = describeKubernetesResource(resource);
       const details = [
         `Namespace: ${resource.namespace || "default"}`,
         workloadKinds.includes(resource.kind) ? `Replicas: ${spec.replicas ?? (resource.kind === "DaemonSet" ? "node-managed" : 1)}` : "",
@@ -2266,8 +2266,8 @@ function App() {
         resource.kind === "Service" ? `Type: ${spec.type || "ClusterIP"}` : "",
         ports.length ? `Ports: ${ports.join(", ")}` : "",
         selector.length ? `Selector: ${selector.join(", ")}` : "",
-        resource.kind === "Ingress" ? `Hosts: ${(spec.rules || []).map((rule) => rule.host).filter(Boolean).slice(0, 2).join(", ") || "default backend"}` : "",
-        resource.kind === "ConfigMap" ? `Keys: ${Object.keys(manifest.data || {}).slice(0, 3).join(", ")}` : "",
+        resource.kind === "Ingress" ? `Hosts: ${hosts.join(", ") || "default backend"}` : "",
+        resource.kind === "ConfigMap" ? `Keys: ${dataKeys.join(", ")}` : "",
         resource.apiVersion || "",
       ].filter(Boolean).slice(0, 5).join("\n");
       const metadata = {
@@ -2371,16 +2371,16 @@ function App() {
           const labels = workload.kind === "Pod"
             ? workload.manifest?.metadata?.labels
             : workload.manifest?.spec?.template?.metadata?.labels || workload.manifest?.spec?.selector?.matchLabels;
-          if (labelsMatch(selector, labels)) addRelationship(service, workload, "routes to");
+          // A Service only selects pods in its own namespace.
+          if (workload.namespace === service.namespace && labelsMatch(selector, labels)) addRelationship(service, workload, "routes to");
         });
       }
     });
     ingressResources.forEach((ingress) => {
-      const rules = ingress.manifest?.spec?.rules || [];
-      const serviceNames = new Set(rules.flatMap((rule) => (rule.http?.paths || []).map((path) => path.backend?.service?.name).filter(Boolean)));
-      const defaultName = ingress.manifest?.spec?.defaultBackend?.service?.name;
-      if (defaultName) serviceNames.add(defaultName);
-      serviceNames.forEach((name) => addRelationship(ingress, services.find((service) => service.name === name && service.namespace === ingress.namespace), "routes to", "#9b78ef"));
+      // Supports networking.k8s.io/v1 backends (backend.service.name) and legacy serviceName,
+      // tolerating null rules/paths instead of crashing.
+      getIngressBackendServiceNames(ingress.manifest).forEach((name) => addRelationship(ingress, services.find((service) => service.name === name && service.namespace === ingress.namespace), "routes to", "#9b78ef"));
+      getIngressTlsSecretNames(ingress.manifest).forEach((secretName) => addRelationship(ingress, resources.find((resource) => resource.kind === "Secret" && resource.name === secretName && resource.namespace === ingress.namespace), "uses", "#9b78ef"));
     });
     resources.filter((resource) => resource.kind === "Namespace").forEach((namespace) => {
       // Namespace membership applies to every namespaced object, not just the
@@ -2572,7 +2572,8 @@ function App() {
   const createComposeDiagram = useCallback(async (composeDocument) => {
     const api = apiRef.current;
     if (!api?.updateScene || !collaborationCanEdit) return;
-    const services = Object.entries(composeDocument.services || {});
+    // Services declared without a body (`web:`) must not crash icon matching or card details.
+    const services = Object.entries(composeDocument.services || {}).map(([name, service]) => [name, service && typeof service === "object" && !Array.isArray(service) ? service : {}]);
     if (!services.length) {
       showToast("Add at least one service before creating a diagram.", "error");
       return;

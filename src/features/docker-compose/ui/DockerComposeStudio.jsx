@@ -6,6 +6,7 @@ import { traceComposeDependencies } from "../composeDependencyTrace.js";
 import { exploreComposeNetworkReachability } from "../composeNetworkReachability.js";
 import { analyzeComposeReadiness, exportComposeReadinessReport, validateComposeDocument } from "../composeDocumentService.js";
 import { updateComposeServiceImage } from "../composeYamlEdits.js";
+import { parseComposeYaml } from "../composeYamlModel.js";
 import "./docker-compose-studio.css";
 
 
@@ -187,16 +188,8 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
   const [completionPosition, setCompletionPosition] = useState({ top: 44, left: 60 });
   const fileInputRef = useRef(null);
   const editorRef = useRef(null);
-  const parsed = useMemo(() => {
-    try {
-      const doc = parseDocument(yamlText, { prettyErrors: true, uniqueKeys: true });
-      if (doc.errors.length) return { document: null, error: doc.errors[0].message };
-      const value = doc.toJS();
-      if (!isRecord(value)) return { document: null, error: "Compose YAML must be a mapping." };
-      if (!isRecord(value.services)) return { document: null, error: "Add a top-level services mapping." };
-      return { document: value, error: "" };
-    } catch (cause) { return { document: null, error: cause?.message || "Could not parse Compose YAML." }; }
-  }, [yamlText]);
+  // parseComposeYaml never throws and returns one actionable sentence (with line/column) on failure.
+  const parsed = useMemo(() => parseComposeYaml(yamlText), [yamlText]);
   const composeDoc = parsed.document;
   const conversion = useMemo(() => {
     if (!composeDoc) return { manifests: [], warnings: [], error: parsed.error };
@@ -337,10 +330,9 @@ export default function DockerComposeStudio({ onClose, onCreateDiagram }) {
     const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;
     try {
       const text = await file.text();
-      const doc = parseDocument(text, { prettyErrors: true, uniqueKeys: true });
-      if (doc.errors.length) throw new Error(doc.errors[0].message);
-      const value = doc.toJS();
-      if (!isRecord(value) || !isRecord(value.services)) throw new Error("The file must contain a Compose document with a top-level services mapping.");
+      const result = parseComposeYaml(text);
+      if (!result.document) throw new Error(result.error);
+      const value = result.document;
       const next = text.endsWith("\n") ? text : text + "\n";
       setYamlText(next); setSavedYaml(next); setSelectedService(Object.keys(value.services)[0] || "");
       setError(""); setNotice("Imported " + file.name + ". The full source YAML is retained in the editor.");

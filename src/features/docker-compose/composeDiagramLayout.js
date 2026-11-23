@@ -1,9 +1,20 @@
 // Pure layout planner for editable Compose architecture diagrams.
 // Edges point from a service to the service it declares in depends_on.
-export function planComposeDiagram(document) {
-  const services = Object.entries(document?.services || {});
+import { namedVolumeSource } from "./composeMountSource.js";
+
+const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+/** Names listed under a list-or-mapping Compose field (depends_on, networks); tolerates null and wrong types. */
+const namesOf = (value) => Array.isArray(value)
+  ? value.filter((entry) => typeof entry === "string" && entry)
+  : isRecord(value) ? Object.keys(value) : [];
+
+export function planComposeDiagram(input) {
+  // Services declared with no body (`web:`) or the wrong type still get a card.
+  const rawServices = isRecord(input?.services) ? input.services : {};
+  const document = { ...input, services: Object.fromEntries(Object.entries(rawServices).map(([name, service]) => [name, isRecord(service) ? service : {}])) };
+  const services = Object.entries(document.services);
   const names = new Set(services.map(([name]) => name));
-  const dependencies = (service) => Array.isArray(service?.depends_on) ? service.depends_on : Object.keys(service?.depends_on || {});
+  const dependencies = (service) => namesOf(service?.depends_on);
   const levels = new Map();
   const visiting = new Set();
   function level(name) {
@@ -34,13 +45,15 @@ export function planComposeDiagram(document) {
   const networks = new Map();
   const volumes = new Map();
   for (const [name, service] of services) {
-    const declared = service.networks ? (Array.isArray(service.networks) ? service.networks : Object.keys(service.networks)) : ["default"];
+    // network_mode (host, none, service:x) means the service joins no Compose network.
+    const declared = typeof service.network_mode === "string" ? [] : namesOf(service.networks);
+    if (!declared.length && typeof service.network_mode !== "string") declared.push("default");
     declared.forEach((network) => { if (!networks.has(network)) networks.set(network, []); networks.get(network).push(name); });
     (Array.isArray(service.volumes) ? service.volumes : []).forEach((mount) => {
-      const source = typeof mount === "string" ? mount.split(":")[0] : mount?.source;
-      if (!source || source.startsWith("/") || source.startsWith(".")) return;
+      const source = namedVolumeSource(mount);
+      if (!source) return;
       if (!volumes.has(source)) volumes.set(source, []);
-      volumes.get(source).push(name);
+      if (!volumes.get(source).includes(name)) volumes.get(source).push(name);
     });
   }
   const rows = Math.max(1, ...[...groups.values()].map((group) => group.length));
@@ -71,8 +84,9 @@ export function planComposeDiagram(document) {
 
 export function composeCardDetails(service) {
   const image = service?.image || (typeof service?.build === "string" ? "Build: " + service.build : service?.build?.context ? "Build: " + service.build.context : "Image not specified");
-  const ports = (Array.isArray(service?.ports) ? service.ports : []).map((port) => typeof port === "string" ? port : [port?.published, port?.target].filter(Boolean).join(" → "));
-  const envCount = Array.isArray(service?.environment) ? service.environment.length : Object.keys(service?.environment || {}).length;
+  const ports = (Array.isArray(service?.ports) ? service.ports : []).map((port) => typeof port === "string" || typeof port === "number" ? String(port) : [port?.published, port?.target].filter(Boolean).join(" → ")).filter(Boolean);
+  const environment = service?.environment;
+  const envCount = Array.isArray(environment) ? environment.length : environment && typeof environment === "object" ? Object.keys(environment).length : 0;
   const details = [String(image), ports.length ? "Ports: " + ports.slice(0, 2).join(", ") : "", envCount ? envCount + " environment variables" : ""].filter(Boolean);
   return details.map((detail) => detail.length > 37 ? detail.slice(0, 34) + "…" : detail);
 }

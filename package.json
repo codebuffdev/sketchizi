@@ -38,6 +38,7 @@
     "check:package-lock-consistency": "node scripts/check-package-lock-consistency.mjs",
     "test:package-lock-consistency": "node --test tests/package-lock-consistency.test.mjs",
     "test:design-catalog": "node --test tests/design-framework.test.js tests/personal-template-store.test.js tests/template-catalog.test.js",
+    "test:studio-roundtrip": "node --test tests/studio-roundtrip-kubernetes.test.js tests/studio-roundtrip-compose.test.js tests/studio-yaml-error-handling.test.js",
     "test:all": "node --import ./tests/register-sync-test-loader.mjs --test tests/*.test.js",
     "test:kubernetes-relationships": "node --import ./tests/register-sync-test-loader.mjs --test tests/kubernetes-relationships.test.js",
     "test:kubernetes-corrections": "node --test tests/kubernetes-relationships.test.js",

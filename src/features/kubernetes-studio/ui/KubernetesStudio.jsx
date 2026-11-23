@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseAllDocuments, stringify } from "yaml";
+import { normalizeKubernetesManifest, parseKubernetesManifests } from "../kubernetesManifestModel.js";
 import { normalizeStudioDiagnostics } from "../../studio-validation/diagnostics.js";
 import { validateKubernetesResources } from "../validation/validateKubernetesResources.js";
 import { readZipTextFiles } from "../zipBundleReader.js";
@@ -181,17 +182,6 @@ function buildCompletions(text, caret, force = false) {
   return { items: items.slice(0, 10), replaceStart, replaceEnd };
 }
 
-const KIND_LABELS = {
-  Pod: "Pod", Deployment: "Deployment", StatefulSet: "StatefulSet", DaemonSet: "DaemonSet",
-  Service: "Service", Ingress: "Ingress", ConfigMap: "ConfigMap", Secret: "Secret",
-  Namespace: "Namespace", Node: "Node", PersistentVolume: "PersistentVolume",
-  PersistentVolumeClaim: "PersistentVolumeClaim", StorageClass: "StorageClass",
-  Job: "Job", CronJob: "CronJob", ReplicaSet: "ReplicaSet", ServiceAccount: "ServiceAccount",
-  Role: "Role", ClusterRole: "ClusterRole", RoleBinding: "RoleBinding",
-  ClusterRoleBinding: "ClusterRoleBinding", NetworkPolicy: "NetworkPolicy",
-  HorizontalPodAutoscaler: "HorizontalPodAutoscaler", LimitRange: "LimitRange",
-  ResourceQuota: "ResourceQuota", EndpointSlice: "EndpointSlice",
-};
 
 function KubernetesResourceIcon({ kind }) {
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round", strokeLinejoin: "round" };
@@ -246,50 +236,12 @@ function KubernetesResourceIcon({ kind }) {
 
 
 
-function normalizeManifest(value, index) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const kind = String(value.kind || "").trim();
-  const metadata = value.metadata && typeof value.metadata === "object" ? value.metadata : {};
-  if (!kind || !metadata.name) return null;
-  return {
-    id: `${kind.toLowerCase()}-${String(metadata.namespace || "default")}-${String(metadata.name)}-${index}`,
-    documentIndex: index - 1,
-    kind,
-    name: String(metadata.name),
-    namespace: String(metadata.namespace || (kind === "Namespace" ? metadata.name : "default")),
-    apiVersion: String(value.apiVersion || "unknown"),
-    manifest: value,
-    supported: Boolean(KIND_LABELS[kind]),
-  };
-}
+// Parsing lives in a pure module so it can be unit-tested; it never throws and
+// reports actionable, line-numbered errors through `parseError`.
+const normalizeManifest = normalizeKubernetesManifest;
 
 function parseStudioYaml(yamlText, locateServiceSelector = false) {
-  const empty = { resources: [], unsupported: [], issues: [], parseError: "", skippedDocuments: 0 };
-  if (!yamlText.trim()) return empty;
-  try {
-    const documents = parseAllDocuments(yamlText, { prettyErrors: true, uniqueKeys: true });
-    const resources = [];
-    const unsupported = [];
-    let skippedDocuments = 0;
-    for (const [index, document] of documents.entries()) {
-      if (document.errors.length) throw document.errors[0];
-      const value = document.toJSON();
-      if (value == null) continue;
-      const resource = normalizeManifest(value, index + 1);
-      if (!resource) {
-        unsupported.push(`Document ${index + 1}: missing kind or metadata.name`);
-        skippedDocuments++;
-        continue;
-      }
-      if (!resource.supported) unsupported.push(`${resource.kind}/${resource.name}: valid Kubernetes kind, rendered as a generic resource`);
-      resources.push(resource);
-    }
-    const selectorOffset = locateServiceSelector && documents[0]?.getIn(["spec", "selector", "app"], true)?.range?.[0];
-    const selectorLine = typeof selectorOffset === "number" ? yamlText.slice(0, selectorOffset).split("\n").length - 1 : null;
-    return { resources, unsupported, skippedDocuments, selectorLine, parseError: "", issues: validateKubernetesResources(resources) };
-  } catch (cause) {
-    return { ...empty, parseError: cause?.message || "Unable to parse YAML." };
-  }
+  return parseKubernetesManifests(yamlText, { locateServiceSelector });
 }
 
 export default function KubernetesStudio({ onClose, onCreateDiagram, onApplyResourceYaml }) {
@@ -588,6 +540,9 @@ spec:
   const applyInspectedResource = () => {
     if (!inspectedResource) return;
     try {
+      if (inspectedResource.listItemIndex != null) {
+        throw new Error("This resource comes from a List (for example kubectl get -o yaml output). Edit it in the main YAML editor; the inspector can only rewrite standalone documents.");
+      }
       const editedDocuments = parseAllDocuments(inspectorDraft, { prettyErrors: true, uniqueKeys: true });
       if (editedDocuments.length !== 1) throw new Error("Edit exactly one Kubernetes resource in this inspector.");
       const editedDocument = editedDocuments[0];
