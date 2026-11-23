@@ -10,7 +10,7 @@ test("every one of the 22 primitives maps to a real inline SVG icon", () => {
     assert.ok(hasIconShape(p.icon), `${p.kind} -> missing shape "${p.icon}"`);
     assert.ok(p.shortLabel, `${p.kind} short label`);
   }
-  assert.equal(new Set(PRIMITIVES.map((p) => p.icon)).size, 16, "each primitive is visually distinct");
+  assert.equal(new Set(PRIMITIVES.map((p) => p.icon)).size, 22, "each primitive is visually distinct");
 });
 
 test("icon shapes only use allowed tags, numeric/finite geometry and no hard-coded colours", () => {
