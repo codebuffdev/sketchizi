@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { PRIMITIVES, morePrimitivesByCategory, quickPrimitives } from "./primitives.js";
+import { quickPrimitives } from "./primitives.js";
 import { Icon, PrimitiveIcon } from "./PrimitiveIcon.jsx";
-import { useDismiss } from "./useDismiss.js";
 
 const shortcutFor = (kind) => {
   const index = PRIMITIVES.findIndex((item) => item.kind === kind);
@@ -15,18 +13,8 @@ const shortcutFor = (kind) => {
  * default), so there is no 16-item list parked on the canvas. Clicking a primitive places it next to the selected
  * node and connects the two (see planPlacement / addNode); with nothing selected it lands in free space near the centre.
  */
-export default function CollapsibleQuickDock({ onAdd, onAutoLayout, snapEnabled, onSnapChange, canEdit }) {
-  const [moreOpen, setMoreOpen] = useState(false);
-  const wrapRef = useRef(null);
-  const closeMore = useCallback(() => setMoreOpen(false), []);
-  useDismiss(wrapRef, moreOpen, closeMore);
-
-  // Move focus into the popover when it opens so the keyboard path is: "+ More" -> Enter -> Tab through items -> Esc.
-  useEffect(() => {
-    if (moreOpen) wrapRef.current?.querySelector(".sd-more-menu button")?.focus({ preventScroll: true });
-  }, [moreOpen]);
-
-  const add = (kind) => { onAdd(kind); setMoreOpen(false); };
+export default function CollapsibleQuickDock({ onAdd, onOpenIconLibrary, onAutoLayout, snapEnabled, onSnapChange, canEdit }) {
+  const add = (kind) => onAdd(kind);
   const hint = (item) => {
     const key = shortcutFor(item.kind);
     return `${item.label}${key ? ` (${key})` : ""} — placed next to the selected node and connected`;
@@ -46,30 +34,12 @@ export default function CollapsibleQuickDock({ onAdd, onAutoLayout, snapEnabled,
 
       <span className="sd-divider" aria-hidden="true" />
 
-      <div className="sd-more" ref={wrapRef}>
-        <button type="button" className={`sd-dock-item sd-more-trigger${moreOpen ? " is-active" : ""}`} aria-haspopup="menu"
-          aria-expanded={moreOpen} disabled={!canEdit} onClick={() => setMoreOpen((open) => !open)} title="More primitives">
-          <Icon name="plus" />
-          <span>More</span>
-        </button>
-        {moreOpen && (
-          <div className="sd-popover sd-more-menu" role="menu" aria-label="More primitives">
-            {morePrimitivesByCategory().map((category) => (
-              <section key={category.id} aria-label={category.label}>
-                <h3>{category.label}</h3>
-                <div className="sd-more-grid">
-                  {category.items.map((item) => (
-                    <button key={item.kind} type="button" role="menuitem" className="sd-more-item" onClick={() => add(item.kind)} title={hint(item)}>
-                      <PrimitiveIcon kind={item.kind} />
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        )}
-      </div>
+      <button type="button" className="sd-dock-item sd-more-trigger" disabled={!canEdit}
+        onClick={onOpenIconLibrary} title="Open all 16 System Design primitives in Icon Library"
+        aria-label="More System Design primitives">
+        <Icon name="plus" />
+        <span>More</span>
+      </button>
 
       <span className="sd-divider" aria-hidden="true" />
 
