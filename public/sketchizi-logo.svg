@@ -1,22 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">Sketchizi logo</title>
-  <desc id="desc">A geometric connected S mark representing collaborative drawing and diagrams.</desc>
-  <defs>
-    <linearGradient id="stroke" x1="118" y1="104" x2="404" y2="408" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#6D5EF4"/>
-      <stop offset="0.52" stop-color="#4F8CFF"/>
-      <stop offset="1" stop-color="#18B8A7"/>
-    </linearGradient>
-    <linearGradient id="node" x1="126" y1="116" x2="394" y2="394" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#8B7CFF"/>
-      <stop offset="1" stop-color="#20C8B5"/>
-    </linearGradient>
-  </defs>
-  <path d="M378 128H214C173 128 146 151 146 184C146 217 173 240 214 240H298C339 240 366 263 366 296C366 329 339 352 298 352H134"
-        fill="none" stroke="url(#stroke)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="378" cy="128" r="24" fill="url(#node)"/>
-  <circle cx="214" cy="240" r="20" fill="#ffffff" stroke="#4F8CFF" stroke-width="10"/>
-  <circle cx="134" cy="352" r="24" fill="url(#node)"/>
-  <path d="M397 107l20 20" stroke="#6D5EF4" stroke-width="12" stroke-linecap="round"/>
-  <path d="M417 107l-20 20" stroke="#6D5EF4" stroke-width="12" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 820" role="img" aria-labelledby="title desc">
+<title id="title">Sketchizi</title><desc id="desc">A glowing cyan pencil drawing connected diagrams in a browser window, with the Sketchizi wordmark.</desc>
+<defs>
+ <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#06152a"/><stop offset="1" stop-color="#020817"/></linearGradient>
+ <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9af5ff"/><stop offset=".45" stop-color="#08d8f2"/><stop offset="1" stop-color="#0874d7"/></linearGradient>
+ <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#63ffd0"/><stop offset="1" stop-color="#00b889"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="1000" height="820" rx="72" fill="url(#bg)"/>
+<g opacity=".92" filter="url(#glow)">
+ <rect x="180" y="72" width="570" height="400" rx="40" fill="#092943" fill-opacity=".5" stroke="#58eaff" stroke-width="9"/>
+ <path d="M181 166h568" stroke="#31dff5" stroke-width="8"/>
+ <circle cx="232" cy="120" r="15" fill="#11c9ed"/><circle cx="278" cy="120" r="15" fill="#16d8a5"/><circle cx="324" cy="120" r="15" fill="#16d8a5"/>
+ <rect x="220" y="210" width="165" height="105" fill="none" stroke="#17cce9" stroke-width="7"/><path d="m220 210 165 105m0-105L220 315" stroke="#17cce9" stroke-width="6"/>
+ <rect x="420" y="210" width="170" height="105" fill="none" stroke="#13d6ad" stroke-width="7"/>
+ <path d="M230 350h120m70 0h100M230 390h90m100 0h70" stroke="#12cde9" stroke-width="12" stroke-linecap="round"/>
+ <path d="M600 220h55v-50m0 0 0-35m0 35 28-28m-28 28-28-28M630 310h65q35 0 35 35v28m0 0-25-25m25 25 25-25" fill="none" stroke="url(#green)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+ <path d="M600 400h-45q-30 0-30 30v22" fill="none" stroke="#10cce8" stroke-width="8"/>
+ <circle cx="655" cy="170" r="17" fill="#14d7ad"/><circle cx="530" cy="430" r="12" fill="#0dc8e7"/>
+ <path d="M170 680 610 240l70 70-440 440-92 22z" fill="url(#cyan)" stroke="#a6f8ff" stroke-width="9" stroke-linejoin="round"/>
+ <path d="m610 240 40-40 70 70-40 40" fill="#0a8fd4" stroke="#42e8f7" stroke-width="8"/>
+ <path d="m170 680 70 70-92 22z" fill="#d9ffff" stroke="#12cde9" stroke-width="8"/>
+ <path d="m240 750 440-440" stroke="#d9ffff" stroke-width="7" opacity=".85"/>
+ <path d="M135 630c-40-60 20-135 105-145 70-8 115 40 60 85-48 40-110 18-118-20" fill="none" stroke="#dff8ff" stroke-width="9" stroke-linecap="round"/>
+ <circle cx="760" cy="300" r="28" fill="#05d4f1" stroke="#a2f7ff" stroke-width="8"/>
+ <circle cx="760" cy="300" r="48" fill="none" stroke="#19d9b0" stroke-width="8"/>
+</g>
+<g font-family="Trebuchet MS,Arial,sans-serif" font-weight="800">
+ <text x="250" y="770" font-size="112" font-style="italic" fill="#f5fbff" letter-spacing="-8">sketch</text>
+ <text x="655" y="770" font-size="112" fill="#13d9eb" letter-spacing="-7">izi</text>
+</g>
 </svg>
