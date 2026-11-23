@@ -115,7 +115,7 @@ export function useWorkspaceTabs({
       // Per-tool style memory travels with the tab so it survives tab switches and reloads.
       toolStylePresets: toolStyles.exportCanvas(activeCanvasIdRef.current) || undefined,\n      systemDesign: systemDesignRef?.current?.getTabState?.(activeCanvasIdRef.current),
     };
-  }, [apiRef, currentFileRef, getCurrentFileSceneSignature, toolStyles]);
+  }, [apiRef, currentFileRef, getCurrentFileSceneSignature, toolStyles, systemDesignRef]);
 
   const persistCanvasTabs = useCallback((nextTabs) => {
     const normalizedTabs = nextTabs.map((tab) => ({ ...tab, active: tab.id === activeCanvasIdRef.current }));
