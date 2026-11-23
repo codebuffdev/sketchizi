@@ -11,10 +11,10 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/sketchizi-favicon.svg",
+      "src": "/sketchizi-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
