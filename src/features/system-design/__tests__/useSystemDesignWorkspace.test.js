@@ -10,7 +10,7 @@ import {
 
 test("System Design activation is isolated to its document tab", () => {
   const tabs = [
-    { id: "tab-1", snapshot: { systemDesign: { active: false, studioMode: "canvas", simRunning: false, baseRps: 10000, inspectorOpen: false } } },
+    { id: "tab-1", snapshot: { elements: [{ id: "node-1", type: "rectangle" }, { id: "edge-1", type: "arrow" }], systemDesign: { active: false, studioMode: "canvas", simRunning: false, baseRps: 10000, inspectorOpen: false } } },
     { id: "tab-2", snapshot: { elements: [], systemDesign: { ...DEFAULT_SYSTEM_DESIGN_TAB_STATE } } },
   ];
   let workspaceByTabId = createSystemDesignWorkspaceByTabId(tabs, "tab-1");
@@ -25,6 +25,7 @@ test("System Design activation is isolated to its document tab", () => {
   const persistedTabs = persistSystemDesignTabState(tabs, "tab-1", workspaceByTabId["tab-1"]);
   assert.deepEqual(readSystemDesignTabState(persistedTabs, "tab-1"), workspaceByTabId["tab-1"]);
   assert.deepEqual(readSystemDesignTabState(persistedTabs, "tab-2"), DEFAULT_SYSTEM_DESIGN_TAB_STATE);
+  assert.deepEqual(persistedTabs[0].snapshot.elements.map((element) => element.id), ["node-1", "edge-1"], "tab graph elements remain attached to their document snapshot");
 
   const reloadedWorkspace = createSystemDesignWorkspaceByTabId(persistedTabs, "tab-2");
   assert.equal(reloadedWorkspace["tab-1"].active, true, "tab-1 studio mode survives IndexedDB tab reload");
