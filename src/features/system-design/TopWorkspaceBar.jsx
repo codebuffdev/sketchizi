@@ -58,11 +58,11 @@ export default function TopWorkspaceBar({ mode, onModeChange, simulate, onSimula
 
         <span className="sd-divider" aria-hidden="true" />
 
-        <button type="button" className="sd-components-trigger" onClick={onOpenIconLibrary} disabled={!canEdit}
+        <button type="button" className="sd-components-trigger" aria-label="Open System Design components" onClick={onOpenIconLibrary} disabled={!canEdit}
           title="Browse all 16 System Design components in Icon Library">
           <Icon name="plus" size={14} /><span>Components</span>
         </button>
-        <button type="button" className="sd-auto-layout-trigger" onClick={onAutoLayout} disabled={!canEdit || nodes.length < 2}
+        <button type="button" className="sd-auto-layout-trigger" aria-label="Auto-Layout components" onClick={onAutoLayout} disabled={!canEdit || nodes.length < 2}
           title={nodes.length < 2 ? "Add at least two components to auto-layout" : "Arrange components automatically"}>
           <Icon name="layout" size={14} /><span>Auto-Layout</span>
         </button>
