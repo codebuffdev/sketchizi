@@ -125,7 +125,7 @@
 .sd-node-sub { font-size: 11px; color: var(--sd-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sd-node-foot { display: flex; gap: 5px; align-items: center; flex-wrap: nowrap; overflow: hidden; }
 .sd-pill { font-size: 10px; padding: 1px 6px; border-radius: 6px; background: var(--sd-soft); color: var(--sd-text); white-space: nowrap; }
-.sd-status { font-size: 10px; padding: 1px 6px; border-radius: 6px; margin-left: auto; white-space: nowrap; }
+.sd-status { flex-shrink: 0; font-size: 10px; padding: 2px 6px; border-radius: 6px; margin-left: auto; white-space: nowrap; }
 .sd-status.s-healthy { color: var(--sd-emerald); background: rgba(5,150,105,.12); }
 .sd-status.s-elevated { color: var(--sd-amber); background: rgba(217,119,6,.14); }
 .sd-status.s-overloaded, .sd-status.s-down { color: var(--sd-red); background: rgba(220,38,38,.12); }
