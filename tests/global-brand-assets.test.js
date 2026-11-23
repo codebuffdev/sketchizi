@@ -9,7 +9,7 @@ test("document metadata uses the unified Sketchizi brand", () => {
   assert.match(html, /<title>Sketchizi<\/title>/);
   assert.match(html, /href="\/sketchizi-icon\.svg"/);
   assert.match(html, /content="#0b0f17"/);
-  assert.match(html, /sketchizi-icon\\.svg/);
+  assert.match(html, /sketchizi-icon\.svg/);
 });
 
 test("PWA manifest uses the unified dark brand theme and scalable icon", () => {
