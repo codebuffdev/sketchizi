@@ -2,6 +2,26 @@ import { formatRps } from "./trafficSimulator.js";
 
 export function deriveArchitectureDiagnostic(nodes = [], simulation = null, edges = []) {
   if (!simulation || !nodes.length) return null;
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  if (simulation.diagnostics?.noHealthyUpstreams) {
+    const group = simulation.healthChecks?.find((item) => item.allTargetsDown);
+    return { tone: "danger", message: `503 No Healthy Upstreams: ${group?.nodeLabel || "Load Balancer"} has no healthy downstream targets.` };
+  }
+  const failover = (simulation.healthChecks || []).find((group) => group.downTargets > 0 && group.healthyTargets > 0);
+  if (failover) {
+    const overloadedSurvivor = failover.targetIds
+      .map((id) => ({ node: byId.get(id), metrics: simulation.nodes[id] }))
+      .find(({ metrics }) => metrics && ["elevated", "overloaded"].includes(metrics.status));
+    if (overloadedSurvivor) {
+      const downNames = failover.downTargetIds.map((id) => byId.get(id)?.label).filter(Boolean);
+      return {
+        tone: "danger",
+        message: `⚠ Failover Overload: ${downNames.join(", ") || "A downstream service"} is down — remaining services absorbing ${formatRps(failover.redistributedRpsPerTarget)}/s each.`,
+      };
+    }
+    const down = failover.downTargetIds.map((id) => byId.get(id)?.label).filter(Boolean);
+    return { tone: "warning", message: `Health Check Failover: ${down.join(", ") || "A downstream service"} is down — redistributed ${formatRps(failover.redistributedRpsPerTarget)}/s across ${failover.healthyTargets} healthy targets.` };
+  }
   const failed = nodes.find((node) => simulation.nodes[node.id]?.status === "down");
   if (failed) return { tone: "danger", message: `Single Point of Failure: ${failed.label} is down — restore it or add healthy replicas.` };
   const overloaded = nodes
