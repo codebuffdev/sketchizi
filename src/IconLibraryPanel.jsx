@@ -144,6 +144,7 @@ export default function IconLibraryPanel({
   toggleFavorite,
   remoteError,
   onClose,
+  initialSource = "all",
 }) {
   const [activeSource, setActiveSource] = useState("all");
   const [viewMode, setViewMode] = useState(loadStoredViewMode);
@@ -272,8 +273,8 @@ export default function IconLibraryPanel({
   const displayedIcons = useMemo(() => {
     const query = search.trim();
     if (activeSource === "system-design") {
-      const query = search.trim().toLowerCase();
-      return query ? systemDesignIcons.filter((icon) => [icon.name, icon.id, ...icon.tags, ...icon.searchAliases].join(" ").toLowerCase().includes(query)) : systemDesignIcons;
+      const normalizedQuery = search.trim().toLowerCase();
+      return normalizedQuery ? systemDesignIcons.filter((icon) => [icon.name, icon.id, ...icon.tags, ...icon.searchAliases].join(" ").toLowerCase().includes(normalizedQuery)) : systemDesignIcons;
     }
     if (activeSource === "all" || activeSource === "eraser" || activeSource === "favorites" || activeSource === "recent") {
       return resolveDisplayedIcons({
@@ -334,12 +335,6 @@ export default function IconLibraryPanel({
   const shownIcons = displayedIcons.slice(0, iconDisplayLimit);
 
   const sourceTabs = [
-    { id: "aws", label: "AWS" },
-    { id: "networking", label: "Networking" },
-    { id: "kubernetes", label: "Kubernetes" },
-    { id: "mindmaps", label: "Mind Maps" },
-    { id: "uml", label: "UML" },
-    { id: "eraser", label: "Essentials" },
     { id: "system-design", label: "System Design (16)" },
     { id: "aws", label: "AWS" },
     { id: "networking", label: "Networking" },
@@ -349,6 +344,9 @@ export default function IconLibraryPanel({
     { id: "eraser", label: "Essentials" },
     { id: "all", label: "All" },
   ];
+  useEffect(() => {
+    if (initialSource && initialSource !== activeSource) chooseSource(initialSource);
+  }, [initialSource]);
 
   const collectionTitle = getActiveCollectionTitle(activeSource);
   return (
@@ -502,6 +500,7 @@ export default function IconLibraryPanel({
               if (source === "kubernetes") setActiveKubernetesCategory(category);
             }}
           >
+            <option value="system-design">System Design (16)</option>
             <option value="all">All icons ({allIcons.length.toLocaleString()})</option>
             <option value="system-design">System Design (16)</option>
             <optgroup label="Collections">
