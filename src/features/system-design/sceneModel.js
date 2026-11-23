@@ -12,7 +12,7 @@ import { createNodeMeta, getPrimitive, ACCENTS, HEALTH_OVERRIDES, PROTOCOLS } fr
 import { choosePorts, routeOrthogonal } from "./orthogonalRouter.js";
 
 export const CUSTOM_KEY = "sketchiziSystemDesign";
-export const NODE_SIZE = Object.freeze({ width: 200, height: 84 });
+export const NODE_SIZE = Object.freeze({ width: 204, height: 88 });
 
 export function isSystemDesignNode(element) {
   return Boolean(element && !element.isDeleted && element.type === "rectangle" && element.customData?.[CUSTOM_KEY]?.role === "node");
@@ -213,6 +213,8 @@ export function collectSceneRepairs(elements) {
       const patch = {};
       if (element.opacity !== 0) patch.opacity = 0;
       if (!isSolid(element.backgroundColor) || element.fillStyle !== "solid") { patch.backgroundColor = "#ffffff"; patch.fillStyle = "solid"; }
+      if (element.width < NODE_SIZE.width) patch.width = NODE_SIZE.width;
+      if (element.height < NODE_SIZE.height) patch.height = NODE_SIZE.height;
       if (element.angle) patch.angle = 0; // A rotated hit-box would drift away from the unrotated card.
       if (Object.keys(patch).length) repairs.set(element.id, patch);
     } else if (element.type === "arrow") {
