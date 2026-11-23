@@ -19,6 +19,8 @@ export default function SystemDesignStudio({ workspace, isDarkTheme }) {
   const rootRef = useRef(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [toast, setToast] = useState("");
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [inspectorTab, setInspectorTab] = useState("config");
 
   const getHost = useCallback(() => rootRef.current?.parentElement?.querySelector(".excalidraw") || null, []);
   const graph = useMemo(() => readGraph(snapshot.elements), [snapshot.elements]);
@@ -63,8 +65,14 @@ export default function SystemDesignStudio({ workspace, isDarkTheme }) {
     if (!enabled) return undefined;
     const region = rootRef.current?.parentElement;
     region?.classList.add("sd-active");
-    return () => region?.classList.remove("sd-active");
+    return () => { region?.classList.remove("sd-active"); region?.classList.remove("sd-has-system-selection"); };
   }, [enabled]);
+
+  useLayoutEffect(() => {
+    const region = rootRef.current?.parentElement;
+    region?.classList.toggle("sd-has-system-selection", Boolean(selection));
+    return () => region?.classList.remove("sd-has-system-selection");
+  }, [selection]);
 
   const selection = useMemo(() => {
     if (snapshot.selectedIds.length !== 1) return null;
@@ -83,11 +91,11 @@ export default function SystemDesignStudio({ workspace, isDarkTheme }) {
         offset={offset} getHost={getHost} actions={actions} canEdit={canEdit} />
       <TopWorkspaceBar mode={mode} onModeChange={workspace.setMode} simulate={simulate} onSimulateChange={onSimulateChange}
         loadRps={loadRps} onLoadChange={workspace.setLoadRps} onLoadBlueprint={actions.loadBlueprint} canEdit={canEdit} onClose={workspace.close}
-        nodes={graph.nodes} edges={graph.edges} diagnostic={simulate ? diagnostic : null} />
+        inspectorOpen={inspectorOpen} onToggleInspector={() => setInspectorOpen((value) => !value)}\n        nodes={graph.nodes} edges={graph.edges} diagnostic={simulate ? diagnostic : null} />
       {toast && <div className="sd-toast" role="status" aria-live="polite">{toast}</div>}
       <CollapsibleQuickDock onAdd={actions.addNode} onAutoLayout={actions.autoLayout}
         snapEnabled={workspace.gridEnabled} onSnapChange={workspace.setGridEnabled} canEdit={canEdit} />
-      <ContextualInspectorDrawer selection={selection} mode={mode} simulation={simulation} simulate={simulate} actions={actions} canEdit={canEdit} />
+      <ContextualInspectorDrawer selection={selection} mode={mode} simulation={simulation} simulate={simulate} actions={actions} canEdit={canEdit}\n        open={inspectorOpen} tab={inspectorTab} onTabChange={setInspectorTab}\n        onOpenInspector={(nextTab = "config") => { setInspectorTab(nextTab); setInspectorOpen(true); }} onClose={() => setInspectorOpen(false)} />
     </div>
   );
 }
