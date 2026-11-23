@@ -251,3 +251,9 @@
   .sd-export-foot > div { width: 100%; }
   .sd-export-foot button { flex: 1; justify-content: center; }
 }
+
+/* During simulation, keep the diagnostic and selected-element controls in a single vertical stack. */
+.sd-root:has(.sd-diagnostic) .sd-topbar { display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+.sd-root:has(.sd-diagnostic) .sd-topbar > .sd-topbar-pill,
+.sd-root:has(.sd-diagnostic) .sd-topbar > .sd-diagnostic { pointer-events: auto; }
+.sd-root:has(.sd-diagnostic) .sd-pill-bar { top: calc(var(--sd-ctx-top) + 46px); }
