@@ -13,7 +13,7 @@ import ExportStackModal from "./ExportStackModal.jsx";
  * Everything lives in the top-centre on purpose. Sketchizi's own header already owns the top-left (documents, save
  * status) and the top-right/right rail (zoom, date, AI, account), so the studio adds nothing in either corner.
  */
-export default function TopWorkspaceBar({ mode, onModeChange, simulate, onSimulateChange, loadRps, onLoadChange, onLoadBlueprint, canEdit = true, onClose, nodes = [], edges = [], diagnostic = null, inspectorOpen = false, onToggleInspector }) {
+export default function TopWorkspaceBar({ mode, onModeChange, simulate, onSimulateChange, loadRps, onLoadChange, onLoadBlueprint, canEdit = true, onClose, nodes = [], edges = [], diagnostic = null, inspectorOpen = false, onToggleInspector, onOpenIconLibrary, onAutoLayout }) {
   const [loadOpen, setLoadOpen] = useState(false);
   const [blueprintsOpen, setBlueprintsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -55,6 +55,17 @@ export default function TopWorkspaceBar({ mode, onModeChange, simulate, onSimula
               className={mode === item.id ? "is-active" : ""} onClick={() => onModeChange(item.id)}>{item.label}</button>
           ))}
         </div>
+
+        <span className="sd-divider" aria-hidden="true" />
+
+        <button type="button" className="sd-components-trigger" onClick={onOpenIconLibrary} disabled={!canEdit}
+          title="Browse all 16 System Design components in Icon Library">
+          <Icon name="plus" size={14} /><span>Components</span>
+        </button>
+        <button type="button" className="sd-auto-layout-trigger" onClick={onAutoLayout} disabled={!canEdit || nodes.length < 2}
+          title={nodes.length < 2 ? "Add at least two components to auto-layout" : "Arrange components automatically"}>
+          <Icon name="layout" size={14} /><span>Auto-Layout</span>
+        </button>
 
         <span className="sd-divider" aria-hidden="true" />
 
