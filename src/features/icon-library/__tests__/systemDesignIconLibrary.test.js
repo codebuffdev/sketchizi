@@ -7,7 +7,7 @@ import path from "node:path";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
 
-test("Icon Library exposes all 16 System Design primitives in tabs and category", () => {
+test("Icon Library exposes all 22 System Design primitives in tabs and category", () => {
   const panel = read("IconLibraryPanel.jsx");
   const primitives = read("features/system-design/primitives.js");
   assert.match(panel, /System Design \(16\)/);
@@ -16,7 +16,7 @@ test("Icon Library exposes all 16 System Design primitives in tabs and category"
   assert.match(panel, /source === "system-design" \? <PrimitiveIcon/);
   assert.match(panel, /searchAliases/);
   assert.match(primitives, /export const PRIMITIVES = Object\.freeze\(\[/);
-  assert.equal((primitives.match(/p\(\{ kind:/g) || []).length, 16);
+  assert.equal((primitives.match(/p\(\{ kind:/g) || []).length, 22);
 });
 
 test("System Design icon click and drag create live nodes and record Recent usage", () => {
