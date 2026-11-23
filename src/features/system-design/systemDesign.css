@@ -215,10 +215,22 @@
   .sd-more-menu { width: min(420px, calc(100vw - 48px)); }
 }
 
-/* While the studio is open, Sketchizi's bottom stroke/fill/freehand palette (.sketchizi-tool-options-dock, which it pins at
-   bottom-centre with z-index 10045) is hidden so only the studio dock is visible. Selector is more specific than its
-   `.app .sketchizi-tool-options-dock { ... !important }` rules, so no cascade-order dependence. */
-.app .sd-active .sketchizi-tool-options-dock { display: none !important; }
+/* The native formatting dock remains available for standard Excalidraw selections.
+   Hide it only when a System Design node/edge is selected and the custom pill replaces it. */
+.app .sd-active.sd-has-system-selection .sketchizi-tool-options-dock { display: none !important; }
+
+.sd-inspector-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 28px; padding: 0 9px; border-radius: 9px; color: var(--sd-text-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.sd-inspector-trigger:hover, .sd-inspector-trigger.is-active { color: var(--sd-emerald); background: rgba(5,150,105,.10); }
+.sd-replica-stepper { display: inline-flex; align-items: center; gap: 5px; color: var(--sd-text-2); font-size: 11px; white-space: nowrap; }
+.sd-replica-stepper > span { font-weight: 600; }
+.sd-replica-stepper b { min-width: 14px; text-align: center; color: var(--sd-text); font-size: 11px; }
+.sd-replica-stepper button { width: 22px; height: 22px; border: 1px solid var(--sd-border); border-radius: 7px; color: var(--sd-text); font-size: 15px; line-height: 1; }
+.sd-replica-stepper button:hover:not(:disabled) { color: var(--sd-emerald); background: var(--sd-soft); }
+.sd-replica-stepper button:disabled { opacity: .35; cursor: not-allowed; }
+.sd-edge-protocol { height: 26px; max-width: 94px; padding: 0 7px; border: 1px solid var(--sd-border); border-radius: 8px; background: var(--sd-card); color: var(--sd-text); font-size: 11px; }
+.sd-inspector-empty { gap: 10px; }
+.sd-inspector-empty > strong { color: var(--sd-text); font-size: 13px; }
+.sd-inspector-empty p { margin: 0; color: var(--sd-text-2); font-size: 12px; line-height: 1.55; }
 
 /* Remap Excalidraw's default primary/selection accent to emerald while the studio is open. */
 .sd-active .excalidraw, .sd-active .excalidraw.theme--dark {
