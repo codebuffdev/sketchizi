@@ -30,7 +30,7 @@ function sanitizeCustomIcon(value) {
   if (!value || typeof value !== "object") return null;
   const id = typeof value.id === "string" ? value.id.slice(0, 180) : "";
   const name = typeof value.name === "string" ? value.name.slice(0, 100) : "";
-  const src = typeof value.src === "string" && /^(https?:|data:image\\/svg\\+xml)/i.test(value.src) ? value.src.slice(0, 12000) : "";
+  const src = typeof value.src === "string" && (value.src.startsWith("https://") || value.src.startsWith("http://") || value.src.startsWith("data:image/svg+xml,") || value.src.startsWith("data:image/svg+xml;base64,")) ? value.src.slice(0, 12000) : "";
   if (!id || !name || !src) return null;
   return {
     id, name, src,
