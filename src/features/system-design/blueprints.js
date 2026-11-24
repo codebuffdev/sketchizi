@@ -107,7 +107,7 @@ const ALEX_XU_BLUEPRINTS = [
     [
       alexNode("client","client",0,140),alexNode("lb","load-balancer",300,140),
       alexNode("post","microservice",600,0,"Post Service",{replicas:8}),alexNode("feed","microservice",600,280,"Feed Service",{replicas:12}),
-      alexNode("bus","pubsub",900,0,"Fan-out Bus"),alexNode("worker","worker",1200,0,"Fanout Worker",{replicas:16,capacityPerReplica:3000}),
+      alexNode("bus","pubsub",900,0,"Fan-out Bus"),alexNode("worker","worker",1200,0,"Fanout Worker",{replicas:16,capacityPerReplica:1000}),
       alexNode("cache","redis",1500,0,"Timeline Cache"),alexNode("posts","sql",900,280,"Posts DB",{replicas:4}),
       alexNode("cdn","cdn",1500,280,"Media CDN"),
     ],[alexEdge("client","lb"),alexEdge("lb","post","gRPC"),alexEdge("lb","feed","gRPC"),alexEdge("post","bus","Kafka"),alexEdge("feed","bus","Kafka"),alexEdge("bus","worker","Kafka"),alexEdge("worker","cache","RESP"),alexEdge("worker","posts","SQL"),alexEdge("worker","cdn")]),
