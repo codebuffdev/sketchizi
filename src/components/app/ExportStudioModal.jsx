@@ -59,11 +59,22 @@ export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = 
       : systemGraph;
     const overlay = buildSystemDesignSvg({ ...overlayGraph, simulation, mode, background: "transparent", darkMode, padding: 24 });
     const inner = overlay.replace(/^<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
-    const sceneElements = data.elements;
-    const minX = Math.min(...sceneElements.map((element) => Number(element.x) || 0));
-    const minY = Math.min(...sceneElements.map((element) => Number(element.y) || 0));
-    const positionedOverlay = `<g transform="translate(${24 - minX} ${24 - minY})">${inner}</g>`;
-    return nativeMarkup.replace(/<\/svg>\s*$/, `${positionedOverlay}</svg>`);
+    const nativeBox = nativeMarkup.match(/viewBox="([^"]+)"/)?.[1]?.trim().split(/[\\s,]+/).map(Number);
+    const overlayBox = overlay.match(/viewBox="([^"]+)"/)?.[1]?.trim().split(/[\\s,]+/).map(Number);
+    if (!nativeBox || !overlayBox || nativeBox.length !== 4 || overlayBox.length !== 4) {
+      return nativeMarkup.replace(/<\\/svg>\\s*$/, "<g>" + inner + "</g></svg>");
+    }
+    const minX = Math.min(nativeBox[0], overlayBox[0]);
+    const minY = Math.min(nativeBox[1], overlayBox[1]);
+    const maxX = Math.max(nativeBox[0] + nativeBox[2], overlayBox[0] + overlayBox[2]);
+    const maxY = Math.max(nativeBox[1] + nativeBox[3], overlayBox[1] + overlayBox[3]);
+    const width = maxX - minX;
+    const height = maxY - minY;
+    const root = nativeMarkup.match(/^<svg\\b[^>]*>/)?.[0];
+    if (!root) throw new Error("Unable to compose exported SVG");
+    const expandedRoot = root.replace(/\\swidth="[^"]*"/i, "").replace(/\\sheight="[^"]*"/i, "").replace(/\\sviewBox="[^"]*"/i, "")
+      .replace(/>$/, ' width="' + width + '" height="' + height + '" viewBox="' + minX + " " + minY + " " + width + " " + height + '">');
+    return nativeMarkup.replace(root, expandedRoot).replace(/<\\/svg>\\s*$/, "<g>" + inner + "</g></svg>");
   };
 
   const makePng = async () => {
