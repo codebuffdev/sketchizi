@@ -561,7 +561,7 @@ export default function DesktopAppHeader({
 
   return (
     <>
-      <CanvasPages api={canvasApi} canEdit={canEditCanvas} aiPanelOpen={aiAskOpen} onPageContextChange={onPageContextChange} />
+      <CanvasPages api={canvasApi} canEdit={canEditCanvas} aiPanelOpen={aiAskOpen} onPageContextChange={onPageContextChange} bookTitle={activeCanvasTabName} onRenameBookTitle={onRenameDocument} />
       <button
         type="button"
         className={nativeMenuOpen ? "desktop-app-menu-trigger desktop-app-menu-trigger-floating active" : "desktop-app-menu-trigger desktop-app-menu-trigger-floating"}
