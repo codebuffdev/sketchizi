@@ -15,7 +15,7 @@ import { applyCanvasAppearance, getCanvasAppearanceFromBackground, getCanvasAppe
 import { useSketchiziEscape, useSketchiziCanvasDismissal } from "./features/navigation/useSketchiziEscape";
 import { useDrawerPresence } from "./features/navigation/useDrawerPresence";
 import { useDocumentPersistence } from "./hooks/useDocumentPersistence";
-import { useSystemDesignWorkspace } from "./features/system-design/useSystemDesignWorkspace.js";
+import { useSystemDesignWorkspace } from "./features/system-design/useSystemDesignWorkspace.js"; import { useSystemDesignIconAssignment } from "./features/system-design/useSystemDesignIconAssignment.js";
 import { useWorkspaceTabState } from "./hooks/useWorkspaceTabState";
 import { useWorkspaceTabs } from "./hooks/useWorkspaceTabs";
 import { useCollaboration } from "./features/collaboration/useCollaboration";
@@ -657,15 +657,9 @@ function App() {
   };
   const systemDesign = useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize, canEdit: collaborationCanEdit, canvasTabsRef, activeCanvasIdRef, persistSystemDesignState });
   systemDesignRef.current = systemDesign;
-  const openSystemDesignIconLibrary = () => {
-    // Force a fresh source transition even if the library was already opened on System Design.
-    setIconLibraryInitialSource("all");
-    openPanel("icon-library");
-    requestAnimationFrame(() => {
-      setIconLibraryInitialSource("system-design");
-      searchRef.current?.focus();
-    });
-  };
+  const { target: iconAssignmentTarget, open: openSystemDesignIconLibrary, assign: assignSystemDesignNodeIcon, close: closeIconLibrary } = useSystemDesignIconAssignment({
+    systemDesign, setInitialSource: setIconLibraryInitialSource, setSearch, searchRef, openPanel, closePanel, markRecentlyUsed,
+  });
   const commands = createSketchiziCommandRegistry({
     apiRef,
     canEdit: collaborationCanEdit,
@@ -1948,11 +1942,12 @@ function App() {
               activateSelectionTool={activateSelectionTool} remoteLoading={remoteLoading}
               visibleIcons={visibleIcons} umlIcons={umlIcons} mindMapIcons={mindMapIcons} networkingIcons={networkingIcons} awsIcons={awsIcons} awsCategories={awsCategories} awsCategoryCounts={awsCategoryCounts} awsCategoryRepresentatives={awsCategoryRepresentatives} awsCatalogLogo={AWS_CATALOG_LOGO} awsCatalogLogoDark={AWS_CATALOG_LOGO_DARK} kubernetesIcons={kubernetesIcons} kubernetesCategories={kubernetesCategories} kubernetesCategoryCounts={kubernetesCategoryCounts} kubernetesCategoryRepresentatives={kubernetesCategoryRepresentatives} iconDisplayLimit={iconDisplayLimit}
               setIconDisplayLimit={setIconDisplayLimit} iconListRef={iconListRef}
-              draggingIcon={draggingIcon} handleIconClick={handleIconClick}
+              draggingIcon={draggingIcon} handleIconClick={iconAssignmentTarget ? assignSystemDesignNodeIcon : handleIconClick}
+              assignmentMode={Boolean(iconAssignmentTarget)} assignmentTargetLabel={iconAssignmentTarget?.nodeLabel || ""} onCancelAssignment={closeIconLibrary}
               handleIconPointerDown={handleIconPointerDown} handleIconMouseDown={handleIconMouseDown} handleDragStart={handleDragStart} createStarterMindMap={createStarterMindMap}
               isFavorite={isFavorite} toggleFavorite={toggleFavorite} remoteError={remoteError}
               iconLibraryPinned={isIconLibraryPinned} setIconLibraryPinned={setIconLibraryPinned}
-              onClose={() => closePanel("icon-library")}
+              onClose={closeIconLibrary}
             />
           )}
           </aside>,

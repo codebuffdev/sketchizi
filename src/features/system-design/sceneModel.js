@@ -26,6 +26,20 @@ export function hasSystemDesignContent(elements) {
   return (elements || []).some(isSystemDesignNode);
 }
 
+function sanitizeCustomIcon(value) {
+  if (!value || typeof value !== "object") return null;
+  const id = typeof value.id === "string" ? value.id.slice(0, 180) : "";
+  const name = typeof value.name === "string" ? value.name.slice(0, 100) : "";
+  const src = typeof value.src === "string" && (value.src.startsWith("https://") || value.src.startsWith("http://") || (value.src.startsWith("/") && !value.src.startsWith("//")) || value.src.startsWith("data:image/svg+xml,") || value.src.startsWith("data:image/svg+xml;base64,")) ? value.src.slice(0, 12000) : "";
+  if (!id || !name || !src) return null;
+  return {
+    id, name, src,
+    ...(typeof value.source === "string" ? { source: value.source.slice(0, 40) } : {}),
+    ...(typeof value.category === "string" ? { category: value.category.slice(0, 80) } : {}),
+    ...(typeof value.svgPath === "string" ? { svgPath: value.svgPath.slice(0, 4000) } : {}),
+  };
+}
+
 function sanitizeMeta(meta) {
   const primitive = getPrimitive(meta?.kind);
   if (!primitive) return null;
@@ -47,6 +61,7 @@ function sanitizeMeta(meta) {
     health: HEALTH_OVERRIDES.includes(meta.health) ? meta.health : "healthy",
     image: typeof meta.image === "string" && meta.image ? meta.image : primitive.image,
     subtitle: typeof meta.subtitle === "string" ? meta.subtitle : primitive.subtitle,
+    customIcon: sanitizeCustomIcon(meta.customIcon),
   };
 }
 

@@ -82,7 +82,7 @@ export default function SystemDesignStudio({ workspace, isDarkTheme, onOpenIconL
   return (
     <div ref={rootRef} className={`sd-root${isDarkTheme ? " is-dark" : ""}`} data-testid="system-design-studio" data-mode={mode}>
       <SystemDesignNodeOverlay graph={graph} simulation={simulation} simulate={showTelemetry} mode={mode} snapshot={snapshot}
-        offset={offset} getHost={getHost} actions={actions} canEdit={canEdit} />
+        offset={offset} getHost={getHost} actions={actions} canEdit={canEdit} onOpenIconLibrary={onOpenIconLibrary} />
       <TopWorkspaceBar mode={mode} onModeChange={workspace.setMode} simulate={simulate} onSimulateChange={onSimulateChange}
         loadRps={loadRps} onLoadChange={workspace.setLoadRps} onLoadBlueprint={actions.loadBlueprint} canEdit={canEdit} onClose={workspace.close}
         inspectorOpen={inspectorOpen} onToggleInspector={() => setInspectorOpen((value) => !value)}
@@ -91,7 +91,7 @@ export default function SystemDesignStudio({ workspace, isDarkTheme, onOpenIconL
       {toast && <div className="sd-toast" role="status" aria-live="polite">{toast}</div>}
       <ContextualInspectorDrawer selection={selection} mode={mode} simulation={simulation} simulate={simulate} actions={actions} canEdit={canEdit}
         hasUpstreamConnections={selection?.kind === "node" && graph.edges.some((edge) => edge.to === selection.item.id)}
-        open={inspectorOpen} tab={inspectorTab} onTabChange={setInspectorTab}
+        open={inspectorOpen} tab={inspectorTab} onTabChange={setInspectorTab} onOpenIconLibrary={onOpenIconLibrary}
         onOpenInspector={(nextTab = "config") => { setInspectorTab(nextTab); setInspectorOpen(true); }} onClose={() => setInspectorOpen(false)} />
     </div>
   );

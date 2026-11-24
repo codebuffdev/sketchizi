@@ -474,3 +474,46 @@
   .sd-command-modes button { min-width: 44px; padding-inline: 7px; }
   .sd-command-divider { margin-inline: 0; }
 }
+
+
+/* Custom technology logos live in the node's 22px icon slot; the small plus affordance
+   appears only on hover/selection so the compact architecture cards stay uncluttered. */
+.sd-node-icon-button {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 22px; width: 22px; height: 22px; min-width: 22px; padding: 0;
+  border: 1px solid var(--sd-border); border-radius: 7px; color: var(--sd-text-2);
+  background: var(--sd-soft); cursor: pointer; pointer-events: auto;
+}
+.sd-node-icon-button:disabled { cursor: default; }
+.sd-node-icon-button .sd-node-icon { width: 16px; height: 16px; }
+.sd-node-custom-icon { display: block; width: 17px; height: 17px; object-fit: contain; }
+.sd-node-icon-add {
+  position: absolute; right: -4px; bottom: -4px; display: grid; place-items: center;
+  width: 12px; height: 12px; border: 1px solid var(--sd-card); border-radius: 50%;
+  color: #fff; background: var(--sd-emerald); font-size: 10px; font-weight: 700;
+  line-height: 1; opacity: 0; transform: scale(.75); transition: opacity .12s ease, transform .12s ease;
+}
+.sd-node.is-hovered .sd-node-icon-add, .sd-node.is-selected .sd-node-icon-add,
+.sd-node-icon-button:focus-visible .sd-node-icon-add { opacity: 1; transform: scale(1); }
+.sd-node-icon-button:hover { border-color: var(--sd-emerald); color: var(--sd-emerald); }
+.sd-node-icon-button:focus-visible, .sd-icon-assign-btn:focus-visible, .sd-icon-reset-btn:focus-visible {
+  outline: 2px solid var(--sd-emerald); outline-offset: 2px;
+}
+.sd-icon-assign-btn, .sd-icon-reset-btn {
+  display: inline-flex; align-items: center; justify-content: center; height: 26px;
+  padding: 0 9px; border: 1px solid var(--sd-border); border-radius: 8px;
+  color: var(--sd-text); background: var(--sd-soft); font-size: 11px; font-weight: 600;
+  white-space: nowrap; cursor: pointer;
+}
+.sd-icon-assign-btn:hover:not(:disabled) { border-color: var(--sd-emerald); color: var(--sd-emerald); }
+.sd-icon-reset-btn { color: var(--sd-text-2); background: transparent; }
+.sd-icon-reset-btn:hover:not(:disabled) { color: var(--sd-red); border-color: var(--sd-red); }
+.sd-icon-assign-btn:disabled, .sd-icon-reset-btn:disabled { opacity: .5; cursor: not-allowed; }
+.sd-icon-assignment-row {
+  display: flex; align-items: center; gap: 7px; min-height: 38px; margin: 0 0 12px;
+  padding: 6px 8px; border: 1px solid var(--sd-border); border-radius: 10px;
+  color: var(--sd-text-2); background: var(--sd-soft); font-size: 11px;
+}
+.sd-icon-assignment-row > span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sd-context-custom-icon { display: block; width: 20px; height: 20px; flex: 0 0 20px; object-fit: contain; }

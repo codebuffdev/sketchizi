@@ -31,7 +31,7 @@ function Slider({ label, value, min, max, step = 1, format = (v) => v, onLive, o
  *       connector:  Connector          |  Solid · Dashed            |  Inspect ▾ | trash
  *  2. The telemetry / YAML drawer on the right. It is CLOSED by default and opens only when the person clicks YAML / Inspect.
  */
-export default function ContextualInspectorDrawer({ selection, mode, simulation, simulate, actions, canEdit, open, tab, onTabChange, onOpenInspector, onClose, hasUpstreamConnections = false }) {
+export default function ContextualInspectorDrawer({ selection, mode, simulation, simulate, actions, canEdit, open, tab, onTabChange, onOpenInspector, onClose, onOpenIconLibrary, hasUpstreamConnections = false }) {
   const [wide, setWide] = useState(false); // 380px default, 640px expanded; remembered while the studio is open
   const [yamlKind, setYamlKind] = useState(null); // null = follow the studio mode
   const [copied, setCopied] = useState(false);
@@ -71,9 +71,13 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
       {selection && <div className="sd-surface sd-pill-bar" role="toolbar" aria-label={isNode ? "Node options" : "Connector options"}>
         {isNode ? (
           <>
-            <PrimitiveIcon kind={item.kind} accent={item.accent} />
+            {item.customIcon?.src ? <img className="sd-context-custom-icon" src={item.customIcon.src} alt={item.customIcon.name || ""} /> : <PrimitiveIcon kind={item.kind} accent={item.accent} />}
             <input className="sd-inline-input" aria-label="Label" value={item.label} maxLength={60} disabled={!canEdit}
               onChange={(e) => patchNode({ label: e.target.value }, true)} onBlur={(e) => patchNode({ label: e.target.value.trim() || item.label })} onKeyDown={(e) => e.stopPropagation()} />
+            <button type="button" className="sd-icon-assign-btn" disabled={!canEdit}
+              title="Insert or change tech icon" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenIconLibrary?.(item); }}>Icon +</button>
+            {item.customIcon && <button type="button" className="sd-icon-reset-btn" disabled={!canEdit}
+              title="Reset to primitive icon" onClick={() => patchNode({ customIcon: null })}>Reset icon</button>}
           </>
         ) : (
           <span className="sd-pill-title">Connector</span>
@@ -171,6 +175,13 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
             </div>
           ) : (
             <div className="sd-drawer-body" role={isNode ? "tabpanel" : undefined} id={isNode ? "sd-panel-config" : undefined} aria-labelledby={isNode ? "sd-tab-config" : undefined}>
+              {isNode && <div className="sd-icon-assignment-row">
+                <span>{item.customIcon?.name || "Primitive icon"}</span>
+                <button type="button" className="sd-icon-assign-btn" disabled={!canEdit}
+                  onClick={() => onOpenIconLibrary?.(item)}>{item.customIcon ? "Change icon" : "Icon +"}</button>
+                {item.customIcon && <button type="button" className="sd-icon-reset-btn" disabled={!canEdit}
+                  onClick={() => patchNode({ customIcon: null })}>Reset icon</button>}
+              </div>}
               {isNode ? (
                 <>
                   <div className="sd-readouts">
