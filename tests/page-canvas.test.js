@@ -202,7 +202,8 @@ test('Pages tabs are routed by tab identity and repaired before the Pages worksp
  assert.doesNotMatch(modeIcon, /pageMode === "pages"/);
  assert.match(header, /workspaceMode=\{workspaceMode\}/);
  assert.match(pages, /workspaceMode = "infinite"/);
- assert.match(pages, /changeMode\(nextMode, false\)/);\n assert.match(pages, /onWorkspaceModeChange\?\.\(value\)/);
+ assert.match(pages, /changeMode\(nextMode, false\)/);
+ assert.match(pages, /onWorkspaceModeChange\?\.\(value\)/);
  assert.match(pages, /const fallbackPage = mode === "pages" && pages\.length === 0/);
  assert.match(pages, /const displayPages = pages\.length \? pages : \(fallbackPage \? \[fallbackPage\] : \[\]\)/);
  assert.match(pages, /pageMaskForRender = fallbackPage \? fallbackPageMask : pageMask/);
