@@ -280,7 +280,7 @@
    resizing discoverable without a persistent Resize mode or visible handles. */
 .canvas-pages-resize-hit {
   position: fixed;
-  z-index: 10031 !important;
+  z-index: 10027 !important;
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -344,7 +344,7 @@
   border: 1px solid #059669;
   border-radius: 3px;
   background: var(--ui-surface-solid, #fff);
-  box-shadow: 0 0 0 4px rgb(167 157 224 / 12%);
+  box-shadow: 0 0 0 4px rgb(5 150 105 / 12%);
 }
 
 .canvas-pages-resize-hit.is-nw::after { top: 100%; left: 100%; transform: translate(-50%, -50%); }
