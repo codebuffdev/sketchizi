@@ -47,7 +47,7 @@ function LabelEditor({ initial, onDone }) {
   );
 }
 
-export default function SystemDesignNodeOverlay({ graph, simulation, mode, snapshot, offset, getHost, actions, canEdit, simulate }) {
+export default function SystemDesignNodeOverlay({ graph, simulation, mode, snapshot, offset, getHost, actions, canEdit, simulate, onOpenIconLibrary }) {
   const { scrollX, scrollY, zoom, selectedIds } = snapshot;
   const [hoverId, setHoverId] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -243,7 +243,16 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
             <div key={node.id} className={`sd-node is-${node.accent} s-${status}${selected ? " is-selected" : ""}${isDropTarget ? " is-drop-target" : ""}${armedConnect?.nodeId === node.id ? " is-connect-armed" : ""}`}
               style={{ left: node.x, top: node.y, width: node.width, height: node.height }} data-node-id={node.id} data-kind={node.kind}>
               <div className="sd-node-head">
-                <PrimitiveIcon kind={node.kind} accent={node.accent} className="sd-node-icon" />
+                <button type="button" className={`sd-node-icon-button${node.customIcon ? " has-custom-icon" : ""}`}
+                  title="Insert or change tech icon" aria-label={`Insert or change tech icon for ${node.label}`}
+                  disabled={!canEdit} onPointerDown={stop} onClick={(event) => {
+                    stop(event); event.preventDefault(); onOpenIconLibrary?.(node);
+                  }}>
+                  {node.customIcon?.src
+                    ? <img className="sd-node-custom-icon" src={node.customIcon.src} alt={node.customIcon.name || ""} draggable={false} />
+                    : <PrimitiveIcon kind={node.kind} accent={node.accent} className="sd-node-icon" />}
+                  <span className="sd-node-icon-add" aria-hidden="true">+</span>
+                </button>
                 {editingId === node.id
                   ? <LabelEditor initial={node.label} onDone={(value) => { setEditingId(null); if (value) actions.updateNodeMeta(node.id, { label: value }); }} />
                   : <strong className="sd-node-label">{node.label}</strong>}
