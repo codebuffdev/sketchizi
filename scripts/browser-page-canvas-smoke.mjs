@@ -94,8 +94,8 @@ try {
  await pageNameInput.press('Enter');
  await page.waitForFunction(()=>document.querySelector('.canvas-pages-page-name')?.textContent.trim()==='Cover');
  // Exercise inline editorial metadata and per-chapter paper texture persistence.
- await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover');
- es = await waitScene(es => pages(es)[0]?.customData?.chapterTitle === 'Cover');
+ await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover chapter');
+ es = await waitScene(es => pages(es)[0]?.customData?.chapterTitle === 'Cover chapter');
  await page.getByRole('textbox', { name: 'Key formula or rule of thumb' }).fill('100M DAU × 20 req/day ≈ 23,150 QPS');
  es = await waitScene(es => pages(es)[0]?.customData?.keyNote?.includes('23,150 QPS'));
  await page.getByRole('button', { name: 'Ruled', exact: true }).click();
