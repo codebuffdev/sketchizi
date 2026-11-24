@@ -652,7 +652,7 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
       inlineName && inlineName.pageId === active?.id ? <input
         ref={inlineNameInputRef}
         className="canvas-pages-page-name-input"
-        style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 31) }}
+        style={{ left: pageMaskForRender.pageRect.left, top: Math.max(8, pageMaskForRender.pageRect.top - 31) }}
         aria-label="Edit page name"
         autoFocus
         maxLength={80}
@@ -660,7 +660,7 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
         onChange={event => setInlineName(current => ({ ...current, value: event.target.value }))}
         onBlur={saveInlineName}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); } if (event.key === 'Escape') { event.preventDefault(); cancelInlineNameRef.current = true; setInlineName(null); } }}
-      /> : <button type="button" className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>,
+      /> : <button type="button" className="canvas-pages-page-name" style={{ left: pageMaskForRender.pageRect.left, top: Math.max(8, pageMaskForRender.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>,
       host,
     )}
 
