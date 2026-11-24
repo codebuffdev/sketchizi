@@ -772,6 +772,36 @@ function App() {
     return () => window.removeEventListener("sketchizi:workspace-canvas-choice", handleWorkspaceCanvasChoice);
   }, [chooseStartupCanvas]);
 
+  // Hamburger Workspace tiles create a fresh editor tab rather than changing
+  // the mode or contents of the currently active tab. Cloud Files deliberately
+  // keeps its existing navigation flow.
+  useEffect(() => {
+    const createWorkspaceTab = (event) => {
+      const mode = event.detail?.mode;
+      if (mode !== "infinite" && mode !== "pages") return;
+      startupChoiceMadeRef.current = true;
+      setStartupChooserOpen(false);
+      createCanvasTab();
+      if (mode === "pages") {
+        window.requestAnimationFrame(() => {
+          window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "pages" } }));
+        });
+      }
+    };
+    const openLocalFileInNewTab = () => {
+      startupChoiceMadeRef.current = true;
+      setStartupChooserOpen(false);
+      createCanvasTab();
+      window.requestAnimationFrame(() => fileActionsRef.current.openDrawingFromDisk?.());
+    };
+    window.addEventListener("sketchizi:workspace-create-tab", createWorkspaceTab);
+    window.addEventListener("sketchizi:workspace-open-local-file", openLocalFileInNewTab);
+    return () => {
+      window.removeEventListener("sketchizi:workspace-create-tab", createWorkspaceTab);
+      window.removeEventListener("sketchizi:workspace-open-local-file", openLocalFileInNewTab);
+    };
+  }, [createCanvasTab, fileActionsRef]);
+
   const applyKubernetesResourceYaml = useCallback((resource) => {
     const api = apiRef.current;
     if (!api?.updateScene || !collaborationCanEdit || !resource?.manifest) {
