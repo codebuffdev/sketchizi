@@ -180,7 +180,7 @@ try {
   if (previousBuild) await page.unroute(appRequests, usePreviousBuild);
   await page.reload({ waitUntil: "networkidle", timeout: 60000 });
   await page.locator(".excalidraw").waitFor();
-  await page.locator(".canvas-tab.is-active .canvas-tab-status-dot").waitFor({ state: "attached", timeout: 20000 });
+  await page.locator(".canvas-tab-item.is-active .canvas-tab-name").waitFor({ state: "attached", timeout: 20000 });
   await page.evaluate((original) => { window.__drawingSmokeOriginalBounds = original; }, { id: drawn.id, x: drawn.x, y: drawn.y });
   await awaitScene(async () => {
     const scene = await currentDrawing();
@@ -273,7 +273,7 @@ try {
         await failingPage.mouse.down();
         await failingPage.mouse.move(failureX + 120, failureY + 90, { steps: 6 });
         await failingPage.mouse.up();
-        await failingPage.locator(".canvas-tab-status-dot.is-error").waitFor({ state: "visible", timeout: 25000 });
+        await failingPage.locator(".canvas-tab-item.is-active .canvas-tab-dirty").waitFor({ state: "visible", timeout: 25000 });
         console.log(`PASS: a failed ${failedKey} write shows a local save error.`);
       } finally {
         await failingContext.close();
