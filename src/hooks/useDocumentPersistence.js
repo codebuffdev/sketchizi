@@ -146,7 +146,7 @@ export function useDocumentPersistence({
       completed: Boolean(frame.customData?.completed),
       paperTexture: frame.customData?.paperTexture || "Dots",
       elements: sceneElements.filter(element => element.id === frame.id || element.frameId === frame.id || element.customData?.sketchiziPagePaper === frame.id),
-      appState: frame.customData?.chapterAppState || sceneAppState,
+      appState: frame.customData?.chapterAppState || { zoom: sceneAppState.zoom, scrollX: sceneAppState.scrollX, scrollY: sceneAppState.scrollY },
     }));
     const activeChapterId = chapterFrames.find(frame => frame.customData?.activeChapterId)?.customData?.activeChapterId || null;
     const activeSnapshot = {
