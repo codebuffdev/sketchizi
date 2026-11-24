@@ -980,3 +980,10 @@ body:has(.pages-book-workspace) .sketchizi-appearance {
 .app[data-canvas-view="pages"] .excalidraw button[aria-label="Scroll back to content"] {
   display: none !important;
 }
+
+html:has(.app[data-canvas-view="pages"]),
+body:has(.app[data-canvas-view="pages"]),
+.app[data-canvas-view="pages"] {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
