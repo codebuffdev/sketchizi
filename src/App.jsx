@@ -470,12 +470,18 @@ function App() {
     const activeTab = canvasTabsRef.current.find(tab => tab.id === tabId);
     if (!tabId || !activeTab) return false;
     try {
+      const tabsBeforeClose = canvasTabsRef.current;
+      const tabIndex = tabsBeforeClose.findIndex(tab => tab.id === activeTab.id);
+      const nextTab = tabsBeforeClose[tabIndex - 1] || tabsBeforeClose.find(tab => tab.id !== activeTab.id);
+      const nextTabHasPages = Array.isArray(nextTab?.snapshot?.elements) &&
+        nextTab.snapshot.elements.some(element => element?.type === "frame" && element.customData?.sketchiziPage && !element.isDeleted);
+      const needsFreshCanvas = tabsBeforeClose.length <= 1;
       await deleteDocument(activeTab.id);
-      if (canvasTabsRef.current.length <= 1) {
-        createCanvasTab({ name: "Canvas 1" });
+      if (needsFreshCanvas) createCanvasTab({ name: "Canvas 1" });
+      performCloseCanvasTab(activeTab.id, { keepDraft: false });
+      if (needsFreshCanvas || !nextTabHasPages) {
         window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "infinite" } }));
       }
-      performCloseCanvasTab(activeTab.id, { keepDraft: false });
       await commitCanvasTabs();
       return true;
     } catch (error) {
