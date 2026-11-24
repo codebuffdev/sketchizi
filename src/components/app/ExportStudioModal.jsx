@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
-import { readGraph } from "../../features/system-design/sceneModel.js";
+import { isSystemDesignEdge, isSystemDesignNode, readGraph } from "../../features/system-design/sceneModel.js";
 import { simulateTraffic } from "../../features/system-design/trafficSimulator.js";
 import { buildSystemDesignSvg, svgToCanvas } from "../../features/system-design/exportSystemDesignImage.js";
 
@@ -52,13 +52,19 @@ export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = 
   const getCombinedSystemSvg = async () => {
     const data = getExportData();
     if (!data?.elements.length) throw new Error("No elements to export");
-    const nativeSvg = await exportToSvg({ elements: data.elements, appState: data.appState, files: data.files });
-    const nativeMarkup = new XMLSerializer().serializeToString(nativeSvg);
-    const overlayGraph = exportOnlySelected && data.elements.length
+    const nativeElements = data.elements.filter((element) => !isSystemDesignNode(element) && !isSystemDesignEdge(element));
+    const overlayGraph = exportOnlySelected
       ? { nodes: systemGraph.nodes.filter((node) => data.elements.some((element) => element.id === node.id)),
           edges: systemGraph.edges.filter((edge) => data.elements.some((element) => element.id === edge.from) && data.elements.some((element) => element.id === edge.to)) }
       : systemGraph;
-    const overlay = buildSystemDesignSvg({ ...overlayGraph, simulation, mode, background: "transparent", darkMode, padding: 24 });
+    const overlay = buildSystemDesignSvg({
+      ...overlayGraph, simulation, mode,
+      background: nativeElements.length ? "transparent" : bgMode,
+      darkMode, padding: 24,
+    });
+    if (!nativeElements.length) return overlay;
+    const nativeSvg = await exportToSvg({ elements: nativeElements, appState: data.appState, files: data.files });
+    const nativeMarkup = new XMLSerializer().serializeToString(nativeSvg);
     if (!overlay) return nativeMarkup;
     const inner = overlay.replace(/^<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
     const nativeBox = nativeMarkup.match(/viewBox="([^"]+)"/)?.[1]?.trim().split(/[\s,]+/).map(Number);
