@@ -38,6 +38,6 @@ test("Open File creates a tab before invoking the existing local file picker", (
 
 test("workspace tiles no longer expose an active purple mode state", () => {
   assert.match(menu, /setAttr\(tile, "data-active", "false"\)/);
-  assert.match(menu, /data-tone="emerald"/);
+  assert.match(menu, /data-tone="slate"/);
   assert.match(styles, /\.sketchizi-ws-tile\[data-active="true"\]/);
 });
