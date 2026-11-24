@@ -46,6 +46,7 @@ export default function PagesBookWorkspace({
   const requestDeleteChapter = page => {
     if (!page) return;
     if (pages.length === 1) {
+      if (chapterIndexOpen) onToggleChapterIndex?.();
       setDeleteOnlyPageOpen(true);
       return;
     }
