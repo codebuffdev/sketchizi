@@ -1075,6 +1075,7 @@ export function useWorkspaceTabs({
     persistActiveCanvasSnapshot,
     switchCanvasTab,
     selectWorkspaceTab,
+    setActiveCanvasTabType,
     createCanvasTab,
     reopenClosedTab,
     deleteClosedTab,
