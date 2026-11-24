@@ -987,3 +987,7 @@ body:has(.app[data-canvas-view="pages"]),
   overflow: hidden !important;
   overscroll-behavior: none !important;
 }
+
+.app[data-canvas-view="pages"] .sketchizi-grid-spotlight {
+  display: none !important;
+}
