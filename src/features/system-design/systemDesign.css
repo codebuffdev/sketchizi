@@ -74,7 +74,7 @@
 /* Overlay layer (scene-space) */
 .sd-overlay { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .sd-layer { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
-.sd-edges { position: absolute; left: 0; top: 0; z-index: 0; display: block; width: auto !important; height: auto !important; max-width: none !important; max-height: none !important; overflow: visible; pointer-events: none; flex: none; }
+.sd-edges { position: absolute; left: 0; top: 0; z-index: 0; display: block; max-width: none !important; max-height: none !important; overflow: visible; pointer-events: none; flex: none; }
 .sd-edge path { stroke: #64748b; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .sd-edge.is-dashed path { stroke-dasharray: 6 5; }
 .sd-edge.is-ok path { stroke: var(--sd-emerald); } .sd-edge.is-warm path { stroke: var(--sd-amber); } .sd-edge.is-hot path { stroke: var(--sd-red); }
