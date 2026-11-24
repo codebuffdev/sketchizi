@@ -57,7 +57,7 @@ function runAfterCanvasLayoutSettles(api, callback) {
   return () => window.cancelAnimationFrame(frame);
 }
 
-export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, onPageContextChange, bookTitle, onRenameBookTitle }) {
+export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, onPageContextChange, bookTitle, onRenameBookTitle, onDeleteOnlyPage }) {
   const [mode, setMode] = useState(() => { try { return localStorage.getItem('sketchizi.canvasView') === 'pages' ? 'pages' : 'infinite'; } catch { return 'infinite'; } });
   const [pages, setPages] = useState([]);
   const [canvasTheme, setCanvasTheme] = useState(() => api?.getAppState?.()?.theme || "light");
@@ -618,6 +618,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
         onToggleChapterIndex={() => setChapterIndexOpen(value => !value)}
         onSelectChapter={page => { if (page) fit(page); setChapterIndexOpen(false); }}
         onDeleteChapter={page => { deletePage(page); setChapterIndexOpen(false); }}
+        onDeleteOnlyPage={onDeleteOnlyPage}
         onAddChapter={() => { add(); setChapterIndexOpen(false); }} />, host)}
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask">
