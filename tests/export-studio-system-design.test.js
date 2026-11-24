@@ -33,7 +33,7 @@ test("Export Studio subscribes to the active System Design graph and composes it
 });
 
 test("left native WORKSPACE menu continues to remove image export and canvas find", () => {
-  assert.ok(nativeMenu.includes('new Set(["export image", "export image...", "find on canvas"])'));
+  assert.ok(nativeMenu.includes('new Set(["export image", "export image...", "export image…", "find on canvas"])'));
   assert.ok(nativeMenu.includes('key === "f" || (key === "e" && event.shiftKey)'));
   assert.ok(nativeMenu.includes('window.addEventListener("keydown", onKeyDown, true)'));
 });
