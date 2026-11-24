@@ -204,6 +204,7 @@ test("deleting the only Pages chapter requires accessible confirmation and close
   assert.match(app, /performCloseCanvasTab\(activeTab\.id, \{ keepDraft: false \}\)/);
   assert.match(app, /createCanvasTab\(\{ name: "Canvas 1" \}\)/);
   assert.match(app, /mode: "infinite"/);
+  assert.match(app, /nextTabHasPages/);
   assert.match(tabs, /\(\{ name: requestedName \} = \{\}\)/);
   assert.match(persistence, /export async function deleteDocument\(id\)/);
   assert.match(styles, /pages-delete-confirm-submit/);
