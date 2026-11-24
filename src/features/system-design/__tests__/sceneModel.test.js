@@ -241,3 +241,48 @@ test("System Design nodes use 204x88 minimum geometry and migrate undersized leg
   const migrated = { ...legacy, ...patch };
   assert.equal(collectSceneRepairs([migrated]).size, 0);
 });
+
+test("tagged blueprint edge metadata wins over conflicting inferred Excalidraw bindings", () => {
+  const a = asElement(createNodeSkeleton("client", { x: 0, y: 0 }), "client");
+  const b = asElement(createNodeSkeleton("api-gateway", { x: 400, y: 0 }), "gateway");
+  const c = asElement(createNodeSkeleton("microservice", { x: 800, y: 0 }), "service");
+  const edge = asElement(createEdgeSkeleton(readNode(a), readNode(b), { protocol: "HTTPS" }, "client-gateway"), "client-gateway");
+  // Simulate Excalidraw's inferred bindings attaching to a neighbouring node after conversion.
+  edge.startBinding = { elementId: "service" };
+  edge.endBinding = { elementId: "client" };
+  const graph = readGraph([a, b, c, edge]);
+  assert.equal(graph.edges.length, 1);
+  assert.deepEqual(
+    [graph.edges[0].from, graph.edges[0].to],
+    ["client", "gateway"],
+    "the blueprint's explicit from/to metadata is the source of truth",
+  );
+});
+
+test("all notification blueprint edges survive conflicting inferred arrow bindings", () => {
+  const blueprint = BLUEPRINTS.find((item) => item.id === "notification-system");
+  const ids = new Map(blueprint.nodes.map((node) => [node.key, `node-${node.key}`]));
+  const nodes = blueprint.nodes.map((node) => asElement(
+    createNodeSkeleton(node.kind, { x: node.x, y: node.y }, node.overrides || {}, ids.get(node.key)),
+    ids.get(node.key),
+  ));
+  const rects = new Map(nodes.map((node) => [node.id, readNode(node)]));
+  const edges = blueprint.edges.map((item, index) => {
+    const edge = asElement(createEdgeSkeleton(
+      rects.get(ids.get(item.fromNode)), rects.get(ids.get(item.toNode)),
+      { protocol: item.protocol, fromPort: item.fromPort, toPort: item.toPort },
+      `notification-edge-${index}`,
+    ), `notification-edge-${index}`);
+    // Deliberately wrong inferred bindings must not collapse the graph into duplicate pairs.
+    edge.startBinding = { elementId: ids.get("log") };
+    edge.endBinding = { elementId: ids.get("client") };
+    return edge;
+  });
+  const graph = readGraph([...nodes, ...edges]);
+  assert.equal(graph.edges.length, blueprint.edges.length);
+  for (const item of blueprint.edges) {
+    assert.ok(graph.edges.some((edge) =>
+      edge.from === ids.get(item.fromNode) && edge.to === ids.get(item.toNode)
+    ), `missing canonical edge ${item.fromNode}->${item.toNode}`);
+  }
+});
