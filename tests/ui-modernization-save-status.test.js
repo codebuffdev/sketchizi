@@ -34,14 +34,15 @@ test("header wires Save now and recovery download to existing persistence callba
   assert.match(header, /onDownloadRecoveryBackup\?\.\(\)/);
 });
 
-test("recovery details explain browser-local storage and expose current-canvas backup", () => {
-  assert.match(header, /Local save &amp; recovery/);
-  assert.match(header, /autosaves this canvas in this browser on this device/);
-  assert.match(header, /Download recovery backup/);
-  assert.match(header, /Local autosave is not a cloud backup/);
-  assert.match(header, /role="dialog"/);
+test("compact save popover replaces verbose recovery banners with one helpful status tooltip", () => {
+  assert.match(header, /This draft is automatically saved in this browser/);
+  assert.match(header, /aria-label="Recovery backup"/);
+  assert.match(header, /onDownloadRecoveryBackup\?\.\(\)/);
+  assert.doesNotMatch(header, /Local save &amp; recovery/);
+  assert.doesNotMatch(header, /Local autosave is not a cloud backup/);
+  assert.match(tabs, /createPortal\(/);
+  assert.match(tabs, /has-save-menu/);
 });
-
 test("save status styling supports dark mode, small desktop widths, and keyboard focus", () => {
   assert.match(styles, /\.app\.theme-dark \.desktop-app-save-status-popover/);
   assert.match(styles, /@media \(max-width: 1280px\) and \(min-width: 1025px\)/);
@@ -56,43 +57,39 @@ test("save status stylesheet is imported with the other stylesheets before CSS r
 });
 
 
-test("document identity distinguishes cloud-backed drawings from local files in the active-tab menu", () => {
+test("active-tab save header uses one status pill without repeating storage banners", () => {
   assert.match(header, /const storageLocation = isCloudDocument \? "Cloud" : currentDocumentFileBacked \? "File" : "Browser"/);
-  assert.match(header, /className="desktop-app-document-location"[^>]*>\{storageLocation\}/);
-  assert.match(header, /isCloudDocument \? "Cloud Workspace" : currentDocumentFileBacked \? "Saved to disk" : "Browser draft"/);
-  assert.match(header, /currentDocumentFileBacked \? \(currentDocumentDirty \? "Unsaved file changes" : "Saved to disk"\)/);
+  assert.match(header, /canvas-tabs-save-status/);
+  assert.match(header, /isCloudDocument \? "Cloud Workspace"/);
+  assert.doesNotMatch(header, /Browser draft<\/span>/);
+  assert.doesNotMatch(header, /desktop-app-document-location/);
 });
-
-test("active-tab status dot follows local autosave state, not file dirty state", () => {
-  assert.match(header, /!isCloudDocument && !currentDocumentFileBacked && \["pending", "saving", "saved", "error"\]\.includes\(saveState\)/);
-  assert.match(header, /desktop-app-document-identity-dirty-dot is-\$\{saveState === "saved" \? "draft" : saveState\}/);
-  assert.match(header, /Browser draft: autosaved in this browser, not saved to a file/);
-  assert.match(header, /canvas-tab-status-dot is-\$\{cloudSaveState\}/);
-  assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-saved\s*\{/);
-  assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-pending/);
-  assert.match(styles, /\.desktop-app-document-identity-dirty-dot\.is-error/);
-  assert.match(styles, /background: #22a06b/);
+test("active-tab save status reflects the relevant local, file, or cloud save state", () => {
+  assert.match(header, /!isCloudDocument && !currentDocumentFileBacked && \["pending", "saving", "error"\]\.includes\(saveState\)/);
+  assert.match(header, /currentDocumentFileBacked && currentDocumentDirty/);
+  assert.match(header, /isCloudDocument && \["pending", "saving", "error", "conflict"\]\.includes\(cloudSaveState\)/);
+  assert.match(header, /canvas-tabs-save-status/);
+  assert.match(tabStyles, /\.canvas-tabs-save-status\.is-unsaved/);
+  assert.match(tabStyles, /\.canvas-tabs-save-status\.is-saved/);
 });
-
-
-test("canvas menu groups save, cloud, download and backup actions with clear descriptions", () => {
+test("canvas menu groups compact save, cloud, and export actions", () => {
   assert.match(header, /<h3>Save &amp; sync<\/h3>/);
-  assert.ok(header.includes("<h3>Download &amp; export</h3>"));
+  assert.match(header, /<h3>Export<\/h3>/);
   assert.match(header, /aria-label="Save locally"/);
-  assert.match(header, /aria-label="Save to Cloud Workspace"/);
-  assert.ok(header.includes('aria-label={currentDocumentFileBacked ? "Save" : "Save to file…"}'));
-  assert.match(header, /aria-label="Download recovery backup"/);
+  assert.match(header, /aria-label="Save to Cloud"/);
+  assert.match(header, /<strong>Save to File\.\.\.<\/strong>/);
+  assert.match(header, /aria-label="Recovery backup"/);
   assert.match(header, /aria-label="Export studio"/);
-  assert.ok(header.includes("Export studio..."));
-  assert.match(header, /Choose PNG, SVG, clipboard and export settings/);
-  assert.match(header, /Keep a copy on this device/);
-  assert.match(header, /Sync with your Cloud Workspace/);
+  assert.match(header, /Ctrl\+Shift\+E/);
   assert.match(tabStyles, /\.canvas-tabs-active-menu-action-copy/);
-  assert.match(tabStyles, /\.canvas-tabs-action-state\.is-saved/);
+  assert.match(tabStyles, /height: 34px/);
+  assert.match(tabStyles, /width: 288px/);
+  assert.match(tabStyles, /z-index: 9999/);
 });
-
-test("canvas rename control is rendered beside the active tab name, outside its options menu", () => {
-  assert.match(tabs, /activeId === tab\.id && activeRenameAction && <span className="canvas-tab-inline-rename">/);
-  assert.match(header, /className="desktop-app-document-rename"/);
-  assert.match(tabStyles, /\.canvas-tab-inline-rename/);
+test("canvas tabs support double-click inline rename without a permanent pencil control", () => {
+  assert.match(tabs, /activeRenameAction\?\.type === "input"/);
+  assert.match(tabs, /onDoubleClick=\{\(\) => \{/);
+  assert.match(tabs, /onRename\?\.\(tab\.id\)/);
+  assert.match(header, /className="desktop-app-document-identity-name-input"/);
+  assert.match(tabStyles, /\.canvas-tab-editing-label/);
 });
