@@ -46,13 +46,16 @@ export function useNativeSketchiziMenu({
       let action = null;
       const canvasModeButton = target.closest?.('[data-sketchizi-canvas-mode]');
       if (canvasModeButton) {
-        event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.();
+        event.preventDefault();
         const mode = canvasModeButton.dataset.sketchiziCanvasMode;
-        window.dispatchEvent(new CustomEvent('sketchizi:workspace-canvas-choice', { detail: { mode } }));
-        if (mode === 'infinite') fileActionsRef.current.createNewFile?.();
+        window.dispatchEvent(new CustomEvent("sketchizi:workspace-create-tab", { detail: { mode } }));
         return;
       }
-      if (target.matches?.("[data-sketchizi-open-file]")) action = "openDrawingFromDisk";
+      if (target.matches?.("[data-sketchizi-open-file]")) {
+        event.preventDefault();
+        window.dispatchEvent(new CustomEvent("sketchizi:workspace-open-local-file"));
+        return;
+      }
       else if (target.matches?.("[data-sketchizi-open-folder]")) action = "openFolderFromDisk";
       else if (target.matches?.("[data-sketchizi-close-folder]")) action = "closeCurrentFolder";
       else if (target.matches?.("[data-sketchizi-new-file]")) action = "createNewFile";
@@ -291,7 +294,7 @@ export function useNativeSketchiziMenu({
           [...menuParent.querySelectorAll("a")].filter((link) => /^(github|connect with coder)$/i.test(link.textContent?.replace(/\s+/g, " ").trim() || "")).forEach((link) => link.remove());
           const communitySection = document.createElement("section");
           communitySection.className = "sketchizi-native-settings-section sketchizi-community-section";
-          communitySection.innerHTML = `<hr class="sketchizi-drawer-divider"><div class="sketchizi-community-cards"><a class="sketchizi-sidebar-community-link sketchizi-community-card" href="/reviews" data-sketchizi-review-link><span class="sketchizi-card-badge sketchizi-review-icon" data-tone="amber" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 14.6 8.6l5.6.8-4.1 4 1 5.6L12 16.3 6.9 19l1-5.6-4.1-4 5.6-.8L12 3.5Z"/></svg></span><span class="sketchizi-card-label">Drop a Review</span><span class="sketchizi-card-trail" aria-hidden="true">›</span></a><a class="sketchizi-sidebar-community-link sketchizi-community-card" href="${githubUrl}" target="_blank" rel="noreferrer noopener" data-sketchizi-coder-link><span class="sketchizi-card-badge sketchizi-git-icon" data-tone="indigo" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="19" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10M18 17v-2a4 4 0 0 0-4-4H10a4 4 0 0 1-4-4"/></svg></span><span class="sketchizi-card-label">Connect with Coder</span><span class="sketchizi-card-trail" aria-hidden="true">↗</span></a></div><hr class="sketchizi-drawer-divider">`;
+          communitySection.innerHTML = `<hr class="sketchizi-drawer-divider"><div class="sketchizi-community-cards"><a class="sketchizi-sidebar-community-link sketchizi-community-card" href="/reviews" data-sketchizi-review-link><span class="sketchizi-card-badge sketchizi-review-icon" data-tone="amber" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 14.6 8.6l5.6.8-4.1 4 1 5.6L12 16.3 6.9 19l1-5.6-4.1-4 5.6-.8L12 3.5Z"/></svg></span><span class="sketchizi-card-label">Drop a Review</span><span class="sketchizi-card-trail" aria-hidden="true">›</span></a><a class="sketchizi-sidebar-community-link sketchizi-community-card" href="${githubUrl}" target="_blank" rel="noreferrer noopener" data-sketchizi-coder-link><span class="sketchizi-card-badge sketchizi-git-icon" data-tone="emerald" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="19" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10M18 17v-2a4 4 0 0 0-4-4H10a4 4 0 0 1-4-4"/></svg></span><span class="sketchizi-card-label">Connect with Coder</span><span class="sketchizi-card-trail" aria-hidden="true">↗</span></a></div><hr class="sketchizi-drawer-divider">`;
           communitySection.style.setProperty("border-top", "0", "important");
           communitySection.style.setProperty("border-bottom", "0", "important");
           customBlock.append(communitySection);
@@ -366,9 +369,9 @@ export function useNativeSketchiziMenu({
       bind(recentMenu?.querySelector("[data-sketchizi-open-folder]"), "bound", () => fileActionsRef.current.openFolderFromDisk?.());
       bind(recentMenu?.querySelector("[data-sketchizi-open-workspace]"), "bound", openCloudWorkspace);
       recentMenu?.querySelectorAll("[data-sketchizi-canvas-mode]").forEach((tile) => {
-        const active = tile.dataset.sketchiziCanvasMode === canvasMode;
-        setAttr(tile, "data-active", String(active));
-        setAttr(tile, "aria-pressed", String(active));
+        // Workspace tiles are creation actions, not mode toggles.
+        setAttr(tile, "data-active", "false");
+        setAttr(tile, "aria-pressed", "false");
       });
       recentMenu?.querySelectorAll("[data-sec-toggle]").forEach((toggle) => bind(toggle, "bound", () => {
         const open = toggle.getAttribute("aria-expanded") !== "true";
