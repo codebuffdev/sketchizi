@@ -1267,3 +1267,307 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
 .sketchizi-ws-tile-icon.is-system-design { color:#059669; }
 .app.theme-dark .sketchizi-ws-tile-icon.is-canvas,.app.theme-dark .sketchizi-ws-tile-icon.is-pages { color:#cbd5e1; }
 .app.theme-dark .sketchizi-ws-tile-icon.is-system-design { color:#34d399; }
+
+
+/* Compact segmented workspace tabs — slate + emerald only. */
+.app .canvas-tabs-dock.desktop-app-document-title-float {
+  --tab-accent: #059669;
+  --tab-surface: #ffffff;
+  --tab-border: #e2e8f0;
+  --tab-text: #0f172a;
+  --tab-muted: #64748b;
+  --tab-hover: #e8eef5;
+  max-width: min(880px, calc(100vw - 220px));
+}
+.app.theme-dark .canvas-tabs-dock.desktop-app-document-title-float {
+  --tab-accent: #34d399;
+  --tab-surface: #1e293b;
+  --tab-border: #1e293b;
+  --tab-text: #e2e8f0;
+  --tab-muted: #94a3b8;
+  --tab-hover: #263449;
+}
+.app .canvas-tabs-dock .canvas-tabs-bar {
+  position: relative;
+  z-index: 50;
+  min-width: 0;
+  overflow: visible;
+}
+.app .canvas-tabs-dock .canvas-tabs-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 36px;
+  min-height: 36px;
+  max-width: min(52vw, 680px);
+  min-width: 0;
+  padding: 3px;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: rgba(241, 245, 249, .88);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  overflow: visible;
+}
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-list {
+  border-color: #1e293b;
+  background: rgba(15, 23, 42, .94);
+}
+.app .canvas-tabs-dock .canvas-tab-item {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  height: 28px;
+  gap: 0;
+  padding: 0 2px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+}
+.app .canvas-tabs-dock .canvas-tab-item.is-active {
+  flex: 0 1 218px;
+  max-width: 218px;
+  border-color: rgba(226, 232, 240, .9);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+  color: #0f172a;
+}
+.app.theme-dark .canvas-tabs-dock .canvas-tab-item.is-active {
+  border-color: #334155;
+  background: #1e293b;
+  color: #f1f5f9;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .22);
+}
+.app .canvas-tabs-dock .canvas-tab,
+.app .canvas-tabs-dock .canvas-tab.is-active {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 124px;
+  height: 28px;
+  padding: 0 8px;
+  gap: 7px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  box-shadow: none;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+}
+.app .canvas-tabs-dock .canvas-tab-item.is-active > .canvas-tab {
+  max-width: 100%;
+  padding-inline: 7px 5px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 600;
+}
+.app.theme-dark .canvas-tabs-dock .canvas-tab { color: #94a3b8; }
+.app.theme-dark .canvas-tabs-dock .canvas-tab-item.is-active > .canvas-tab { color: #f1f5f9; }
+.app .canvas-tabs-dock .canvas-tab-name {
+  display: block;
+  min-width: 0;
+  max-width: 124px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app .canvas-tabs-dock .canvas-tab-item.is-active .canvas-tab-name { max-width: 136px; }
+.app .canvas-tabs-dock .canvas-tab-icon {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  color: #64748b;
+  opacity: 1;
+}
+.app .canvas-tabs-dock .canvas-tab-item.is-active .canvas-tab-icon {
+  color: #059669;
+  opacity: 1;
+}
+.app.theme-dark .canvas-tabs-dock .canvas-tab-item.is-active .canvas-tab-icon { color: #34d399; }
+.app .canvas-tabs-dock .canvas-tab-dirty {
+  flex: 0 0 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #d69a32;
+  box-shadow: none;
+}
+.app .canvas-tabs-dock .canvas-tab-sync { display: none; }
+.app .canvas-tabs-dock .canvas-tab-menu-trigger {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+.app .canvas-tabs-dock .canvas-tab-menu-trigger:hover,
+.app .canvas-tabs-dock .canvas-tab-menu-trigger.is-open {
+  background: #f1f5f9;
+  color: #0f766e;
+}
+.app.theme-dark .canvas-tabs-dock .canvas-tab-menu-trigger:hover,
+.app.theme-dark .canvas-tabs-dock .canvas-tab-menu-trigger.is-open {
+  background: #334155;
+  color: #34d399;
+}
+.app .canvas-tabs-dock .canvas-tab-close {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0 3px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #64748b;
+  opacity: 0;
+}
+.app .canvas-tabs-dock .canvas-tab-item.is-active .canvas-tab-close { opacity: .62; }
+.app .canvas-tabs-dock .canvas-tab-item:not(.is-active):hover .canvas-tab-close,
+.app .canvas-tabs-dock .canvas-tab-close:focus-visible,
+.app .canvas-tabs-dock .canvas-tab-item.is-active .canvas-tab-close:hover { opacity: 1; }
+.app .canvas-tabs-dock .canvas-tab-close:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.app.theme-dark .canvas-tabs-dock .canvas-tab-close:hover:not(:disabled) {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+.app .canvas-tabs-dock .canvas-tab-controls-group {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 2px;
+  margin-left: 1px;
+}
+.app .canvas-tabs-dock .canvas-tabs-overflow-trigger,
+.app .canvas-tabs-dock .canvas-tabs-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #475569;
+  box-shadow: none;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.app .canvas-tabs-dock .canvas-tabs-overflow-trigger:hover,
+.app .canvas-tabs-dock .canvas-tabs-overflow-trigger.is-open,
+.app .canvas-tabs-dock .canvas-tabs-add:hover {
+  background: #e2e8f0;
+  color: #0f766e;
+}
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-overflow-trigger,
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-add { color: #cbd5e1; }
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-overflow-trigger:hover,
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-overflow-trigger.is-open,
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-add:hover {
+  background: #334155;
+  color: #34d399;
+}
+.app .canvas-tabs-dock .canvas-tabs-overflow-menu-portal,
+.app .canvas-tabs-dock .canvas-tabs-tab-menu-portal {
+  position: fixed;
+  z-index: 9999;
+  box-sizing: border-box;
+  min-width: 240px;
+  max-width: min(300px, calc(100vw - 16px));
+  padding: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 16px 42px rgba(15, 23, 42, .2);
+}
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-overflow-menu-portal,
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-tab-menu-portal {
+  border-color: #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .46);
+}
+.app .canvas-tabs-dock .canvas-tabs-overflow-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 8px 7px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.app .canvas-tabs-dock .canvas-tabs-overflow-scroll { display: grid; gap: 2px; max-height: min(340px, 55vh); overflow-y: auto; }
+.app .canvas-tabs-dock .canvas-tabs-overflow-item { display: flex; align-items: center; gap: 3px; border-radius: 7px; }
+.app .canvas-tabs-dock .canvas-tabs-overflow-item:hover,
+.app .canvas-tabs-dock .canvas-tabs-overflow-item.is-active { background: #f1f5f9; }
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-overflow-item:hover,
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-overflow-item.is-active { background: #1e293b; }
+.app .canvas-tabs-dock .canvas-tabs-overflow-select {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 9px;
+  padding: 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.app .canvas-tabs-dock .canvas-tabs-overflow-select .canvas-tab-icon { flex: 0 0 14px; width: 14px; height: 14px; }
+.app .canvas-tabs-dock .canvas-tabs-overflow-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 550; }
+.app .canvas-tabs-dock .canvas-tabs-overflow-active-dot { flex: 0 0 6px; width: 6px; height: 6px; border-radius: 50%; background: #059669; }
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-overflow-active-dot { background: #34d399; }
+.app .canvas-tabs-dock .canvas-tabs-overflow-close { opacity: .55; }
+.app .canvas-tabs-dock .canvas-tabs-overflow-item:hover .canvas-tabs-overflow-close,
+.app .canvas-tabs-dock .canvas-tabs-overflow-close:focus-visible { opacity: 1; }
+.app .canvas-tabs-dock .canvas-tabs-tab-menu-portal > button[role="menuitem"] {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.app .canvas-tabs-dock .canvas-tabs-tab-menu-portal > button[role="menuitem"]:hover { background: #f1f5f9; }
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-tab-menu-portal > button[role="menuitem"]:hover { background: #1e293b; }
+.app .canvas-tabs-dock .canvas-tabs-tab-menu-portal > button.is-danger { color: #b91c1c; }
+.app .canvas-tabs-dock .canvas-tabs-tab-menu-details { margin-top: 5px; padding-top: 5px; border-top: 1px solid #e2e8f0; }
+.app.theme-dark .canvas-tabs-dock .canvas-tabs-tab-menu-details { border-color: #334155; }
+.app .canvas-tabs-dock .canvas-tabs-tab-menu-details .canvas-tabs-active-menu { position: static; max-height: 360px; overflow: auto; box-shadow: none; }
+@media (max-width: 760px) {
+  .app .canvas-tabs-dock .canvas-tabs-list { max-width: min(78vw, 520px); }
+  .app .canvas-tabs-dock .canvas-tab-item.is-active { flex-basis: 170px; }
+  .app .canvas-tabs-dock .canvas-tab-item.is-active .canvas-tab-name { max-width: 94px; }
+}
