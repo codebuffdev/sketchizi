@@ -15,7 +15,7 @@ const simulation = { nodes: {
 test("exports non-empty, tightly bounded SVG with node labels, telemetry and orthogonal connectors in both themes", () => {
   for (const darkMode of [false, true]) {
     const svg = buildSystemDesignSvg({ nodes, edges, simulation, darkMode, background: darkMode ? "dark" : "light" });
-    assert.match(svg, /<svg[^>]+width="768"[^>]+height="188"/);
+    assert.match(svg, /<svg[^>]+width="728"[^>]+height="188"/);
     assert.match(svg, /Orders API/);
     assert.match(svg, /Orders Database/);
     assert.match(svg, /450/);
