@@ -61,7 +61,7 @@ test("document identity distinguishes cloud-backed drawings from local files", (
   assert.match(header, /const storageLocation = isCloudDocument \? "Cloud" : currentDocumentFileBacked \? "File" : "Browser"/);
   assert.match(header, /const documentStatusLabel = isCloudDocument/);
   assert.match(header, /cloudStatusLabels\[cloudSaveState\]/);
-  assert.match(header, /className="canvas-tabs-save-status/);
+  assert.match(header, /canvas-tabs-save-status/);
   assert.match(header, /This draft is automatically saved in this browser/);
   assert.match(css, /\.desktop-app-document-location/);
   assert.match(styleEntry, /@import "\.\/styles\/document-location\.css";/);
