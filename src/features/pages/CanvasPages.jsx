@@ -57,7 +57,7 @@ function runAfterCanvasLayoutSettles(api, callback) {
   return () => window.cancelAnimationFrame(frame);
 }
 
-export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, onPageContextChange }) {
+export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, onPageContextChange, bookTitle, onRenameBookTitle }) {
   const [mode, setMode] = useState(() => { try { return localStorage.getItem('sketchizi.canvasView') === 'pages' ? 'pages' : 'infinite'; } catch { return 'infinite'; } });
   const [pages, setPages] = useState([]);
   const [canvasTheme, setCanvasTheme] = useState(() => api?.getAppState?.()?.theme || "light");
@@ -482,7 +482,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     const paperBackground = getPagePaperBackground(api.getAppState?.(), true);
     const created = convertToExcalidrawElements(pageSkeleton(elements, responsiveSize, crypto.randomUUID(), paperBackground), { regenerateIds: false });
     const frame = created.find(e => e.type === 'frame');
-    if (frame) frame.name = `Chapter ${String(nextOrder).padStart(2, '0')}`;
+    if (frame) frame.name = 'Untitled Page';
     if (frame && previousViewBackgroundRef.current?.color) {
       frame.customData = {
         ...frame.customData,
@@ -612,7 +612,8 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   return <>
     {mode === 'pages' && pageMask && host && createPortal(
       <PagesBookWorkspace pages={pages} active={active} index={index}
-        canEdit={canEdit} onToggleRead={toggleChapterRead} onPatch={patchChapter} />, host)}
+        canEdit={canEdit} onToggleRead={toggleChapterRead} onPatch={patchChapter}
+        bookTitle={bookTitle} onRenameBookTitle={onRenameBookTitle} />, host)}
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask">
         {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
