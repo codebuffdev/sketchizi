@@ -935,3 +935,13 @@ body:has(.pages-book-workspace) .sketchizi-appearance {
     max-width: calc(100vw - 20px) !important;
   }
 }
+
+/* Let the drawing workspace receive clicks in the header's empty areas while
+   keeping the inline editors and chapter controls directly interactive. */
+.pages-editorial-header {
+  pointer-events: none !important;
+}
+.pages-editorial-header input,
+.pages-editorial-header button {
+  pointer-events: auto !important;
+}
