@@ -165,3 +165,18 @@ test('Pages locks the Excalidraw camera and blocks viewport navigation gestures'
  assert.match(pages, /moveChapter\(targetPage, 0, 0\)/);
  assert.match(pages, /scrollX: 0, scrollY: 0, zoom: \{ value: 1 \}/);
 });
+
+
+test('Pages browser smoke verifies the editorial summary, paper textures, numeric badge, and Zen spacing', async () => {
+ const { readFile } = await import('node:fs/promises');
+ const smoke = await readFile(new URL('../scripts/browser-page-canvas-smoke.mjs', import.meta.url), 'utf8');
+ assert.match(smoke, /getByRole\('textbox', \{ name: 'Chapter subtitle' \}\)/);
+ assert.match(smoke, /customData\?\.tagline === 'Capacity planning and traffic assumptions'/);
+ assert.doesNotMatch(smoke, /Key formula or rule of thumb|23,150 QPS/);
+ assert.match(smoke, /pages-chapter-eyebrow/);
+ assert.match(smoke, /pages-bottom-actions/);
+ assert.match(smoke, /10px gap/);
+ assert.match(smoke, /repeating-linear-gradient/);
+ assert.match(smoke, /radial-gradient/);
+ assert.match(smoke, /rgb\(15, 20, 29\)/);
+});
