@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { choosePorts, getPortPoint, getPorts, isOrthogonal, nearestPort, pointAlong, roundedPath, routeOrthogonal, PORT_STUB } from "../orthogonalRouter.js";
+import { choosePorts, getPortPoint, getPorts, isOrthogonal, nearestPort, pointAlong, roundedPath, routeOrthogonal, PORT_STUB, getSceneViewport } from "../orthogonalRouter.js";
 
 const rect = (x, y, width = 200, height = 84) => ({ x, y, width, height });
 
@@ -60,4 +60,20 @@ test("rounded path uses quadratic corners and clamps the radius on short segment
 
 test("pointAlong places badges at the path midpoint", () => {
   assert.deepEqual(pointAlong([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }], 0.5), { x: 100, y: 0 });
+});
+
+test("edge SVG viewport includes negative scene coordinates and routing margins", () => {
+  const viewport = getSceneViewport([rect(-420, -180), rect(300, 240)]);
+  assert.equal(viewport.left, -516);
+  assert.equal(viewport.top, -276);
+  assert.equal(viewport.width, 1116);
+  assert.equal(viewport.height, 612);
+  assert.equal(viewport.viewBox, "-516 -276 1116 612");
+  assert.ok(viewport.left < -420 && viewport.top < -180);
+});
+
+test("empty scene receives a valid non-zero SVG viewport", () => {
+  assert.deepEqual(getSceneViewport([]), {
+    left: 0, top: 0, width: 1, height: 1, viewBox: "0 0 1 1",
+  });
 });
