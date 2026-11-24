@@ -167,7 +167,7 @@ test('Pages locks the Excalidraw camera and blocks viewport navigation gestures'
 });
 
 
-test('Pages browser smoke verifies the editorial summary, paper textures, numeric badge, and Zen spacing', async () => {
+test('Pages browser smoke verifies the editorial summary, header chapter controller, and clean canvas perimeter', async () => {
  const { readFile } = await import('node:fs/promises');
  const smoke = await readFile(new URL('../scripts/browser-page-canvas-smoke.mjs', import.meta.url), 'utf8');
  assert.match(smoke, /getByRole\('textbox', \{ name: 'Chapter subtitle' \}\)/);
@@ -175,7 +175,9 @@ test('Pages browser smoke verifies the editorial summary, paper textures, numeri
  assert.doesNotMatch(smoke, /Key formula or rule of thumb|23,150 QPS/);
  assert.match(smoke, /pages-chapter-eyebrow/);
  assert.match(smoke, /pages-bottom-actions/);
- assert.match(smoke, /10px gap/);
+ assert.match(smoke, /Chapter index popover must open downward/);
+ assert.match(smoke, /Pages mode must not render a floating bottom action container/);
+ assert.match(smoke, /Dark-theme chapter index popover must also open downward/);
  assert.match(smoke, /repeating-linear-gradient/);
  assert.match(smoke, /radial-gradient/);
  assert.match(smoke, /rgb\(15, 20, 29\)/);
