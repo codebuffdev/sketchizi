@@ -186,7 +186,14 @@ export default function PagesBookWorkspace({
               <button type="button" aria-label="Next chapter" disabled={index < 0 || index >= pages.length - 1}
                 onClick={() => onSelectChapter(pages[index + 1])}>›</button>
               <button ref={deleteChapterButtonRef} type="button" className="canvas-pages-delete" disabled={!active || !canEdit}
-                onClick={() => requestDeleteChapter(active)}>Delete</button>
+                onClick={() => {
+                  if (pages.length <= 1) {
+                    if (chapterIndexOpen) onToggleChapterIndex?.();
+                    setDeleteOnlyPageOpen(true);
+                  } else {
+                    requestDeleteChapter(active);
+                  }
+                }}>Delete</button>
               <button type="button" className="canvas-pages-add" aria-label="Add Chapter" title="Add Chapter"
                 disabled={!canEdit} onClick={onAddChapter}>
                 <svg className="canvas-pages-add-icon" width="15" height="15" viewBox="0 0 24 24"
