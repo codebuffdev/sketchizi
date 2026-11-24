@@ -642,7 +642,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
           </div>}
         </div>
         <button type="button" aria-label="Next chapter" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button>
-        <button type="button" disabled={!active} onClick={() => { fit(active); requestExcalidrawCanvasRefresh(); }}>Fit</button>
         <button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button>
         <button type="button" className="canvas-pages-add" aria-label="Add Chapter" title="Add Chapter" disabled={!canEdit} onClick={add}><svg className="canvas-pages-add-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="12" x2="12" y2="18" /><line x1="9" y1="15" x2="15" y2="15" /></svg><span>+ Chapter</span></button>
       </nav>
