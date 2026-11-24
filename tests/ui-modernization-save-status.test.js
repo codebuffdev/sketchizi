@@ -76,7 +76,7 @@ test("canvas menu groups compact save, cloud, and export actions", () => {
   assert.match(header, /<h3>Save &amp; sync<\/h3>/);
   assert.match(header, /<h3>Export<\/h3>/);
   assert.match(header, /aria-label="Save locally"/);
-  assert.match(header, /aria-label="Save to Cloud"/);
+  assert.match(header, /aria-label="Save to Cloud Workspace"/);
   assert.match(header, /<strong>Save to File\.\.\.<\/strong>/);
   assert.match(header, /aria-label="Recovery backup"/);
   assert.match(header, /aria-label="Export studio"/);
