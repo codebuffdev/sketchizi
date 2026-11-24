@@ -2,7 +2,7 @@ import React, { useMemo, useState, useSyncExternalStore } from "react";
 import { exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
 import { readGraph } from "../../features/system-design/sceneModel.js";
 import { simulateTraffic } from "../../features/system-design/trafficSimulator.js";
-import { buildSystemDesignSvg, exportSystemDesignImage, svgToCanvas } from "../../features/system-design/exportSystemDesignImage.js";
+import { buildSystemDesignSvg, svgToCanvas } from "../../features/system-design/exportSystemDesignImage.js";
 
 const EMPTY_SNAPSHOT = Object.freeze({ elements: [] });
 const noopSubscribe = () => () => {};
@@ -60,8 +60,8 @@ export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = 
     const overlay = buildSystemDesignSvg({ ...overlayGraph, simulation, mode, background: "transparent", darkMode, padding: 24 });
     const inner = overlay.replace(/^<svg[^>]*>/, "").replace(/<\\/svg>\\s*$/, "");
     const sceneElements = data.elements;
-    const minX = Math.min(0, ...sceneElements.map((element) => Number(element.x) || 0));
-    const minY = Math.min(0, ...sceneElements.map((element) => Number(element.y) || 0));
+    const minX = Math.min(...sceneElements.map((element) => Number(element.x) || 0));
+    const minY = Math.min(...sceneElements.map((element) => Number(element.y) || 0));
     const positionedOverlay = `<g transform="translate(${24 - minX} ${24 - minY})">${inner}</g>`;
     return nativeMarkup.replace(/<\\/svg>\\s*$/, `${positionedOverlay}</svg>`);
   };
