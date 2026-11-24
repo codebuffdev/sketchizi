@@ -11,9 +11,9 @@ const persistence = readFileSync(resolve(here, "../../persistence.js"), "utf8");
 const tabs = readFileSync(resolve(here, "../../hooks/useWorkspaceTabs.js"), "utf8");
 const styles = readFileSync(resolve(here, "../../features/pages/pages.css"), "utf8");
 
-test("New Chapter creates a new isolated Excalidraw page and exposes both chapter creation controls", () => {
-  assert.match(workspace, /className="pages-new-chapter"/);
-  assert.match(workspace, /onClick={onAdd}/);
+test("New Chapter creates an isolated Excalidraw page from the navigator and chapter index", () => {
+  assert.match(pages, /className="canvas-pages-chapter-new"/);
+  assert.match(pages, /onClick=\{\(\) => \{ add\(\); setChapterIndexOpen\(false\); \}\}/);
   assert.match(pages, /const createPage = \(\) =>/);
   assert.match(pages, /pageSkeleton\(elements, responsiveSize, crypto\.randomUUID\(\)/);
   assert.match(pages, /className="canvas-pages-add"/);
