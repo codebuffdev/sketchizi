@@ -53,14 +53,14 @@ test('bottom-left navigation keeps only the zoom percentage visible', () => {
 });
 
 
-test('dock uses semantic tool-family separators and a neutral active accent', () => {
-  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
-  assert.match(canvas, /name: "navigation"/);
-  assert.match(canvas, /name: "selection-shapes"/);
-  assert.match(canvas, /name: "connectors"/);
-  assert.match(canvas, /name: "drawing"/);
-  assert.match(canvas, /name: "annotation-editing"/);
-  assert.match(canvas, /data-sketchizi-dock-layout/);
+test('dock orders tools by family and keeps a neutral active accent', () => {
+  const primary = readFileSync(new URL('../src/components/app/PrimaryDock.jsx', import.meta.url), 'utf8');
+  const ids = [...primary.matchAll(/\{ id: "([a-z]+)", label:/g)].map((m) => m[1]);
+  const at = (id) => ids.indexOf(id);
+  // navigation -> shapes -> connectors -> drawing -> annotation -> utilities
+  assert.ok(at('selection') === 0 && at('hand') === 1);
+  assert.ok(at('hand') < at('rectangle') && at('rectangle') < at('arrow') && at('arrow') < at('freedraw'));
+  assert.ok(at('freedraw') < at('text') && at('text') < at('eraser') && at('eraser') < at('todo'));
   assert.match(css, /data-sketchizi-dock-layout="grouped"/);
   assert.match(css, /--sk-dock-group-divider/);
   assert.match(css, /#477f91/);
@@ -69,9 +69,10 @@ test('dock uses semantic tool-family separators and a neutral active accent', ()
 
 
 test('tool families render as distinct compact clusters rather than a flat toolbar row', () => {
-  const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
-  assert.match(canvas, /data\.sketchiziToolGroup = group\.name/);
-  assert.match(canvas, /data\.sketchiziGroupStart = "true"/);
+  const primary = readFileSync(new URL('../src/components/app/PrimaryDock.jsx', import.meta.url), 'utf8');
+  // The React dock separates the Todo utility from the drawing tools with an explicit divider.
+  assert.match(primary, /\{ id: "todo", label: "Todo List", separated: true \}/);
+  assert.match(primary, /\{tool\.separated && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" \/>\}/);
   assert.match(css, /\[data-sketchizi-tool-group\][\s\S]*?border-radius:\s*9px/);
   assert.match(css, /\[data-sketchizi-tool-group="navigation"\]/);
   assert.match(css, /\[data-sketchizi-group-start="true"\]/);

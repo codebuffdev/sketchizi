@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { readAppSourceSync } from './helpers/app-source.js';
 
 const toolbar = readFileSync(new URL('../src/components/app/ContextualFormattingToolbar.jsx', import.meta.url), 'utf8');
 const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
-const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+const app = readAppSourceSync();
 const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
 
 test('contextual toolbar is rendered for editable selections and supported active drawing tools', () => {
@@ -18,18 +19,19 @@ test('contextual toolbar is rendered for editable selections and supported activ
   assert.match(toolbar, /api\.updateScene\(\{ appState: appStatePatch \}\)/);
   assert.match(toolbar, /currentItemStrokeColor = patch\.strokeColor/);
   assert.match(toolbar, /currentItemBackgroundColor = patch\.backgroundColor/);
-  assert.match(toolbar, /currentItemStrokeWidth = patch\.strokeWidth/);
+  assert.match(toolbar, /Object\.assign\(appStatePatch, strokeWidthAppStatePatch\(patch\.strokeWidth\)\)/);
   assert.ok(toolbar.includes('const selectedIds = new Set(liveSelection.map((element) => element.id))'));
   assert.match(toolbar, /const isRelatedNoteElement = noteSelection && noteGroupIds\.has\(element\.id\)/);
-  assert.match(toolbar, /api\.updateScene\(\{ elements: updatedElements, captureUpdate: CaptureUpdateAction\.IMMEDIATELY \}\)/);
+  assert.match(toolbar, /elements: updatedElements,[\s\S]*?captureUpdate: CaptureUpdateAction\.IMMEDIATELY/);
   assert.match(toolbar, /version: \(Number\(element\.version\) \|\| 0\) \+ 1/);
   assert.doesNotMatch(toolbar, /if \(!canEdit \|\| propertiesOpen \|\|/);
   assert.match(app, /\{renderedRightRailPanel === "properties" && \(/);
   assert.match(app, /<PropertiesPanel/);
-  assert.match(canvas, /propertiesOpen=\{propertiesOpen\}/);
+  // The canvas mounts the contextual ToolOptionsDock independently of the properties panel.
+  assert.doesNotMatch(canvas, /<ToolOptionsDock[^>]*propertiesOpen/);
   assert.match(app, /propertiesOpen=\{propertiesOpen\}[\s\S]*?selectedElements=\{selectedElements\}/);
-  assert.match(canvas, /<ContextualFormattingToolbar[\s\S]*?selectedElements=\{selectedElements\}/);
-  assert.match(canvas, /canEdit=\{canEdit && !viewModeEnabled\}/);
+  assert.match(canvas, /<ToolOptionsDock apiRef=\{apiRef\} selectedElements=\{selectedElements\}/);
+  assert.match(canvas, /<ToolOptionsDock[^>]*canEdit=\{canEdit && !viewModeEnabled\}/);
 });
 
 test('Properties hides only formatting controls duplicated by the contextual toolbar', () => {
@@ -115,10 +117,11 @@ test('floating dock has no enclosing background shell', () => {
 });
 
 
-test('dock hides inline shortcut hints without disabling keyboard shortcuts', () => {
+test('dock shows inline shortcut hints as corner badges without disabling keyboard shortcuts', () => {
   const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
-  assert.match(dockCss, /\.App-toolbar\[data-sketchizi-dock="true"\] \.ToolIcon__keybinding[\s\S]*?display: none !important/);
-  assert.match(dockCss, /Keyboard shortcuts themselves remain available and unchanged/);
+  assert.match(dockCss, /\.App-toolbar\[data-sketchizi-dock="true"\] \.ToolIcon__keybinding\s*\{[^}]*display: block !important[^}]*position: absolute !important/);
+  // Shortcut hints are purely presentational; nothing in the dock stylesheet hides the tool buttons themselves.
+  assert.doesNotMatch(dockCss, /\.App-toolbar\[data-sketchizi-dock="true"\] \.ToolIcon__keybinding\s*\{[^}]*display: none/);
 });
 
 

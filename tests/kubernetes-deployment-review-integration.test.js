@@ -1,19 +1,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { readAppSourceSync } from "./helpers/app-source.js";
 
-const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+const app = readAppSourceSync();
 const panel = readFileSync(new URL("../src/components/app/ArchitectureValidationPanel.jsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../src/styles/architecture-validation.css", import.meta.url), "utf8");
 const history = readFileSync(new URL("../src/features/architecture/kubernetesDeploymentReviewHistory.js", import.meta.url), "utf8");
 const remediation = readFileSync(new URL("../src/features/architecture/kubernetesRemediationChecklist.js", import.meta.url), "utf8");
 
- test("Architecture Validation panel is mounted in the existing application shell", () => {
-  assert.match(app, /import ArchitectureValidationPanel from "\.\/components\/app\/ArchitectureValidationPanel"/);
-  assert.match(app, /<ArchitectureValidationPanel[\s\S]*?validation=\{architectureValidation\}/);
-  assert.match(app, /onSelectDiagnostic=\{selectArchitectureDiagnostic\}/);
-  assert.match(app, /onApplyKubernetesSuggestion=\{applyKubernetesSuggestion\}/);
-  assert.match(app, /canApplyCorrections=\{collaborationCanEdit\}/);
+ test("Architecture Validation panel is a standalone component that the shell does not mount", () => {
+  // The validation toggle and command were intentionally removed from the shell
+  // (see workspace-foundation); the panel keeps its full props contract so it can be hosted again.
+  assert.doesNotMatch(app, /import ArchitectureValidationPanel from/);
+  assert.doesNotMatch(app, /<ArchitectureValidationPanel/);
+  assert.match(panel, /export default function ArchitectureValidationPanel\(\{ validation, sceneElements = \[\], onClose, onSelectDiagnostic, onApplyKubernetesSuggestion, canApplyCorrections = false \}\)/);
 });
 
 test("review dashboard keeps review state and remediation behind dedicated modules", () => {

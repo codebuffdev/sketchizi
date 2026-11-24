@@ -5,12 +5,16 @@ import { readFileSync } from 'node:fs';
 const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
 
-test('dock supports keyboard movement with viewport clamping', () => {
-  assert.match(canvas, /grip\.addEventListener\("keydown"/);
-  assert.match(canvas, /ArrowLeft/);
-  assert.match(canvas, /window\.innerWidth - rect\.width - 8/);
-  assert.match(canvas, /window\.addEventListener\("resize", clampDockToViewport\)/);
-  assert.match(canvas, /window\.removeEventListener\("resize", clampDockToViewport\)/);
+test('dock is keyboard operable and stays within the viewport', () => {
+  const dock = readFileSync(new URL('../src/components/app/PrimaryDock.jsx', import.meta.url), 'utf8');
+  const dockCss = readFileSync(new URL('../src/styles/canvas-top-controls.css', import.meta.url), 'utf8');
+  // Focus reveals the tools, and focus leaving the dock collapses it again.
+  assert.match(dock, /onBlurCapture=\{\(event\) => \{\s*if \(!event\.currentTarget\.contains\(event\.relatedTarget\)\) scheduleCollapse\(\);/);
+  assert.match(dock, /firstToolButtonRef\.current\?\.focus\(\)/);
+  assert.match(dock, /aria-label=\{expanded \? "Collapse drawing tools" : "Expand drawing tools"\}/);
+  // The dock can never outgrow the viewport; it is pinned with safe-area insets.
+  assert.match(dockCss, /max-height: calc\(100dvh - 24px - var\(--safe-top, 0px\) - var\(--safe-bottom, 0px\)\)/);
+  assert.doesNotMatch(canvas, /clampDockToViewport/);
 });
 
 test('mobile dock remains reachable through horizontal scrolling', () => {

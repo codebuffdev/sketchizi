@@ -11,8 +11,10 @@ test("file management menu keeps workspace actions compact and focused on files"
   assert.match(menu, /class="sketchizi-native-settings-title">Workspace/);
   assert.doesNotMatch(menuTemplate, /aria-label="Current folder"/);
   assert.doesNotMatch(menuTemplate, /Recent folders|data-recent-folder-list|data-clear-recent-folders/);
-  assert.match(menuTemplate, /data-sketchizi-new-file/);
-  assert.match(menuTemplate, /class="sketchizi-file-menu-actions" role="group" aria-label="File actions"/);
+  // Workspace actions are a compact tile group (Canvas, Pages, Cloud Files, Open File).
+  assert.match(menuTemplate, /class="sketchizi-ws-tiles" role="group" aria-label="Workspace actions"/);
+  assert.match(menuTemplate, /data-sketchizi-canvas-mode="infinite"/);
+  assert.match(menuTemplate, /data-sketchizi-canvas-mode="pages"/);
   assert.match(menuTemplate, /class="sketchizi-file-menu-group sketchizi-file-menu-recents" aria-label="Recent items"/);
   assert.match(menuTemplate, /aria-controls="sketchizi-recent-files-panel"/);
 });
@@ -53,8 +55,7 @@ test("hamburger catalog stays within the viewport and exposes a scrollbar", () =
 
 test("workspace menu offers Open file and improved community action icons", () => {
   assert.match(menuTemplate, /data-sketchizi-open-file/);
-  assert.match(menuTemplate, /data-sketchizi-new-file>New file<\/button>/);
-  assert.match(menuTemplate, /data-sketchizi-open-file><span aria-hidden="true">↗<\/span> Open file<\/button>/);
+  assert.match(menuTemplate, /data-sketchizi-open-file>[\s\S]*?<span class="sketchizi-ws-tile-label">Open File<\/span><\/button>/);
   assert.doesNotMatch(menuTemplate, /data-sketchizi-new-file><span aria-hidden="true">▤<\/span>/);
   assert.doesNotMatch(menuTemplate, /data-sketchizi-open-file[^<]*<kbd>Ctrl\+O<\/kbd>/);
   assert.match(menu, /sketchizi-review-icon/);

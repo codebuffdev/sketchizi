@@ -6,24 +6,29 @@ const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx',
 const styles = readFileSync(new URL('../src/styles/ui-modernization-navigation.css', import.meta.url), 'utf8');
 const entry = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
 
-test('adds Fit to content to the existing native zoom controls', () => {
-  assert.match(canvas, /root\.querySelector\("\.zoom-actions"\)/);
-  assert.match(canvas, /sketchizi-fit-content-button/);
-  assert.match(canvas, /aria-label", "Fit diagram to viewport"/);
-  assert.match(canvas, /Fit to content \(F\)/);
-  assert.match(canvas, /zoomActions\.querySelector\("\:scope > \.Stack_horizontal"\)/);
-  assert.match(canvas, /zoomRow\.appendChild\(fitButton\)/);
+const minimap = readFileSync(new URL('../src/Minimap.jsx', import.meta.url), 'utf8');
+const preferences = readFileSync(new URL('../src/features/navigation/useSketchiziPreferences.js', import.meta.url), 'utf8');
+const shortcutHelp = readFileSync(new URL('../src/ShortcutHelp.jsx', import.meta.url), 'utf8');
+
+test('Fit to content is offered from the minimap zoom label and the F shortcut', () => {
+  assert.match(minimap, /className="minimap-zoom-label"/);
+  assert.match(minimap, /title="Fit diagram"/);
+  assert.match(shortcutHelp, /\["F", "Fit diagram to viewport"\]/);
+  assert.match(preferences, /if \(key === "f"\) \{ event\.preventDefault\(\); fitDiagram\(\); \}/);
 });
 
 test('fit action delegates to native viewport APIs and ignores deleted elements', () => {
-  assert.match(canvas, /getSceneElements\?\.\(\) \|\| \[\]\)\.filter\(\(element\) => element && !element\.isDeleted && !element\.deleted\)/);
-  assert.match(canvas, /api\.setViewport\(\{ target: elements, fit: "contain" \}\)/);
-  assert.match(canvas, /api\.scrollToContent\?\.\(elements, \{ fitToViewport: true, animate: true \}\)/);
+  for (const source of [minimap, preferences]) {
+    assert.match(source, /getSceneElements\(\)\.filter\(\(element\) => !element\.isDeleted\)/);
+    assert.match(source, /api\.setViewport\(\{ target: elements, fit: "contain" \}\)/);
+    assert.match(source, /api\.scrollToContent\?\.\(elements, \{ fitToViewport: true, animate: true \}\)/);
+  }
 });
 
-test('fit control is disabled when editing is unavailable or the canvas is empty', () => {
-  assert.match(canvas, /fitButton\.disabled = !canEdit \|\| viewModeEnabled \|\| visibleElements\.length === 0/);
-  assert.match(canvas, /fitContentButtonRef\.current\.disabled = !canEdit \|\| viewModeEnabled \|\| !hasVisibleElements/);
+test('fit shortcut is a no-op on an empty canvas and while typing', () => {
+  assert.match(preferences, /if \(!elements\.length\) return;/);
+  assert.match(preferences, /const isTyping = target instanceof HTMLInputElement \|\| target instanceof HTMLTextAreaElement \|\| target\?\.isContentEditable;/);
+  assert.match(preferences, /if \(isTyping\) return;/);
 });
 
 test('navigation controls provide focus, disabled states, and accessible hover feedback', () => {

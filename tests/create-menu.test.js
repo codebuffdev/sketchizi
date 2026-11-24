@@ -8,29 +8,27 @@ const styles = readFileSync(new URL("../src/styles/create-menu.css", import.meta
 const styleEntry = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 const files = readFileSync(new URL("../src/features/files/useFileManager.js", import.meta.url), "utf8");
 
-test("Create menu prioritizes blank drawing and general-purpose templates", () => {
-  const blank = menu.indexOf("Blank drawing");
-  const templates = menu.indexOf("<strong>Templates</strong>");
-  const advanced = menu.indexOf("Engineering tools");
+test("DevOps menu lists Kubernetes Studio before Docker Compose Studio", () => {
+  const heading = menu.indexOf("DevOps tools");
   const kubernetes = menu.indexOf("<strong>Kubernetes Studio</strong>");
   const compose = menu.indexOf("<strong>Docker Compose Studio</strong>");
-  assert.ok(blank >= 0 && blank < templates && templates < advanced);
-  assert.ok(advanced < kubernetes && kubernetes < compose);
-  assert.match(menu, /<span>Create<\/span>/);
+  assert.ok(heading >= 0 && heading < kubernetes && kubernetes < compose);
+  assert.match(menu, /onKubernetesStudio/);
+  assert.match(menu, /onDockerStudio/);
 });
 
-test("Create menu keeps existing drawing and studio actions wired", () => {
-  assert.match(app, /<CreateMenu[\s\S]*onBlankDrawing=\{\(\) => fileActionsRef\.current\.createNewFile\?\.\(\)\}/);
-  assert.match(app, /onTemplates=\{\(\) => setDesignStudioOpen\(true\)\}/);
-  assert.match(app, /onCloudWorkspace=\{\(\) => window\.location\.assign\("\/workspace"\)\}/);
-  assert.match(app, /onKubernetesStudio=\{\(\) => setKubernetesStudioOpen\(true\)\}/);
-  assert.match(app, /onDockerStudio=\{\(\) => setDockerStudioOpen\(true\)\}/);
-  assert.match(files, /const createNewFile = \(\) => \{[\s\S]*confirmCanvasReplacement\("create a new drawing"\)/);
+test("Studio actions and new-drawing confirmation stay wired", () => {
+  // Studios open from the More Tools panel and from the command registry.
+  assert.match(app, /onOpenKubernetesStudio=\{\(\) => \{ togglePanel\("more-tools"\); setKubernetesStudioOpen\(true\); \}\}/);
+  assert.match(app, /onOpenDockerComposeStudio=\{\(\) => \{ togglePanel\("more-tools"\); setDockerStudioOpen\(true\); \}\}/);
+  assert.match(app, /openKubernetesStudio: \(\) => setKubernetesStudioOpen\(true\)/);
+  assert.match(app, /openDockerComposeStudio: \(\) => setDockerStudioOpen\(true\)/);
+  assert.match(files, /const createNewFile = async \(\) => \{[\s\S]*confirmCanvasReplacement\("create a new drawing"\)/);
   assert.doesNotMatch(app, /devopsStudioMenuOpen|setDevopsStudioMenuOpen/);
 });
 
-test("Create menu is accessible and dismissible", () => {
-  assert.match(menu, /aria-label="Create drawing"/);
+test("DevOps menu is accessible and dismissible", () => {
+  assert.match(menu, /aria-label="DevOps"/);
   assert.match(menu, /aria-haspopup="menu"/);
   assert.match(menu, /aria-expanded=\{open\}/);
   assert.match(menu, /role="menu"/);
@@ -47,12 +45,11 @@ test("Create menu is accessible and dismissible", () => {
 test("Canvas keeps its normal interaction path without a second menu listener", () => {
   assert.match(app, /<section className="desktop-canvas-region" aria-label="Canvas workspace">/);
   assert.doesNotMatch(app, /onPointerDownCapture=\{\(\) => \{ if \(devopsStudioMenuOpen\)/);
-  assert.match(app, /onBeforeOpen=\{\(\) => \{/);
-  assert.match(app, /if \(nativeMenuOpen\) closeNativeMenu\(\)/);
+  // Opening any panel closes the native menu first.
+  assert.match(app, /onBeforeOpenPanel=\{closeNativeMenu\}/);
 });
 
-test("Create control is clearly labeled on desktop and compact on small screens", () => {
-  assert.match(styleEntry, /@import "\.\/styles\/create-menu\.css";/);
+test("DevOps menu styles define a compact heading and a small-screen layout", () => {
   assert.match(styles, /min-width: 88px/);
   assert.match(styles, /@media \(max-width: 760px\)/);
   assert.match(styles, /\.sketchizi-create-menu-heading/);

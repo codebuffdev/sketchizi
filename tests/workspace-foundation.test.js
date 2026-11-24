@@ -25,7 +25,7 @@ test("Tool menu only contains tools not already on the dock and uses labeled SVG
 
 test("editor toolbar uses recognizable icons for workspaces, AI Ask, and validation", async () => {
   const app = await readAppSource();
-  assert.match(app, /aria-label="AI Ask"\s+aria-expanded=\{aiAskOpen\}\s*>\s*<AiAskIcon className="ai-ask-toggle-icon"\s*\/>/);
+  assert.match(app, /aria-label="AI Ask"\s+aria-expanded=\{aiAskOpen\}\s*>\s*<svg className="ai-ask-toggle-sparkle"/);
   const registry = await read("../src/features/commands/commandRegistry.js");
   assert.doesNotMatch(registry, /Validate Architecture|architecture-validation/);
   assert.doesNotMatch(app, /<span className="ai-ask-toggle-icon" aria-hidden="true">✳<\/span>/);
@@ -152,12 +152,12 @@ test("editor exposes an explicit Save to Cloud action and creates a cloud diagra
   const app = await readAppSource();
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   const dialog = await read("../src/features/workspace/CloudSaveDialog.jsx");
-  assert.match(header, /desktop-app-save-to-cloud-button/);
-  assert.match(header, /Save drawing to Cloud Workspace/);
+  assert.match(header, /canvas-tabs-active-menu-action-button/);
+  assert.match(header, /aria-label="Save to Cloud Workspace"/);
   assert.match(header, /onSaveToCloud\?\.\(\)/);
   assert.match(app, /workspaceClient\.createDiagram\(/);
   assert.match(app, /createCloudDocument\(/);
-  assert.match(app, /cloudDiagramId=\$\{encodeURIComponent\(diagram\.id\)\}/);
+  assert.match(app, /searchParams\.set\("cloudDiagramId", diagram\.id\)/);
   assert.match(dialog, /workspaceClient\.listProjects\(\)/);
   assert.match(dialog, /Save to Cloud Workspace/);
 });

@@ -5,6 +5,10 @@ import { readFile } from "node:fs/promises";
 const canvas = await readFile(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
 const dock = await readFile(new URL("../src/components/app/ToolOptionsDock.jsx", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/styles/ui-modernization-toolbar-dock.css", import.meta.url), "utf8");
+import { readFileSync as readFileSyncLocalImpl } from "node:fs";
+const readFileSyncLocal = (rel) => readFileSyncLocalImpl(new URL(rel, import.meta.url), "utf8");
+const primary = await readFile(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
+const dockPositionCss = await readFile(new URL("../src/styles/canvas-top-controls.css", import.meta.url), "utf8");
 
 test("Sketchizi mounts its own contextual tool options dock in the canvas", () => {
   assert.match(canvas, /<ToolOptionsDock apiRef=\{apiRef\} selectedElements=\{selectedElements\}/);
@@ -52,24 +56,23 @@ test("stroke width choices use visual line-weight icons instead of numeric label
 });
 
 
-test("the primary dock defaults to a vertical left-edge position on desktop", () => {
-  assert.match(canvas, /toolbar\.dataset\.sketchiziOrientation = "vertical"/);
-  assert.match(canvas, /toolbar\.dataset\.sketchiziDockSide = "left"/);
-  assert.match(canvas, /container\.style\.setProperty\("left", "8px", "important"\)/);
-  assert.match(canvas, /container\.style\.setProperty\("top", "50%", "important"\)/);
-  assert.match(canvas, /container\.dataset\.sketchiziDockPositioned = "true"/);
+test("the primary dock is a React-owned left-edge dock anchored bottom-left on desktop", () => {
+  assert.match(canvas, /\{!hudSuppressed && <PrimaryDock/);
+  assert.match(primary, /aria-label="Drawing tools"/);
+  assert.match(dockPositionCss, /\.sketchizi-tool-sidebar\.sketchizi-tool-sidebar \{[\s\S]*?left: calc\(12px \+ var\(--safe-left, 0px\)\);[\s\S]*?bottom: calc\(12px \+ var\(--safe-bottom, 0px\)\)/);
+  assert.doesNotMatch(canvas, /sketchiziDockPositioned|sketchiziOrientation/);
 });
 
 
 test("font family changes target the text element currently being edited", () => {
   assert.match(dock, /const editingTextElement = appState\.editingTextElement\?\.type === "text"/);
   assert.match(dock, /const isSelection = selected\.length > 0 \|\| Boolean\(isText && editingTextElement\?\.id\)/);
-  assert.match(dock, /if \(isText && editingTextElement\?\.id\) ids\.add\(editingTextElement\.id\)/);
+  assert.match(dock, /if \(isText && activeEditingText\?\.id\) ids\.add\(activeEditingText\.id\)/);
   assert.match(dock, /const first = selected\[0\] \|\| editingTextElement/);
 });
 
 test("font family picker exposes the supported Excalidraw font families", () => {
-  assert.match(dock, /\[\[1, "Virgil"\], \[2, "Helvetica"\], \[3, "Cascadia"\], \[5, "Excalifont"\], \[6, "Nunito"\], \[7, "Lilita One"\], \[8, "Comic Shanns"\], \[9, "Liberation Sans"\]\]/);
+  assert.match(dock, /\[\[3, "Cascadia"\], \[4, "Kalam"\], \[5, "Excalifont"\], \[7, "Lilita One"\], \[8, "Comic Shanns"\]\]/);
   assert.match(dock, /currentItemFontFamily", 5/);
 });
 
@@ -108,29 +111,33 @@ test("vertical Primary Dock grip has no reserved 24px space above Hand", () => {
 });
 
 
-test("the Primary Dock hides the redundant three-dot overflow control and keeps Eraser beside Bucket Fill", () => {
-  assert.match(canvas, /sketchiziHideOverflowTools/);
-  assert.match(canvas, /querySelectorAll\(":scope > \.dropdown-menu-button"\)/);
+test("the Primary Dock lists its own tools (no native overflow control) and keeps Eraser beside Bucket Fill", () => {
+  // The dock renders an explicit tool list, so there is no native three-dot overflow to hide.
+  assert.doesNotMatch(canvas, /sketchiziHideOverflowTools/);
+  const ids = [...primary.matchAll(/\{ id: "([a-z]+)", label:/g)].map((m) => m[1]);
+  assert.ok(ids.indexOf("eraser") >= 0 && ids.indexOf("bucketfill") === ids.indexOf("laser") + 1);
+  assert.ok(ids.indexOf("bucketfill") - ids.indexOf("eraser") <= 2, "Bucket Fill stays next to Eraser");
   assert.match(css, /\.App-toolbar > \.dropdown-menu-button[\s\S]*?display: none !important/);
-  assert.match(css, /data-sketchizi-hide-overflow-tools="true"[\s\S]*?display: none !important/);
-  assert.match(css, /quick-tools[\s\S]*?flex: 0 0 34px !important;[\s\S]*?height: 34px !important/);
 });
 
 
-test("Primary Dock hides descriptive hover tooltips and always shows compact shortcut hints", () => {
-  assert.match(canvas, /do not show[\s\S]*?descriptive hover tooltips on Primary Dock buttons/);
-  assert.match(canvas, /data-sketchiziPersistentShortcut = keybinding/);
-  assert.doesNotMatch(canvas, /button\.dataset\.sketchiziTooltip = tooltip/);
-  assert.match(css, /\.App-toolbar\[data-sketchizi-dock="true"\] \.ToolIcon__keybinding[\s\S]*?display: block !important;[\s\S]*?font-size: 8px !important;[\s\S]*?position: absolute !important/);
+test("Primary Dock buttons show compact shortcut hints and a label tooltip with the key", () => {
+  assert.match(primary, /\{tool\.keyHint && <span className="sketchizi-tool-sidebar-key">\{tool\.keyHint\}<\/span>\}/);
+  assert.match(primary, /title=\{tool\.keyHint \? `\$\{tool\.label\} \(\$\{tool\.keyHint\}\)` : tool\.label\}/);
+  assert.match(primary, /Hints are only shown for shortcuts already handled by Excalidraw/);
+  const keyCss = readFileSyncLocal('../src/styles/ipad-radial-tool-wheel.css');
+  assert.match(keyCss, /\.sketchizi-tool-sidebar-key \{[\s\S]*?position: absolute;[\s\S]*?font-size: 8px/);
 });
 
 
-test("Primary Dock keeps Selection visible and reveals the full dock on hover or keyboard focus", () => {
-  assert.match(canvas, /sketchiziSelectionTrigger/);
-  assert.match(canvas, /toolbar\.insertBefore\(selectionAnchor, toolbar\.firstChild\)/);
-  assert.match(canvas, /toolbar\.dataset\.sketchiziHoverExpand = "true"/);
+test("Primary Dock keeps the active tool visible and reveals the full dock on hover or keyboard focus", () => {
+  assert.match(primary, /onMouseEnter=\{expandDock\}/);
+  assert.match(primary, /onMouseLeave=\{scheduleCollapse\}/);
+  assert.match(primary, /inert=\{!expanded\}/);
+  assert.match(primary, /aria-label=\{`Active tool: \$\{activeToolMeta\.label\}\. Expand drawing tools`\}/);
+  assert.match(primary, /aria-expanded=\{expanded\}/);
+  assert.match(primary, /handleExpandClick/);
+  assert.match(primary, /firstToolButtonRef\.current\?\.focus\(\)/);
   assert.doesNotMatch(canvas, /sketchizi-dock-collapse-toggle|sketchizi-primary-dock-collapsed/);
-  assert.match(css, /App-toolbar\[data-sketchizi-hover-expand="true"\][\s\S]*?max-height: 38px !important;[\s\S]*?overflow: hidden !important/);
-  assert.match(css, /:hover,[\s\S]*?:focus-within[\s\S]*?max-height: calc\(100vh - 32px\) !important/);
-  assert.match(css, /:not\(\[data-sketchizi-selection-trigger="true"\]\)[\s\S]*?visibility: hidden !important/);
+  assert.match(dockPositionCss, /\.sketchizi-tool-sidebar\.sketchizi-tool-sidebar:not\(\.is-expanded\) \{[\s\S]*?width: 48px/);
 });

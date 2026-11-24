@@ -10,11 +10,14 @@ test("floating segmented header separates navigation, workspace and utilities", 
   const left = header.indexOf('desktop-app-header-island-left');
   const center = header.indexOf('desktop-app-header-island-center');
   const right = header.indexOf('desktop-app-header-island-right');
-  assert.ok(left >= 0 && center > left && right > center);
-  assert.ok(header.indexOf('{workspaceToggle}') > center);
-  assert.ok(header.indexOf('{workspaceToggle}') < right);
-  assert.ok(header.indexOf('desktop-app-document-identity') > center);
-  assert.ok(header.indexOf('desktop-app-document-identity') < right);
+  const headerEnd = header.indexOf("</header>");
+  assert.ok(left >= 0 && center > left && right > center && right < headerEnd);
+  // The workspace switcher and the document identity are floating siblings of the
+  // segmented header rather than members of its islands.
+  const workspaceButton = header.indexOf("className={`desktop-app-workspace-button");
+  const identity = header.indexOf("desktop-app-document-title-float");
+  assert.ok(workspaceButton > headerEnd);
+  assert.ok(identity > headerEnd);
 });
 
 test("segmented header retains original controls and responsive fallback", () => {

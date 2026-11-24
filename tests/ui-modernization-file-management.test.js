@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { readAppSourceSync } from "./helpers/app-source.js";
 
-const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+const app = readAppSourceSync();
 const header = readFileSync(new URL("../src/components/app/DesktopAppHeader.jsx", import.meta.url), "utf8");
 const fileManager = readFileSync(new URL("../src/features/files/useFileManager.js", import.meta.url), "utf8");
 const scene = readFileSync(new URL("../src/features/canvas/useExcalidrawScene.js", import.meta.url), "utf8");
@@ -10,14 +11,14 @@ const styles = readFileSync(new URL("../src/styles/document-save-status.css", im
 const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
 test("header shows current document identity and a distinct unsaved-to-file state", () => {
-  assert.match(app, /currentDocumentName=\{cloudDiagramId && !cloudDetached \? cloudDocumentName : \(currentFile\?\.name \|\| "Untitled drawing"\)\}/);
-  assert.match(app, /isCloudDocument=\{Boolean\(cloudDiagramId && !cloudDetached\)\}/);
+  assert.match(app, /currentDocumentName=\{cloudSessionRef\.current\.active && !cloudDetached \? cloudDocumentName : \(currentFile\?\.name \|\| "Untitled drawing"\)\}/);
+  assert.match(app, /isCloudDocument=\{Boolean\(cloudSessionRef\.current\.active && !cloudDetached\)\}/);
   assert.match(app, /currentDocumentDirty=\{documentDirty\}/);
   assert.match(app, /currentDocumentFileBacked=\{Boolean\(currentFile\?\.handle\)\}/);
   assert.match(header, /desktop-app-document-identity/);
   assert.match(header, /Changes not saved to file/);
-  assert.match(header, /Linked file/);
-  assert.match(header, /Local canvas/);
+  assert.match(header, /Saved to disk/);
+  assert.match(header, /BROWSER_DRAFT_LABEL/);
 });
 
 test("file edits are tracked against the last opened or successfully saved scene", () => {
@@ -35,7 +36,9 @@ test("file edits are tracked against the last opened or successfully saved scene
 
 test("new/open transitions warn before replacing an unsaved or browser-local working canvas", () => {
   assert.match(fileManager, /const confirmCanvasReplacement = \(actionLabel\)/);
-  assert.match(fileManager, /window\.confirm\(\`\$\{reason\}/);
+  assert.match(fileManager, /replacementPromptResolverRef\.current = resolve/);
+  assert.match(fileManager, /setReplacementPrompt\(\{ reason, recovery, actionLabel \}\)/);
+  assert.match(fileManager, /const reason = isDirty/);
   assert.match(fileManager, /Continuing may replace the current browser-local autosave/);
   assert.match(fileManager, /confirmCanvasReplacement\("create a new drawing"\)/);
   assert.ok((fileManager.match(/confirmCanvasReplacement\(`open/g) || []).length >= 4,
@@ -66,7 +69,7 @@ test("canvas document names can be edited without forcing a file save", () => {
 
 test("cloud canvas rename persists through the existing workspace metadata endpoint", () => {
   const workspaceClient = readFileSync(new URL("../src/features/workspace/workspaceClient.js", import.meta.url), "utf8");
-  assert.match(app, /workspaceClient\.updateDiagram\(cloudDiagramId, \{ name: normalizedName \}\)/);
+  assert.match(app, /workspaceClient\.updateDiagram\(cloudSessionRef\.current\.diagramId, \{ name: normalizedName \}\)/);
   assert.match(app, /setCloudDocumentName\(savedName\)/);
   assert.match(workspaceClient, /updateDiagram: \(diagramId, metadata\) => request\([^\n]+method: "PATCH"/);
 });

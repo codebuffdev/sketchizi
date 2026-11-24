@@ -5,20 +5,17 @@ import { readFileSync } from 'node:fs';
 const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
 
-test('tooltips are rendered in a body-level portal so the vertical dock cannot clip them', () => {
-  assert.match(canvas, /document\.createElement\("div"\)[\s\S]*?className = "sketchizi-toolbar-tooltip"/);
-  assert.match(canvas, /document\.body\.appendChild\(toolbarTooltip\)/);
-  assert.match(canvas, /toolbar\?\.dataset\.sketchiziOrientation === "vertical"/);
-  assert.match(canvas, /side === "right" \? buttonRect\.left - tipRect\.width - 10 : buttonRect\.right \+ 10/);
-  assert.match(canvas, /toolbarTooltip\.remove\(\)/);
+test('dock labels never depend on a custom body-level tooltip that could be clipped', () => {
+  const primary = readFileSync(new URL('../src/components/app/PrimaryDock.jsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(canvas, /document\.body\.appendChild\(toolbarTooltip\)|toolbarTooltip\.remove\(\)/);
+  assert.match(primary, /title=\{tool\.keyHint \? `\$\{tool\.label\} \(\$\{tool\.keyHint\}\)` : tool\.label\}/);
 });
 
-test('toolbar tooltips preserve accessible names and clean up hover and focus handlers', () => {
-  assert.match(canvas, /button\.dataset\.sketchiziTooltip = tooltip/);
-  assert.match(canvas, /button\.removeAttribute\("title"\)/);
-  assert.match(canvas, /button\.addEventListener\("focus", show\)/);
-  assert.match(canvas, /button\.addEventListener\("blur", hide\)/);
-  assert.match(canvas, /button\.removeEventListener\("pointerenter", show\)/);
+test('dock buttons preserve accessible names and release their window listeners on cleanup', () => {
+  const primary = readFileSync(new URL('../src/components/app/PrimaryDock.jsx', import.meta.url), 'utf8');
+  assert.match(primary, /aria-label=\{tool\.label\}/);
+  assert.match(primary, /window\.removeEventListener\("click", clearCustomTool, true\)/);
+  assert.doesNotMatch(canvas, /button\.removeAttribute\("title"\)/);
 });
 
 test('dock hover, active, disabled and keyboard-focus states are explicit and reduced-motion aware', () => {
@@ -43,16 +40,9 @@ test('duplicate native Scroll back to content tooltip is suppressed', () => {
   assert.match(canvas, /tooltipObserver\.observe\(document\.body, \{ childList: true, subtree: true \}\)/);
 });
 
-test('Scroll back to content tooltip is anchored to the control without covering the dock', () => {
-  assert.match(canvas, /const scrollBackTooltip = \/scroll back to content\/i\.test\(label\)/);
-  assert.match(canvas, /if \(scrollBackTooltip\) \{/);
-  assert.match(canvas, /top = buttonRect\.top - tipRect\.height - 8/);
-  assert.match(canvas, /if \(top < 8\) top = buttonRect\.bottom \+ 8/);
-});
-
-test('Scroll back to content uses accessible native-title suppression and the shared dock tooltip', () => {
+test('Scroll back to content keeps its accessible name and sits above the contextual dock when they overlap', () => {
+  assert.match(canvas, /return \/scroll back to content\/i\.test\(label\)|\/scroll back to content\/i\.test\(label\)/);
   assert.match(canvas, /button\.dataset\.sketchiziTooltip = "Scroll back to content"/);
-  assert.match(canvas, /button\.removeAttribute\("title"\)/);
-  assert.match(canvas, /bindToolbarTooltip\(button\)/);
-  assert.match(canvas, /return \/scroll back to content\/i\.test\(label\)/);
+  assert.match(canvas, /const liftedTop = contextualRect\.top - buttonHeight - 12/);
+  assert.match(canvas, /position\.top = Math\.min\(position\.top, Math\.round\(liftedTop\)\)/);
 });

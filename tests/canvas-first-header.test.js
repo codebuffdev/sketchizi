@@ -21,28 +21,24 @@ test("header hides on canvas pointer interaction without listening to canvas whe
 
   assert.match(header, /collapseOnCanvasInteraction/);
   assert.match(header, /event\.target\.closest\("\.desktop-canvas-region"\)/);
-  assert.match(header, /setDocumentTitleVisible\(false\)/);
-  assert.match(header, /setAuthControlVisible\(false\)/);
+  assert.match(header, /setHeaderVisible\(false\)/);
+  // Document title and sign-in no longer auto-hide independently of the rail.
+  assert.doesNotMatch(header, /setDocumentTitleVisible|setAuthControlVisible/);
   assert.match(header, /document\.addEventListener\("pointerdown", collapseOnCanvasInteraction, true\)/);
   assert.doesNotMatch(header, /addEventListener\(["']wheel["']/);
 });
 
-test("header supports pinning, responsive edge reveal, and a keyboard visibility shortcut", async () => {
+test("header supports pinning, settings-only reveal, and a keyboard visibility shortcut", async () => {
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   const css = await read("../src/styles/canvas-first-header.css");
   const railCss = await read("../src/styles/right-header-rail.css");
 
   assert.match(header, /setHeaderPinned\(\(pinned\) => !pinned\)/);
   assert.match(header, /aria-pressed=\{headerPinned\}/);
-  assert.match(header, /event\.clientY <= 24/);
-  assert.match(header, /Math\.abs\(event\.clientX - viewportWidth \/ 2\) <= 190/);
-  assert.match(header, /event\.clientX >= viewportWidth - 100/);
-  assert.match(header, /event\.clientX >= viewportWidth - 20 && event\.clientY > 64/);
-  assert.match(header, /setDocumentTitleVisible\(true\)/);
-  assert.match(header, /setAuthControlVisible\(true\)/);
-  assert.match(header, /is-title-hidden/);
-  assert.match(header, /is-auth-hidden/);
-  assert.match(header, /window\.matchMedia\("\(min-width: 1025px\)"\)\.matches/);
+  // The rail is revealed only from the settings popover or the keyboard shortcut;
+  // hovering the screen edges must not open it.
+  assert.doesNotMatch(header, /event\.clientY <= 24|event\.clientX >= viewportWidth - 100/);
+  assert.match(header, /window\.matchMedia\("\(min-width: 521px\)"\)\.matches/);
   assert.match(header, /event\.key\.toLowerCase\(\) !== "h"/);
   assert.match(header, /desktop-app-header-reveal-handle/);
   assert.match(header, /M4 6h16M4 12h16M4 18h16/);

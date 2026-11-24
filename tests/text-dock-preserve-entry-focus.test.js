@@ -6,9 +6,11 @@ const source = readFileSync(new URL("../src/components/app/ToolOptionsDock.jsx",
 
 test("text font-family menu preserves the active text editor focus", () => {
   assert.match(source, /const preserveTextEditorFocus = isText && Boolean\(appState\.editingTextElement\)/);
-  assert.match(source, /preserveFocus=\{preserveTextEditorFocus\}/);
+  // The font-family menu always preserves editor focus (editing or merely selected).
+  assert.match(source, /<DockSelect label="Font family" value=\{fontFamily\} onChange=\{updateTextFontFamily\} preserveFocus>/);
   assert.match(source, /if \(!preserveFocus\) menuRef\.current\?\.querySelector/);
-  assert.match(source, /onPointerDown=\{preserveFocus \? \(event\) => event\.preventDefault\(\) : undefined\}/);
+  // Menu controls carry Excalidraw's focus-safe marker class so the text editor does not blur.
+  assert.match(source, /\$\{preserveFocus \? " properties-trigger" : ""\}/);
   assert.match(source, /if \(!preserveFocus\) triggerRef\.current\?\.focus\(\)/);
 });
 
@@ -54,5 +56,5 @@ test("font family changes resolve live selected text and update only text elemen
 
 
 test("font picker preserves a selected text element even when it is not in edit mode", () => {
-  assert.match(source, /<DockSelect label="Font family"[\\s\\S]*?onChange=\\{updateTextFontFamily\\} preserveFocus icon=/);
+  assert.match(source, /<DockSelect label="Font family"[\s\S]*?onChange=\{updateTextFontFamily\} preserveFocus>/);
 });

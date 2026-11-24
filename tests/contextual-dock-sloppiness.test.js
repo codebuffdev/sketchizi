@@ -8,8 +8,13 @@ const styles = readFileSync(new URL("../src/styles/ui-modernization-toolbar-dock
 test("all contextual dropdowns share one choice-menu implementation", () => {
   assert.ok(dock.includes("function DockChoiceMenu("));
   assert.ok(dock.includes("return <DockChoiceMenu"));
-  assert.equal(dock.split("createPortal(").length - 1, 1);
-  assert.ok(dock.includes("document.body,"));
+  // Exactly one portal renders choice menus: the one inside DockChoiceMenu. The
+  // layer-order menu is a separate, dedicated surface.
+  const choiceStart = dock.indexOf("function DockChoiceMenu(");
+  const choiceEnd = dock.indexOf("function DockSelect(", choiceStart);
+  assert.ok(choiceStart >= 0 && choiceEnd > choiceStart);
+  assert.equal(dock.slice(choiceStart, choiceEnd).split("createPortal(").length - 1, 1);
+  assert.ok(dock.slice(choiceStart, choiceEnd).includes("document.body,"));
 });
 
 test("choice menus expose visible labels and accessible checked state", () => {

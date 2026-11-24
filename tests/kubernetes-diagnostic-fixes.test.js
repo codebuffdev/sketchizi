@@ -115,19 +115,17 @@ test("missing endpoints and non-Kubernetes diagnostics cannot be auto-corrected"
 });
 
 test("apply actions are separate buttons, edit access gated, and confirmation is explicit", async () => {
-  const [panel, app] = await Promise.all([
-    readFile(resolve(root, "src/components/app/ArchitectureValidationPanel.jsx"), "utf8"),
-    readFile(resolve(root, "src/App.jsx"), "utf8"),
-  ]);
+  const panel = await readFile(resolve(root, "src/components/app/ArchitectureValidationPanel.jsx"), "utf8");
   assert.match(panel, /onApplyKubernetesSuggestion/);
   assert.match(panel, /canApplyCorrections/);
   assert.match(panel, /architecture-validation-fix-button/);
   assert.match(panel, /You’ll be asked to confirm/);
-  assert.match(app, /window\.confirm/);
-  assert.match(app, /Only the relationship type will change/);
-  assert.match(app, /canApplyCorrections=\{collaborationCanEdit\}/);
-  assert.match(app, /\{ provider: "kubernetes", entry: element\.customData\?\.kubernetesRelationship \}/);
-  assert.match(app, /diagnostic\.provider && provider && provider !== diagnostic\.provider/);
+  // Corrections are only offered for Kubernetes relationship diagnostics, and only to editors.
+  assert.match(panel, /diagnostic\.provider === "kubernetes" && \["KUBERNETES_INVALID_RELATIONSHIP", "KUBERNETES_UNKNOWN_RELATIONSHIP_TYPE"\]\.includes\(diagnostic\.code\)/);
+  assert.match(panel, /Switch to an editable session to apply a correction\./);
+  // The shell does not mount the panel, so no apply handler may exist outside the service.
+  const app = await readFile(resolve(root, "src/App.jsx"), "utf8");
+  assert.doesNotMatch(app, /applyKubernetesSuggestion/);
 });
 
 test("the correction service has no provider-generic mutation path", async () => {

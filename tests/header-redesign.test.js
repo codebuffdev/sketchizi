@@ -7,7 +7,7 @@ const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 test("header uses an accessible hamburger application-menu trigger and preserves the library shortcut", async () => {
   const header = await read("../src/components/app/DesktopAppHeader.jsx");
   assert.match(header, /className=\{nativeMenuOpen \?/);
-  assert.match(header, /desktop-app-menu-trigger active/);
+  assert.match(header, /desktop-app-menu-trigger desktop-app-menu-trigger-floating active/);
   assert.match(header, /Open application menu/);
   assert.match(header, /toggleNativeMenu\?\.\(/);
   assert.match(header, /aria-expanded=\{nativeMenuOpen\}/);
@@ -15,7 +15,8 @@ test("header uses an accessible hamburger application-menu trigger and preserves
   assert.doesNotMatch(header, /src="\/sketchizi-logo\.svg"/);
   assert.match(header, /\{libraryToggle\}/); // existing Icon Library shortcut is preserved
   assert.match(header, /aria-label="Search commands"/);
-  assert.match(header, /Ctrl\+K/);
+  assert.match(header, /getCommandPaletteShortcut\(\)/);
+  assert.match(header, /\{paletteShortcut\.label\}/);
 });
 
 test("header Tool menu is positioned relative to its trigger so it remains visible", async () => {

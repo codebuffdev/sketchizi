@@ -7,22 +7,25 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const source = await readFile(resolve(root, "src/components/app/DesktopAppHeader.jsx"), "utf8");
 
-test("theme toggle and AI Ask are grouped before the existing right-side utility controls", () => {
+test("tools and search stay grouped in the header actions, with theme and AI Ask in their own global controls", () => {
   const actionsStart = source.indexOf('<div className="desktop-app-header-actions">');
   const actionsEnd = source.indexOf("</div>\n    </header>", actionsStart);
   assert.ok(actionsStart >= 0 && actionsEnd > actionsStart, "right-side header actions should exist");
   const actions = source.slice(actionsStart, actionsEnd);
-  const theme = actions.indexOf('<div className="desktop-app-header-account-zone">');
-  const aiAsk = actions.indexOf('<div className="desktop-app-header-panel-actions">{children}</div>');
   const tools = actions.indexOf("{moreToolsToggle}");
   const search = actions.indexOf('className="desktop-app-header-icon-button desktop-app-search-button"');
-  const signIn = actions.indexOf("<AuthenticationControl />");
-  assert.ok(theme >= 0 && aiAsk > theme && tools > aiAsk && search > tools && signIn > search);
+  assert.ok(tools >= 0 && search > tools, "Tools control sits before command search");
+  // Sign-in leads the header; theme and AI Ask are floating global controls after it.
+  const signIn = source.indexOf("<AuthenticationControl />");
+  assert.ok(signIn >= 0 && signIn < actionsStart);
+  const theme = source.indexOf('<div className="desktop-app-global-theme-control">');
+  const aiAsk = source.indexOf('<div className="desktop-app-global-ai-control">{children}</div>');
+  assert.ok(theme > actionsEnd && aiAsk > theme);
 });
 
 test("theme toggle and AI Ask retain their existing callbacks and props", () => {
-  assert.match(source, /<ThemeControl setThemeMode=\{setThemeMode\} themeMode=\{themeMode\} isDarkTheme=\{isDarkTheme\} api=\{canvasApi\} canEdit=\{canEditCanvas\} \/>/);
-  assert.match(source, /<div className="desktop-app-header-panel-actions">\{children\}<\/div>/);
+  assert.match(source, /<ThemeControl setThemeMode=\{setThemeMode\} themeMode=\{themeMode\} isDarkTheme=\{isDarkTheme\} canvasAppearance=\{canvasAppearance\} onCanvasAppearanceChange=\{onCanvasAppearanceChange\} api=\{canvasApi\} canEdit=\{canEditCanvas\} \/>/);
+  assert.match(source, /<div className="desktop-app-global-ai-control">\{children\}<\/div>/);
 });
 
 test("desktop right header rail uses the same frameless shell as the canvas dock", async () => {
@@ -37,7 +40,7 @@ test("desktop right header rail uses the same frameless shell as the canvas dock
 test("desktop right header rail aligns controls on one vertical axis", async () => {
   const styles = await readFile(resolve(root, "src/styles/right-header-rail.css"), "utf8");
   assert.match(styles, /desktop-app-header-right-rail\s*>\s*\.desktop-app-header-island\s*\{[\s\S]*?flex-direction:\s*column\s*!important/);
-  assert.match(styles, /desktop-app-header-right-rail\s*>\s*\.desktop-app-header-island\s*>\s*\*\s*\{[\s\S]*?align-self:\s*center/);
+  assert.match(styles, /desktop-app-header-right-rail :is\([\s\S]*?\)\s*\{[\s\S]*?align-self:\s*center/);
   assert.match(styles, /desktop-app-header-right-rail\s+\.desktop-app-save-status-trigger[\s\S]*?width:\s*36px/);
   assert.match(styles, /desktop-app-header-right-rail\s+\.desktop-app-header-spacer\s*\{[\s\S]*?display:\s*none\s*!important/);
 });

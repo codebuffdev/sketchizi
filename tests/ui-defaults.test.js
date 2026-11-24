@@ -55,7 +55,7 @@ test("independent canvas palette is removed in the two-theme design", async () =
 
 test("restored scene keeps its saved canvas background", async () => {
   const source = await readFile(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
-  assert.match(source, /viewBackgroundColor: savedSketch\?\.appState\?\.viewBackgroundColor \|\| getCanvasBackground\(isDarkTheme\)/);
+  assert.match(source, /viewBackgroundColor: savedSketch\?\.appState\?\.viewBackgroundColor \|\| getCanvasAppearanceBackground\(activeAppearance, isDarkTheme\)/);
   const helper = await readFile(new URL("../src/features/navigation/canvasTheme.js", import.meta.url), "utf8");
   assert.match(helper, /api\.getAppState\(\)/);
   assert.match(helper, /api\.updateScene\(/);
@@ -125,11 +125,11 @@ test("hamburger panel removes trailing empty separators after Reset the canvas",
 });
 
 
-test("new canvases default to a visible focus grid while saved grid preferences win", async () => {
+test("new canvases default to a visible grid while saved grid preferences win", async () => {
   const app = await readFile(new URL("../src/App.jsx", import.meta.url), "utf8");
   assert.match(app, /stored === null \? true : stored === "true"/);
   assert.match(app, /catch \{ return true; \}/);
-  assert.match(app, /includes\(stored\) \? stored : "focus"/);
-  assert.match(app, /catch \{ return "focus"; \}/);
+  assert.match(app, /includes\(stored\) \? stored : "normal"/);
+  assert.match(app, /catch \{ return "normal"; \}/);
   assert.match(app, /stored === null \? true : stored === "true"/);
 });

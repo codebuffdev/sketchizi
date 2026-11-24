@@ -2,22 +2,26 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
+// The Primary Dock is a React component with no drag gesture, so the former
+// "single drag cleanup path" requirement is carried by its listener and timer
+// lifecycle: everything it registers is released on unmount.
+const dock = readFileSync(new URL('../src/components/app/PrimaryDock.jsx', import.meta.url), 'utf8');
 const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
 
-test('active drag listeners have a single cleanup path', () => {
-  assert.match(canvas, /let activeDragCleanup = null/);
-  assert.match(canvas, /activeDragCleanup = finish/);
-  assert.match(canvas, /window\.removeEventListener\("pointermove", move\)/);
-  assert.match(canvas, /window\.removeEventListener\("pointerup", finish\)/);
-  assert.match(canvas, /window\.removeEventListener\("pointercancel", finish\)/);
+test('dock has no native drag machinery left to leak window listeners', () => {
+  assert.doesNotMatch(canvas, /activeDragCleanup/);
+  assert.doesNotMatch(dock, /pointermove|pointerup|pointercancel/);
 });
 
-test('canvas effect cleanup ends an in-progress drag before disconnecting observers', () => {
-  assert.match(canvas, /disposed = true;\s*activeDragCleanup\?\.\(\);\s*cancelAnimationFrame\(frame\)/);
+test('dock window listeners are removed by the same effect that adds them', () => {
+  assert.match(dock, /window\.addEventListener\("sketchizi:activate-tool", syncCustomTool\)/);
+  assert.match(dock, /window\.removeEventListener\("sketchizi:activate-tool", syncCustomTool\)/);
+  assert.match(dock, /window\.addEventListener\("click", clearCustomTool, true\)/);
+  assert.match(dock, /window\.removeEventListener\("click", clearCustomTool, true\)/);
 });
 
-test('drag cleanup is safe when pointerup or pointercancel fires more than once', () => {
-  assert.match(canvas, /if \(activeDragCleanup === finish\) activeDragCleanup = null/);
-  assert.match(canvas, /window\.addEventListener\("pointerup", finish, \{ once: true \}\)/);
-  assert.match(canvas, /window\.addEventListener\("pointercancel", finish, \{ once: true \}\)/);
+test('pending collapse timers are cancelled on unmount and before rescheduling', () => {
+  assert.match(dock, /useEffect\(\(\) => \(\) => \{\s*if \(collapseTimerRef\.current\) window\.clearTimeout\(collapseTimerRef\.current\);\s*\}, \[\]\)/);
+  assert.match(dock, /const scheduleCollapse = \(\) => \{\s*cancelCollapseTimer\(\);/);
+  assert.match(dock, /collapseTimerRef\.current = null;/);
 });

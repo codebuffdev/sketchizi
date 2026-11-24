@@ -19,7 +19,7 @@ test("Zen Mode anchors the formatting dock to the canvas viewport instead of the
 
 test("formatting controls continue to derive their values and actions from the active selection", () => {
   assert.match(source, /const liveSelection = selectedElements\.filter/);
-  assert.match(source, /const applyFormatting = \(patch\) =>/);
+  assert.match(source, /const applyFormatting = \(rawPatch\) =>/);
   assert.match(source, /onClick=\{\(\) => setOpenGroup\(\(current\) => current === group\.id \? null : group\.id\)\}/);
 });
 
