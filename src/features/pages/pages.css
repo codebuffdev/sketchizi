@@ -706,7 +706,7 @@
 }
 
 
-/* The Pages overlay stays non-stacking; app header and popovers outrank sheet controls. */
+/* The Pages overlay stays non-stacking; expanded app popovers temporarily outrank sheet controls. */
 .app.canvas-first-header:has(.pages-book-workspace) .desktop-app-header { z-index: 10060 !important; }
 .app:has(.pages-book-workspace):has(.desktop-app-header [aria-expanded="true"]) .pages-book-ui {
   z-index: 500;
