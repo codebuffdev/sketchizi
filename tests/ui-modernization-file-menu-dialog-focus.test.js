@@ -6,8 +6,8 @@ const menu = readFileSync(new URL("../src/features/navigation/useNativeSketchizi
 const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
 test("native file menu registers keyboard shortcuts and cleans up its global listeners", () => {
-  assert.match(menu, /window\\.addEventListener\\("keydown", onKeyDown, true\\)/);
-  assert.match(menu, /window\\.removeEventListener\\("keydown", onKeyDown, true\\)/);
+  assert.ok(menu.includes('window.addEventListener("keydown", onKeyDown, true)'));
+  assert.ok(menu.includes('window.removeEventListener("keydown", onKeyDown, true)'));
   assert.match(menu, /key === "o" && !event\.shiftKey/);
   assert.match(menu, /fileActionsRef\.current\.openDrawingFromDisk\?\.\(\)/);
 });
