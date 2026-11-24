@@ -142,14 +142,20 @@ test("bound text remains centered in its parent box after the parent is arranged
   assert.equal(label.y + label.height / 2, parent.y + parent.height / 2);
 });
 
-test("ToolOptionsDock renders the minimalist Align trigger and a body-portaled upward popover", async () => {
+test("ToolOptionsDock exposes the Align trigger, upward portal, and live selection action", async () => {
   const source = await readFile(new URL("../../components/app/ToolOptionsDock.jsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../../styles/contextual-dock-polish.css", import.meta.url), "utf8");
   assert.match(source, /title="Align & Arrange"/);
-  assert.match(source, /width="18" height="18"[^>]*strokeWidth="1\.8"/);
+  assert.match(source, /width="18" height="18"[^>]*strokeWidth="1\\.8"/);
   assert.match(source, /M5 4v16M8 7h11M8 12h8M8 17h11/);
-  assert.match(source, /document\.body,/);
-  assert.match(source, /onMouseDown=\{\(event\) => event\.stopPropagation\(\)\}/);
-  assert.match(source, /api\.getSceneElements\?\.\(\)/);
+  assert.match(source, /document\\.body,/);
+  assert.match(source, /onMouseDown=\\{\\(event\\) => event\\.stopPropagation\\(\\)\\}/);
+  assert.match(source, /api\\.getSceneElements\\?\\.\\(\\)/);
   assert.match(source, /selectedElementIds/);
+  assert.match(source, /applyAlignmentToSelection\\(api, layout/);
   assert.match(source, /commitToHistory: true/);
+  assert.match(styles, /width: 34px;[\\s\\S]*height: 34px;/);
+  assert.match(styles, /background: rgba\\(148, 163, 184, \\.14\\)/);
+  assert.match(styles, /z-index: 1000/);
+  assert.match(styles, /transform: translateX\\(-50%\\)/);
 });
