@@ -549,3 +549,125 @@
 /* The editorial title field replaces the legacy floating page-name overlay. */
 .app:has(.pages-book-workspace) .canvas-pages-page-name,
 .app:has(.pages-book-workspace) .canvas-pages-page-name-input { display: none !important; }
+
+
+/* A single chapter index lives above the compact bottom-right navigator. */
+.canvas-pages-navigation { overflow: visible; }
+.canvas-pages-chapter-index { position: relative; min-width: 0; }
+.canvas-pages-navigation .canvas-pages-chapter-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: min(310px, 42vw);
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ui-text-strong, #1f2937);
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.canvas-pages-chapter-trigger:hover,
+.canvas-pages-chapter-trigger[aria-expanded="true"] {
+  border-color: rgb(5 150 105 / 24%);
+  background: rgb(5 150 105 / 9%);
+  color: #047857;
+}
+.app.theme-dark .canvas-pages-navigation .canvas-pages-chapter-trigger { color: #e2e8f0; }
+.app.theme-dark .canvas-pages-navigation .canvas-pages-chapter-trigger:hover,
+.app.theme-dark .canvas-pages-navigation .canvas-pages-chapter-trigger[aria-expanded="true"] {
+  color: #6ee7b7;
+  background: rgb(16 185 129 / 14%);
+}
+.canvas-pages-chapter-popover {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  z-index: 1000;
+  box-sizing: border-box;
+  width: min(300px, calc(100vw - 24px));
+  max-height: min(420px, calc(100dvh - 150px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid var(--ui-border, #dbe3ec);
+  border-radius: 12px;
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text-strong, #1f2937);
+  box-shadow: 0 14px 38px rgb(15 23 42 / 20%);
+}
+.app.theme-dark .canvas-pages-chapter-popover {
+  border-color: #334155;
+  background: #111827;
+  color: #f8fafc;
+  box-shadow: 0 16px 42px rgb(0 0 0 / 42%);
+}
+.canvas-pages-chapter-popover-title {
+  padding: 2px 5px 5px;
+  color: var(--ui-text-muted, #64748b);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.canvas-pages-chapter-popover-list { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; }
+.canvas-pages-chapter-option {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 3px;
+  padding: 2px 4px 2px 7px;
+  border-left: 3px solid transparent;
+  border-radius: 7px;
+}
+.canvas-pages-chapter-option.is-active {
+  border-left-color: #059669;
+  background: rgb(5 150 105 / 10%);
+}
+.canvas-pages-chapter-jump {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 10px;
+  padding: 7px 3px !important;
+  text-align: left;
+}
+.canvas-pages-chapter-option-number {
+  flex: 0 0 auto;
+  color: #059669;
+  font: 750 10px/1 ui-monospace, SFMono-Regular, monospace;
+}
+.canvas-pages-chapter-option-name {
+  overflow: hidden;
+  color: var(--ui-text-strong, #1f2937);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app.theme-dark .canvas-pages-chapter-option-name { color: #e2e8f0; }
+.canvas-pages-chapter-complete,
+.canvas-pages-chapter-remove { flex: 0 0 27px; padding: 5px !important; color: #059669 !important; }
+.canvas-pages-chapter-remove { opacity: 0; color: var(--ui-text-muted, #64748b) !important; }
+.canvas-pages-chapter-option:hover .canvas-pages-chapter-remove,
+.canvas-pages-chapter-remove:focus-visible { opacity: 1; }
+.canvas-pages-chapter-new {
+  width: 100%;
+  padding: 9px !important;
+  border: 1px solid var(--ui-border, #dbe3ec) !important;
+  color: #047857 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-align: left;
+}
+.app.theme-dark .canvas-pages-chapter-new { color: #6ee7b7 !important; border-color: #334155 !important; }
+.canvas-pages-chapter-popover button:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }
+@media (max-width: 767px) {
+  .canvas-pages-chapter-popover { width: min(280px, calc(100vw - 24px)); }
+  .canvas-pages-chapter-trigger { max-width: 40vw; }
+}
