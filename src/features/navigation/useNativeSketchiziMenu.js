@@ -64,7 +64,8 @@ export function useNativeSketchiziMenu({
     const onKeyDown = (event) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
       const key = event.key.toLowerCase();
-      // Disable Excalidraw Find globally. Ctrl/Cmd+Shift+E is routed to the custom Export Studio handler.\n      if (key === "f") {
+      // Disable Excalidraw Find globally. Ctrl/Cmd+Shift+E is routed to the custom Export Studio handler.
+      if (key === "f") {
         event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.();
         return;
       }
