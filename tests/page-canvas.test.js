@@ -116,6 +116,8 @@ test('Pages keeps the paper texture behind the transparent HiDPI Excalidraw canv
  assert.match(pages, /pagesPreviousViewBackgroundColor/);
  assert.match(pages, /const restoreBackground = currentTheme/);
  assert.match(pages, /window\.dispatchEvent\(new Event\('resize'\)\)/);
+ assert.match(pages, /if \(refreshCanvas\) requestExcalidrawCanvasRefresh\(\)/);
+ assert.match(pages, /setPageWidthMode\('Wide', activePageRef\.current, false\)/);
  assert.match(pages, /fit\(active\); requestExcalidrawCanvasRefresh\(\)/);
  assert.match(styles, /\.pages-book-workspace \{ z-index: auto; \}/);
  assert.match(styles, /\.pages-book-ui \{[\s\S]*?z-index: 10040/);
