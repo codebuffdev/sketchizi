@@ -1236,3 +1236,21 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
 .sketchizi-toast.closed-tab-toast button { flex: 0 0 auto; padding: 5px 12px; border: 1px solid rgba(255,255,255,.35); border-radius: 8px; background: rgba(255,255,255,.14); color: #fff; font: inherit; font-weight: 650; cursor: pointer; }
 .sketchizi-toast.closed-tab-toast button:hover { background: rgba(255,255,255,.26); }
 .sketchizi-toast.closed-tab-toast button:focus-visible { outline: 2px solid #f0c36a; outline-offset: 2px; }
+
+
+.canvas-tabs-export-shortcut-hint {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 3px 5px;
+  border: 1px solid var(--ct-strip-border, #dfe4ec);
+  border-radius: 5px;
+  background: var(--ct-strip, #f2f5f9);
+  color: var(--ct-text, #748095);
+  font: 600 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+}
+.app.theme-dark .canvas-tabs-export-shortcut-hint {
+  border-color: #3b4658;
+  background: #2b3544;
+  color: #aab5c5;
+}
