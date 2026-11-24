@@ -89,6 +89,17 @@ try {
  await pageNameInput.fill('Cover');
  await pageNameInput.press('Enter');
  await page.waitForFunction(()=>document.querySelector('.canvas-pages-page-name')?.textContent.trim()==='Cover');
+ // Exercise inline editorial metadata and per-chapter paper texture persistence.
+ await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover');
+ es = await waitScene(es => pages(es)[0]?.customData?.chapterTitle === 'Cover');
+ await page.getByRole('textbox', { name: 'Key formula or rule of thumb' }).fill('100M DAU × 20 req/day ≈ 23,150 QPS');
+ es = await waitScene(es => pages(es)[0]?.customData?.keyNote?.includes('23,150 QPS'));
+ await page.getByRole('button', { name: 'Ruled', exact: true }).click();
+ es = await waitScene(es => pages(es)[0]?.customData?.paperTexture === 'Ruled');
+ await page.getByRole('button', { name: 'Dots', exact: true }).click();
+ es = await waitScene(es => pages(es)[0]?.customData?.paperTexture === 'Dots');
+ await page.getByRole('button', { name: /Mark Read/ }).click();
+ es = await waitScene(es => pages(es)[0]?.customData?.completed === true);
  assert(await page.locator('.pages-book-canvas-zone.texture-dots').evaluate(el=>getComputedStyle(el).backgroundImage!=='none'),'Editorial dot texture must be visible');
  const dock = await page.getByRole('navigation',{name:'Drawing tools'}).boundingBox();
  assert(dock && dock.width>0 && dock.height>0,'Drawing dock must remain visible in Pages mode');
