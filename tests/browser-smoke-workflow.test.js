@@ -22,7 +22,7 @@ test("System Design browser smoke uses the shared Icon Library and top-bar actio
   assert.match(script, /Add Component/);
   assert.match(script, /System Design \(22\)/);
   assert.match(script, /Add \$\{label\} to canvas/);
-  assert.match(script, /Auto-Layout components/);
+  assert.doesNotMatch(script, /Auto-Layout components/);
   assert.doesNotMatch(script, /primitiveDock|System design primitives/);
   assert.match(script, /\.sd-dock/);
 });
