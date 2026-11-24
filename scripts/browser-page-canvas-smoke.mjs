@@ -179,10 +179,9 @@ try {
  await renameActivePage('Details');
  es = await waitScene(es=>pages(es).length===2 && pages(es).some(p=>p.name==='Details'));
  const navigation=page.getByRole('navigation',{name:'Chapter navigation'});
- await navigation.getByRole('button').nth(0).click();
  await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('01 / 02'));
  assert.equal(await page.getByRole('textbox', { name: 'Chapter title' }).inputValue(),'Cover chapter');
- await navigation.getByRole('button').nth(1).click();
+ await navigation.getByRole('button',{name:'Next chapter'}).click();
  await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('02 / 02'));
  assert.equal(await page.getByRole('textbox', { name: 'Chapter title' }).inputValue(),'Details');
  await page.reload();
