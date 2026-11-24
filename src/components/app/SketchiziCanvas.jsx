@@ -46,6 +46,40 @@ export default function SketchiziCanvas({
   const spotlightSelectedRef = useRef(selectedElements);
   spotlightSelectedRef.current = selectedElements;
 
+  const cameraLockUpdateRef = useRef(false);
+  const pagesMode = pageContext?.mode === "pages";
+
+  // A Pages chapter is a bounded sheet, not an infinite canvas. Consume all
+  // viewport-navigation gestures before Excalidraw can translate its camera.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root || !pagesMode) return undefined;
+    const stopViewportGesture = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+    };
+    const onPointerDown = (event) => {
+      if (event.button === 1 || event.pointerType === "touch") stopViewportGesture(event);
+    };
+    const onKeyDown = (event) => {
+      if (event.code !== "Space" || event.repeat) return;
+      if (event.target instanceof Element &&
+          event.target.closest("input, textarea, select, [contenteditable='true']")) return;
+      stopViewportGesture(event);
+    };
+    root.addEventListener("wheel", stopViewportGesture, { capture: true, passive: false });
+    root.addEventListener("touchmove", stopViewportGesture, { capture: true, passive: false });
+    root.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      root.removeEventListener("wheel", stopViewportGesture, true);
+      root.removeEventListener("touchmove", stopViewportGesture, true);
+      root.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, [pagesMode]);
+
   // Excalidraw assigns "S" to its color panel. When a shape is selected,
   // keep that shortcut from opening the panel; window capture runs before
   // Excalidraw's editor-level keyboard handlers.
@@ -478,6 +512,31 @@ export default function SketchiziCanvas({
   }, [apiRef, canEdit, viewModeEnabled]);
 
   const handleSceneChange = useCallback((elements, appState, files) => {
+    if (pageContext?.mode === "pages") {
+      const zoomValue = Number(appState?.zoom?.value ?? appState?.zoom ?? 1);
+      const cameraNeedsLock = appState?.scrollX !== 0 || appState?.scrollY !== 0 || zoomValue !== 1;
+      const handToolActive = appState?.activeTool?.type === "hand";
+      if ((cameraNeedsLock || handToolActive) && !cameraLockUpdateRef.current) {
+        cameraLockUpdateRef.current = true;
+        apiRef?.current?.updateScene?.({
+          appState: {
+            scrollX: 0,
+            scrollY: 0,
+            zoom: { value: 1 },
+            ...(handToolActive ? { activeTool: { type: "selection" } } : {}),
+          },
+          captureUpdate: "NEVER",
+        });
+        requestAnimationFrame(() => { cameraLockUpdateRef.current = false; });
+        appState = {
+          ...appState,
+          scrollX: 0,
+          scrollY: 0,
+          zoom: { value: 1 },
+          ...(handToolActive ? { activeTool: { type: "selection" } } : {}),
+        };
+      }
+    }
     // Excalidraw can emit many scene changes during a single freehand gesture.
     // Avoid driving a React render (and grid/overlay recalculation) for every
     // point. While drawing, pointer-up publishes the settled revision.
@@ -488,7 +547,7 @@ export default function SketchiziCanvas({
       });
     }
     handleChange?.(elements, appState, files);
-  }, [handleChange]);
+  }, [apiRef, handleChange, pageContext?.mode]);
   const handleViewportChange = useCallback((...args) => {
     if (!canvasRevisionFrameRef.current) {
       canvasRevisionFrameRef.current = requestAnimationFrame(() => {
