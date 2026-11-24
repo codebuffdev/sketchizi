@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { getTabDisplayName } from "../../features/workspace/tabLabel.js";
 import { describeTabSync, getTabStatusClass } from "../../features/workspace/tabCloudState.js";
 import { countLiveElements, describeClosedAt } from "../../features/workspace/closedTabs.js";
@@ -47,6 +48,9 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
   const [activeMenuOpen, setActiveMenuOpen] = useState(false);
   const [closedMenuOpen, setClosedMenuOpen] = useState(false);
   const rootRef = useRef(null);
+  const overflowTriggerRef = useRef(null);
+  const overflowMenuRef = useRef(null);
+  const [overflowPosition, setOverflowPosition] = useState(null);
   const visibleTabs = useMemo(() => {
     if (tabs.length <= 3) return tabs;
     const activeIndex = Math.max(0, tabs.findIndex((tab) => tab.id === activeId));
@@ -103,7 +107,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
   useEffect(() => {
     if (!overflowOpen) return undefined;
     const closeOnOutsideInteraction = (event) => {
-      if (!rootRef.current?.contains(event.target)) setOverflowOpen(false);
+      if (!rootRef.current?.contains(event.target) && !overflowMenuRef.current?.contains(event.target)) setOverflowOpen(false);
     };
     const closeOnEscape = (event) => {
       if (event.key === "Escape") setOverflowOpen(false);
@@ -115,6 +119,28 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
       document.removeEventListener("keydown", closeOnEscape, true);
     };
   }, [overflowOpen]);
+
+  useEffect(() => {
+    if (!overflowOpen) {
+      setOverflowPosition(null);
+      return undefined;
+    }
+    const updatePosition = () => {
+      const trigger = overflowTriggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const menuWidth = overflowMenuRef.current?.offsetWidth || 220;
+      const left = Math.max(8, Math.min(rect.left, window.innerWidth - menuWidth - 8));
+      setOverflowPosition({ top: rect.bottom + 5, left });
+    };
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [overflowOpen, hiddenCount]);
 
   const handleDrop = (event, targetId) => {
     event.preventDefault();
@@ -162,9 +188,14 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
         <div className="canvas-tab-controls-group">
         {hiddenCount > 0 && (
           <div className="canvas-tabs-overflow">
-            <button type="button" className={`canvas-tabs-overflow-trigger${overflowOpen ? " is-open" : ""}`} aria-haspopup="menu" aria-expanded={overflowOpen} onClick={() => setOverflowOpen((open) => !open)}>+{hiddenCount}</button>
-            {overflowOpen && (
-              <div className="canvas-tabs-overflow-menu" role="menu">
+            <button ref={overflowTriggerRef} type="button" className={`canvas-tabs-overflow-trigger${overflowOpen ? " is-open" : ""}`} aria-haspopup="menu" aria-expanded={overflowOpen} onClick={() => setOverflowOpen((open) => !open)}>+{hiddenCount}</button>
+            {overflowOpen && typeof document !== "undefined" && createPortal(
+              <div
+                ref={overflowMenuRef}
+                className="canvas-tabs-overflow-menu canvas-tabs-overflow-menu-portal"
+                role="menu"
+                style={overflowPosition ? { top: overflowPosition.top, left: overflowPosition.left } : { visibility: "hidden", top: 0, left: 0 }}
+              >
                 {hiddenTabs.map((tab) => (
                   <div className="canvas-tabs-overflow-item" role="none" key={tab.id}>
                     <button type="button" role="menuitem" className={activeId === tab.id ? "is-active" : ""} onClick={() => { onSelect?.(tab.id); setOverflowOpen(false); }}>
@@ -174,7 +205,8 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
                     {onClose && <button type="button" className="canvas-tab-close canvas-tabs-overflow-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={() => { setOverflowOpen(false); onClose(tab.id); }} disabled={disabled}><CloseGlyph /></button>}
                   </div>
                 ))}
-              </div>
+              </div>,
+              document.body
             )}
           </div>
         )}
