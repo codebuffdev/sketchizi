@@ -562,7 +562,7 @@ export default function DesktopAppHeader({
 
   return (
     <>
-      <CanvasPages api={canvasApi} canEdit={canEditCanvas} aiPanelOpen={aiAskOpen} onPageContextChange={onPageContextChange} bookTitle={activeCanvasTabName} onRenameBookTitle={onRenameDocument} onDeleteOnlyPage={onDeleteOnlyPage} />
+      <CanvasPages api={canvasApi} workspaceMode={activeWorkspaceTab?.type === "pages" || activeWorkspaceTab?.type === "page" ? "pages" : "infinite"} canEdit={canEditCanvas} aiPanelOpen={aiAskOpen} onPageContextChange={onPageContextChange} bookTitle={activeCanvasTabName} onRenameBookTitle={onRenameDocument} onDeleteOnlyPage={onDeleteOnlyPage} />
       <button
         type="button"
         className={nativeMenuOpen ? "desktop-app-menu-trigger desktop-app-menu-trigger-floating active" : "desktop-app-menu-trigger desktop-app-menu-trigger-floating"}
