@@ -90,3 +90,20 @@ test("Pages book styling uses the muted slate and emerald palette without purple
   assert.match(styles, /\.pages-editorial-header input, \.pages-editorial-header button \{ pointer-events: auto; \}/);
   assert.doesNotMatch(styles, /#(?:7061a8|9e88ed|a68af0|a79de0|978fcf|7968ee)/i);
 });
+
+
+test("book sheet defaults to widescreen and offers a persisted Standard or Wide width toggle", () => {
+  assert.match(workspace, /widthMode = 'Wide'/);
+  assert.match(workspace, /pages-width-switcher/);
+  assert.match(workspace, /\['Standard', 'Wide'\]/);
+  assert.match(workspace, /onWidthChange\(value\)/);
+  assert.match(pages, /const setPageWidthMode = \(mode, page = active\)/);
+  assert.match(pages, /pageWidthMode: mode/);
+  assert.match(pages, /onWidthChange=\{setPageWidthMode\}/);
+  assert.match(pages, /window\.innerWidth - 56/);
+  assert.match(pages, /window\.innerHeight - 124/);
+  assert.match(styles, /min-height: calc\(100vh - 124px\)/);
+  assert.match(styles, /padding: 20px 32px 16px/);
+  assert.match(styles, /padding: 10px 32px/);
+  assert.match(styles, /pages-editorial-copy/);
+});
