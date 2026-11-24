@@ -1945,3 +1945,38 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
   border-bottom-color: #34d399;
   color: #f1f5f9;
 }
+
+.app .desktop-app-document-identity .canvas-tab-editing-label {
+  display: inline-flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 160px;
+  gap: 7px;
+  padding: 0 5px 0 7px;
+}
+.app .desktop-app-document-identity .canvas-tab-editing-label .canvas-tab-rename-input {
+  position: static;
+  transform: none;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 64px;
+  max-width: 136px;
+  height: 24px;
+  margin: 0;
+  padding: 0 4px;
+  border: 0;
+  border-bottom: 1px solid #059669;
+  border-radius: 0;
+  background: transparent;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  box-shadow: none;
+}
+.app.theme-dark .desktop-app-document-identity .canvas-tab-editing-label .canvas-tab-rename-input {
+  border-bottom-color: #34d399;
+  color: #f1f5f9;
+}
