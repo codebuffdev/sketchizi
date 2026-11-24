@@ -656,7 +656,7 @@ function App() {
     iconInsertion.addIconToCanvas(icon, rect.left + rect.width / 2, rect.top + rect.height / 2);
   };
   const systemDesign = useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize, canEdit: collaborationCanEdit, canvasTabsRef, activeCanvasIdRef, persistSystemDesignState });
-  systemDesignRef.current = systemDesign;
+  systemDesignRef.current = systemDesign; if (apiRef.current) apiRef.current.systemDesignWorkspace = systemDesign;
   const { target: iconAssignmentTarget, open: openSystemDesignIconLibrary, assign: assignSystemDesignNodeIcon, close: closeIconLibrary } = useSystemDesignIconAssignment({
     systemDesign, setInitialSource: setIconLibraryInitialSource, setSearch, searchRef, openPanel, closePanel, markRecentlyUsed,
   });
