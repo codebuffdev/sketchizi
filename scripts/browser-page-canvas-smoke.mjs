@@ -135,8 +135,18 @@ try {
  }));
  assert(dotsStyle.image.includes('radial-gradient') && dotsStyle.size === '22px 22px',
   'Dots paper must render its 22px radial grid');
+ // The eyebrow book title is the active top-tab name and renames that tab on commit.
+ const bookTitleInput = page.getByRole('textbox', { name: 'Book / notebook title' });
+ await bookTitleInput.fill('System Design Notes');
+ await bookTitleInput.press('Enter');
+ await page.waitForFunction(() => document.querySelector('.canvas-tab.is-active .canvas-tab-name')?.textContent.trim() === 'System Design Notes');
+ // Typing in the page heading must remain native input text, not an Excalidraw shortcut.
+ const chapterTitleInput = page.getByRole('textbox', { name: 'Chapter title' });
+ await chapterTitleInput.fill('Untitled Page');
+ await chapterTitleInput.press('s');
+ assert.equal(await chapterTitleInput.inputValue(), 'Untitled Pages', 'Page title input must receive shortcut-like characters without Excalidraw interception');
  // The editable editorial heading is also the canonical chapter name.
- await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover');
+ await chapterTitleInput.fill('Cover');
  es = await waitScene(elements => pages(elements)[0]?.name === 'Cover');
  // Exercise inline editorial metadata and per-chapter paper texture persistence.
  await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover chapter');
