@@ -77,7 +77,7 @@ try {
  }
  assert(await documentMenu.getByText('Save & sync',{exact:true}).count()===1,'Save actions must have a clear section heading');
  assert(await documentMenu.getByText('Export',{exact:true}).count()===1,'Download and export actions must have a clear section heading');
- await page.keyboard.press('Escape');
+ await tabActions.click();
  await documentMenu.waitFor({state:'detached'});
  assert.equal(await canvasStyle().count(),1,'Header must render one Canvas style control');
  await chooseCanvasMode('pages');
