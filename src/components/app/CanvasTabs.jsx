@@ -31,7 +31,7 @@ export default function CanvasTabs({
   tabs, activeId, onSelect, onCreate, onDuplicate, onClose, onReorder, onRename,
   closedTabs = [], onReopenClosedTab, onDeleteClosedTab, onClearClosedTabs,
   activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved",
-  activeStatusLabel = "Saved", disabled = false, showAddButton = true, newTabMode = "canvas",
+  activeStatusLabel = "Saved", disabled = false, showAddButton = true, newTabMode = "canvas", isDark = false,
 }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [tabMenuOpenId, setTabMenuOpenId] = useState(null);
@@ -254,14 +254,14 @@ export default function CanvasTabs({
         </div>
       </div>
       {overflowOpen && typeof document !== "undefined" && createPortal(
-        <div ref={overflowMenuRef} className="canvas-tabs-overflow-menu canvas-tabs-overflow-menu-portal" role="menu" style={overflowPosition ? { top: overflowPosition.top, left: overflowPosition.left } : { visibility: "hidden", top: 0, left: 0 }}>
+        <div ref={overflowMenuRef} className={`canvas-tabs-overflow-menu canvas-tabs-overflow-menu-portal${isDark ? " is-dark" : ""}`} role="menu" style={overflowPosition ? { top: overflowPosition.top, left: overflowPosition.left } : { visibility: "hidden", top: 0, left: 0 }}>
           <div className="canvas-tabs-overflow-heading">Open tabs <span>{tabs.length}</span></div>
           <div className="canvas-tabs-overflow-scroll">{tabs.map(renderOverflowTab)}</div>
         </div>,
         document.body
       )}
       {tabMenuOpenId && activeMenuTab && typeof document !== "undefined" && createPortal(
-        <div ref={tabMenuRef} className="canvas-tabs-tab-menu-portal" role="menu" style={tabMenuPosition ? { top: tabMenuPosition.top, left: tabMenuPosition.left } : { visibility: "hidden", top: 0, left: 0 }}>
+        <div ref={tabMenuRef} className={`canvas-tabs-tab-menu-portal${isDark ? " is-dark" : ""}`} role="menu" style={tabMenuPosition ? { top: tabMenuPosition.top, left: tabMenuPosition.left } : { visibility: "hidden", top: 0, left: 0 }}>
           <button type="button" role="menuitem" onClick={() => { setTabMenuOpenId(null); onRename?.(activeMenuTab.id); }}>Rename</button>
           <button type="button" role="menuitem" onClick={() => { setTabMenuOpenId(null); onDuplicate?.(activeMenuTab.id); }}>Duplicate</button>
           <button type="button" role="menuitem" className="is-danger" onClick={() => { setTabMenuOpenId(null); onClose?.(activeMenuTab.id); }}>Close</button>
