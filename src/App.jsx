@@ -476,12 +476,13 @@ function App() {
         window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "infinite" } }));
       }
       performCloseCanvasTab(activeTab.id, { keepDraft: false });
+      await commitCanvasTabs();
       return true;
     } catch (error) {
       showToast(error?.message || "Unable to delete this notebook.", "error");
       return false;
     }
-  }, [createCanvasTab, performCloseCanvasTab, showToast]);
+  }, [commitCanvasTabs, createCanvasTab, performCloseCanvasTab, showToast]);
 
   const renameActiveDocument = useCallback(async (name) => {
     const normalizedName = String(name || "").trim();
