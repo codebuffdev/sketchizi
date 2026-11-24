@@ -744,6 +744,7 @@
 /* Apply transparency to the full desktop canvas region, including direct sibling layers.
    Excalidraw's rendering may expose the drawing canvas as a direct sibling layer;
    cover the actual canvas elements as well as any wrapper variants. */
+/* Stack the native canvas element itself above the paper; wrapper class names vary by build. */
 /* Excalidraw's drawing layer is the canvas element itself, not a wrapper;
    keep both the element and any future nested canvas fully opaque. */
 .app:has(.pages-book-workspace) .desktop-canvas-region canvas,
