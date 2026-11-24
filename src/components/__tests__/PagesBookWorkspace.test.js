@@ -52,7 +52,7 @@ test("chapter metadata and diagram elements persist together in the existing Ind
   assert.match(tabs, /elements: activeApi\?\.getSceneElementsIncludingDeleted/);
   assert.match(tabs, /appState: activeApi\?\.getAppState/);
   assert.match(persistence, /indexedDB\.open\(DB_NAME, DB_VERSION\)/);
-  assert.match(persistence, /snapshot/);
+  assert.match(persistence, /canvas-tabs-manifest/);
   assert.match(workspace, /paperTexture/);
   assert.match(workspace, /keyNote/);
 });
