@@ -145,7 +145,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
         onDoubleClick={() => { if (!tab.isTodoTab) { setOverflowOpen(false); setActiveMenuOpen(true); onRename?.(tab.id); } }}
         disabled={disabled}
       >
-        {tab.isTodoTab ? <TodoGlyph /> : <WorkspaceModeIcon mode={tab.type || "canvas"} className={`canvas-tab-icon canvas-tab-icon--${tab.type || "canvas"}`} />}
+        {tab.isTodoTab ? <TodoGlyph /> : <WorkspaceModeIcon mode={tab.type === "page" ? "pages" : tab.type || "canvas"} className={`canvas-tab-icon canvas-tab-icon--${tab.type === "page" ? "pages" : tab.type || "canvas"}`} />}
         <span className="canvas-tab-name">{getTabDisplayName(tab.name)}</span>
         {tab.syncMeta?.sourceType === "cloud" ? <TabSyncBadge meta={tab.syncMeta} /> : tab.isTodoTab ? null : activeId === tab.id ? <span className={`canvas-tab-status-dot ${activeStatusClass}`} role="status" aria-label={activeStatusLabel} title={activeStatusLabel} /> : tab.syncMeta && <span className={`canvas-tab-status-dot ${getTabStatusClass(tab.syncMeta)}`} role="status" aria-label={describeTabSync(tab.syncMeta)} title={describeTabSync(tab.syncMeta)} />}
       </button>
