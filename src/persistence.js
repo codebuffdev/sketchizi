@@ -378,6 +378,35 @@ export async function deleteRecentSketch(id) {
   } catch { return false; }
 }
 
+export async function deleteDocument(id) {
+  if (!id) return false;
+  let db;
+  try {
+    db = await openDatabase();
+    return await new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (fn, value) => {
+        if (settled) return;
+        settled = true;
+        try { db.close(); } catch {}
+        fn(value);
+      };
+      try {
+        const transaction = db.transaction(STORE_NAME, "readwrite");
+        const request = transaction.objectStore(STORE_NAME).delete(id);
+        request.onerror = () => finish(reject, toPersistenceError(request.error, "Unable to delete this notebook.", "write"));
+        transaction.onerror = () => finish(reject, toPersistenceError(transaction.error, "Unable to delete this notebook.", "write"));
+        transaction.onabort = () => finish(reject, toPersistenceError(transaction.error, "Unable to delete this notebook.", "write"));
+        transaction.oncomplete = () => finish(resolve, true);
+      } catch (error) {
+        finish(reject, toPersistenceError(error, "Unable to delete this notebook.", "write"));
+      }
+    });
+  } catch (error) {
+    throw toPersistenceError(error, "Unable to delete this notebook.", "write");
+  }
+}
+
 export async function clearSketch() {
   try {
     const db = await openDatabase();
