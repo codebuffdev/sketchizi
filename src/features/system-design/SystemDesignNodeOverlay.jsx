@@ -116,10 +116,18 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
 
   const byId = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph.nodes]);
   const names = useMemo(() => serviceNames(graph.nodes), [graph.nodes]);
-  const routes = useMemo(() => graph.edges.map((edge) => {
+  const routes = useMemo(() => graph.edges.flatMap((edge) => {
     const a = byId.get(edge.from); const b = byId.get(edge.to);
-    return { edge, points: routeOrthogonal(a, edge.fromPort, b, edge.toPort) };
+    // Ignore stale or malformed edges rather than allowing the router to produce an invalid SVG path.
+    if (!a || !b) return [];
+    return [{ edge, points: routeOrthogonal(a, edge.fromPort, b, edge.toPort) }];
   }), [graph.edges, byId]);
+  // Give the SVG a real scene-sized viewport. A 1×1 SVG with overflow visible is clipped by
+  // several browser/compositor combinations after canvas transforms, hiding otherwise-valid paths.
+  const edgeViewport = useMemo(() => ({
+    width: Math.max(1, ...graph.nodes.map((node) => node.x + node.width)) + 96,
+    height: Math.max(1, ...graph.nodes.map((node) => node.y + node.height)) + 96,
+  }), [graph.nodes]);
 
   const beginConnect = (event, node, port) => {
     if (!canEdit) return;
@@ -184,7 +192,8 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
   return (
     <div className="sd-overlay" aria-hidden={false}>
       <div className="sd-layer" style={layerStyle}>
-        <svg className="sd-edges" width="1" height="1" overflow="visible" aria-hidden="true">
+        <svg className="sd-edges" width={edgeViewport.width} height={edgeViewport.height}
+          viewBox={`0 0 ${edgeViewport.width} ${edgeViewport.height}`} overflow="visible" aria-hidden="true">
           <defs>
             <marker id="sd-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
               <path d="M1.5 1.5 8 5 1.5 8.5" className="sd-arrow-head" fill="none" />
