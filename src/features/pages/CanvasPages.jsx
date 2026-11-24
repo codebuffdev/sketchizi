@@ -80,7 +80,8 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
   const spacePanHeldRef = useRef(false);
   const signature = useRef('');
   const sceneSnapshot = useRef(null);
-  // Keep a bounded paper sheet mounted while an empty Pages tab hydrates its first scene.\n  const fallbackPage = mode === "pages" && pages.length === 0 ? {
+  // Keep a bounded paper sheet mounted while an empty Pages tab hydrates its first scene.
+  const fallbackPage = mode === "pages" && pages.length === 0 ? {
     id: "pages-loading-placeholder",
     type: "frame",
     name: "Untitled Page",
