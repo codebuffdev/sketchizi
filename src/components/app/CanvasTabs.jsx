@@ -130,8 +130,11 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
       if (!trigger) return;
       const rect = trigger.getBoundingClientRect();
       const menuWidth = overflowMenuRef.current?.offsetWidth || 220;
+      const pagesHeader = document.querySelector(".pages-book-workspace .pages-editorial-header");
+      const pagesHeaderBottom = pagesHeader?.getBoundingClientRect().bottom || 0;
+      const top = Math.max(rect.bottom + 5, pagesHeaderBottom + (pagesHeader ? 8 : 0));
       const left = Math.max(8, Math.min(rect.left, window.innerWidth - menuWidth - 8));
-      setOverflowPosition({ top: rect.bottom + 5, left });
+      setOverflowPosition({ top, left });
     };
     updatePosition();
     window.addEventListener("resize", updatePosition);
