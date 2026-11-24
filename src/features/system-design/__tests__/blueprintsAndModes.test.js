@@ -26,7 +26,8 @@ test("any root node is a traffic source when nothing ingress-like exists; Client
 });
 
 test("every blueprint is a valid, fully connected graph that runs healthy at the default 10k RPS", () => {
-  assert.deepEqual(BLUEPRINTS.map((b) => b.label), ["Read-Heavy Web Scale", "Event-Driven Order Pipeline", "Load-Balanced Microservices"]);
+  assert.deepEqual(BLUEPRINTS.filter((b) => b.category === "Core Patterns").map((b) => b.label),
+    ["Read-Heavy Web Scale", "Event-Driven Order Pipeline", "Load-Balanced Microservices"]);
   for (const bp of BLUEPRINTS) {
     assert.equal(getBlueprint(bp.id), bp);
     const keys = new Set(bp.nodes.map((x) => x.key));
