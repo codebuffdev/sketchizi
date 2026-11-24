@@ -82,6 +82,9 @@ test("canvas menu groups save, cloud, download and backup actions with clear des
   assert.match(header, /aria-label="Save to Cloud Workspace"/);
   assert.ok(header.includes('aria-label={currentDocumentFileBacked ? "Save" : "Save to file…"}'));
   assert.match(header, /aria-label="Download recovery backup"/);
+  assert.match(header, /aria-label="Export studio"/);
+  assert.match(header, /Export studio\\.\\.\\./);
+  assert.match(header, /Choose PNG, SVG, clipboard and export settings/);
   assert.match(header, /Keep a copy on this device/);
   assert.match(header, /Sync with your Cloud Workspace/);
   assert.match(tabStyles, /\.canvas-tabs-active-menu-action-copy/);
