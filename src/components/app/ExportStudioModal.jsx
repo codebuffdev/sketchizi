@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import React, { useMemo, useState, useSyncExternalStore } from "react";
+import { readGraph } from "../../features/system-design/sceneModel.js";
+import { simulateTraffic } from "../../features/system-design/trafficSimulator.js";
+import { buildSystemDesignSvg, exportSystemDesignImage } from "../../features/system-design/exportSystemDesignImage.js";
 import { exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
 
-export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = "architecture-diagram" }) {
+export default function ExportStudioModal({ isOpen, onClose, apiRef, systemDesign, filename = "architecture-diagram" }) {
   const [scale, setScale] = useState(2);
   const [bgMode, setBgMode] = useState("dark"); // "transparent" | "dark" | "light"
   const [exportOnlySelected, setExportOnlySelected] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false);\n  const [darkMode, setDarkMode] = useState(true);\n  const systemSnapshot = useSyncExternalStore(systemDesign?.store?.subscribe || (() => () => {}), systemDesign?.store?.getSnapshot || (() => ({ elements: [] })), systemDesign?.store?.getSnapshot || (() => ({ elements: [] })));\n  const systemGraph = useMemo(() => systemDesign?.enabled ? readGraph(systemSnapshot.elements) : null, [systemDesign?.enabled, systemSnapshot.elements]);\n  const systemSimulation = useMemo(() => systemGraph ? simulateTraffic({ nodes: systemGraph.nodes, edges: systemGraph.edges, totalRps: systemDesign?.simulate ? systemDesign.loadRps : 0 }) : null, [systemGraph, systemDesign?.simulate, systemDesign?.loadRps]);\n  const systemSvg = useMemo(() => systemGraph?.nodes?.length ? buildSystemDesignSvg({ ...systemGraph, simulation: systemSimulation, mode: systemDesign?.mode, background: bgMode, darkMode, padding: 24 }) : "", [systemGraph, systemSimulation, systemDesign?.mode, bgMode, darkMode]);
 
   if (!isOpen) return null;
 
@@ -47,7 +50,7 @@ export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = 
     setStatusMessage("Generating image…");
     try {
       const data = getExportElementsAndState();
-      if (!data || data.elements.length === 0) {
+      if (systemSvg) {\n        const blob = await exportSystemDesignImage({ ...systemGraph, simulation: systemSimulation, mode: systemDesign?.mode, background: bgMode, darkMode, scale, format: "png" });\n        if (navigator.clipboard?.write && window.ClipboardItem) { await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); setStatusMessage("✓ Copied PNG to clipboard!"); }\n        else setStatusMessage("Clipboard API not supported in this browser");\n        return;\n      }\n      if (!data || data.elements.length === 0) {
         setStatusMessage("No elements to export");
         return;
       }
@@ -186,7 +189,7 @@ export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = 
             </div>
           </div>
 
-          {/* Scope Toggle */}
+          <div className="sketchizi-export-control-group">\n            <label className="sketchizi-export-checkbox-label"><input type="checkbox" checked={darkMode} onChange={(e) => setDarkMode(e.target.checked)} /><span>Dark mode rendering</span></label>\n          </div>\n\n          {systemSvg && <div className="sketchizi-export-control-group" aria-label="Diagram preview"><label className="sketchizi-export-label">Diagram preview</label><div className="sketchizi-system-export-preview" style={{ background: bgMode === "transparent" ? "repeating-conic-gradient(#ddd 0% 25%, #fff 0% 50%) 50% / 16px 16px" : bgMode === "dark" ? "#12141c" : "#fff" }} dangerouslySetInnerHTML={{ __html: systemSvg }} /></div>}\n\n          {/* Scope Toggle */}
           <div className="sketchizi-export-control-group">
             <label className="sketchizi-export-checkbox-label">
               <input
