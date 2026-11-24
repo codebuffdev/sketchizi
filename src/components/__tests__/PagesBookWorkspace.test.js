@@ -133,7 +133,8 @@ test("Pages paper and textures stay behind fully opaque native canvas rendering"
 
 
 test("Pages paper textures show through transparent Excalidraw in light and dark themes", () => {
-  assert.match(canvas, /viewBackgroundColor: pageContext\?\.mode === "pages" \? "transparent"/);
+  assert.match(canvas, /viewBackgroundColor: savedSketch\?\.appState\?\.viewBackgroundColor \|\| getCanvasAppearanceBackground\(activeAppearance, isDarkTheme\)/);
+  assert.match(canvas, /\.\.\.\(pageContext\?\.mode === "pages" \? \{ viewBackgroundColor: "transparent" \} : \{\}\)/);
   assert.match(canvas, /pages-canvas-wrapper/);
   assert.match(canvas, /viewBackgroundColor: "transparent"/);
   assert.match(pages, /setCanvasTheme\(current => current === nextTheme \? current : nextTheme\)/);
