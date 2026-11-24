@@ -42,6 +42,14 @@ test("uses theme-inheriting SVG strokes for toolbar icons", () => {
 test("uses shared light/dark theme tokens throughout the floating toolbar", () => {
   assert.ok(studio.includes('className={`sd-root${isDarkTheme ? " is-dark" : ""}`}'));
   assert.ok(styles.includes(".sd-root.is-dark {"));
+  assert.ok(styles.includes(".sd-root .sd-topbar-pill {"));
+  assert.ok(styles.includes("background: var(--sd-surface)"));
+  assert.ok(styles.includes("border-color: var(--sd-border)"));
+  assert.ok(styles.includes(".sd-root .sd-command-icon-btn {"));
+  assert.ok(styles.includes("color: var(--sd-text-2)"));
+  assert.ok(styles.includes("opacity: .72"));
+  assert.ok(styles.includes(".sd-root .sd-command-sim-main"));
+
   assert.ok(styles.includes("--sd-surface: rgba(30,41,59,.86)"));
   assert.ok(styles.includes(".sd-surface { pointer-events: auto; background: var(--sd-surface)"));
   assert.ok(styles.includes(".sd-command-divider { height: 22px; margin: 0 2px; background: var(--sd-border)"));
