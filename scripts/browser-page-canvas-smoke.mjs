@@ -150,9 +150,10 @@ try {
  await page.getByRole('button',{name:'Appearance and canvas background'}).click();
  await page.getByRole('button',{name:'Light',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-light'));
- assert(await page.locator('.canvas-pages-mask-panel').first().evaluate(el=>getComputedStyle(el).backgroundColor!=='rgb(17, 24, 32)'));
+ assert.equal(await page.locator('.pages-book-sheet').evaluate(el=>getComputedStyle(el).backgroundColor), 'rgb(255, 255, 255)', 'Full-bleed paper must switch to the light theme');
  await page.getByRole('button',{name:'Dark',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-dark'));
+ assert.equal(await page.locator('.pages-book-sheet').evaluate(el=>getComputedStyle(el).backgroundColor), 'rgb(17, 24, 39)', 'Full-bleed paper must switch to the dark theme');
  await ensureHeaderVisible();
  await page.getByRole('button',{name:'Appearance and canvas background'}).click();
  // Draw through the actual canvas, then ensure the new shape belongs to this page.
