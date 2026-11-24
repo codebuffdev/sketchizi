@@ -9,7 +9,7 @@ import { applyDarkModeFilter } from "@excalidraw/common";
 import { isHexColor } from "../../features/navigation/recentCustomColors.js";
 import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
 import { absolutePointsToPatch, getAbsolutePoints, getRoutingMode, getRoutingPatch, normalizeOrthogonalPath } from "../../features/canvas/arrowRouting.js";
-import { arrangeElements } from "../../utils/alignElements.js";
+import { applyAlignmentToSelection } from "../../utils/alignElements.js";
 
 // Excalidraw reserves font-family ID 4 for host-provided custom fonts.
 // Register Kalam on the shared enum so its renderer resolves ID 4 to Kalam.
