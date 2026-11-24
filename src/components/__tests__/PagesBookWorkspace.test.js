@@ -152,6 +152,10 @@ test("Pages paper textures show through transparent Excalidraw in light and dark
 test("chapter badge is a zero-padded number and navigator shares a flex row with Zen", () => {
   assert.match(workspace, /<span>\{String\(index \+ 1\)\.padStart\(2, '0'\)\}<\/span>/);
   assert.match(workspace, /pages-eyebrow-separator/);
+  assert.doesNotMatch(workspace, /CHAPTER/);
+  assert.match(workspace, /onPointerDown=\{e => e\.stopPropagation\(\)\}/);
+  assert.match(workspace, /onMouseDown=\{e => e\.stopPropagation\(\)\}/);
+  assert.match(pages, /frame\.name = 'Untitled Page'/);
   assert.match(workspace, /aria-label="Book \/ notebook title"/);
   assert.match(workspace, /onRenameBookTitle\?\.\(nextTitle\)/);
   assert.match(workspace, /onKeyDown=\{e => \{ e\.stopPropagation\(\)/);
