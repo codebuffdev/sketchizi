@@ -9,7 +9,7 @@ const modal = read("src/components/app/ExportStudioModal.jsx");
 const nativeMenu = read("src/features/navigation/useNativeSketchiziMenu.js");
 
 test("document tab popover restores Export Studio after Recovery backup", () => {
-  const recovery = header.indexOf("<strong>Recovery backup</strong>");
+  const recovery = header.indexOf("<strong>Recovery Backup</strong>");
   const studio = header.indexOf("<strong>Export Studio...</strong>");
   assert.ok(header.includes("<h3>Export</h3>"));
   assert.ok(recovery >= 0 && studio > recovery);
