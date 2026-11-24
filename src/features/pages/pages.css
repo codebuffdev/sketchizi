@@ -1257,3 +1257,246 @@ body:has(.app[data-canvas-view="pages"]),
   .pages-editorial-copy .pages-chapter-heading,
   .pages-editorial-copy .pages-chapter-tagline { transition: none !important; }
 }
+
+
+/* Editorial masthead refinement: flat page-native header, no floating card. */
+.pages-book-workspace .pages-editorial-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 28px !important;
+  width: 100% !important;
+  max-width: 1180px !important;
+  margin: 62px auto 0 !important;
+  padding: 0 36px 18px !important;
+  box-sizing: border-box !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: var(--book-paper, #fff) !important;
+  isolation: isolate;
+}
+.app.theme-dark .pages-book-workspace .pages-editorial-header {
+  border-bottom-color: #1e293b !important;
+}
+.pages-book-workspace .pages-editorial-copy {
+  position: relative;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding-left: 17px;
+}
+.pages-book-workspace .pages-editorial-copy::before {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  width: 3px;
+  border-radius: 2px;
+  background: #059669;
+  content: "";
+}
+.app.theme-dark .pages-book-workspace .pages-editorial-copy::before {
+  background: #34d399;
+}
+.pages-book-workspace .pages-editorial-title-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.pages-book-workspace .pages-chapter-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  line-height: 1.4;
+  letter-spacing: .08em !important;
+  font-variant-numeric: tabular-nums;
+}
+.pages-book-workspace .pages-chapter-eyebrow > span:first-child {
+  color: #059669 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-chapter-eyebrow > span:first-child {
+  color: #34d399 !important;
+}
+.pages-book-workspace .pages-eyebrow-separator { color: #94a3b8 !important; }
+.pages-book-workspace .pages-chapter-heading {
+  width: min(100%, 620px) !important;
+  min-width: 160px !important;
+  margin: 0 !important;
+  padding: 0 0 2px !important;
+  border: 0 !important;
+  border-bottom: 1.5px solid transparent !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: #0f172a !important;
+  font-size: 26px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -.02em !important;
+  transition: border-bottom-color 140ms ease !important;
+}
+.app.theme-dark .pages-book-workspace .pages-chapter-heading { color: #f8fafc !important; }
+.pages-book-workspace .pages-chapter-heading:focus {
+  border-bottom-color: #059669 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.app.theme-dark .pages-book-workspace .pages-chapter-heading:focus {
+  border-bottom-color: #34d399 !important;
+}
+.pages-book-workspace .pages-chapter-heading:hover:not(:focus) {
+  border-bottom-color: #cbd5e1 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-chapter-heading:hover:not(:focus) {
+  border-bottom-color: #334155 !important;
+}
+.pages-book-workspace .pages-chapter-tagline {
+  display: block !important;
+  width: min(100%, 650px) !important;
+  min-width: 0 !important;
+  margin: 4px 0 0 !important;
+  padding: 0 0 2px !important;
+  border: 0 !important;
+  border-bottom: 1.5px solid transparent !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: #64748b !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  transition: border-bottom-color 140ms ease !important;
+}
+.pages-book-workspace .pages-chapter-tagline:focus {
+  border-bottom-color: #059669 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.app.theme-dark .pages-book-workspace .pages-chapter-tagline:focus {
+  border-bottom-color: #34d399 !important;
+}
+.pages-book-workspace .pages-chapter-tagline:hover:not(:focus) {
+  border-bottom-color: #cbd5e1 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-chapter-tagline:hover:not(:focus) {
+  border-bottom-color: #334155 !important;
+}
+.pages-book-workspace .pages-editorial-actions {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.pages-book-workspace .pages-paper-switcher {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding: 2px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+}
+.app.theme-dark .pages-book-workspace .pages-paper-switcher {
+  border-color: #1e293b !important;
+}
+.pages-book-workspace .pages-paper-switcher .pages-paper-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: #64748b !important;
+  cursor: pointer;
+}
+.pages-book-workspace .pages-paper-switcher .pages-paper-icon[aria-pressed="true"] {
+  background: rgb(5 150 105 / 10%) !important;
+  color: #047857 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-paper-switcher .pages-paper-icon[aria-pressed="true"] {
+  background: rgb(52 211 153 / 13%) !important;
+  color: #34d399 !important;
+}
+.pages-book-workspace .pages-paper-switcher .pages-paper-icon:hover:not(:disabled) {
+  background: rgb(100 116 139 / 10%) !important;
+}
+.pages-book-workspace .pages-paper-switcher .pages-paper-icon:focus-visible,
+.pages-book-workspace .pages-mark-read:focus-visible {
+  outline: 2px solid #059669 !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+.app.theme-dark .pages-book-workspace .pages-paper-switcher .pages-paper-icon:focus-visible,
+.app.theme-dark .pages-book-workspace .pages-mark-read:focus-visible {
+  outline-color: #34d399 !important;
+}
+.pages-book-workspace .pages-mark-read {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 10px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  white-space: nowrap;
+}
+.app.theme-dark .pages-book-workspace .pages-mark-read {
+  border-color: #1e293b !important;
+  color: #94a3b8 !important;
+}
+.pages-book-workspace .pages-mark-read[aria-pressed="true"] {
+  border-color: rgb(5 150 105 / 22%) !important;
+  background: rgb(5 150 105 / 9%) !important;
+  color: #047857 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-mark-read[aria-pressed="true"] {
+  border-color: rgb(52 211 153 / 24%) !important;
+  background: rgb(52 211 153 / 12%) !important;
+  color: #34d399 !important;
+}
+.pages-book-workspace .pages-book-canvas-zone {
+  top: 0 !important;
+}
+@media (max-width: 900px) {
+  .pages-book-workspace .pages-editorial-header {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    margin-top: 62px !important;
+    padding: 0 24px 16px !important;
+  }
+  .pages-book-workspace .pages-editorial-actions { justify-content: flex-start !important; }
+}
+@media (max-width: 767px) {
+  .pages-book-workspace .pages-editorial-header {
+    margin-top: 64px !important;
+    padding: 0 18px 14px !important;
+  }
+  .pages-book-workspace .pages-chapter-heading { min-width: 0 !important; font-size: 23px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pages-book-workspace .pages-chapter-heading,
+  .pages-book-workspace .pages-chapter-tagline { transition: none !important; }
+}
