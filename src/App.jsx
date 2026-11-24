@@ -473,9 +473,12 @@ function App() {
 
   const handlePageContextChange = useCallback((context) => {
     setCanvasPageContext(context);
+  }, []);
+
+  const handleWorkspaceModeChange = useCallback((mode) => {
     const activeTab = canvasTabsRef.current.find(tab => tab.id === activeCanvasIdRef.current);
-    if (context?.mode === "pages" && activeTab?.type !== "pages") setActiveCanvasTabType("pages");
-    else if (context?.mode === "infinite" && activeTab?.type === "pages") setActiveCanvasTabType("canvas");
+    if (mode === "pages" && activeTab?.type !== "pages") setActiveCanvasTabType("pages");
+    else if (mode === "infinite" && (activeTab?.type === "pages" || activeTab?.type === "page")) setActiveCanvasTabType("canvas");
   }, [setActiveCanvasTabType]);
 
   const handleDeleteOnlyPagesNotebook = useCallback(async () => {
@@ -1908,6 +1911,7 @@ function App() {
         canvasApi={apiRef.current}
         aiAskOpen={aiAskOpen}
         onPageContextChange={handlePageContextChange}
+        onWorkspaceModeChange={handleWorkspaceModeChange}
         onDeleteOnlyPage={handleDeleteOnlyPagesNotebook}
         canEditCanvas={collaborationCanEdit}
         isDarkTheme={isDarkTheme}
