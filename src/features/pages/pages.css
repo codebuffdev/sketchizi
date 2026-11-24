@@ -706,7 +706,7 @@
 }
 
 
-/* The Pages overlay is deliberately non-stacking so canvas layers can interleave. */
+/* The Pages overlay stays non-stacking; the app header outranks edge resize grips. */
 .app.canvas-first-header:has(.pages-book-workspace) .desktop-app-header { z-index: 10060 !important; }
 .pages-book-workspace {
   position: static;
