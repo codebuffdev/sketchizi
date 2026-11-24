@@ -1002,6 +1002,7 @@ export default function DesktopAppHeader({
                   <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { setSaveDetailsOpen(false); onOpenExportStudio?.(); }} aria-label="Export studio">
                     <CanvasActionIcon name="export" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Export studio...</strong><small>Choose PNG, SVG, clipboard and export settings</small></span>
+                    <kbd className="canvas-tabs-export-shortcut-hint" aria-label="Control or Command plus Shift plus E">Ctrl+Shift+E</kbd>
                   </button>
                 </div>
               </section>
