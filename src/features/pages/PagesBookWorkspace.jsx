@@ -9,8 +9,11 @@ export default function PagesBookWorkspace({
   const texture = meta.paperTexture || 'Dots';
   return (
     <div className="pages-book-workspace">
-      <section className="pages-book-sheet" style={pageRect} aria-label={'Chapter ' + (index + 1) + ': ' + title}>
+      <div className="pages-book-sheet" style={pageRect} aria-hidden="true">
         <div className="pages-book-edge pages-book-edge-one" /><div className="pages-book-edge pages-book-edge-two" /><div className="pages-book-spine" />
+        <div className={'pages-book-canvas-zone texture-' + String(texture).toLowerCase()} />
+      </div>
+      <section className="pages-book-ui" style={pageRect} role="region" aria-label={'Chapter ' + (index + 1) + ': ' + title}>
         <header className="pages-editorial-header">
           <div className="pages-editorial-copy">
             <span className="pages-chapter-eyebrow">CHAPTER {String(index + 1).padStart(2, '0')}</span>
@@ -26,7 +29,6 @@ export default function PagesBookWorkspace({
             <button type="button" className="pages-mark-read" aria-pressed={Boolean(meta.completed)} onClick={() => onToggleRead(active)}>{meta.completed ? '✓ Read' : '✓ Mark Read'}</button>
           </div>
         </header>
-        <div className={'pages-book-canvas-zone texture-' + String(texture).toLowerCase()} aria-hidden="true" />
         <footer className="pages-book-folio"><span>SKETCHIZI · ENGINEERING HANDBOOK</span><span>CHAPTER {String(index + 1).padStart(2, '0')} OF {String(pages.length).padStart(2, '0')}</span></footer>
       </section>
     </div>
