@@ -157,7 +157,7 @@ test("chapter badge is a zero-padded number and navigator shares a flex row with
   assert.match(workspace, /onMouseDown=\{e => e\.stopPropagation\(\)\}/);
   assert.match(pages, /frame\.name = 'Untitled Page'/);
   assert.match(workspace, /aria-label="Book \/ notebook title"/);
-  assert.match(workspace, /onRenameBookTitle\?\.\(nextTitle\)/);
+  assert.match(workspace, /await onRenameBookTitle\(nextTitle\)/);
   assert.match(workspace, /onKeyDown=\{e => \{ e\.stopPropagation\(\)/);
   assert.match(workspace, /Untitled Page/);
   assert.match(workspace, /Add a page summary or focus/);
