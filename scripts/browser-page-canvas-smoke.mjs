@@ -24,6 +24,7 @@ async function renameActivePage(name) {
  await waitScene(elements => pages(elements).some(item => item.name === name));
 }
 async function chooseCanvasMode(mode) {
+ await ensureHeaderVisible();
  await canvasStyle().click();
  const optionLabel = mode === 'pages' ? 'Pages' : 'Infinite canvas';
  await page.getByText(optionLabel, { exact: true }).click();
@@ -48,11 +49,8 @@ async function ensureHeaderVisible() {
   await reveal.click({ force: true });
  }
  await page.waitForFunction(() => document.querySelector('.desktop-app-header')?.getAttribute('aria-hidden') === 'false');
- const pin = page.locator('.desktop-app-header[aria-hidden="false"] .desktop-app-header-pin-button').first();
- if (await pin.getAttribute('aria-pressed') !== 'true') {
-  await pin.evaluate(element => element.click());
- }
- await page.waitForFunction(() => document.querySelector('.desktop-app-header[aria-hidden="false"] .desktop-app-header-pin-button')?.getAttribute('aria-pressed') === 'true');
+ // The header auto-hides after canvas interaction; reveal it on demand instead of
+ // depending on a pinned state that can vary across desktop header layouts.
 }
 async function closeAiAskIfOpen() {
  const toggle = page.getByRole('button', { name: 'AI Ask', exact: true });
@@ -67,6 +65,7 @@ try {
  await ensureHeaderVisible();
  // The canvas document menu must make every save/download/export action obvious.
  assert.equal(await page.getByRole('button',{name:'Rename canvas'}).count(),1,'Rename must sit beside the active canvas title');
+ await ensureHeaderVisible();
  await page.getByRole('button',{name:'Canvas options'}).click();
  const documentMenu = page.getByRole('dialog',{name:'Canvas options'});
  await documentMenu.waitFor({state:'visible'});
@@ -142,6 +141,8 @@ try {
  es = await waitScene(es=>pages(es)[0]?.width>beforeWidth);
  assert(es.find(e=>e.customData?.sketchiziPagePaper===pages(es)[0].id)?.width===pages(es)[0].width,'Page paper must track the resized frame');
  // Verify both themes update the Pages workspace without leaving the mode.
+ await ensureHeaderVisible();
+ await ensureHeaderVisible();
  await page.getByRole('button',{name:'Appearance and canvas background'}).click();
  await page.getByRole('button',{name:'Light',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-light'));
@@ -177,6 +178,7 @@ try {
  // Re-enter Pages mode through the same workspace choice event used by startup.
  await chooseCanvasMode('pages');
  await page.setViewportSize({width:390,height:844});
+ await ensureHeaderVisible();
  await canvasStyle().click();
  const menu=await page.getByRole('dialog',{name:'Canvas style'}).boundingBox();
  assert(menu.x>=0 && menu.x+menu.width<=390);
@@ -203,6 +205,7 @@ try {
  const blueprintMenu = page.getByRole('menu',{name:'Starter architectures'});
  await blueprintMenu.getByRole('menuitem').first().click();
  await studio.locator('[data-node-id]').first().waitFor({state:'visible'});
+ await ensureHeaderVisible();
  await page.getByRole('button',{name:'Canvas options'}).click();
  const exportMenu = page.getByRole('dialog',{name:'Canvas options'});
  await exportMenu.getByRole('button',{name:/Export studio/i}).click();
@@ -215,6 +218,7 @@ try {
  await exportStudio.getByRole('button',{name:'Close export studio'}).click();
 
  // The Excalidraw WORKSPACE hamburger keeps both built-in actions stripped.
+ await ensureHeaderVisible();
  await page.getByRole('button',{name:'Open application menu'}).click();
  const workspaceMenu = page.locator('.dropdown-menu-container').first();
  await workspaceMenu.waitFor({state:'visible'});
