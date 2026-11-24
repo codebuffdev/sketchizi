@@ -34,7 +34,7 @@ test("chapter title and one-line summary are editable and persisted on the page 
   assert.match(workspace, /aria-label="Chapter title"/);
   assert.match(workspace, /onPatch\(\{ chapterTitle: e\.target\.value \}\)/);
   assert.match(workspace, /aria-label="Chapter subtitle"/);
-  assert.match(workspace, /placeholder="Add a chapter summary or focus\.\.\."/);
+  assert.match(workspace, /placeholder="Add a page summary or focus\.\.\."/);
   assert.match(workspace, /onPatch\(\{ tagline: e\.target\.value \}\)/);
   assert.doesNotMatch(workspace, /keyNote|RULE OF THUMB|Key formula or rule of thumb/);
   assert.match(pages, /customData: \{ \.\.\.element\.customData, \.\.\.patch \}/);
@@ -152,6 +152,13 @@ test("Pages paper textures show through transparent Excalidraw in light and dark
 test("chapter badge is a zero-padded number and navigator shares a flex row with Zen", () => {
   assert.match(workspace, /<span>\{String\(index \+ 1\)\.padStart\(2, '0'\)\}<\/span>/);
   assert.match(workspace, /pages-eyebrow-separator/);
+  assert.match(workspace, /aria-label="Book \/ notebook title"/);
+  assert.match(workspace, /onRenameBookTitle\?\.\(nextTitle\)/);
+  assert.match(workspace, /onKeyDown=\{e => \{ e\.stopPropagation\(\)/);
+  assert.match(workspace, /Untitled Page/);
+  assert.match(workspace, /Add a page summary or focus/);
+  assert.match(styles, /\.pages-book-title-input/);
+  assert.match(pages, /bookTitle=\{bookTitle\} onRenameBookTitle=\{onRenameBookTitle\}/);
   assert.match(styles, /font-variant-numeric: tabular-nums/);
   assert.match(pages, /className="pages-bottom-actions"/);
   assert.match(app, /document\.querySelector\("\.pages-bottom-actions"\)/);
