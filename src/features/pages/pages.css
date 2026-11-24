@@ -1652,3 +1652,24 @@ body:has(.app[data-canvas-view="pages"]),
     max-width: 42vw !important;
   }
 }
+
+/* Destructive confirmation for deleting the final Pages chapter. */
+.pages-delete-confirm-backdrop { position:fixed; inset:0; z-index:2147483000; display:grid; place-items:center; padding:24px; background:rgb(15 23 42 / 42%); backdrop-filter:blur(5px); }
+.pages-delete-confirm-dialog { width:min(100%,420px); padding:26px; border:1px solid #e2e8f0; border-radius:16px; background:#fff; color:#0f172a; box-shadow:0 24px 70px rgb(15 23 42 / 24%); }
+.pages-delete-confirm-icon { display:grid; width:34px; height:34px; margin-bottom:16px; place-items:center; border:1px solid rgb(225 29 72 / 22%); border-radius:10px; background:rgb(225 29 72 / 8%); color:#be123c; font-size:18px; font-weight:800; }
+.pages-delete-confirm-dialog h2 { margin:0; color:#0f172a; font-size:18px; font-weight:750; letter-spacing:-.035em; }
+.pages-delete-confirm-dialog p { margin:10px 0 22px; color:#64748b; font-size:13px; line-height:1.65; }
+.pages-delete-confirm-actions { display:flex; justify-content:flex-end; gap:9px; }
+.pages-delete-confirm-actions button { min-height:36px; padding:0 14px; border-radius:8px; font-size:12px; font-weight:700; transition:background 120ms ease,border-color 120ms ease; }
+.pages-delete-confirm-cancel { border:1px solid #cbd5e1; background:#f8fafc; color:#334155; }
+.pages-delete-confirm-cancel:hover:not(:disabled) { background:#f1f5f9; border-color:#94a3b8; }
+.pages-delete-confirm-submit { border:1px solid #be123c; background:#e11d48; color:#fff; }
+.pages-delete-confirm-submit:hover:not(:disabled) { background:#be123c; }
+.pages-delete-confirm-actions button:focus-visible { outline:2px solid #64748b; outline-offset:3px; }
+.pages-delete-confirm-actions button:disabled { cursor:wait; opacity:.65; }
+.app.theme-dark .pages-delete-confirm-dialog { border-color:#334155; background:#111827; color:#e2e8f0; box-shadow:0 24px 70px rgb(0 0 0 / 48%); }
+.app.theme-dark .pages-delete-confirm-dialog h2 { color:#f8fafc; }
+.app.theme-dark .pages-delete-confirm-dialog p { color:#94a3b8; }
+.app.theme-dark .pages-delete-confirm-cancel { border-color:#475569; background:#1e293b; color:#cbd5e1; }
+.app.theme-dark .pages-delete-confirm-cancel:hover:not(:disabled) { background:#334155; }
+@media (max-width:520px) { .pages-delete-confirm-dialog { padding:22px; } .pages-delete-confirm-actions { flex-direction:column-reverse; } .pages-delete-confirm-actions button { width:100%; } }
