@@ -99,9 +99,29 @@ export function useWorkspaceTabs({
   const captureCanvasTabSnapshot = useCallback((elements, appState) => {
     const api = apiRef.current;
     const live = canvasSnapshotStateRef.current;
+    const sceneElements = Array.isArray(elements) ? elements : (api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []);
+    const sceneAppState = appState || api?.getAppState?.() || {};
+    const chapterFrames = getPages(sceneElements);
+    const chapters = chapterFrames.map((frame, index) => ({
+      id: frame.id,
+      num: frame.customData?.pageOrder ?? index + 1,
+      title: frame.customData?.chapterTitle || frame.name || `Chapter ${index + 1}`,
+      tagline: frame.customData?.tagline || "",
+      badge: frame.customData?.badge || "RULE OF THUMB",
+      keyNote: frame.customData?.keyNote || "",
+      completed: Boolean(frame.customData?.completed),
+      paperTexture: frame.customData?.paperTexture || "Dots",
+      elements: sceneElements.filter(element => element.id === frame.id || element.frameId === frame.id || element.customData?.sketchiziPagePaper === frame.id),
+      appState: sanitizeTabAppState(frame.customData?.chapterAppState || {
+        zoom: sceneAppState.zoom, scrollX: sceneAppState.scrollX, scrollY: sceneAppState.scrollY,
+      }),
+    }));
+    const activeChapterId = chapterFrames.find(frame => frame.customData?.activeChapterId)?.customData?.activeChapterId || null;
     return {
-      elements: Array.isArray(elements) ? elements : (api?.getSceneElementsIncludingDeleted?.() || api?.getSceneElements?.() || []),
-      appState: sanitizeTabAppState(appState || api?.getAppState?.() || {}),
+      elements: sceneElements,
+      appState: sanitizeTabAppState(sceneAppState),
+      chapters,
+      activeChapterId,
       files: api?.getFiles?.() || {},
       metadata: documentMetadataRef.current?.metadata || {},
       extensions: documentMetadataRef.current?.extensions || {},
