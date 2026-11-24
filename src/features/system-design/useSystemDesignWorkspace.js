@@ -372,7 +372,16 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
       rects.get(ids.get(edge.fromNode || edge.from)), rects.get(ids.get(edge.toNode || edge.to)),
       { ...(edge.protocol ? { protocol: edge.protocol } : {}), ...(edge.lineStyle ? { lineStyle: edge.lineStyle } : {}), ...(edge.fromPort && edge.toPort ? { fromPort: edge.fromPort, toPort: edge.toPort } : {}) }, newId("sdedge"),
     ));
-    const created = restoreElements(convertToExcalidrawElements([...nodeSkeletons, ...edgeSkeletons]), null);
+    // Excalidraw's skeleton converter normalizes arrow endpoints and may omit customData while
+    // rebuilding elements. Re-attach the canonical System Design metadata by stable element ID
+    // after conversion so readGraph never has to infer blueprint topology from geometric bindings.
+    const skeletons = [...nodeSkeletons, ...edgeSkeletons];
+    const metadataById = new Map(skeletons.map((element) => [element.id, element.customData]));
+    const converted = convertToExcalidrawElements(skeletons).map((element) => {
+      const customData = metadataById.get(element.id);
+      return customData ? { ...element, customData: { ...element.customData, ...customData } } : element;
+    });
+    const created = restoreElements(converted, null);
     commit([...api.getSceneElementsIncludingDeleted(), ...created]);
     api.updateScene({ appState: { selectedElementIds: {} }, captureUpdate: CaptureUpdateAction.NEVER });
     api.scrollToContent?.(created.filter(isSystemDesignNode), { fitToContent: true, animate: true });
