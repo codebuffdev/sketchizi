@@ -462,22 +462,6 @@
   --book-panel: #161f30;
   --book-dot: #283548;
 }
-.pages-book-sheet {
-  position: fixed;
-  box-sizing: border-box;
-  min-width: 320px;
-  min-height: 720px;
-  border: 1px solid var(--book-border);
-  border-radius: 6px 14px 14px 6px;
-  background: transparent;
-  box-shadow: 0 2px 5px #0f172a0a, 0 18px 48px #0f172a20, 0 42px 90px #0f172a12;
-  pointer-events: none;
-}
-.pages-book-edge { position: absolute; inset: 0; z-index: -1; border: 1px solid var(--book-border); border-radius: 6px 14px 14px 6px; background: var(--book-paper); }
-.pages-book-edge-one { transform: translate(6px, 3px); opacity: .72; }
-.pages-book-edge-two { transform: translate(12px, 6px); opacity: .42; }
-.pages-book-spine { position: absolute; z-index: 2; top: 0; bottom: 0; left: 0; width: 18px; border-radius: 6px 0 0 6px; background: linear-gradient(90deg, rgba(15,23,42,.045), transparent); pointer-events: none; }
-.app.theme-dark .pages-book-spine { background: linear-gradient(90deg, rgba(0,0,0,.28), transparent); }
 .pages-editorial-header { position: relative; z-index: 4; padding: 36px 48px 20px; pointer-events: none; }
 .pages-editorial-header input, .pages-editorial-header button { pointer-events: auto; }
 .pages-editorial-topline, .pages-editorial-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -634,10 +618,6 @@
 
 /* Widescreen editorial spread: retain the tactile paper treatment while
    moving the chapter identity and controls into one compact header row. */
-.pages-book-sheet {
-  width: min(1360px, calc(100vw - 56px));
-  min-height: calc(100vh - 124px);
-}
 .pages-editorial-header {
   display: flex;
   align-items: center;
@@ -665,7 +645,7 @@
   gap: 8px;
 }
 .pages-editorial-actions .pages-key-badge { padding: 4px 6px; white-space: nowrap; }
-.pages-paper-switcher, .pages-width-switcher {
+.pages-paper-switcher {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -675,23 +655,6 @@
   border-radius: 8px;
   background: var(--book-panel);
 }
-.pages-width-switcher button {
-  padding: 5px 8px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--book-muted);
-  font-size: 10px;
-  cursor: pointer;
-}
-.pages-width-switcher button[aria-pressed="true"] {
-  background: #05966916;
-  color: #047857;
-  font-weight: 700;
-}
-.app.theme-dark .pages-width-switcher button[aria-pressed="true"] { color: #6ee7b7; }
-.pages-width-switcher button:disabled { opacity: .55; cursor: not-allowed; }
-.pages-book-canvas-zone { inset: 112px 0 42px; }
 .pages-book-folio { padding: 10px 32px; }
 @media (max-width: 1100px) {
   .pages-editorial-header { align-items: flex-start; flex-direction: column; gap: 12px; }
@@ -701,8 +664,7 @@
 @media (max-width: 767px) {
   .pages-editorial-header { padding: 18px 20px 14px; }
   .pages-editorial-actions { gap: 6px; }
-  .pages-book-canvas-zone { inset: 190px 0 42px; }
-  .pages-book-folio { padding: 10px 20px; }
+    .pages-book-folio { padding: 10px 20px; }
 }
 
 
@@ -739,13 +701,6 @@ body:has(.pages-book-workspace) .sketchizi-appearance {
    itself is CSS-painted; the matching Excalidraw paper element is transparent. */
 .pages-book-workspace { z-index: auto; }
 .pages-book-sheet { z-index: 0; }
-.pages-book-edge { z-index: 0; background: var(--book-paper); }
-.pages-book-spine {
-  z-index: 1;
-  left: 0;
-  width: 16px;
-  pointer-events: none;
-}
 .pages-book-canvas-zone { z-index: 0; }
 .pages-editorial-header,
 .pages-book-folio { z-index: 10040; }
@@ -830,10 +785,6 @@ body:has(.pages-book-workspace) .sketchizi-appearance {
   box-shadow: none !important;
   pointer-events: none;
   z-index: 0 !important;
-}
-.pages-book-edge,
-.pages-book-spine {
-  display: none !important;
 }
 .pages-book-canvas-zone {
   position: absolute !important;
