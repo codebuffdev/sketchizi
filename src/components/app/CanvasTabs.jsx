@@ -265,7 +265,7 @@ export default function CanvasTabs({
         document.body
       )}
       {tabMenuOpenId && activeMenuTab && typeof document !== "undefined" && createPortal(
-        <div ref={tabMenuRef} className={`canvas-tabs-tab-menu-portal${isDark ? " is-dark" : ""}${activeMenu && activeMenuTab.id === activeId ? " has-save-menu" : ""}`} role="menu" style={tabMenuPosition ? { top: tabMenuPosition.top, left: tabMenuPosition.left } : { visibility: "hidden", top: 0, left: 0 }}>
+        <div ref={tabMenuRef} className={`canvas-tabs-tab-menu-portal${isDark ? " is-dark" : ""}${activeMenu && activeMenuTab.id === activeId ? " has-save-menu" : ""}`} role="menu" onClick={(event) => { if (event.target.closest("[data-close-tab-menu]")) setTabMenuOpenId(null); }} style={tabMenuPosition ? { top: tabMenuPosition.top, left: tabMenuPosition.left } : { visibility: "hidden", top: 0, left: 0 }}>
           <div className="canvas-tabs-menu-tab-actions">
             <h3>Tab</h3>
             <button type="button" role="menuitem" onClick={() => { setTabMenuOpenId(null); onRename?.(activeMenuTab.id); }}><span>Rename</span><kbd>F2</kbd></button>
