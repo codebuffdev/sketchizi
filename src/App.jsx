@@ -471,7 +471,10 @@ function App() {
     if (!tabId || !activeTab) return false;
     try {
       await deleteDocument(activeTab.id);
-      if (canvasTabsRef.current.length <= 1) createCanvasTab({ name: "Canvas 1" });
+      if (canvasTabsRef.current.length <= 1) {
+        createCanvasTab({ name: "Canvas 1" });
+        window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "infinite" } }));
+      }
       performCloseCanvasTab(activeTab.id, { keepDraft: false });
       return true;
     } catch (error) {
