@@ -96,11 +96,12 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
   activePageRef.current = active;
   const index = Math.max(0, pages.findIndex(p => p.id === active?.id));
   const host = document.querySelector('.app');
-  const pageMaskForRender = pageMask || (fallbackPage ? {
+  const fallbackPageMask = fallbackPage ? {
     backgroundColor: canvasTheme === "dark" ? "#111820" : "#f7f9fc",
     pageRect: { left: 0, top: 0, width: fallbackPage.width, height: fallbackPage.height },
     panels: [],
-  } : null);
+  } : null;
+  const pageMaskForRender = fallbackPage ? fallbackPageMask : pageMask;
 
   useEffect(() => {
     if (!api) return;
