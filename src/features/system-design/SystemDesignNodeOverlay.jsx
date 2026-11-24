@@ -240,7 +240,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           const facets = nodeFacets(node, mode, names);
           const status = simulate && telemetry ? telemetry.status : node.health === "down" ? "down" : node.health === "degraded" ? "elevated" : "healthy";
           return (
-            <div key={node.id} className={`sd-node is-${node.accent} s-${status}${selected ? " is-selected" : ""}${isDropTarget ? " is-drop-target" : ""}${armedConnect?.nodeId === node.id ? " is-connect-armed" : ""}`}
+            <div key={node.id} className={`sd-node is-${node.accent} s-${status}${selected ? " is-selected" : ""}${hoverId === node.id ? " is-hovered" : ""}${isDropTarget ? " is-drop-target" : ""}${armedConnect?.nodeId === node.id ? " is-connect-armed" : ""}`}
               style={{ left: node.x, top: node.y, width: node.width, height: node.height }} data-node-id={node.id} data-kind={node.kind}>
               <div className="sd-node-head">
                 <button type="button" className={`sd-node-icon-button${node.customIcon ? " has-custom-icon" : ""}`}
