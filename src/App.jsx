@@ -662,14 +662,17 @@ function App() {
   const openSystemDesignIconLibrary = (node) => {
     if (node?.id) {
       setIconAssignment({ nodeId: node.id, nodeLabel: node.label });
-      setIconLibraryInitialSource("all");
+      setIconLibraryInitialSource("system-design");
       setSearch(inferTechnologyIconQuery(node.label, node.kind));
     } else {
       setIconAssignment(null);
       setIconLibraryInitialSource("system-design");
     }
     openPanel("icon-library");
-    requestAnimationFrame(() => searchRef.current?.focus());
+    requestAnimationFrame(() => {
+      if (node?.id) setIconLibraryInitialSource("all");
+      searchRef.current?.focus();
+    });
   };
   const assignSystemDesignNodeIcon = (icon) => {
     if (!iconAssignment?.nodeId || !icon) return;
