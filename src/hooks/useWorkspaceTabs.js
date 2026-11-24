@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef } from "react";
 import { sanitizeTabAppState, createCanvasTabId } from "../features/workspace/tabSnapshot.js";
 import { saveCanvasTabs, saveClosedTabs, loadClosedTabs, loadCanvasTabs, saveCanvasTabsPagehideBackup } from "../persistence.js";
-import { getPages } from "../features/pages/pageModel.js";
+import { getPages, pageSkeleton, DEFAULT_PAGE_SIZE } from "../features/pages/pageModel.js";
 import { logger } from "../logging/logger";
 import { isValidCanvasStartDate, createTabDates, getLocalDateString, normalizeTabDates } from "../features/canvas/canvasStartDate.js";
-import { restoreElements, CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { restoreElements, CaptureUpdateAction, convertToExcalidrawElements } from "@excalidraw/excalidraw";
 import { hydrateFilesSync, hydrateMissingFromCache } from "../features/workspace/binaryFileCache.js";
 import { sceneFingerprint } from "../features/workspace/cloudSaveGuard.js";
 import { hasCloudSceneChange, allowsEmptyCloudSave } from "../features/workspace/cloudSavePolicy.js";
@@ -32,6 +32,26 @@ import { DEFAULT_SYSTEM_DESIGN_TAB_STATE, persistSystemDesignTabState } from "..
  *
  * Moved verbatim out of App.jsx; declaration order (and therefore effect order) is unchanged.
  */
+function createDefaultPagesSnapshot(api) {
+  const chapterId = crypto.randomUUID();
+  const elements = convertToExcalidrawElements(pageSkeleton([], DEFAULT_PAGE_SIZE, chapterId), { regenerateIds: false })
+    .map(element => element.id === chapterId ? {
+      ...element,
+      name: "Untitled Page",
+      customData: { ...element.customData, pageOrder: 1, activeChapterId: chapterId, chapterTitle: "Untitled Page", paperTexture: "dots" },
+    } : element);
+  return {
+    elements,
+    chapters: [{ id: chapterId, num: "01", title: "Untitled Page", subtitle: "", completed: false, paperTexture: "dots", elements, appState: {} }],
+    activeChapterId: chapterId,
+    appState: { viewBackgroundColor: api?.getAppState?.().viewBackgroundColor || "#ffffff", scrollX: 0, scrollY: 0, zoom: { value: 1 } },
+    files: {}, metadata: {}, extensions: {}, format: "excalidraw",
+    systemDesign: { ...DEFAULT_SYSTEM_DESIGN_TAB_STATE },
+    file: null, cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" },
+    cloudDetached: true, cloudSaveState: { state: "inactive", error: "" }, cloudDocumentName: "Cloud diagram",
+  };
+}
+
 export function useWorkspaceTabs({
   activeCanvasId,
   activeCanvasIdRef,
@@ -346,7 +366,7 @@ export function useWorkspaceTabs({
     persistCanvasTabs(canvasTabsRef.current.map((tab) => tab.id === tabId ? { ...tab, todoTabActive: false } : tab));
   }, [persistCanvasTabs, switchCanvasTab]);
 
-  const createCanvasTab = useCallback(({ name: requestedName } = {}) => {
+  const createCanvasTab = useCallback(({ name: requestedName, type: requestedType = "canvas" } = {}) => {
     const currentSnapshot = apiRef.current
       ? captureCanvasTabSnapshot()
       : (canvasTabsRef.current.find((tab) => tab.id === activeCanvasIdRef.current)?.snapshot || null);
@@ -355,9 +375,12 @@ export function useWorkspaceTabs({
       : tab);
     const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
     const id = createCanvasTabId(currentTabs.map((tab) => tab.id));
+    const isPagesTab = requestedType === "pages";
     const nextTab = {
-      id, name: requestedName || `Canvas ${nextNumber}`, ...createTabDates(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
-      snapshot: {
+      id, name: requestedName || (isPagesTab ? `Page ${nextNumber}` : `Canvas ${nextNumber}`),
+      type: isPagesTab ? "pages" : requestedType,
+      ...createTabDates(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
+      snapshot: isPagesTab ? createDefaultPagesSnapshot(apiRef.current) : {
         elements: [], appState: { viewBackgroundColor: apiRef.current?.getAppState?.().viewBackgroundColor || "#ffffff" },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
         systemDesign: { ...DEFAULT_SYSTEM_DESIGN_TAB_STATE },
