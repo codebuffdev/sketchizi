@@ -122,12 +122,20 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
     if (!a || !b) return [];
     return [{ edge, points: routeOrthogonal(a, edge.fromPort, b, edge.toPort) }];
   }), [graph.edges, byId]);
-  // Give the SVG a real scene-sized viewport. A 1×1 SVG with overflow visible is clipped by
-  // several browser/compositor combinations after canvas transforms, hiding otherwise-valid paths.
-  const edgeViewport = useMemo(() => ({
-    width: Math.max(1, ...graph.nodes.map((node) => node.x + node.width)) + 96,
-    height: Math.max(1, ...graph.nodes.map((node) => node.y + node.height)) + 96,
-  }), [graph.nodes]);
+  // Blueprint placement is centred around the current viewport, so scene coordinates can be negative.
+  // The SVG must cover the full min→max scene bounds (not just 0→max), otherwise valid paths whose
+  // endpoints sit left/above the origin are clipped even while their node cards remain visible.
+  const edgeViewport = useMemo(() => {
+    const margin = 96;
+    if (!graph.nodes.length) return { left: 0, top: 0, width: 1, height: 1, viewBox: "0 0 1 1" };
+    const minX = Math.min(...graph.nodes.map((node) => node.x)) - margin;
+    const minY = Math.min(...graph.nodes.map((node) => node.y)) - margin;
+    const maxX = Math.max(...graph.nodes.map((node) => node.x + node.width)) + margin;
+    const maxY = Math.max(...graph.nodes.map((node) => node.y + node.height)) + margin;
+    const width = Math.max(1, maxX - minX);
+    const height = Math.max(1, maxY - minY);
+    return { left: minX, top: minY, width, height, viewBox: `${minX} ${minY} ${width} ${height}` };
+  }, [graph.nodes]);
 
   const beginConnect = (event, node, port) => {
     if (!canEdit) return;
@@ -192,8 +200,9 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
   return (
     <div className="sd-overlay" aria-hidden={false}>
       <div className="sd-layer" style={layerStyle}>
-        <svg className="sd-edges" width={edgeViewport.width} height={edgeViewport.height}
-          viewBox={`0 0 ${edgeViewport.width} ${edgeViewport.height}`} overflow="visible" aria-hidden="true">
+        <svg className="sd-edges" style={{ left: edgeViewport.left, top: edgeViewport.top }}
+          width={edgeViewport.width} height={edgeViewport.height} viewBox={edgeViewport.viewBox}
+          overflow="visible" aria-hidden="true">
           <defs>
             <marker id="sd-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
               <path d="M1.5 1.5 8 5 1.5 8.5" className="sd-arrow-head" fill="none" />
