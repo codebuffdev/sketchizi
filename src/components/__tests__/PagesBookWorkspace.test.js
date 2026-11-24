@@ -189,6 +189,25 @@ test("chapter eyebrow and chapter controller share the editorial masthead withou
 
 });
 
+test("Pages routing follows tab identity and hydration seeds an empty legacy Pages tab", () => {
+  const modeIcon = readFileSync(resolve(here, "../../features/workspace/WorkspaceModeIcon.jsx"), "utf8");
+  const header = readFileSync(resolve(here, "../app/DesktopAppHeader.jsx"), "utf8");
+  assert.match(modeIcon, /tab\?\.type === "pages"/);
+  assert.match(modeIcon, /tab\?\.snapshot\?\.chapters/);
+  assert.doesNotMatch(modeIcon, /pageMode === "pages"/);
+  assert.match(header, /workspaceMode=\{activeWorkspaceTab\?\.type === "pages"/);
+  assert.match(pages, /workspaceMode = "infinite"/);
+  assert.match(pages, /const nextMode = workspaceMode === "pages" \? "pages" : "infinite"/);
+  assert.match(app, /pageContext=\{canvasTabs\.find\(tab => tab\.id === activeCanvasId\)\?\.type === "pages"/);
+  assert.match(tabs, /function createDefaultPagesSnapshot\(api\)/);
+  assert.match(tabs, /chapters: \[\{ id: chapterId, num: "01", title: "Untitled Page"/);
+  assert.match(tabs, /const isPagesTab = tab\?\.type === "pages"/);
+  assert.match(tabs, /if \(isPagesTab && getPages\(storedElements\)\.length === 0\)/);
+  assert.match(tabs, /type: "pages", snapshot/);
+  assert.match(tabs, /hasPageChapters \|\| normalized\.type === "pages"/);
+  assert.match(tabs, /if \(activeTab\.snapshot \|\| activeTab\.type === "pages"\) applyCanvasTabSnapshot\(activeTab\)/);
+});
+
 test("deleting the only Pages chapter requires accessible confirmation and closes the notebook tab", () => {
   assert.match(workspace, /pages\.length === 1/);
   assert.match(workspace, /setDeleteOnlyPageOpen\(true\)/);
