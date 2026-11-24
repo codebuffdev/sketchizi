@@ -144,7 +144,7 @@ test("useWorkspaceTabs exposes every tab and workspace operation App renders", (
   const { tabs } = renderHooks();
   const expected = [
     "persistCanvasTabs", "updateActiveCanvasStartDate", "updateCanvasActivity", "openTodoTab", "closeTodoTab",
-    "updateCanvasTodoItems", "persistActiveCanvasSnapshot", "switchCanvasTab", "selectWorkspaceTab", "createCanvasTab",
+    "updateCanvasTodoItems", "persistActiveCanvasSnapshot", "switchCanvasTab", "selectWorkspaceTab", "setActiveCanvasTabType", "createCanvasTab",
     "reopenClosedTab", "deleteClosedTab", "clearClosedTabs", "performCloseCanvasTab", "closeCanvasTab",
     "saveAndCloseTab", "reorderCanvasTabs", "openCloudWorkspace", "openWorkspaceDiagram", "createWorkspaceChapter",
   ];
