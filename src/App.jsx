@@ -579,7 +579,6 @@ function App() {
     setMinimapOpen,
     designStudioOpen,
     setDesignStudioOpen,
-    exportStudioOpen,
     templatesModalOpen,
     setTemplatesModalOpen,
     collaborationOpen,
