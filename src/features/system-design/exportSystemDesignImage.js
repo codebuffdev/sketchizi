@@ -53,17 +53,17 @@ export function buildSystemDesignSvg({
     const title = escapeXml(node.label || node.kind || "Component");
     const subtitle = escapeXml(facets.sub || node.subtitle || "");
     const icon = escapeXml((node.customIcon?.name || node.kind || "S").slice(0, 1).toUpperCase());
-    const customIcon = node.customIcon?.src
-      ? `<image href="${escapeXml(node.customIcon.src)}" x="${node.x + 13}" y="${node.y + top - 12}" width="24" height="24" preserveAspectRatio="xMidYMid meet"/>`
-      : node.customIcon?.svgPath
-        ? `<path d="${escapeXml(node.customIcon.svgPath)}" transform="translate(${node.x + 13} ${node.y + top - 12}) scale(.9)" fill="${accent}"/>`
-        : "";
     const rps = telemetry ? formatRps(telemetry.incomingRps) : "—";
     const p95 = telemetry?.p95Ms != null ? `${telemetry.p95Ms}ms` : "—";
     const util = telemetry ? (Number.isFinite(telemetry.utilization) ? `${Math.round(telemetry.utilization * 100)}%` : "∞") : "—";
     const cap = nodeCapacity(node);
     const titleSize = w >= 340 ? 17 : w >= 250 ? 15 : 13;
     const top = Math.max(30, Math.min(42, h * 0.42));
+    const customIcon = node.customIcon?.src
+      ? `<image href="${escapeXml(node.customIcon.src)}" x="${node.x + 13}" y="${node.y + top - 12}" width="24" height="24" preserveAspectRatio="xMidYMid meet"/>`
+      : node.customIcon?.svgPath
+        ? `<path d="${escapeXml(node.customIcon.svgPath)}" transform="translate(${node.x + 13} ${node.y + top - 12}) scale(.9)" fill="${accent}"/>`
+        : "";
     return `<g data-node-id="${escapeXml(node.id)}"><rect x="${node.x}" y="${node.y}" width="${w}" height="${h}" rx="13" fill="${card}" stroke="${border}" stroke-width="1.5"/><path d="M ${node.x + 13} ${node.y + 2} H ${node.x + w - 13}" stroke="${accent}" stroke-width="4" stroke-linecap="round"/><circle cx="${node.x + 25}" cy="${node.y + top}" r="13" fill="${accent}" fill-opacity=".18"/>${customIcon || `<text x="${node.x + 25}" y="${node.y + top + 5}" text-anchor="middle" font-size="13" font-weight="800" fill="${accent}">${icon}</text>`}<text x="${node.x + 47}" y="${node.y + top - 2}" font-size="${titleSize}" font-weight="700" fill="${primary}">${title}</text><circle cx="${node.x + w - 15}" cy="${node.y + 18}" r="4" fill="${statusColor}"/><text x="${node.x + 47}" y="${node.y + top + 17}" font-size="10.5" fill="${secondary}">${subtitle}</text><path d="M ${node.x + 12} ${node.y + h - 28} H ${node.x + w - 12}" stroke="${border}"/><text x="${node.x + 14}" y="${node.y + h - 11}" font-size="9.5" fill="${secondary}">RPS <tspan fill="${primary}" font-weight="700">${escapeXml(rps)}</tspan></text><text x="${node.x + w * .43}" y="${node.y + h - 11}" font-size="9.5" fill="${secondary}">p95 <tspan fill="${primary}" font-weight="700">${escapeXml(p95)}</tspan></text><text x="${node.x + w - 45}" y="${node.y + h - 11}" font-size="9.5" fill="${secondary}">Util <tspan fill="${primary}" font-weight="700">${escapeXml(util)}</tspan></text><title>${title} · ${escapeXml(formatRps(cap))} RPS capacity</title></g>`;
   }).join("");
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${bounds.width}" height="${bounds.height}" viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" role="img" aria-label="System Design architecture diagram"><defs><marker id="sd-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0 L0 6 L8 3 z" fill="${darkMode ? "#94a3b8" : "#64748b"}"/></marker></defs>${surface !== "none" ? `<rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" height="${bounds.height}" fill="${surface}"/>` : ""}${edgeMarkup}${nodeMarkup}</svg>`;
