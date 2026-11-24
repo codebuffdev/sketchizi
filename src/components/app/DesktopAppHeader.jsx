@@ -221,7 +221,6 @@ export default function DesktopAppHeader({
   chapterNav = null,
   onNavigateChapter,
   onDownloadRecoveryBackup,
-  onOpenExport,
   onOpenTemplates,
   onToggleMinimap,
   minimapOpen = false,
@@ -998,10 +997,6 @@ export default function DesktopAppHeader({
                   <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onDownloadRecoveryBackup?.()} aria-label="Download recovery backup">
                     <CanvasActionIcon name="backup" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Recovery backup</strong><small>Download a portable backup of this canvas</small></span>
-                  </button>
-                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { setSaveDetailsOpen(false); onOpenExport?.(); }} aria-label="Export studio">
-                    <CanvasActionIcon name="export" />
-                    <span className="canvas-tabs-active-menu-action-copy"><strong>Export studio…</strong><small>Choose PNG, SVG, clipboard and export settings</small></span>
                   </button>
                 </div>
               </section>
