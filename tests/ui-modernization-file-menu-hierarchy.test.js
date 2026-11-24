@@ -79,6 +79,8 @@ test("workspace and review sections are injected into the visible hamburger menu
   assert.match(menu, /const hasNativeMenuAction = \(container\)/);
   assert.match(menu, /blockedMenuLabels = new Set/);
   assert.match(menu, /label === "reset the canvas"/);
+  assert.match(menu, /blockedMenuLabels = new Set/);
+  assert.match(menu, /label === "reset the canvas"/);
   assert.match(menu, /label === "reset the canvas"/);
   assert.match(menu, /\.find\(hasNativeMenuAction\)/);
   assert.match(menu, /customBlock\.append\(recentSection\)/);
