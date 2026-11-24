@@ -26,4 +26,5 @@ test("each lazy studio retains its original open gate and creation callbacks", (
   assert.match(app, /onCreate=\{createDesignFromStudio\}/);
   assert.match(app, /\{templatesModalOpen && \(\s*<ArchitectureTemplatesModal/);
   assert.match(app, /\{cloudSaveDialogOpen && <CloudSaveDialog/);
+  assert.ok(app.includes("<ExportStudioModal isOpen={exportStudioOpen}"));
 });
