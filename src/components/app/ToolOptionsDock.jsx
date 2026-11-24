@@ -1129,14 +1129,14 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         </div>
       </DockGroup>}
 
-      {((showCornerRadius || showRoughness || !noLayerForTool) && <DockGroup label="Shape modifiers & layers">
+      {((showCornerRadius || showRoughness || !noLayerForTool || selected.length >= 2) && <DockGroup label="Shape modifiers & layers">
         {showCornerRadius && <DockSelect label="Corner radius" value={activeRoundness ? "rounded" : "sharp"} onChange={(value) => update({ roundness: value === "rounded" ? { type: 3 } : null })}>
           <option value="sharp">Sharp corners</option><option value="rounded">Rounded corners</option>
         </DockSelect>}
         {showRoughness && <VisualOptionSelect label="Roughness" value={roughness} onChange={(value) => update({ roughness: Number(value) })} kind="roughness" options={[{ value: 0, label: "Architect" }, { value: 1, label: "Artist" }, { value: 2, label: "Cartoonist" }]} />}
 
         {layerOrderControl}
-        {selected.length >= 2 && !noLayerForTool && <>
+        {selected.length >= 2 && <>
           <span className="sk-tool-dock-divider" aria-hidden="true" />
           <div className="sk-tool-align-control">
             <button ref={alignTriggerRef} type="button" className={`sk-tool-align-trigger${alignPopoverOpen ? " is-active" : ""}`}
