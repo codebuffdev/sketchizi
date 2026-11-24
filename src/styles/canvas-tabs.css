@@ -484,14 +484,14 @@
 .canvas-tabs-bar {
   --ct-strip:#f3f5f8;--ct-strip-border:#dfe4ec;--ct-active:#fff;--ct-active-border:#d5dce7;
   --ct-hover:#e9edf3;--ct-text:#647084;--ct-strong:#202a3a;--ct-muted:#7d8798;
-  --ct-separator:#e0e5ed;--ct-control-hover:#edf1f6;--ct-accent:#7168d8;
+  --ct-separator:#e0e5ed;--ct-control-hover:#edf1f6;
   padding:3px;border:1px solid var(--ct-strip-border);border-radius:11px;background:var(--ct-strip);
   box-shadow:0 1px 2px rgb(22 34 54 / 5%);
 }
 .app.theme-dark .canvas-tabs-bar {
   --ct-strip:#171d27;--ct-strip-border:#303a4a;--ct-active:#303a4b;--ct-active-border:#59677e;
   --ct-hover:#252e3d;--ct-text:#aab5c6;--ct-strong:#f4f6fb;--ct-muted:#bdc6d5;
-  --ct-separator:#536075;--ct-control-hover:#3a4659;--ct-accent:#b5afff;
+  --ct-separator:#536075;--ct-control-hover:#3a4659;
   box-shadow:0 1px 3px rgb(0 0 0 / 24%);
 }
 .canvas-tabs-list{height:36px;gap:4px}
@@ -505,7 +505,7 @@
 .app.theme-dark .canvas-tab-item.is-active{background:var(--ct-active);border-color:var(--ct-active-border);box-shadow:0 2px 5px rgb(0 0 0 / 24%),inset 0 1px 0 rgb(255 255 255 / 5%)}
 .canvas-tab-item .canvas-tab{height:32px;min-width:88px;padding:0 10px;gap:8px;border-radius:7px;color:var(--ct-text);font-size:12px;font-weight:520}
 .canvas-tab-item.is-active>.canvas-tab{flex:1 1 180px;min-width:0;max-width:220px;color:var(--ct-strong);font-weight:650}
-.canvas-tab-item.is-active>.canvas-tab .canvas-tab-icon{color:var(--ct-accent);opacity:1}
+.canvas-tab-item.is-active>.canvas-tab .canvas-tab-icon{opacity:1}
 .canvas-tab-name{color:inherit;letter-spacing:-.01em}
 .canvas-tab-dirty{width:6px;height:6px;flex-basis:6px;box-shadow:0 0 0 2px color-mix(in srgb,#d99a35 17%,transparent)}
 .canvas-tab-item.is-active>.desktop-app-save-status-wrap{padding-right:4px;margin-right:3px;border-right:1px solid var(--ct-separator)}
@@ -1254,3 +1254,16 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
   background: #2b3544;
   color: #aab5c5;
 }
+
+/* Shared monochrome workspace glyph palette; System Design alone uses emerald. */
+.workspace-mode-icon { display:inline-block; flex:0 0 15px; width:15px; height:15px; vertical-align:middle; }
+.workspace-mode-icon--canvas,.workspace-mode-icon--pages { color:#334155; }
+.workspace-mode-icon--system-design { color:#059669; }
+.app.theme-dark .workspace-mode-icon--canvas,.app.theme-dark .workspace-mode-icon--pages { color:#cbd5e1; }
+.app.theme-dark .workspace-mode-icon--system-design { color:#34d399; }
+.canvas-tab-icon { opacity:.9; }
+.canvas-tab-item.is-active>.canvas-tab .canvas-tab-icon { opacity:1; }
+.sketchizi-ws-tile-icon.is-canvas,.sketchizi-ws-tile-icon.is-pages { color:#334155; }
+.sketchizi-ws-tile-icon.is-system-design { color:#059669; }
+.app.theme-dark .sketchizi-ws-tile-icon.is-canvas,.app.theme-dark .sketchizi-ws-tile-icon.is-pages { color:#cbd5e1; }
+.app.theme-dark .sketchizi-ws-tile-icon.is-system-design { color:#34d399; }

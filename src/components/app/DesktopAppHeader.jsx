@@ -306,6 +306,7 @@ export default function DesktopAppHeader({
   const workspaceButtonRef = useRef(null);
   const activeWorkspaceTab = canvasTabs.find((tab) => tab.id === activeCanvasId);
   const activeIsTodoTab = Boolean(activeWorkspaceTab?.isTodoTab);
+  const activeIsSystemDesignTab = activeWorkspaceTab?.type === "system-design";
   const activeCanvasTabName = activeWorkspaceTab?.name || currentDocumentName;
   const [documentNameDraft, setDocumentNameDraft] = useState(activeCanvasTabName);
   const cancelDocumentRenameRef = useRef(false);
@@ -1009,6 +1010,7 @@ export default function DesktopAppHeader({
             </div>
           }
           showAddButton
+          newTabMode={activeIsSystemDesignTab ? "system-design" : canvasMode === "pages" ? "pages" : "canvas"}
         />
       </div>
 
