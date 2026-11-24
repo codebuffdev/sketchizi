@@ -12,7 +12,6 @@ export function useNativeSketchiziMenu({
   currentFolderFiles,
   recentFiles,
   recentFolders,
-  canvasMode = "infinite",
   closedTabs = [],
   reopenClosedTab = () => {},
   deleteClosedTab = () => {},
