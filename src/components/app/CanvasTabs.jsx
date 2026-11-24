@@ -23,7 +23,7 @@ function ChevronGlyph() {
 export default function CanvasTabs({
   tabs, activeId, onSelect, onCreate, onDuplicate, onClose, onReorder, onRename,
   closedTabs = [], onReopenClosedTab, onDeleteClosedTab, onClearClosedTabs,
-  activeMenu = null, activeStatusClass = "is-saved",
+  activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved",
   disabled = false, showAddButton = true, newTabMode = "canvas", isDark = false,
 }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
@@ -175,7 +175,7 @@ export default function CanvasTabs({
           disabled={disabled}
         >
           {tab.isTodoTab ? <TodoGlyph /> : <WorkspaceModeIcon mode={mode} className={`canvas-tab-icon canvas-tab-icon--${mode}`} />}
-          <span className="canvas-tab-name">{getTabDisplayName(tab.name)}</span>
+          {isActive && activeRenameAction?.type === "input" ? activeRenameAction : <span className="canvas-tab-name">{getTabDisplayName(tab.name)}</span>}
           {isDirty && <span className="canvas-tab-dirty" role="status" aria-label="Unsaved changes" title="Unsaved changes" />}
         </button>
         {isActive && !tab.isTodoTab && (
