@@ -2033,7 +2033,9 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
   border-radius: 5px;
   background: #f8fafc;
   color: #64748b;
-  font: 10px/1.4 inherit;
+  font-family: inherit;
+  font-size: 10px;
+  line-height: 1.4;
   white-space: nowrap;
 }
 .canvas-tabs-tab-menu-portal.is-dark .canvas-tabs-menu-tab-actions > button[role="menuitem"] { color: #cbd5e1; }
@@ -2191,7 +2193,9 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
   border-radius: 5px;
   background: #f8fafc;
   color: #64748b;
-  font: 10px/1.4 inherit;
+  font-family: inherit;
+  font-size: 10px;
+  line-height: 1.4;
   white-space: nowrap;
 }
 .canvas-tabs-tab-menu-portal.is-dark .canvas-tabs-active-menu-content kbd { border-color: #334155; background: #1e293b; color: #94a3b8; }
