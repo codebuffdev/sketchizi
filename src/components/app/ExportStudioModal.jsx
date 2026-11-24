@@ -1,31 +1,24 @@
-import React, { useMemo, useState, useSyncExternalStore } from "react";
+import React, { useMemo, useState } from "react";
 import { exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
 import { readGraph } from "../../features/system-design/sceneModel.js";
 import { simulateTraffic } from "../../features/system-design/trafficSimulator.js";
 import { buildSystemDesignSvg, exportSystemDesignImage } from "../../features/system-design/exportSystemDesignImage.js";
 
-const EMPTY_SNAPSHOT = Object.freeze({ elements: [] });
-const noopSubscribe = () => () => {};
-const getEmptySnapshot = () => EMPTY_SNAPSHOT;
-
-export default function ExportStudioModal({ isOpen, onClose, apiRef, systemDesign, filename = "architecture-diagram" }) {
+export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = "architecture-diagram" }) {
   const [scale, setScale] = useState(2);
   const [bgMode, setBgMode] = useState("dark");
   const [darkMode, setDarkMode] = useState(true);
   const [exportOnlySelected, setExportOnlySelected] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const subscribe = systemDesign?.store?.subscribe || noopSubscribe;
-  const getSnapshot = systemDesign?.store?.getSnapshot || getEmptySnapshot;
-  const systemSnapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  const systemGraph = useMemo(() => systemDesign?.enabled ? readGraph(systemSnapshot.elements) : null, [systemDesign?.enabled, systemSnapshot.elements]);
-  const simulation = useMemo(() => systemGraph ? simulateTraffic({
-    nodes: systemGraph.nodes, edges: systemGraph.edges,
-    totalRps: systemDesign?.simulate ? systemDesign.loadRps : 0,
-  }) : null, [systemGraph, systemDesign?.simulate, systemDesign?.loadRps]);
-  const systemSvg = useMemo(() => systemGraph?.nodes?.length ? buildSystemDesignSvg({
-    ...systemGraph, simulation, mode: systemDesign?.mode, background: bgMode, darkMode, padding: 24,
-  }) : "", [systemGraph, simulation, systemDesign?.mode, bgMode, darkMode]);
+  const sceneElements = apiRef?.current?.getSceneElements?.() || [];
+  const systemGraph = useMemo(() => readGraph(sceneElements), [sceneElements]);
+  const simulation = useMemo(() => systemGraph.nodes.length ? simulateTraffic({
+    nodes: systemGraph.nodes, edges: systemGraph.edges, totalRps: 0,
+  }) : null, [systemGraph]);
+  const systemSvg = useMemo(() => systemGraph.nodes.length ? buildSystemDesignSvg({
+    ...systemGraph, simulation, mode: "canvas", background: bgMode, darkMode, padding: 24,
+  }) : "", [systemGraph, simulation, bgMode, darkMode]);
 
   if (!isOpen) return null;
 
@@ -46,7 +39,7 @@ export default function ExportStudioModal({ isOpen, onClose, apiRef, systemDesig
   };
 
   const makePng = async () => {
-    if (systemSvg) return exportSystemDesignImage({ ...systemGraph, simulation, mode: systemDesign?.mode, background: bgMode, darkMode, scale, format: "png" });
+    if (systemSvg) return exportSystemDesignImage({ ...systemGraph, simulation, mode: "canvas", background: bgMode, darkMode, scale, format: "png" });
     const data = getExportData();
     if (!data?.elements.length) throw new Error("No elements to export");
     return exportToBlob({ elements: data.elements, appState: data.appState, files: data.files, mimeType: "image/png" });
