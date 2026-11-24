@@ -1906,7 +1906,7 @@
   width: 24px;
   height: 24px;
   flex: 0 0 24px;
-  background-image: url("/icons/category-icons.png");
+  background-image: url("/icons/category-icons.svg");
   background-repeat: no-repeat;
   background-size: 168px 24px;
   background-position: calc(var(--category-icon-index) * -24px) 0;
