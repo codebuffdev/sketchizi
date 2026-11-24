@@ -60,6 +60,7 @@ function runAfterCanvasLayoutSettles(api, callback) {
 export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, onPageContextChange }) {
   const [mode, setMode] = useState(() => { try { return localStorage.getItem('sketchizi.canvasView') === 'pages' ? 'pages' : 'infinite'; } catch { return 'infinite'; } });
   const [pages, setPages] = useState([]);
+  const [canvasTheme, setCanvasTheme] = useState(() => api?.getAppState?.()?.theme || "light");
   const [activeId, setActiveId] = useState(null);
   const [error, setError] = useState('');
   const [pageMask, setPageMask] = useState(null);
@@ -90,6 +91,8 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     sceneSnapshot.current = api.getSceneElementsIncludingDeleted();
     const sync = (elements, appState) => {
       const next = getPages(elements);
+      const nextTheme = appState?.theme || api.getAppState?.()?.theme || "light";
+      setCanvasTheme(current => current === nextTheme ? current : nextTheme);
       const pagePaperBackground = getPagePaperBackground(appState || api.getAppState?.(), mode === 'pages');
       // Native frame dragging/resizing must carry its paper surface too.
       const repairs = new Map();
@@ -158,7 +161,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
       if (signature.current !== key) { signature.current = key; setPages(next); }
 
     };
-    sync(api.getSceneElements());
+    sync(api.getSceneElements(), api.getAppState?.());
     const unsubscribe = api.onChange(sync);
     return () => { unsubscribe(); signature.current = ''; sceneSnapshot.current = null; };
   }, [api, canEdit, mode]);
@@ -214,6 +217,18 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
       }
     };
   }, [api, mode]);
+
+  // Reassert a transparent Excalidraw paper after chapter or theme changes.
+  useEffect(() => {
+    if (!api || mode !== "pages") return;
+    if (api.getAppState?.()?.viewBackgroundColor !== "transparent") {
+      api.updateScene({
+        appState: { viewBackgroundColor: "transparent" },
+        captureUpdate: CaptureUpdateAction.NEVER,
+      });
+    }
+  }, [api, mode, active?.id, canvasTheme]);
+
   useEffect(() => {
     const page = mode === 'pages' && active ? {
       id: active.id,
@@ -619,7 +634,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
       /> : <button type="button" className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>,
       host,
     )}
-    {mode === 'pages' && host && createPortal(<>
+    {mode === 'pages' && host && createPortal(<div className="pages-bottom-actions">
       <nav className="canvas-pages-navigation" aria-label="Chapter navigation">
         <button type="button" aria-label="Previous chapter" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button>
         <div className="canvas-pages-chapter-index" ref={chapterIndexRef}>
@@ -645,6 +660,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
         <button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button>
         <button type="button" className="canvas-pages-add" aria-label="Add Chapter" title="Add Chapter" disabled={!canEdit} onClick={add}><svg className="canvas-pages-add-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="12" x2="12" y2="18" /><line x1="9" y1="15" x2="15" y2="15" /></svg><span>+ Chapter</span></button>
       </nav>
-    </>,host)}
+    </div>,host)}
   </>;
 }
