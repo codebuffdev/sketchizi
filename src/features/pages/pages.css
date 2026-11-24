@@ -741,7 +741,8 @@
 .app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .layer-canvas {
   z-index: 2 !important;
 }
-/* Excalidraw's drawing layer is the canvas element itself, not a wrapper. */
+/* Excalidraw's drawing layer is the canvas element itself, not a wrapper;
+   keep both the element and any future nested canvas fully opaque. */
 .app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .layer-canvas,
 .app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .layer-canvas canvas {
   background: transparent !important;
