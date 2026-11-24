@@ -83,7 +83,7 @@ test("command palette motion styling and removed Validate Arch entries", async (
 
 test("command registry groups engineering actions", async () => {
   const registry = await read("src/features/commands/commandRegistry.js");
-  for (const id of ["export.diagram-yaml-png", "templates.architecture-packs", "templates.design-catalog"]) {
+  for (const id of ["templates.architecture-packs", "templates.design-catalog"]) {
     assert.ok(registry.includes(`id: "${id}"`), id);
   }
   // Studios are reachable from Ctrl/Cmd+K; validation and design review stay removed.
@@ -93,9 +93,7 @@ test("command registry groups engineering actions", async () => {
     assert.ok(!registry.includes(`id: "${id}"`), id);
   assert.match(registry, /ARCHITECTURE_PACKS\.map/);
   assert.match(registry, /getInfrastructureInsertTargets\(\)\.map/);
-  for (const label of ["Export Diagram / YAML / PNG"]) {
-    assert.ok(registry.includes(`label: "${label}"`), label);
-  }
+  assert.doesNotMatch(registry, /Export Diagram \/ YAML \/ PNG|export\.diagram-yaml-png/);
 });
 
 test("header Workspace icon button toggles a quick popover instead of jumping to /workspace", async () => {
