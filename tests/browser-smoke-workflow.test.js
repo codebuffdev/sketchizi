@@ -19,7 +19,7 @@ test("browser smoke covers configured AWS template creation and editor handoff",
 });
 
 test("System Design browser smoke uses the shared Icon Library and top-bar actions", () => {
-  assert.match(script, /Open icon library/);
+  assert.match(script, /Add Component/);
   assert.match(script, /System Design \(16\)/);
   assert.match(script, /Add \$\{label\} to canvas/);
   assert.match(script, /Auto-Layout components/);
