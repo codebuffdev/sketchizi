@@ -57,7 +57,7 @@ function runAfterCanvasLayoutSettles(api, callback) {
   return () => window.cancelAnimationFrame(frame);
 }
 
-export default function CanvasPages({ api, workspaceMode = "infinite", canEdit = true, aiPanelOpen = false, onPageContextChange, bookTitle, onRenameBookTitle, onDeleteOnlyPage }) {
+export default function CanvasPages({ api, workspaceMode = "infinite", canEdit = true, aiPanelOpen = false, onPageContextChange, onWorkspaceModeChange, bookTitle, onRenameBookTitle, onDeleteOnlyPage }) {
   const [mode, setMode] = useState(() => workspaceMode === "pages" ? "pages" : "infinite");
   const [pages, setPages] = useState([]);
   const [canvasTheme, setCanvasTheme] = useState(() => api?.getAppState?.()?.theme || "light");
@@ -510,12 +510,12 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
     update([...elements, ...created]);
     const currentView = api.getAppState?.();
     previousViewportRef.current = currentView ? { scrollX: currentView.scrollX, scrollY: currentView.scrollY, zoom: currentView.zoom } : null;
-    setError(''); setMode('pages'); fit(frame);
+    setError(''); setMode('pages'); onWorkspaceModeChange?.('pages'); fit(frame);
   };
   const add = () => { createPage(); };
   useEffect(() => {
     const nextMode = workspaceMode === "pages" ? "pages" : "infinite";
-    if (mode !== nextMode) changeMode(nextMode);
+    if (mode !== nextMode) changeMode(nextMode, false);
   }, [workspaceMode, mode, api, pages, active?.id]);
 
   const patchChapter = patch => {
@@ -533,7 +533,7 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
       ? { ...element, customData: { ...element.customData, completed }, version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
       : element));
   };
-  const changeMode = value => {
+  const changeMode = (value, syncTabType = true) => {
     const livePages = api?.getSceneElementsIncludingDeleted?.() || [];
     if (value === 'pages' && getPages(livePages).length === 0) { add(); return; }
     if (value === 'pages' && mode !== 'pages') {
@@ -541,6 +541,7 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
       previousViewportRef.current = currentView ? { scrollX: currentView.scrollX, scrollY: currentView.scrollY, zoom: currentView.zoom } : null;
     }
     setMode(value);
+    if (syncTabType) onWorkspaceModeChange?.(value);
     if (value === 'infinite') {
       setPageMask(null);
       activeIdRef.current = null;
@@ -556,7 +557,7 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
     };
     window.addEventListener('sketchizi:choose-canvas-mode', chooseMode);
     return () => window.removeEventListener('sketchizi:choose-canvas-mode', chooseMode);
-  }, [api, mode, pages, active?.id]);
+  }, [api, mode, pages, active?.id, onWorkspaceModeChange]);
 
   const rename = page => {
     if (!page || !canEdit) return;
