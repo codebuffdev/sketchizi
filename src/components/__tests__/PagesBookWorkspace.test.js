@@ -169,5 +169,7 @@ test("chapter badge is a zero-padded number and navigator shares a flex row with
   assert.match(styles, /font-size: 26px !important/);
   assert.match(styles, /font-size: 14px !important/);
   assert.match(styles, /height: 28px !important/);
+  assert.match(styles, /clip-path: inset\(156px 0 0 0\)/);
+  assert.match(styles, /clip-path: inset\(200px 0 0 0\)/);
 
 });
