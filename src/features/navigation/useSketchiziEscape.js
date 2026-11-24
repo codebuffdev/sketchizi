@@ -25,6 +25,8 @@ export function useSketchiziEscape({
   setDesignStudioOpen,
   templatesModalOpen,
   setTemplatesModalOpen,
+  exportStudioOpen,
+  setExportStudioOpen,
   collaborationOpen,
   setCollaborationOpen,
   connectionMode,
@@ -61,6 +63,10 @@ export function useSketchiziEscape({
       }
       if (templatesModalOpen) {
         consumeEscape(() => setTemplatesModalOpen(false));
+        return;
+      }
+      if (exportStudioOpen) {
+        consumeEscape(() => setExportStudioOpen(false));
         return;
       }
       if (designStudioOpen) {
@@ -108,7 +114,7 @@ export function useSketchiziEscape({
 
     document.addEventListener("keydown", handleKeyDown, true);
     return () => document.removeEventListener("keydown", handleKeyDown, true);
-  }, [activeTransientPanel, closePanel, closeMostRecentDrawer, isZenMode, exitZenMode, commandPaletteOpen, closeCommandPalette, minimapOpen, setMinimapOpen, designStudioOpen, setDesignStudioOpen, templatesModalOpen, setTemplatesModalOpen, collaborationOpen, setCollaborationOpen, connectionMode, activateSelectionTool, searchRef, apiRef]);
+  }, [activeTransientPanel, closePanel, closeMostRecentDrawer, isZenMode, exitZenMode, commandPaletteOpen, closeCommandPalette, minimapOpen, setMinimapOpen, designStudioOpen, setDesignStudioOpen, templatesModalOpen, setTemplatesModalOpen, exportStudioOpen, setExportStudioOpen, collaborationOpen, setCollaborationOpen, connectionMode, activateSelectionTool, searchRef, apiRef]);
 }
 
 /**
