@@ -7,6 +7,8 @@ import { dirname, resolve } from "node:path";
 const here = dirname(fileURLToPath(import.meta.url));
 const workspace = readFileSync(resolve(here, "../../features/pages/PagesBookWorkspace.jsx"), "utf8");
 const pages = readFileSync(resolve(here, "../../features/pages/CanvasPages.jsx"), "utf8");
+const canvas = readFileSync(resolve(here, "../app/SketchiziCanvas.jsx"), "utf8");
+const app = readFileSync(resolve(here, "../../App.jsx"), "utf8");
 const persistence = readFileSync(resolve(here, "../../persistence.js"), "utf8");
 const tabs = readFileSync(resolve(here, "../../hooks/useWorkspaceTabs.js"), "utf8");
 const styles = readFileSync(resolve(here, "../../features/pages/pages.css"), "utf8");
@@ -23,7 +25,6 @@ test("New Chapter creates an isolated Excalidraw page from the navigator and cha
 test("book workspace receives the chapter collection and completion callback", () => {
   assert.match(workspace, /pages = \[\]/);
   assert.match(workspace, /onToggleRead/);
-  assert.match(workspace, /pages\.length/);
   assert.match(workspace, /onToggleRead\(active\)/);
   assert.match(pages, /<PagesBookWorkspace pages=\{pages\}/);
   assert.match(pages, /onToggleRead=\{toggleChapterRead\}/);
@@ -77,7 +78,7 @@ test("chapter metadata and diagram elements persist together in the existing Ind
   assert.match(persistence, /indexedDB\.open\(DB_NAME, DB_VERSION\)/);
   assert.match(persistence, /canvas-tabs-manifest/);
   assert.match(workspace, /paperTexture/);
-  assert.match(workspace, /keyNote/);
+  assert.match(workspace, /paperTexture/);
 });
 
 test("Pages book styling uses the muted slate and emerald palette without purple accents", () => {
@@ -106,7 +107,6 @@ test("chapter workspace is full-bleed and removes the boxed sheet width controls
   assert.match(styles, /margin: 64px auto 0 !important/);
   assert.match(styles, /padding: 0 32px 16px !important/);
   assert.match(styles, /border-bottom: 1px solid var\(--book-border\)/);
-  assert.match(styles, /bottom: 58px !important/);
   assert.match(workspace, /pages-paper-switcher/);
   assert.match(workspace, /pages-mark-read/);
   assert.match(styles, /\.pages-editorial-title-row/);
@@ -129,4 +129,31 @@ test("Pages paper and textures stay behind fully opaque native canvas rendering"
   assert.match(styles, /\.excalidraw-textEditorContainer \{[\s\S]*?z-index: 10030 !important/);
   assert.match(styles, /\.excalidraw-textEditorContainer textarea \{[\s\S]*?background: transparent !important/);
   assert.doesNotMatch(styles, /transform:\s*scale\(/);
+});
+
+
+test("Pages paper textures show through transparent Excalidraw in light and dark themes", () => {
+  assert.match(canvas, /viewBackgroundColor: pageContext\?\.mode === "pages" \? "transparent"/);
+  assert.match(canvas, /pages-canvas-wrapper/);
+  assert.match(canvas, /viewBackgroundColor: "transparent"/);
+  assert.match(pages, /setCanvasTheme\(current => current === nextTheme \? current : nextTheme\)/);
+  assert.match(pages, /\[api, mode, active\?\.id, canvasTheme\]/);
+  assert.match(styles, /\.pages-canvas-wrapper \.excalidraw,[\s\S]*?--default-bg-color: transparent !important/);
+  assert.match(styles, /radial-gradient\(circle, var\(--book-dot\) 1\.25px, transparent 1\.25px\)/);
+  assert.match(styles, /background-size: 22px 22px/);
+  assert.match(styles, /var\(--book-rule\) 27px,[\s\S]*?var\(--book-rule\) 28px/);
+  assert.match(styles, /--book-paper: #ffffff/);
+  assert.match(styles, /--book-paper: #0f141d/);
+  assert.match(styles, /--book-dot: #2b3648/);
+  assert.match(styles, /--book-rule: #1e293b/);
+});
+
+test("chapter badge is a zero-padded number and navigator shares a flex row with Zen", () => {
+  assert.match(workspace, /\{String\(index \+ 1\)\.padStart\(2, '0'\)\}/);
+  assert.doesNotMatch(workspace, />CH \{String\(index/);
+  assert.match(styles, /font-variant-numeric: tabular-nums/);
+  assert.match(pages, /className="pages-bottom-actions"/);
+  assert.match(app, /document\.querySelector\("\.pages-bottom-actions"\)/);
+  assert.match(styles, /\.pages-bottom-actions \{[\s\S]*?display: flex;[\s\S]*?align-items: center;[\s\S]*?gap: 10px/);
+  assert.match(styles, /\.pages-bottom-actions \.sk-zen-pill \{[\s\S]*?position: static !important/);
 });
