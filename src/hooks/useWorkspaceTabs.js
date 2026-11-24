@@ -35,7 +35,12 @@ import { DEFAULT_SYSTEM_DESIGN_TAB_STATE, persistSystemDesignTabState } from "..
 function createDefaultPagesSnapshot(api, existingChapter = null) {
   const chapterId = existingChapter?.id || crypto.randomUUID();
   const title = existingChapter?.title || "Untitled Page";
-  const elements = convertToExcalidrawElements(pageSkeleton([], DEFAULT_PAGE_SIZE, chapterId), { regenerateIds: false })
+  const appState = api?.getAppState?.() || {};
+  const size = {
+    width: Math.max(320, Math.round(appState.width || (typeof window !== "undefined" ? window.innerWidth : 0) || DEFAULT_PAGE_SIZE.width)),
+    height: Math.max(320, Math.round(appState.height || (typeof window !== "undefined" ? window.innerHeight : 0) || DEFAULT_PAGE_SIZE.height)),
+  };
+  const elements = convertToExcalidrawElements(pageSkeleton([], size, chapterId), { regenerateIds: false })
     .map(element => element.id === chapterId ? {
       ...element,
       name: title,
