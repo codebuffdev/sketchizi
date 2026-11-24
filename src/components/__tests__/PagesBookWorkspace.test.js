@@ -111,7 +111,7 @@ test("book sheet defaults to widescreen and offers a persisted Standard or Wide 
 
 
 test("Pages paper and textures stay behind fully opaque native canvas rendering", () => {
-  assert.match(pages, /function getPagePaperBackground\(\)\s*\{[\s\S]*?return 'transparent'/);
+  assert.match(pages, /function getPagePaperBackground\(appState, isPagesMode = false\)\s*\{[\s\S]*?if \(isPagesMode\)[\s\S]*?return 'transparent'/);
   assert.match(pages, /viewBackgroundColor: 'transparent'/);
   assert.match(pages, /requestExcalidrawCanvasRefresh/);
   assert.match(pages, /window\.dispatchEvent\(new Event\('resize'\)\)/);
