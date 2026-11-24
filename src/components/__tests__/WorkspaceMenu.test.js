@@ -33,11 +33,13 @@ test("Cloud Files keeps the existing Cloud Workspace navigation flow", () => {
 
 test("Open File creates a tab before invoking the existing local file picker", () => {
   assert.match(menu, /sketchizi:workspace-open-local-file/);
-  assert.match(app, /openLocalFileInNewTab[\s\S]*?createCanvasTab\(\)[\s\S]*?requestAnimationFrame\(\(\) => fileActionsRef\.current\.openDrawingFromDisk\?\.\(\)\)/);
+  assert.match(app, /openLocalFileInNewTab[\s\S]*?createCanvasTab\(\)[\s\S]*?Promise\.resolve\(fileActionsRef\.current\.openDrawingFromDisk\?\.\(\)\)/);
+  assert.match(app, /openedName\.replace\(\/\\\.(sketchizi\|excalidraw\|json)\$\/i, ""\)/);
 });
 
 test("workspace tiles no longer expose an active purple mode state", () => {
   assert.match(menu, /setAttr\(tile, "data-active", "false"\)/);
   assert.match(menu, /data-tone="slate"/);
-  assert.match(styles, /\.sketchizi-ws-tile\[data-active="true"\]/);
+  assert.doesNotMatch(styles, /\.sketchizi-ws-tile\[data-active="true"\]/);
+  assert.match(styles, /outline: 2px solid #059669/);
 });
