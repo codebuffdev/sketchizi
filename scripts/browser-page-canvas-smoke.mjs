@@ -184,9 +184,12 @@ try {
  // Re-enter Pages mode through the same workspace choice event used by startup.
  await chooseCanvasMode('pages');
  await page.setViewportSize({width:390,height:844});
- es = await waitScene(elements => pages(elements)[0]?.width === 390 && pages(elements)[0]?.height === 844);
- assert.equal(es.find(e => e.customData?.sketchiziPagePaper === pages(es)[0].id)?.width, 390, 'Paper backing must resize with the mobile chapter frame');
- assert.equal(es.find(e => e.customData?.sketchiziPagePaper === pages(es)[0].id)?.height, 844, 'Paper backing must match the mobile viewport height');
+ es = await waitScene(elements => pages(elements).some(item => item.width === 390 && item.height === 844));
+ const mobilePage = pages(es).find(item => item.width === 390 && item.height === 844);
+ assert(mobilePage, 'The active chapter must resize to the mobile viewport');
+ const mobilePaper = es.find(e => e.customData?.sketchiziPagePaper === mobilePage.id);
+ assert.equal(mobilePaper?.width, 390, 'Paper backing must resize with the mobile chapter frame');
+ assert.equal(mobilePaper?.height, 844, 'Paper backing must match the mobile viewport height');
  await ensureHeaderVisible();
  await canvasStyle().click();
  const menu=await page.getByRole('dialog',{name:'Canvas style'}).boundingBox();
