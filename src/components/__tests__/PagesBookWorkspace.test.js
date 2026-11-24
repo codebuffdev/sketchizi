@@ -68,5 +68,6 @@ test("Pages book styling uses the muted slate and emerald palette without purple
   assert.match(styles, /#0b0f17/);
   assert.match(styles, /#059669/);
   assert.match(styles, /#34d399/);
+  assert.match(styles, /\.pages-editorial-header input, \.pages-editorial-header button \{ pointer-events: auto; \}/);
   assert.doesNotMatch(styles, /#(?:7061a8|9e88ed|a68af0|a79de0|978fcf|7968ee)/i);
 });
