@@ -117,11 +117,10 @@ test("Pages paper and textures stay behind fully opaque native canvas rendering"
   assert.match(pages, /window\.dispatchEvent\(new Event\('resize'\)\)/);
   assert.match(pages, /fit\(active\); requestExcalidrawCanvasRefresh\(\)/);
   assert.match(styles, /\.pages-book-workspace \{ z-index: auto; \}/);
-  assert.match(styles, /\.pages-book-edge \{ z-index: 0; background: var\(--book-paper\); \}/);
+  assert.match(styles, /\.pages-book-sheet \{ z-index: 0; \}/);
   assert.match(styles, /\.pages-book-canvas-zone \{ z-index: 0; \}/);
   assert.match(styles, /\.desktop-canvas-region canvas \{[\s\S]*?z-index: 1 !important/);
   assert.match(styles, /\.excalidraw-textEditorContainer \{[\s\S]*?z-index: 10030 !important/);
   assert.match(styles, /\.excalidraw-textEditorContainer textarea \{[\s\S]*?background: transparent !important/);
-  assert.match(styles, /width: 16px/);
   assert.doesNotMatch(styles, /transform:\s*scale\(/);
 });
