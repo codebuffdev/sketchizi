@@ -474,3 +474,16 @@
   .sd-command-modes button { min-width: 44px; padding-inline: 7px; }
   .sd-command-divider { margin-inline: 0; }
 }
+
+
+/* Searchable, grouped starter-blueprint catalogue. */
+.sd-blueprint-menu { width: 340px; max-height: 400px; overflow-y: auto; overscroll-behavior: contain; padding: 8px; }
+.sd-blueprint-search { position: sticky; top: 0; z-index: 1; width: 100%; min-height: 34px; margin: 0 0 7px; padding: 7px 10px; border: 1px solid var(--sd-border); border-radius: 8px; outline: none; color: var(--sd-text); background: var(--sd-surface); font: inherit; font-size: 12px; }
+.sd-blueprint-search::placeholder { color: var(--sd-text-2); }
+.sd-blueprint-search:focus-visible { border-color: var(--sd-emerald); box-shadow: 0 0 0 2px color-mix(in srgb, var(--sd-emerald) 20%, transparent); }
+.sd-blueprint-group { display: flex; flex-direction: column; gap: 2px; }
+.sd-blueprint-group + .sd-blueprint-group { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--sd-border); }
+.sd-blueprint-group h3 { margin: 4px 9px 5px; color: var(--sd-text-2); font-size: 9px; font-weight: 750; letter-spacing: .09em; line-height: 1.4; }
+.sd-blueprint-menu button { flex: 0 0 auto; width: 100%; }
+.sd-blueprint-menu button small { display: block; }
+.sd-blueprint-empty { margin: 12px 8px; color: var(--sd-text-2); font-size: 12px; }
