@@ -95,14 +95,21 @@ try {
  assert.equal(es.find(e => e.customData?.sketchiziPagePaper === pages(es)[0].id)?.width, 1360);
  // Assert the actual backing store is sized for a 2x HiDPI display, not CSS-scaled.
  const canvasMetrics = await page.evaluate(() => {
-  const canvas = [...document.querySelectorAll('.layer-canvas')].find(el =>
-   el instanceof HTMLCanvasElement && el.getBoundingClientRect().width > 0
-  );
-  if (!canvas) return null;
+  const canvases = [...document.querySelectorAll('.desktop-canvas-region .excalidraw canvas')]
+   .filter(el => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().height > 0);
+  const canvas = canvases.find(el => !String(el.className).includes('layer-ui')) || canvases[0];
+  if (!canvas) return { dpr: window.devicePixelRatio, candidates: [...document.querySelectorAll('.desktop-canvas-region .excalidraw *')]
+   .filter(el => String(el.className || '').includes('layer-canvas'))
+   .map(el => ({ tag: el.tagName, className: String(el.className) })) };
   const rect = canvas.getBoundingClientRect();
-  return { dpr: window.devicePixelRatio, width: canvas.width, height: canvas.height, cssWidth: rect.width, cssHeight: rect.height };
+  return {
+   dpr: window.devicePixelRatio, width: canvas.width, height: canvas.height,
+   cssWidth: rect.width, cssHeight: rect.height, className: String(canvas.className),
+   candidates: canvases.map(el => ({ className: String(el.className), width: el.width, height: el.height })),
+  };
  });
- assert(canvasMetrics && canvasMetrics.dpr === 2, 'Browser smoke test must run at 2x device pixel ratio');
+ assert(canvasMetrics && canvasMetrics.dpr === 2 && canvasMetrics.width > 0,
+  'Browser smoke test must find a native 2x Excalidraw canvas: ' + JSON.stringify(canvasMetrics));
  assert(Math.abs(canvasMetrics.width - Math.round(canvasMetrics.cssWidth * canvasMetrics.dpr)) <= 2, 'Canvas backing width must match its physical HiDPI width');
  assert(Math.abs(canvasMetrics.height - Math.round(canvasMetrics.cssHeight * canvasMetrics.dpr)) <= 2, 'Canvas backing height must match its physical HiDPI height');
  const layerOrder = await page.evaluate(() => ({
