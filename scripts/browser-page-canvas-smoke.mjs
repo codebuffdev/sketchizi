@@ -273,6 +273,21 @@ try {
  assert.equal(await page.getByRole('button', { name: 'Fit', exact: true }).count(), 0);
  await page.screenshot({path:'/tmp/sketchizi-page-desktop.png'});
 
+ // A final-page delete is cancellable; confirmation closes its tab instead of
+ // leaving the editor on an empty Pages grid.
+ await page.getByRole('button', { name: 'Delete', exact: true }).click();
+ const finalPageDialog = page.getByRole('dialog', { name: 'Delete "Page 1"?' });
+ await finalPageDialog.waitFor({ state: 'visible' });
+ assert.match(await finalPageDialog.innerText(), /This is the only page remaining/);
+ await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+ assert.equal((await page.locator('.canvas-pages-chapter-trigger').textContent()).trim().startsWith('01 / 01'), true,
+  'Cancel must preserve the sole page');
+ await page.getByRole('button', { name: 'Delete', exact: true }).click();
+ await page.getByRole('dialog', { name: 'Delete "Page 1"?' }).getByRole('button', { name: 'Delete & Close' }).click();
+ await page.waitForFunction(() => document.querySelector('.canvas-tab.is-active .canvas-tab-name')?.textContent.trim() === 'Canvas 1',
+  { timeout: 10000 });
+ assert.equal(await page.locator('.pages-book-workspace').count(), 0, 'Confirmed deletion must close Pages mode with the notebook tab');
+
  // Exercise the restored document-tab Export Studio against a real System Design graph.
  await page.keyboard.press('Control+K');
  const palette = page.locator('.sketchizi-command-palette');
