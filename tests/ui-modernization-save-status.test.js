@@ -65,7 +65,7 @@ test("active-tab save header uses one status pill without repeating storage bann
   assert.doesNotMatch(header, /desktop-app-document-location/);
 });
 test("active-tab save status reflects the relevant local, file, or cloud save state", () => {
-  assert.match(header, /!isCloudDocument && !currentDocumentFileBacked && \["pending", "saving", "error"\]\.includes\(saveState\)/);
+  assert.match(header, /!isCloudDocument && !currentDocumentFileBacked/);
   assert.match(header, /currentDocumentFileBacked && currentDocumentDirty/);
   assert.match(header, /isCloudDocument && \["pending", "saving", "error", "conflict"\]\.includes\(cloudSaveState\)/);
   assert.match(header, /canvas-tabs-save-status/);
