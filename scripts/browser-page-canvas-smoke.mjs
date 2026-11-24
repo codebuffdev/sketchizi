@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 const browser = await chromium.launch({headless:true});
-const page = await browser.newPage({viewport:{width:1440,height:1000}});
+const page = await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:2});
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
 async function scene() {
@@ -81,8 +81,37 @@ try {
  let es = await waitScene(es=>pages(es).length===1);
  const initialPage = pages(es)[0];
  assert(initialPage.width > 0 && initialPage.height > 0, 'New page must have usable dimensions');
- assert(Math.abs(initialPage.width / initialPage.height - 800 / 1120) < 0.02, 'New page must preserve the configured 800:1120 portrait aspect ratio');
- assert(initialPage.width <= 1440 * 0.8 + 1 && initialPage.height <= 1000 * 0.8 + 1, 'New page must fit within 80% of the available viewport');
+ assert.equal(initialPage.width, 1360, 'New Wide page must use the 1360px desktop sheet width cap');
+ assert.equal(initialPage.height, 876, 'New Wide page must reserve 124px of viewport height');
+ assert(initialPage.width > initialPage.height, 'New page must use a widescreen editorial spread by default');
+ assert.equal(await page.getByRole('button', { name: 'Wide', exact: true }).getAttribute('aria-pressed'), 'true');
+ // Width changes update the native frame and its transparent paper backing together.
+ await page.getByRole('button', { name: 'Standard', exact: true }).click();
+ es = await waitScene(elements => pages(elements)[0]?.width === 860);
+ assert.equal(es.find(e => e.customData?.sketchiziPagePaper === pages(es)[0].id)?.width, 860);
+ await page.getByRole('button', { name: 'Wide', exact: true }).click();
+ es = await waitScene(elements => pages(elements)[0]?.width === 1360);
+ assert.equal(es.find(e => e.customData?.sketchiziPagePaper === pages(es)[0].id)?.width, 1360);
+ // Assert the actual backing store is sized for a 2x HiDPI display, not CSS-scaled.
+ const canvasMetrics = await page.evaluate(() => {
+  const canvas = [...document.querySelectorAll('.layer-canvas canvas')].find(el => el.getBoundingClientRect().width > 0);
+  if (!canvas) return null;
+  const rect = canvas.getBoundingClientRect();
+  return { dpr: window.devicePixelRatio, width: canvas.width, height: canvas.height, cssWidth: rect.width, cssHeight: rect.height };
+ });
+ assert(canvasMetrics && canvasMetrics.dpr === 2, 'Browser smoke test must run at 2x device pixel ratio');
+ assert(Math.abs(canvasMetrics.width - Math.round(canvasMetrics.cssWidth * canvasMetrics.dpr)) <= 2, 'Canvas backing width must match its physical HiDPI width');
+ assert(Math.abs(canvasMetrics.height - Math.round(canvasMetrics.cssHeight * canvasMetrics.dpr)) <= 2, 'Canvas backing height must match its physical HiDPI height');
+ const layerOrder = await page.evaluate(() => ({
+  paper: getComputedStyle(document.querySelector('.pages-book-edge')).zIndex,
+  texture: getComputedStyle(document.querySelector('.pages-book-canvas-zone')).zIndex,
+  drawing: getComputedStyle(document.querySelector('.layer-canvas')).zIndex,
+  ui: getComputedStyle(document.querySelector('.layer-ui__wrapper')).zIndex,
+ }));
+ assert.equal(layerOrder.paper, '0');
+ assert.equal(layerOrder.texture, '0');
+ assert.equal(layerOrder.drawing, '2');
+ assert.equal(layerOrder.ui, '10020');
  // The editable editorial heading is also the canonical chapter name.
  await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover');
  es = await waitScene(elements => pages(elements)[0]?.name === 'Cover');
