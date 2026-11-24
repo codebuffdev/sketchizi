@@ -1267,3 +1267,32 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
 .sketchizi-ws-tile-icon.is-system-design { color:#059669; }
 .app.theme-dark .sketchizi-ws-tile-icon.is-canvas,.app.theme-dark .sketchizi-ws-tile-icon.is-pages { color:#cbd5e1; }
 .app.theme-dark .sketchizi-ws-tile-icon.is-system-design { color:#34d399; }
+
+
+/* Pages stacking contract: keep the tab chrome above the bounded workspace.
+   The workspace itself stays at z-index: 1; its internal editorial layers
+   must not be allowed to paint over the global tab controls. */
+.canvas-tabs-bar {
+  position: relative;
+  z-index: 50;
+  overflow: visible;
+}
+.canvas-tabs-bar .canvas-tabs-list,
+.canvas-tabs-bar .canvas-tab-controls-group,
+.canvas-tabs-bar .canvas-tabs-overflow,
+.canvas-tabs-bar .canvas-tabs-closed {
+  overflow: visible;
+}
+.canvas-tabs-overflow-menu,
+.canvas-tabs-active-menu,
+.canvas-tabs-closed-menu {
+  z-index: 60;
+}
+
+/* Header wrappers must not clip the tab menus when Pages is active. */
+.desktop-app-document-identity,
+.desktop-app-document-identity .canvas-tabs-bar,
+.desktop-app-document-title-float,
+.desktop-app-document-title-float .canvas-tabs-bar {
+  overflow: visible;
+}
