@@ -144,6 +144,9 @@ export default function IconLibraryPanel({
   toggleFavorite,
   remoteError,
   onClose,
+  assignmentMode = false,
+  assignmentTargetLabel = "",
+  onCancelAssignment,
   initialSource = "all",
 }) {
   const [activeSource, setActiveSource] = useState("all");
@@ -359,7 +362,7 @@ export default function IconLibraryPanel({
     <aside className="library-panel library-panel-redesign sk-icon-panel" aria-label="Icon Library" role="dialog" aria-modal="false">
       <header className="sk-icon-panel-header">
         <div className="sk-icon-panel-heading">
-          <h2 className="sk-icon-panel-title">Icon Library</h2>
+          <h2 className="sk-icon-panel-title">{assignmentMode ? "Assign Icon to Node" : "Icon Library"}</h2>
           <span className="sk-icon-panel-count" aria-label={`${allIcons.length.toLocaleString()} available icons`}>({allIcons.length.toLocaleString()})</span>
         </div>
 
@@ -397,7 +400,7 @@ export default function IconLibraryPanel({
           <button
             type="button"
             className="sk-icon-panel-close"
-            onClick={() => onClose?.()}
+            onClick={() => (assignmentMode ? onCancelAssignment?.() : onClose?.())}
             aria-label="Close icon library"
             title="Close (Esc)"
           >
@@ -432,7 +435,7 @@ export default function IconLibraryPanel({
               }
             }}
             onBlur={() => rememberSearch()}
-            placeholder="Search icons..."
+            placeholder={assignmentMode ? `Search technology icons for ${assignmentTargetLabel}...` : "Search icons..."}
             aria-label="Search icons, tags, or categories"
           />
           {search ? (
@@ -616,10 +619,10 @@ export default function IconLibraryPanel({
                   <div
                     key={`${icon.category || icon.source}-${icon.id}`}
                     className={`icon-card library-icon-card sk-icon-card ${isDragging ? "is-drag-source" : ""} ${isSelected ? "is-selected" : ""} ${favorite ? "has-favorite" : ""}`}
-                    onPointerDown={(event) => handleIconPointerDown(event, icon)}
-                    onMouseDown={(event) => handleIconMouseDown(event, icon)}
-                    onDragStart={(event) => handleDragStart(event, icon)}
-                    draggable={true}
+                    onPointerDown={(event) => { if (!assignmentMode) handleIconPointerDown(event, icon); }}
+                    onMouseDown={(event) => { if (!assignmentMode) handleIconMouseDown(event, icon); }}
+                    onDragStart={(event) => { if (assignmentMode) event.preventDefault(); else handleDragStart(event, icon); }}
+                    draggable={!assignmentMode}
                   >
                     <button
                       type="button"
@@ -628,8 +631,8 @@ export default function IconLibraryPanel({
                         setSelectedIconId(selectionKey);
                         handleIconClick(icon);
                       }}
-                      title={`${icon.name} — Click or drag onto canvas`}
-                      aria-label={`Add ${icon.name} to canvas`}
+                      title={assignmentMode ? `Assign ${icon.name} to ${assignmentTargetLabel}` : `${icon.name} — Click or drag onto canvas`}
+                      aria-label={assignmentMode ? `Assign ${icon.name} to node` : `Add ${icon.name} to canvas`}
                       aria-pressed={isSelected}
                     >
                       <span className="icon-preview library-icon-preview sk-icon-stage">
