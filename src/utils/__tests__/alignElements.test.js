@@ -7,6 +7,8 @@ const box = (id, x, y, width = 40, height = 30, extra = {}) => ({
 });
 const moved = (elements, id) => elements.find((element) => element.id === id);
 const bounds = (element) => ({ left: element.x, right: element.x + element.width, top: element.y, bottom: element.y + element.height });
+const centerX = (element) => element.x + element.width / 2;
+const centerY = (element) => element.y + element.height / 2;
 
 test("Horizontal Line uses 24px gaps, averages vertical centers, and preserves bound text offsets", () => {
   const scene = [
@@ -20,9 +22,7 @@ test("Horizontal Line uses 24px gaps, averages vertical centers, and preserves b
   assert.equal(bounds(moved(next, "c")).left - bounds(moved(next, "b")).right, 24);
   assert.equal(moved(next, "a-label").x - moved(next, "a").x, 15);
   assert.equal(moved(next, "a-label").y - moved(next, "a").y, 12);
-  const centers = ["a", "b", "c"].map((id) => {
-    const item = bounds(moved(next, id)); return (item.top + item.bottom) / 2;
-  });
+  const centers = ["a", "b", "c"].map((id) => centerY(moved(next, id)));
   assert.ok(centers.every((center) => Math.abs(center - centers[0]) < 0.001));
 });
 
@@ -38,33 +38,44 @@ test("Vertical Line uses 24px gaps and preserves group offsets", () => {
   assert.equal(bounds(moved(next, "c")).top - bounds(moved(next, "b")).bottom, 24);
   assert.equal(moved(next, "a-label").x - moved(next, "a").x, 8);
   assert.equal(moved(next, "a-label").y - moved(next, "a").y, 8);
-  const centers = ["a", "b", "c"].map((id) => {
-    const item = bounds(moved(next, id)); return (item.left + item.right) / 2;
-  });
+  const centers = ["a", "b", "c"].map((id) => centerX(moved(next, id)));
   assert.ok(centers.every((center) => Math.abs(center - centers[0]) < 0.001));
 });
 
 for (const layout of ["square", "rectangle"]) {
-  test(`${layout === "square" ? "Square Grid" : "Rectangle Grid"} arranges 4–6 boxes from the selection top-left with 24px gaps`, () => {
-    const scene = [
-      box("a", 120, 90, 40, 30), box("b", 240, 110, 50, 20),
-      box("c", 80, 210, 30, 40), box("d", 330, 220, 60, 30),
-      box("e", 190, 310, 35, 25), box("f", 400, 330, 45, 35),
-    ];
-    const next = arrangeElements(scene, scene.map((element) => element.id), layout);
-    const items = next.filter((element) => ["a", "b", "c", "d", "e", "f"].includes(element.id));
-    assert.equal(Math.min(...items.map((element) => element.x)), 80);
-    assert.equal(Math.min(...items.map((element) => element.y)), 90);
-    const columns = layout === "square" ? 3 : 3;
-    const rows = layout === "square" ? 2 : 2;
-    for (let row = 0; row < rows; row += 1) {
-      const cells = items.slice(row * columns, (row + 1) * columns);
-      for (let index = 1; index < cells.length; index += 1) {
-        assert.equal(cells[index].x - (cells[index - 1].x + cells[index - 1].width), 24);
+  for (const count of [4, 5, 6]) {
+    test(`${layout === "square" ? "Square Grid" : "Rectangle Grid"} arranges ${count} boxes from the selection top-left with 24px cell gaps`, () => {
+      const scene = [
+        box("a", 120, 90, 40, 30), box("b", 240, 110, 50, 20),
+        box("c", 80, 210, 30, 40), box("d", 330, 220, 60, 30),
+        box("e", 190, 310, 35, 25), box("f", 400, 330, 45, 35),
+      ].slice(0, count);
+      const next = arrangeElements(scene, scene.map((element) => element.id), layout);
+      const items = next.filter((element) => scene.some((source) => source.id === element.id));
+      const columns = layout === "square" ? Math.ceil(Math.sqrt(count)) : Math.ceil(count / 2);
+      const rows = Math.ceil(count / columns);
+      assert.equal(Math.min(...items.map((element) => element.x)), Math.min(...scene.map((element) => element.x)));
+      assert.equal(Math.min(...items.map((element) => element.y)), Math.min(...scene.map((element) => element.y)));
+      const sorted = [...items].sort((a, b) => a.y - b.y || a.x - b.x);
+      const colWidths = Array.from({ length: columns }, (_, col) =>
+        Math.max(...sorted.filter((_, index) => index % columns === col).map((element) => element.width)),
+      );
+      const rowHeights = Array.from({ length: rows }, (_, row) =>
+        Math.max(...sorted.slice(row * columns, (row + 1) * columns).map((element) => element.height)),
+      );
+      for (let row = 0; row < rows; row += 1) {
+        const cells = sorted.slice(row * columns, (row + 1) * columns);
+        for (let col = 1; col < cells.length; col += 1) {
+          assert.equal(cells[col].x - cells[col - 1].x, colWidths[col - 1] + 24);
+        }
       }
-    }
-    assert.equal(items.length, 6);
-  });
+      for (let row = 1; row < rows; row += 1) {
+        const previousRow = sorted.slice((row - 1) * columns, row * columns);
+        const currentRow = sorted.slice(row * columns, (row + 1) * columns);
+        assert.equal(currentRow[0].y - previousRow[0].y, rowHeights[row - 1] + 24);
+      }
+    });
+  }
 }
 
 test("standard edge alignments align logical unit bounds without detaching bound text", () => {
