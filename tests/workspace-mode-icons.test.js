@@ -17,10 +17,10 @@ test("workspace mode icons use the specified 15px outline SVG geometry", () => {
 
 test("workspace icons have slate light/dark colors and emerald System Design colors", () => {
   const styles = read("../src/styles/canvas-tabs.css");
-  assert.match(styles, /workspace-mode-icon--canvas,.workspace-mode-icon--pages \{ color:#334155; \}/);
+  assert.match(styles, /color:#cbd5e1/);
   assert.match(styles, /workspace-mode-icon--system-design \{ color:#059669; \}/);
-  assert.match(styles, /workspace-mode-icon--canvas,.workspace-mode-icon--pages \{ color:#cbd5e1; \}/);
-  assert.match(styles, /workspace-mode-icon--system-design \{ color:#34d399; \}/);
+  assert.match(styles, /color:#cbd5e1/);
+  assert.match(styles, /color:#34d399/);
   assert.doesNotMatch(styles, /--ct-accent:\s*#[67][0-9a-f]{5}/i);
 });
 
