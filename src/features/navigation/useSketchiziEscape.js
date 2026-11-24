@@ -23,8 +23,6 @@ export function useSketchiziEscape({
   setMinimapOpen,
   designStudioOpen,
   setDesignStudioOpen,
-  exportStudioOpen,
-  setExportStudioOpen,
   templatesModalOpen,
   setTemplatesModalOpen,
   collaborationOpen,
@@ -33,7 +31,6 @@ export function useSketchiziEscape({
   activateSelectionTool,
   searchRef,
   apiRef,
-  closeExportDialog,
 }) {
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -46,14 +43,6 @@ export function useSketchiziEscape({
         event.stopImmediatePropagation?.();
         close();
       };
-
-      // Excalidraw owns the image export dialog state. Keep Escape in the
-      // centralized Sketchizi dismissal path so it closes before lower-priority
-      // panels or Excalidraw canvas handling can consume the event.
-      if (apiRef.current?.getAppState?.().openDialog?.name === "imageExport") {
-        consumeEscape(closeExportDialog);
-        return;
-      }
 
       // Layer 1: transient floating popovers/dropdowns. The command palette is
       // closed here; the tool popovers (calendar, opacity, font size presets,
@@ -72,10 +61,6 @@ export function useSketchiziEscape({
       }
       if (templatesModalOpen) {
         consumeEscape(() => setTemplatesModalOpen(false));
-        return;
-      }
-      if (exportStudioOpen) {
-        consumeEscape(() => setExportStudioOpen(false));
         return;
       }
       if (designStudioOpen) {
@@ -123,7 +108,7 @@ export function useSketchiziEscape({
 
     document.addEventListener("keydown", handleKeyDown, true);
     return () => document.removeEventListener("keydown", handleKeyDown, true);
-  }, [activeTransientPanel, closePanel, closeMostRecentDrawer, isZenMode, exitZenMode, commandPaletteOpen, closeCommandPalette, minimapOpen, setMinimapOpen, designStudioOpen, setDesignStudioOpen, exportStudioOpen, setExportStudioOpen, templatesModalOpen, setTemplatesModalOpen, collaborationOpen, setCollaborationOpen, connectionMode, activateSelectionTool, searchRef, apiRef, closeExportDialog]);
+  }, [activeTransientPanel, closePanel, closeMostRecentDrawer, isZenMode, exitZenMode, commandPaletteOpen, closeCommandPalette, minimapOpen, setMinimapOpen, designStudioOpen, setDesignStudioOpen, templatesModalOpen, setTemplatesModalOpen, collaborationOpen, setCollaborationOpen, connectionMode, activateSelectionTool, searchRef, apiRef]);
 }
 
 /**
