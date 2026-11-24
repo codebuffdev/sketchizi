@@ -5,8 +5,17 @@ import { getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, 
 import './pages.css';
 import PagesBookWorkspace from './PagesBookWorkspace.jsx';
 
-function getPagePaperBackground(appState) {
-  return appState?.theme === 'dark' ? '#111827' : '#ffffff';
+function getPagePaperBackground() {
+  // The paper is painted by the CSS sheet beneath Excalidraw's native canvas.
+  // A filled Excalidraw paper rectangle would cover the CSS texture and force
+  // the editor to composite drawings over an opaque overlay.
+  return 'transparent';
+}
+
+function requestExcalidrawCanvasRefresh() {
+  window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+    window.dispatchEvent(new Event('resize'));
+  }));
 }
 
 function runAfterCanvasLayoutSettles(api, callback) {
@@ -54,6 +63,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   const touchResizeTimerRef = useRef(null);
   const activeIdRef = useRef(null);
   const initialFitRef = useRef(false);
+  const previousViewBackgroundRef = useRef(null);
   const previousViewportRef = useRef(null);
   const panelViewportRef = useRef(null);
   const panelPageBoundsRef = useRef(null);
@@ -142,6 +152,32 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   }, [api, canEdit, mode]);
 
   useEffect(() => { try { localStorage.setItem('sketchizi.canvasView', mode); } catch { /* View preferences are optional. */ } }, [mode]);
+
+  // Let the paper sheet show through Excalidraw's drawing canvas. Restore the
+  // user's normal canvas background when leaving Pages mode.
+  useEffect(() => {
+    if (!api) return undefined;
+    if (mode !== 'pages') return undefined;
+    const currentBackground = api.getAppState?.()?.viewBackgroundColor;
+    if (previousViewBackgroundRef.current === null) {
+      previousViewBackgroundRef.current = currentBackground ?? '#ffffff';
+    }
+    api.updateScene({
+      appState: { viewBackgroundColor: 'transparent' },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+    requestExcalidrawCanvasRefresh();
+    return () => {
+      const previousBackground = previousViewBackgroundRef.current;
+      if (previousBackground !== null) {
+        api.updateScene({
+          appState: { viewBackgroundColor: previousBackground },
+          captureUpdate: CaptureUpdateAction.NEVER,
+        });
+        previousViewBackgroundRef.current = null;
+      }
+    };
+  }, [api, mode]);
   useEffect(() => {
     const page = mode === 'pages' && active ? {
       id: active.id,
@@ -349,6 +385,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
       if (page) fit(page);
     };
     refresh();
+    requestExcalidrawCanvasRefresh();
     window.addEventListener('resize', refresh);
     return () => window.removeEventListener('resize', refresh);
   }, [api, mode, active?.id]);
@@ -458,6 +495,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     });
     api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
     fit({ ...page, width, height, customData: { ...page.customData, pageWidthMode: mode } });
+    requestExcalidrawCanvasRefresh();
   };
   useEffect(() => {
     if (mode !== 'pages' || !active || !canEdit || active.customData?.pageWidthMode) return;
@@ -658,7 +696,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
           </div>}
         </div>
         <button type="button" aria-label="Next chapter" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button>
-        <button type="button" disabled={!active} onClick={() => fit(active)}>Fit</button>
+        <button type="button" disabled={!active} onClick={() => { fit(active); requestExcalidrawCanvasRefresh(); }}>Fit</button>
         <button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button>
         <button type="button" className="canvas-pages-add" aria-label="Add Chapter" title="Add Chapter" disabled={!canEdit} onClick={add}><svg className="canvas-pages-add-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="12" x2="12" y2="18" /><line x1="9" y1="15" x2="15" y2="15" /></svg><span>+ Chapter</span></button>
       </nav>
