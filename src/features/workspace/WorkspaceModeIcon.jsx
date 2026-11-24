@@ -54,3 +54,9 @@ export default function WorkspaceModeIcon({ mode = 'canvas', className = '' }) {
     </svg>
   );
 }
+
+export function getWorkspaceTabMode(tab, activeTabId, pageMode = "infinite") {
+  if (tab?.snapshot?.systemDesign?.active === true) return "system-design";
+  if (tab?.id === activeTabId && (tab?.type === "pages" || tab?.type === "page" || pageMode === "pages")) return "pages";
+  return "canvas";
+}
