@@ -110,16 +110,16 @@ const ALEX_XU_BLUEPRINTS = [
       alexNode("bus","pubsub",900,0,"Fan-out Bus"),alexNode("worker","worker",1200,0,"Fanout Worker",{replicas:16,capacityPerReplica:3000}),
       alexNode("cache","redis",1500,0,"Timeline Cache"),alexNode("posts","sql",900,280,"Posts DB",{replicas:4}),
       alexNode("cdn","cdn",1500,280,"Media CDN"),
-    ],[alexEdge("client","lb"),alexEdge("lb","post","gRPC"),alexEdge("lb","feed","gRPC"),alexEdge("post","bus","Kafka"),alexEdge("bus","worker","Kafka"),alexEdge("worker","cache","RESP"),alexEdge("feed","cache","RESP"),alexEdge("post","posts","SQL"),alexEdge("feed","posts","SQL"),alexEdge("feed","cdn")]),
+    ],[alexEdge("client","lb"),alexEdge("lb","post","gRPC"),alexEdge("lb","feed","gRPC"),alexEdge("post","bus","Kafka"),alexEdge("feed","bus","Kafka"),alexEdge("bus","worker","Kafka"),alexEdge("worker","cache","RESP"),alexEdge("worker","posts","SQL"),alexEdge("worker","cdn")]),
   alexBlueprint("notification-system", "Notification System", "Vol. 1 · Ch. 10",
     "A durable notification queue fans out to independent push and email/SMS delivery workers.",
     [
       alexNode("client","client",0,140),alexNode("gateway","api-gateway",300,140),
       alexNode("service","microservice",600,140,"Notification Service",{replicas:8}),
       alexNode("queue","queue",900,140,"Push & SMS Topics"),
-      alexNode("push","worker",1200,0,"APNs/FCM Worker",{replicas:8}),alexNode("email","worker",1200,280,"Twilio/Email Worker",{replicas:8}),
-      alexNode("provider","external-api",1500,0,"APNs / Twilio",{capacityPerReplica:5000}),alexNode("log","nosql",1500,280,"Notification Log"),
-    ],[alexEdge("client","gateway"),alexEdge("gateway","service","gRPC"),alexEdge("service","queue","Kafka"),alexEdge("queue","push","Kafka"),alexEdge("queue","email","Kafka"),alexEdge("push","provider"),alexEdge("email","provider"),alexEdge("service","log","HTTPS")]),
+      alexNode("push","worker",1200,0,"APNs/FCM Worker",{replicas:8,capacityPerReplica:1000}),alexNode("email","worker",1200,280,"Twilio/Email Worker",{replicas:8,capacityPerReplica:1000}),
+      alexNode("provider","external-api",1500,0,"APNs / Twilio",{capacityPerReplica:12000}),alexNode("log","nosql",1500,280,"Notification Log"),
+    ],[alexEdge("client","gateway"),alexEdge("gateway","service","gRPC"),alexEdge("service","queue","Kafka"),alexEdge("queue","push","Kafka"),alexEdge("queue","email","Kafka"),alexEdge("push","provider"),alexEdge("email","provider"),alexEdge("push","log","HTTPS"),alexEdge("email","log","HTTPS")]),
   alexBlueprint("realtime-chat-whatsapp", "Real-Time Chat (WhatsApp)", "Vol. 1 · Ch. 12",
     "WebSocket ingress separates chat delivery from presence and online-state tracking.",
     [
@@ -160,8 +160,8 @@ const ALEX_XU_BLUEPRINTS = [
       alexNode("payment","microservice",600,140,"Payment Service",{replicas:8}),
       alexNode("ledger","sql",900,0,"Double-Entry Ledger",{replicas:4}),
       alexNode("queue","queue",900,280,"Settlement Queue"),
-      alexNode("worker","worker",1200,280,"Ledger & Payout Worker",{replicas:6}),
-      alexNode("psp","external-api",1500,280,"Card PSP / Stripe",{capacityPerReplica:3000}),
+      alexNode("worker","worker",1200,280,"Ledger & Payout Worker",{replicas:6,capacityPerReplica:2000}),
+      alexNode("psp","external-api",1500,280,"Card PSP / Stripe",{capacityPerReplica:12000}),
     ],[alexEdge("client","gateway"),alexEdge("gateway","payment","gRPC"),alexEdge("payment","ledger","SQL"),alexEdge("payment","queue","Kafka"),alexEdge("queue","worker","Kafka"),alexEdge("worker","psp")]),
 ];
 
