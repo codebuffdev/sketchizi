@@ -124,11 +124,22 @@ try {
  assert.equal(layerOrder.header, '10040');
  assert.match(await page.locator('.pages-chapter-eyebrow').innerText(), /^01\s*·$/s, 'Eyebrow must show the page number and separator before its editable title input');
  assert.equal(await page.getByRole('textbox', { name: 'Book / notebook title' }).count(), 1, 'Book title must be inline editable in the eyebrow');
- const actions = page.locator('.pages-bottom-actions');
- const navigatorBounds = await actions.locator('.canvas-pages-navigation').boundingBox();
- const zenBounds = await actions.locator('.sk-zen-pill').boundingBox();
- assert(navigatorBounds && zenBounds && Math.abs(zenBounds.x - navigatorBounds.x - navigatorBounds.width - 10) <= 2,
-  'Chapter navigator and Zen pill must sit in one row with a 10px gap');
+ const editorialActions = page.locator('.pages-editorial-actions');
+ const navigator = editorialActions.locator('.canvas-pages-navigation');
+ assert.equal(await navigator.count(), 1, 'Chapter controller must be inside the editorial header action row');
+ assert(await navigator.isVisible(), 'Chapter controller must be visible in the header');
+ assert.equal(await page.locator('.pages-bottom-actions').count(), 0, 'Pages mode must not render a floating bottom action container');
+ assert.equal(await page.locator('.sk-zen-pill').count(), 0, 'Pages mode must not render the floating Zen pill');
+ const chapterTrigger = page.locator('.canvas-pages-chapter-trigger');
+ const chapterPopover = page.getByRole('dialog', { name: 'Chapters Index' });
+ await chapterTrigger.click();
+ const triggerBounds = await chapterTrigger.boundingBox();
+ const popoverBounds = await chapterPopover.boundingBox();
+ assert(triggerBounds && popoverBounds && popoverBounds.y >= triggerBounds.y + triggerBounds.height,
+  'Chapter index popover must open downward from the header controller');
+ assert.equal(await chapterPopover.locator('.canvas-pages-chapter-option').count(), 1, 'Chapter index must list every page');
+ await chapterTrigger.click();
+ assert.equal(await chapterPopover.count(), 0, 'Chapter index must close when its trigger is clicked again');
  const dotsStyle = await page.locator('.pages-book-canvas-zone').evaluate(el => ({
   image: getComputedStyle(el).backgroundImage,
   size: getComputedStyle(el).backgroundSize,
@@ -195,6 +206,12 @@ try {
  await page.getByRole('button',{name:'Dark',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-dark'));
  assert.equal(await page.locator('.pages-book-sheet').evaluate(el=>getComputedStyle(el).backgroundColor), 'rgb(15, 20, 29)', 'Full-bleed paper must switch to the dark theme');
+ await page.locator('.canvas-pages-chapter-trigger').click();
+ const darkTriggerBounds = await page.locator('.canvas-pages-chapter-trigger').boundingBox();
+ const darkPopoverBounds = await page.getByRole('dialog', { name: 'Chapters Index' }).boundingBox();
+ assert(darkTriggerBounds && darkPopoverBounds && darkPopoverBounds.y >= darkTriggerBounds.y + darkTriggerBounds.height,
+  'Dark-theme chapter index popover must also open downward below the header');
+ await page.locator('.canvas-pages-chapter-trigger').click();
  await ensureHeaderVisible();
  await page.getByRole('button',{name:'Appearance and canvas background'}).click();
  // Draw through the actual canvas, then ensure the new shape belongs to this page.
