@@ -137,3 +137,10 @@ test("legacy accessibility, test and file-workflow contracts remain", () => {
   assert.match(menu, /aria-expanded="true"/);
   assert.match(menuCss, /prefers-reduced-motion: reduce/);
 });
+test("image export and canvas find are blocked from menu surfaces and global shortcuts", () => {
+  assert.match(menu, /blockedMenuLabels = new Set/);
+  assert.match(menu, /key === "f" \|\| \(key === "e" && event\.shiftKey\)/);
+  assert.match(menu, /window\.addEventListener\("keydown", onKeyDown, true\)/);
+  assert.doesNotMatch(menu, /label: "Export Image"/);
+  assert.doesNotMatch(menu, /label: "Find on Canvas"/);
+});
