@@ -195,6 +195,7 @@ test('Pages tabs are routed by tab identity and repaired before the Pages worksp
  assert.match(tabs, /setActiveCanvasTabType,/);
  assert.match(tabs, /if \(isPagesTab && getPages\(storedElements\)\.length === 0\)/);
  assert.match(tabs, /const hasPageChapters =/);
+ assert.match(tabs, /if \(normalized\.type\) return normalized/);
  assert.match(tabs, /localStorage\.setItem\("sketchizi\.active-workspace-tab-mode"/);
  assert.match(modeIcon, /tab\?\.type === "pages"/);
  assert.match(modeIcon, /if \(tab\?\.type === "canvas"\) return "canvas"/);
