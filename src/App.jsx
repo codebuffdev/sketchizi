@@ -2130,7 +2130,7 @@ function App() {
         </div>
       )}
 
-      <ExportStudioModal isOpen={exportStudioOpen} onClose={() => setExportStudioOpen(false)} apiRef={apiRef} filename={(currentFile?.name || cloudDocumentName || "architecture-diagram").replace(/\\.[^.]+$/, "")} />
+      <ExportStudioModal isOpen={exportStudioOpen} onClose={() => setExportStudioOpen(false)} apiRef={apiRef} filename={(currentFile?.name || cloudDocumentName || "architecture-diagram").replace(/\.[^.]+$/, "")} />
 
       <CommandPalette
         open={commandPaletteOpen}
