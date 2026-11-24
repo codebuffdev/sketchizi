@@ -4,28 +4,12 @@ export default function PagesBookWorkspace({
   pages = [], active, index = 0, pageRect, canEdit = true,
   onSelect, onAdd, onDelete, onToggleRead, onPatch,
 }) {
-  const [collapsed, setCollapsed] = useState(false);
   const meta = active && active.customData || {};
   const title = meta.chapterTitle || active?.name || ('Chapter ' + (index + 1));
   const tagline = meta.tagline || 'A working space for ideas, systems, and sketches';
   const texture = meta.paperTexture || 'Dots';
   return (
-    <div className={'pages-book-workspace' + (collapsed ? ' rail-collapsed' : '')}>
-      <aside className="pages-chapters-rail" aria-label="Chapters">
-        <div className="pages-rail-heading"><strong>Chapters</strong><button type="button" aria-label={collapsed ? 'Expand Chapters' : 'Collapse Chapters'} onClick={() => setCollapsed(v => !v)}>{collapsed ? '›' : '‹'}</button></div>
-        {!collapsed && <>
-          <div className="pages-chapter-list">
-            {pages.map((page, i) => <div className={'pages-chapter-row' + (page.id === active?.id ? ' is-active' : '')} key={page.id}>
-              <button type="button" className="pages-chapter-select" aria-current={page.id === active?.id ? 'page' : undefined} onClick={() => onSelect(page)}>
-                <span className="pages-chapter-number">{String(i + 1).padStart(2, '0')}</span><span className="pages-chapter-title">{page.customData?.chapterTitle || page.name || ('Chapter ' + (i + 1))}</span>
-              </button>
-              <button type="button" className="pages-chapter-complete" aria-label="Toggle chapter read status" aria-pressed={Boolean(page.customData?.completed)} onClick={() => onToggleRead(page)}>{page.customData?.completed ? '✓' : '○'}</button>
-              {canEdit && <button type="button" className="pages-chapter-delete" aria-label={'Delete ' + (page.name || 'chapter')} onClick={() => onDelete(page)}>×</button>}
-            </div>)}
-          </div>
-          <button type="button" className="pages-new-chapter" onClick={onAdd} disabled={!canEdit}>＋ New Chapter</button>
-        </>}
-      </aside>
+    <div className="pages-book-workspace">
       <section className="pages-book-sheet" style={pageRect} aria-label={'Chapter ' + (index + 1) + ': ' + title}>
         <div className="pages-book-edge pages-book-edge-one" /><div className="pages-book-edge pages-book-edge-two" /><div className="pages-book-spine" />
         <header className="pages-editorial-header">
