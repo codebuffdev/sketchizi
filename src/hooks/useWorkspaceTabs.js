@@ -349,6 +349,45 @@ export function useWorkspaceTabs({
     switchCanvasTab(id);
   }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, switchCanvasTab]);
 
+  const duplicateCanvasTab = useCallback((tabId) => {
+    const sourceId = tabId || activeCanvasIdRef.current;
+    const liveSnapshot = sourceId === activeCanvasIdRef.current && apiRef.current
+      ? captureCanvasTabSnapshot()
+      : null;
+    const currentTabs = canvasTabsRef.current.map((tab) => (
+      tab.id === activeCanvasIdRef.current && liveSnapshot
+        ? { ...tab, snapshot: liveSnapshot }
+        : tab
+    ));
+    const source = currentTabs.find((tab) => tab.id === sourceId);
+    if (!source) return;
+    const id = createCanvasTabId(currentTabs.map((tab) => tab.id));
+    const copySnapshot = source.snapshot ? JSON.parse(JSON.stringify(source.snapshot)) : null;
+    if (copySnapshot) {
+      copySnapshot.cloudSession = { active: false, diagramId: "", projectId: "", revision: null, name: "" };
+      copySnapshot.cloudDetached = true;
+      copySnapshot.cloudSaveState = { state: "inactive", error: "" };
+    }
+    const baseName = `Copy of ${source.name || "Canvas"}`;
+    const existingNames = new Set(currentTabs.map((tab) => String(tab.name || "").toLowerCase()));
+    let name = baseName;
+    let suffix = 2;
+    while (existingNames.has(name.toLowerCase())) name = `${baseName} ${suffix++}`;
+    const nextTab = {
+      ...source,
+      id,
+      name,
+      ...createTabDates(),
+      dirty: false,
+      todoTabOpen: false,
+      todoTabActive: false,
+      ...(copySnapshot ? { snapshot: copySnapshot } : {}),
+    };
+    const nextTabs = [...currentTabs, nextTab];
+    persistCanvasTabs(nextTabs);
+    switchCanvasTab(id);
+  }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, switchCanvasTab]);
+
   useEffect(() => {
     const createCanvasFromShortcut = (event) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== "n") return;
@@ -968,6 +1007,7 @@ export function useWorkspaceTabs({
     switchCanvasTab,
     selectWorkspaceTab,
     createCanvasTab,
+    duplicateCanvasTab,
     reopenClosedTab,
     deleteClosedTab,
     clearClosedTabs,
