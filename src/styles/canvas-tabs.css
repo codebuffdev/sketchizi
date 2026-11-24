@@ -1300,7 +1300,13 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
 /* The +N menu is portaled to body so it escapes header/workspace stacking contexts. */
 .canvas-tabs-overflow-menu-portal {
   position: fixed;
-  z-index: 60;
+  z-index: 10065;
+  min-width: 190px;
+  background: var(--ct-active, #fff);
+  color: var(--ct-strong, #172033);
+  border: 1px solid var(--ct-active-border, #d7dee8);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgb(15 23 42 / 17%);
   top: auto;
   left: auto;
   max-height: min(60vh, 420px);
