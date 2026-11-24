@@ -449,14 +449,13 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   const createPage = () => {
     if (!api || !canEdit) return;
     const elements = api.getSceneElementsIncludingDeleted();
-    const appState = api.getAppState();
     const responsiveSize = {
       width: Math.round(Math.min(1360, Math.max(320, window.innerWidth - 56))),
       height: Math.round(Math.min(10000, Math.max(320, window.innerHeight - 124))),
     };
     if (!validSize(responsiveSize.width, responsiveSize.height)) { setError('The available canvas area is too small to create a page.'); return; }
     const nextOrder = getPages(elements).reduce((n, page) => Math.max(n, page.customData?.pageOrder || 0), 0) + 1;
-    const paperBackground = getPagePaperBackground(appState);
+    const paperBackground = getPagePaperBackground();
     const created = convertToExcalidrawElements(pageSkeleton(elements, responsiveSize, crypto.randomUUID(), paperBackground), { regenerateIds: false });
     const frame = created.find(e => e.type === 'frame');
     if (frame) frame.name = `Page ${nextOrder}`;
@@ -476,7 +475,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   };
   const setPageWidthMode = (mode, page = active) => {
     if (!page || !api || !canEdit || !['Standard', 'Wide'].includes(mode)) return;
-    const appState = api.getAppState?.() || {};
     const width = mode === 'Standard'
       ? 860
       : Math.round(Math.min(1360, Math.max(320, window.innerWidth - 56)));
