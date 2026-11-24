@@ -107,12 +107,12 @@ try {
   paper: getComputedStyle(document.querySelector('.pages-book-edge')).zIndex,
   texture: getComputedStyle(document.querySelector('.pages-book-canvas-zone')).zIndex,
   drawing: getComputedStyle(document.querySelector('.layer-canvas')).zIndex,
-  ui: getComputedStyle(document.querySelector('.layer-ui__wrapper')).zIndex,
+  ui: getComputedStyle(document.querySelector('.layer-ui__wrapper')).zIndex,\n  header: getComputedStyle(document.querySelector('.pages-book-ui')).zIndex,
  }));
  assert.equal(layerOrder.paper, '0');
  assert.equal(layerOrder.texture, '0');
  assert.equal(layerOrder.drawing, '2');
- assert.equal(layerOrder.ui, '10020');
+ assert.equal(layerOrder.ui, '10020');\n assert.equal(layerOrder.header, '10040');
  // The editable editorial heading is also the canonical chapter name.
  await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover');
  es = await waitScene(elements => pages(elements)[0]?.name === 'Cover');
