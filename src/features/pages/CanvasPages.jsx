@@ -5,11 +5,13 @@ import { getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, 
 import './pages.css';
 import PagesBookWorkspace from './PagesBookWorkspace.jsx';
 
-function getPagePaperBackground() {
-  // The paper is painted by the CSS sheet beneath Excalidraw's native canvas.
-  // A filled Excalidraw paper rectangle would cover the CSS texture and force
-  // the editor to composite drawings over an opaque overlay.
-  return 'transparent';
+function getPagePaperBackground(appState, isPagesMode = false) {
+  if (isPagesMode) {
+    // The paper is CSS-painted beneath Excalidraw's native drawing canvas.
+    return 'transparent';
+  }
+  // Restore a normal native paper fill when the user returns to Infinite mode.
+  return appState?.theme === 'dark' ? '#111827' : '#ffffff';
 }
 
 function requestExcalidrawCanvasRefresh() {
@@ -83,10 +85,10 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     sceneSnapshot.current = api.getSceneElementsIncludingDeleted();
     const sync = (elements, appState) => {
       const next = getPages(elements);
-      const pagePaperBackground = getPagePaperBackground(appState || api.getAppState?.());
+      const pagePaperBackground = getPagePaperBackground(appState || api.getAppState?.(), mode === 'pages');
       // Native frame dragging/resizing must carry its paper surface too.
       const repairs = new Map();
-      if (canEdit) for (const e of elements) {
+      for (const e of elements) {
         if (e.isDeleted || !e.customData?.sketchiziPagePaper) continue;
         const frame = next.find(p => p.id === e.customData.sketchiziPagePaper);
         const paperColorChanged = String(e.backgroundColor || '').toLowerCase() !== pagePaperBackground;
@@ -479,7 +481,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     };
     if (!validSize(responsiveSize.width, responsiveSize.height)) { setError('The available canvas area is too small to create a page.'); return; }
     const nextOrder = getPages(elements).reduce((n, page) => Math.max(n, page.customData?.pageOrder || 0), 0) + 1;
-    const paperBackground = getPagePaperBackground();
+    const paperBackground = getPagePaperBackground(api.getAppState?.(), true);
     const created = convertToExcalidrawElements(pageSkeleton(elements, responsiveSize, crypto.randomUUID(), paperBackground), { regenerateIds: false });
     const frame = created.find(e => e.type === 'frame');
     if (frame) frame.name = `Page ${nextOrder}`;
