@@ -335,6 +335,33 @@ try {
  assert(await workspaceMenu.getByText(/Reset (the )?canvas/i).count()>=1,'Hamburger must retain Reset canvas');
  await page.getByRole('button',{name:'Close application menu'}).click();
 
+ // Create Pages from the actual WORKSPACE hamburger tile. The tab must be
+ // typed and seeded before it becomes active, with no intermediate grid view.
+ await ensureHeaderVisible();
+ await page.getByRole('button',{name:'Open application menu'}).click();
+ const pagesTile = page.locator('[data-sketchizi-canvas-mode="pages"]');
+ await pagesTile.waitFor({state:'visible'});
+ await pagesTile.click();
+ await page.locator('.pages-book-workspace').waitFor({state:'visible'});
+ const createdPagesTab = page.locator('.canvas-tab.is-active');
+ const createdPagesTabName = (await createdPagesTab.locator('.canvas-tab-name').textContent()).trim();
+ assert.match(await createdPagesTab.locator('.canvas-tab-icon').getAttribute('class'), /pages/);
+ await page.waitForFunction(() => document.querySelector('.canvas-pages-chapter-trigger')?.textContent.trim().startsWith('01 / 01'));
+
+ // Rapidly alternate between the Pages tab and an existing Canvas tab.
+ await page.getByRole('tab').filter({hasText:'Canvas 1'}).click();
+ await page.waitForFunction(() => document.querySelector('.canvas-tab.is-active .canvas-tab-name')?.textContent.trim() === 'Canvas 1');
+ await page.locator('.pages-book-workspace').waitFor({state:'detached'});
+ await page.getByRole('tab').filter({hasText:createdPagesTabName}).click();
+ await page.locator('.pages-book-workspace').waitFor({state:'visible'});
+ await page.waitForFunction(() => document.querySelector('.canvas-pages-chapter-trigger')?.textContent.trim().startsWith('01 / 01'));
+
+ // Reload with the Pages tab active; IndexedDB hydration must preserve its
+ // identity and immediately restore the bounded Pages workspace.
+ await page.reload();
+ await page.locator('.pages-book-workspace').waitFor({state:'visible', timeout:20000});
+ await page.waitForFunction(() => document.querySelector('.canvas-pages-chapter-trigger')?.textContent.trim().startsWith('01 / 01'));
+
  assert.deepEqual(errors,[]);
  console.log('PASS: pages canvas plus document Export Studio live System Design preview, while native hamburger image export/find stay removed');
 } catch (error) {
