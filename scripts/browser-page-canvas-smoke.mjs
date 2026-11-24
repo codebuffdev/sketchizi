@@ -72,7 +72,7 @@ try {
  await tabActions.click();
  const documentMenu = page.locator('.canvas-tabs-tab-menu-portal');
  await documentMenu.waitFor({state:'visible'});
- for (const action of ['Save locally','Save to Cloud','Save to file','Recovery backup','Export studio']) {
+ for (const action of ['Save locally','Save to Cloud Workspace','Save to file','Recovery backup','Export studio']) {
   assert.equal(await documentMenu.getByRole('button',{name:new RegExp(action,'i')}).count(),1,action+' must be discoverable in the canvas menu');
  }
  assert(await documentMenu.getByText('Save & sync',{exact:true}).count()===1,'Save actions must have a clear section heading');
