@@ -807,20 +807,11 @@ function App() {
       if (mode !== "infinite" && mode !== "pages") return;
       startupChoiceMadeRef.current = true;
       setStartupChooserOpen(false);
-      createCanvasTab();
-      const createdId = activeCanvasIdRef.current;
       const existingTabs = canvasTabsRef.current;
       const nextName = mode === "pages"
         ? `Page ${existingTabs.reduce((max, tab) => Math.max(max, Number(String(tab.name || "").match(/^Page (\\d+)$/)?.[1] || 0)), 0) + 1}`
         : null;
-      persistCanvasTabs(existingTabs.map((tab) => tab.id === createdId
-        ? { ...tab, type: mode === "pages" ? "pages" : "canvas", ...(nextName ? { name: nextName } : {}) }
-        : tab));
-      if (mode === "pages") {
-        window.requestAnimationFrame(() => {
-          window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "pages" } }));
-        });
-      }
+      createCanvasTab({ ...(nextName ? { name: nextName } : {}), type: mode === "pages" ? "pages" : "canvas" });
     };
     const openLocalFileInNewTab = () => {
       startupChoiceMadeRef.current = true;
