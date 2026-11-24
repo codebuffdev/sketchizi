@@ -483,7 +483,7 @@
 .pages-book-canvas-zone { position: absolute; z-index: 1; inset: 210px 0 42px; pointer-events: none; }
 .pages-book-canvas-zone.texture-dots { background-image: radial-gradient(circle, var(--book-dot) .8px, transparent 1px); background-size: 20px 20px; }
 .pages-book-canvas-zone.texture-ruled { background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, var(--book-dot) 28px); }
-.pages-book-folio { position: absolute; right: 0; bottom: 0; left: 0; z-index: 4; display: flex; justify-content: space-between; padding: 14px 48px; border-top: 1px solid var(--book-border); color: var(--book-muted); font-size: 9px; font-weight: 700; letter-spacing: .08em; pointer-events: none; }
+
 .canvas-pages-navigation { max-width: min(620px, calc(100vw - 24px)); gap: 4px; }
 .canvas-pages-navigation > span { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -655,7 +655,7 @@
   border-radius: 8px;
   background: var(--book-panel);
 }
-.pages-book-folio { padding: 10px 32px; }
+
 @media (max-width: 1100px) {
   .pages-editorial-header { align-items: flex-start; flex-direction: column; gap: 12px; }
   .pages-editorial-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
@@ -664,7 +664,7 @@
 @media (max-width: 767px) {
   .pages-editorial-header { padding: 18px 20px 14px; }
   .pages-editorial-actions { gap: 6px; }
-    .pages-book-folio { padding: 10px 20px; }
+
 }
 
 
@@ -703,7 +703,7 @@ body:has(.pages-book-workspace) .sketchizi-appearance {
 .pages-book-sheet { z-index: 0; }
 .pages-book-canvas-zone { z-index: 0; }
 .pages-editorial-header,
-.pages-book-folio { z-index: 10040; }
+
 .app:has(.pages-book-workspace) .desktop-canvas-region canvas {
   z-index: 2 !important;
 }
@@ -863,21 +863,7 @@ body:has(.pages-book-workspace) .sketchizi-appearance {
 }
 .pages-paper-switcher { flex: 0 0 auto; white-space: nowrap; }
 .pages-mark-read { flex: 0 0 auto; white-space: nowrap; }
-.pages-book-folio {
-  position: absolute !important;
-  right: 0 !important;
-  bottom: 58px !important;
-  left: 0 !important;
-  display: flex !important;
-  justify-content: space-between !important;
-  box-sizing: border-box !important;
-  width: 100% !important;
-  max-width: 1180px !important;
-  margin: 0 auto !important;
-  padding: 10px 32px !important;
-  border-top: 1px solid var(--book-border) !important;
-  pointer-events: none !important;
-}
+
 .app:has(.pages-book-workspace) .desktop-canvas-region canvas {
   z-index: 1 !important;
 }
@@ -924,11 +910,7 @@ body:has(.pages-book-workspace) .sketchizi-appearance {
   }
   .pages-editorial-copy .pages-chapter-tagline { white-space: normal; }
   .pages-editorial-actions { gap: 6px !important; }
-  .pages-book-folio {
-    bottom: 112px !important;
-    padding: 8px 18px !important;
-    font-size: 8px !important;
-  }
+
   .app:has(.pages-book-workspace) .canvas-pages-navigation {
     right: 10px !important;
     bottom: 64px !important;
