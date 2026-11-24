@@ -198,7 +198,9 @@ test("Pages routing follows tab identity and hydration seeds an empty legacy Pag
   assert.match(header, /workspaceMode=\{workspaceMode\}/);
   assert.match(pages, /workspaceMode = "infinite"/);
   assert.match(pages, /const nextMode = workspaceMode === "pages" \? "pages" : "infinite"/);
-  assert.match(app, /workspaceMode=\{canvasTabsReady \? getWorkspaceTabMode\(canvasTabs\.find\(tab => tab\.id === activeCanvasId\)\)/);\n  assert.match(app, /sketchizi\.active-workspace-tab-mode/);\n  assert.match(app, /pageContext=\{\{ \.\.\.canvasPageContext, mode: \(canvasTabsReady/);
+  assert.match(app, /workspaceMode=\{canvasTabsReady \? getWorkspaceTabMode\(canvasTabs\.find\(tab => tab\.id === activeCanvasId\)\)/);
+  assert.match(app, /sketchizi\.active-workspace-tab-mode/);
+  assert.match(app, /pageContext=\{\{ \.\.\.canvasPageContext, mode: \(canvasTabsReady/);
   assert.match(tabs, /function createDefaultPagesSnapshot\(api\)/);
   assert.match(tabs, /chapters: \[\{ id: chapterId, num: "01", title: "Untitled Page"/);
   assert.match(tabs, /const isPagesTab = tab\?\.type === "pages"/);
