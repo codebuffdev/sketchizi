@@ -93,7 +93,8 @@ function App() {
   const exitZenMode = useCallback(() => setIsZenMode(false), []);
   const [canvasPageContext, setCanvasPageContext] = useState(() => {
     try {
-      const restoredMode = localStorage.getItem("sketchizi.active-workspace-tab-mode") || localStorage.getItem("sketchizi.canvasView");\n      return { mode: restoredMode === "pages" ? "pages" : "infinite", page: null, pageCount: 0 };
+      const restoredMode = localStorage.getItem("sketchizi.active-workspace-tab-mode") || localStorage.getItem("sketchizi.canvasView");
+      return { mode: restoredMode === "pages" ? "pages" : "infinite", page: null, pageCount: 0 };
     } catch { return { mode: "infinite", page: null, pageCount: 0 }; }
   });
   const [startupChooserOpen, setStartupChooserOpen] = useState(false);
