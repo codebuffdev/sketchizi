@@ -118,6 +118,7 @@ test('Pages keeps the paper texture behind the transparent HiDPI Excalidraw canv
  assert.match(pages, /window\.dispatchEvent\(new Event\('resize'\)\)/);
  assert.match(pages, /fit\(active\); requestExcalidrawCanvasRefresh\(\)/);
  assert.match(styles, /\.pages-book-workspace \{ z-index: auto; \}/);
+ assert.match(styles, /\.pages-book-ui \{[\s\S]*?z-index: 10040/);
  assert.match(styles, /\.pages-book-edge \{ z-index: 0; background: var\(--book-paper\); \}/);
  assert.match(styles, /\.pages-book-canvas-zone \{ z-index: 0; \}/);
  assert.match(styles, /\.layer-canvas \{[\s\S]*?z-index: 2 !important/);
