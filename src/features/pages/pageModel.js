@@ -1,8 +1,8 @@
 export const PAGE_MARKER = 'sketchiziPage';
-// Default artboard proportions are 55 cm × 27 cm. Pixel dimensions are
-// calculated from 80% of the available canvas viewport whenever a page is created.
-export const DEFAULT_PAGE_SIZE = { width: 1600, height: Math.round(1600 * 27 / 55) };
-export const PAGE_ASPECT_RATIO = 55 / 27;
+// Editorial handbook sheets use a portrait 800 × 1120 canvas proportion.
+// The displayed size is fitted to the viewport while preserving this ratio.
+export const DEFAULT_PAGE_SIZE = { width: 800, height: 1120 };
+export const PAGE_ASPECT_RATIO = 800 / 1120;
 
 export function getResponsivePageSize(appState, margin = 0.8) {
   const zoom = Number(appState?.zoom?.value ?? appState?.zoom ?? 1);
