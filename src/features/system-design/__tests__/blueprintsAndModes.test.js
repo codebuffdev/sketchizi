@@ -32,9 +32,13 @@ test("every blueprint is a valid, fully connected graph that runs healthy at the
     assert.equal(getBlueprint(bp.id), bp);
     const keys = new Set(bp.nodes.map((x) => x.key));
     assert.equal(keys.size, bp.nodes.length);
-    for (const edge of bp.edges) assert.ok(keys.has(edge.from) && keys.has(edge.to), `${bp.id}: dangling edge`);
+    for (const edge of bp.edges) {
+      const from = edge.fromNode || edge.from;
+      const to = edge.toNode || edge.to;
+      assert.ok(keys.has(from) && keys.has(to), `${bp.id}: dangling edge`);
+    }
     const nodes = bp.nodes.map((x) => n(x.key, x.kind, x.overrides || {}));
-    const edges = bp.edges.map((x) => ({ id: `${x.from}-${x.to}`, from: x.from, to: x.to, protocol: x.protocol || "HTTPS" }));
+    const edges = bp.edges.map((x) => ({ id: x.id || `${x.from || x.fromNode}-${x.to || x.toNode}`, from: x.fromNode || x.from, to: x.toNode || x.to, protocol: x.protocol || "HTTPS" }));
     const sim = simulateTraffic({ nodes, edges, totalRps: 10000 });
     for (const node of nodes) {
       assert.ok(sim.nodes[node.key ?? node.id].incomingRps > 0, `${bp.id}: ${node.id} gets no traffic`);
