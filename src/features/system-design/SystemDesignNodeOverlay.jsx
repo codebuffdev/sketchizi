@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PORTS, choosePorts, getPortPoint, nearestPort, pointAlong, roundedPath, routeOrthogonal } from "./orthogonalRouter.js";
+import { PORTS, choosePorts, getPortPoint, nearestPort, pointAlong, roundedPath, routeOrthogonal, getSceneViewport } from "./orthogonalRouter.js";
 import { nodeFacets, serviceNames } from "./yamlPreview.js";
 import { formatRps, packetCountForRps } from "./trafficSimulator.js";
 import { PrimitiveIcon } from "./PrimitiveIcon.jsx";
@@ -125,17 +125,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
   // Blueprint placement is centred around the current viewport, so scene coordinates can be negative.
   // The SVG must cover the full min→max scene bounds (not just 0→max), otherwise valid paths whose
   // endpoints sit left/above the origin are clipped even while their node cards remain visible.
-  const edgeViewport = useMemo(() => {
-    const margin = 96;
-    if (!graph.nodes.length) return { left: 0, top: 0, width: 1, height: 1, viewBox: "0 0 1 1" };
-    const minX = Math.min(...graph.nodes.map((node) => node.x)) - margin;
-    const minY = Math.min(...graph.nodes.map((node) => node.y)) - margin;
-    const maxX = Math.max(...graph.nodes.map((node) => node.x + node.width)) + margin;
-    const maxY = Math.max(...graph.nodes.map((node) => node.y + node.height)) + margin;
-    const width = Math.max(1, maxX - minX);
-    const height = Math.max(1, maxY - minY);
-    return { left: minX, top: minY, width, height, viewBox: `${minX} ${minY} ${width} ${height}` };
-  }, [graph.nodes]);
+  const edgeViewport = useMemo(() => getSceneViewport(graph.nodes), [graph.nodes]);
 
   const beginConnect = (event, node, port) => {
     if (!canEdit) return;
