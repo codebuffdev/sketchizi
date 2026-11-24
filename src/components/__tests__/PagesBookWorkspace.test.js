@@ -8,7 +8,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const workspace = readFileSync(resolve(here, "../../features/pages/PagesBookWorkspace.jsx"), "utf8");
 const pages = readFileSync(resolve(here, "../../features/pages/CanvasPages.jsx"), "utf8");
 const persistence = readFileSync(resolve(here, "../../persistence.js"), "utf8");
-const tabs = readFileSync(resolve(here, "../../hooks/useDocumentPersistence.js"), "utf8");
+const tabs = readFileSync(resolve(here, "../../hooks/useWorkspaceTabs.js"), "utf8");
 const styles = readFileSync(resolve(here, "../../features/pages/pages.css"), "utf8");
 
 test("New Chapter creates a new isolated Excalidraw page and exposes both chapter creation controls", () => {
@@ -32,7 +32,8 @@ test("chapter title, subtitle, and key formula are editable and persisted on the
   assert.match(pages, /chapterAppState =/);
   assert.match(tabs, /const chapters = chapterFrames\.map/);
   assert.match(tabs, /activeChapterId,/);
-  assert.match(tabs, /appState: frame\.customData\?\.chapterAppState/);
+  assert.match(tabs, /appState: sanitizeTabAppState\(frame\.customData\?\.chapterAppState/);
+  assert.match(tabs, /elements: sceneElements/);
 });
 
 test("Dots, Ruled, and Clean paper textures are selectable per chapter", () => {
