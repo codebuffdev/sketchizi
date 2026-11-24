@@ -27,7 +27,7 @@ test("book workspace receives the chapter collection and completion callback", (
   assert.match(workspace, /pages = \[\]/);
   assert.match(workspace, /onToggleRead/);
   assert.match(workspace, /onToggleRead\(active\)/);
-  assert.match(pages, /<PagesBookWorkspace pages=\{pages\}/);
+  assert.match(pages, /<PagesBookWorkspace pages=\{displayPages\}/);
   assert.match(pages, /onToggleRead=\{toggleChapterRead\}/);
 });
 
@@ -101,7 +101,7 @@ test("chapter workspace is full-bleed and removes the boxed sheet width controls
   assert.match(pages, /width: Math\.max\(320, Math\.round\(window\.innerWidth\)\)/);
   assert.match(pages, /height: Math\.max\(320, Math\.round\(window\.innerHeight\)\)/);
   assert.match(pages, /const resizeChapter = \(\) =>/);
-  assert.match(pages, /<PagesBookWorkspace pages=\{pages\} active=\{active\} index=\{index\}/);
+  assert.match(pages, /<PagesBookWorkspace pages=\{displayPages\} active=\{active\} index=\{index\}/);
   assert.doesNotMatch(pages, /setPageWidthMode|canvas-pages-resize-hit/);
   assert.match(styles, /\.pages-book-sheet \{[\s\S]*?inset: 0 !important;[\s\S]*?width: 100vw !important;[\s\S]*?height: 100vh !important/);
   assert.match(styles, /max-width: 1160px !important/);
@@ -201,8 +201,8 @@ test("Pages routing follows tab identity and hydration seeds an empty legacy Pag
   assert.match(app, /workspaceMode=\{canvasTabsReady \? getWorkspaceTabMode\(canvasTabs\.find\(tab => tab\.id === activeCanvasId\)\)/);
   assert.match(app, /sketchizi\.active-workspace-tab-mode/);
   assert.match(app, /pageContext=\{\{ \.\.\.canvasPageContext, mode: \(canvasTabsReady/);
-  assert.match(tabs, /function createDefaultPagesSnapshot\(api\)/);
-  assert.match(tabs, /chapters: \[\{ id: chapterId, num: "01", title: "Untitled Page"/);
+  assert.match(tabs, /function createDefaultPagesSnapshot\(api, existingChapter = null\)/);
+  assert.match(tabs, /chapters: \[chapter\]/);
   assert.match(tabs, /const isPagesTab = tab\?\.type === "pages"/);
   assert.match(tabs, /if \(isPagesTab && getPages\(storedElements\)\.length === 0\)/);
   assert.match(tabs, /type: "pages", snapshot/);
@@ -226,7 +226,7 @@ test("deleting the only Pages chapter requires accessible confirmation and close
   assert.match(app, /createCanvasTab\(\{ name: "Canvas 1" \}\)/);
   assert.match(app, /mode: "infinite"/);
   assert.match(app, /nextTabHasPages/);
-  assert.match(tabs, /\(\{ name: requestedName \} = \{\}\)/);
+  assert.match(tabs, /\(\{ name: requestedName, type: requestedType = "canvas" \} = \{\}\)/);
   assert.match(persistence, /export async function deleteDocument\(id\)/);
   assert.match(persistence, /storedTabs\.filter\(tab => tab\?\.id !== id\)/);
   assert.match(persistence, /recentStore\.delete\(id\)/);
