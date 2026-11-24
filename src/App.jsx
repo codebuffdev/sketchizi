@@ -73,6 +73,7 @@ import "./features/design/design.css";
 import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
 import { getLocalDateString } from "./features/canvas/canvasStartDate.js";
+import { deleteDocument } from "./persistence.js";
 import "./styles/canvas-tabs.css";
 import "./styles/canvas-tabs-dock.css";
 import "./styles/contextual-dock-polish.css";
@@ -463,6 +464,21 @@ function App() {
     toolStyles,
     systemDesignRef,
   });
+
+  const handleDeleteOnlyPagesNotebook = useCallback(async () => {
+    const tabId = activeCanvasIdRef.current;
+    const activeTab = canvasTabsRef.current.find(tab => tab.id === tabId);
+    if (!tabId || !activeTab) return false;
+    try {
+      await deleteDocument(activeTab.id);
+      if (canvasTabsRef.current.length <= 1) createCanvasTab({ name: "Canvas 1" });
+      performCloseCanvasTab(activeTab.id, { keepDraft: false });
+      return true;
+    } catch (error) {
+      showToast(error?.message || "Unable to delete this notebook.", "error");
+      return false;
+    }
+  }, [createCanvasTab, performCloseCanvasTab, showToast]);
 
   const renameActiveDocument = useCallback(async (name) => {
     const normalizedName = String(name || "").trim();
@@ -1876,6 +1892,7 @@ function App() {
         canvasApi={apiRef.current}
         aiAskOpen={aiAskOpen}
         onPageContextChange={setCanvasPageContext}
+        onDeleteOnlyPage={handleDeleteOnlyPagesNotebook}
         canEditCanvas={collaborationCanEdit}
         isDarkTheme={isDarkTheme}
         saveStatus={saveStatus}
