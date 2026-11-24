@@ -517,3 +517,20 @@
 .sd-icon-assignment-row > span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .sd-context-custom-icon { display: block; width: 20px; height: 20px; flex: 0 0 20px; object-fit: contain; }
+
+/* Keep the live card bounds (and connector ports) at the resized dimensions; scale only the
+   original 204×88 content plane from its top-left corner. */
+.sd-node-content {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 204px;
+  height: 88px;
+  box-sizing: border-box;
+  padding: 10px 8px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transform-origin: top left;
+  pointer-events: none;
+}
+.sd-node-content .sd-node-icon-button { pointer-events: auto; }
