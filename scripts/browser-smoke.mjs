@@ -115,7 +115,7 @@ try {
   await openStudioFromCommandPalette(blank.page, "System Design Studio");
   await blank.page.locator('[data-testid="system-design-studio"]').waitFor({ state: "visible" });
   // The floating primitive dock was removed: create nodes through the shared Icon Library.
-  await blank.page.getByRole("button", { name: "Open System Design components" }).click();
+  await blank.page.getByRole("button", { name: "Open icon library" }).click();
   const systemLibrary = blank.page.getByRole("dialog", { name: "Icon Library" });
   await systemLibrary.waitFor({ state: "visible" });
   await systemLibrary.getByRole("button", { name: "System Design (16)", exact: true }).click();
