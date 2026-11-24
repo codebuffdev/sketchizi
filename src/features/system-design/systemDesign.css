@@ -519,7 +519,7 @@
 .sd-context-custom-icon { display: block; width: 20px; height: 20px; flex: 0 0 20px; object-fit: contain; }
 
 /* Responsive System Design cards: native-size content reflows within the live node bounds. */
-.sd-node { overflow: hidden; }
+.sd-node { padding: 0; overflow: visible; }
 .sd-node-content {
   position: relative;
   width: 100%;
