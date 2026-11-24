@@ -30,3 +30,13 @@ test("exports non-empty, tightly bounded SVG with node labels, telemetry and ort
 test("returns an empty string for a tab without System Design nodes", () => {
   assert.equal(buildSystemDesignSvg({ nodes: [], edges: [] }), "");
 });
+
+test("includes assigned technology icon artwork in the exported node", () => {
+  const svg = buildSystemDesignSvg({
+    nodes: [{ ...nodes[0], customIcon: { id: "aws", name: "AWS", src: "https://cdn.example.test/aws.svg" } }],
+    edges: [],
+    background: "light",
+    darkMode: false,
+  });
+  assert.match(svg, /<image href="https:\/\/cdn\.example\.test\/aws\.svg"/);
+});
