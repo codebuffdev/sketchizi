@@ -1517,3 +1517,33 @@ body:has(.app[data-canvas-view="pages"]),
     clip-path: inset(202px 0 0 0);
   }
 }
+
+/* Editable notebook title in the chapter eyebrow. */
+.pages-book-workspace .pages-book-title-input {
+  display: inline-block !important;
+  width: 230px !important;
+  max-width: 42vw !important;
+  min-width: 72px !important;
+  margin: 0 !important;
+  padding: 0 0 1px !important;
+  border: 0 !important;
+  border-bottom: 1px solid transparent !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: #64748b !important;
+  font: inherit !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  line-height: 1.4 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+  font-variant-numeric: tabular-nums;
+  transition: border-bottom-color 140ms ease !important;
+}
+.pages-book-workspace .pages-book-title-input:hover:not(:focus) { border-bottom-color: #cbd5e1 !important; }
+.pages-book-workspace .pages-book-title-input:focus { border-bottom-color: #059669 !important; outline: none !important; box-shadow: none !important; }
+.app.theme-dark .pages-book-workspace .pages-book-title-input { color: #94a3b8 !important; }
+.app.theme-dark .pages-book-workspace .pages-book-title-input:hover:not(:focus) { border-bottom-color: #334155 !important; }
+.app.theme-dark .pages-book-workspace .pages-book-title-input:focus { border-bottom-color: #34d399 !important; }
