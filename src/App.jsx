@@ -2229,25 +2229,13 @@ function App() {
         sendChatMessage={sendChatMessage}
       />
 
-      {!isWelcomeOrDashboardOpen && (
-        canvasPageContext.mode === "pages"
-          ? (document.querySelector(".pages-bottom-actions")
-              ? createPortal(
-                  <ZenHud
-                    isZenMode={isZenMode}
-                    onToggleZen={toggleZenMode}
-                    aiOpen={aiAskOpen}
-                    onToggleAi={toggleAiAsk}
-                  />,
-                  document.querySelector(".pages-bottom-actions")
-                )
-              : null)
-          : <ZenHud
-              isZenMode={isZenMode}
-              onToggleZen={toggleZenMode}
-              aiOpen={aiAskOpen}
-              onToggleAi={toggleAiAsk}
-            />
+      {!isWelcomeOrDashboardOpen && canvasPageContext.mode !== "pages" && (
+        <ZenHud
+          isZenMode={isZenMode}
+          onToggleZen={toggleZenMode}
+          aiOpen={aiAskOpen}
+          onToggleAi={toggleAiAsk}
+        />
       )}
       <AiAskPanel open={aiAskOpen} onClose={() => setAiAskOpen(false)} apiRef={apiRef} persistSketchNow={persistSketchNow} saveTimerRef={saveTimerRef} pageContext={canvasPageContext} />
 
