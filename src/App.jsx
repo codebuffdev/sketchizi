@@ -36,7 +36,6 @@ import CollaborationUI from "./components/app/CollaborationUI";
 import MoreTools from "./components/app/MoreTools";
 import { useIconInsertion } from "./features/icon-library/useIconInsertion";
 import { useCommandPalette } from "./features/navigation/useCommandPalette";
-import { useSketchiziExportLifecycle } from "./features/navigation/useSketchiziExportLifecycle";
 import { createSketchiziCommandRegistry } from "./features/commands/commandRegistry";
 import { insertArchitecturePack as insertArchitecturePackIntoScene } from "./features/templates/architecturePackInsertion";
 const CreateDesignScreen = lazy(() => import("./features/design/ui/CreateDesignScreen.jsx"));
@@ -60,7 +59,6 @@ import DesktopAppHeader from "./components/app/DesktopAppHeader";
 const SystemDesignStudio = lazy(() => import("./features/system-design/SystemDesignStudio.jsx"));
 const DockerComposeStudio = lazy(() => import("./features/docker-compose/ui/DockerComposeStudio.jsx"));
 const KubernetesStudio = lazy(() => import("./features/kubernetes-studio/ui/KubernetesStudio.jsx"));
-const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"));
 const ArchitectureTemplatesModal = lazy(() => import("./components/app/ArchitectureTemplatesModal"));
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { getTabCloudMeta } from "./features/workspace/tabCloudState.js";
@@ -171,7 +169,6 @@ function App() {
   const handleExcalidrawAPI = useCallback((api) => { apiRef.current = api || null; setApiReady(Boolean(api)); }, []);
 
   const [minimapOpen, setMinimapOpen] = useState(false);
-  const [exportStudioOpen, setExportStudioOpen] = useState(false);
   const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
   const minimapDragRef = useRef(null);
   const minimapController = useMinimapController({ apiRef, minimapOpen });
@@ -310,7 +307,6 @@ function App() {
     // floating tool surfaces that are opened outside usePanelState.
     if (
       minimapOpen ||
-      exportStudioOpen ||
       templatesModalOpen ||
       designStudioOpen ||
       dockerStudioOpen ||
@@ -323,7 +319,6 @@ function App() {
   }, [
     nativeMenuOpen,
     minimapOpen,
-    exportStudioOpen,
     templatesModalOpen,
     designStudioOpen,
     dockerStudioOpen,
@@ -497,17 +492,6 @@ function App() {
     persistCanvasTabs(renamedTabs);
   }, [cloudDiagramId, showToast, persistCanvasTabs]);
 
-  const closeExportDialog = useCallback(() => {
-    const api = apiRef.current;
-    if (!api) return;
-    const appState = api.getAppState?.();
-    if (appState?.openDialog?.name !== "imageExport") return;
-    api.updateScene({
-      appState: { ...appState, openDialog: null },
-      captureUpdate: CaptureUpdateAction.NEVER,
-    });
-  }, []);
-
   const openCollaborationDetails = useCallback(() => {
     const activeCollaboration = Boolean(
       collaborationRoom &&
@@ -596,7 +580,6 @@ function App() {
     designStudioOpen,
     setDesignStudioOpen,
     exportStudioOpen,
-    setExportStudioOpen,
     templatesModalOpen,
     setTemplatesModalOpen,
     collaborationOpen,
@@ -605,10 +588,8 @@ function App() {
     activateSelectionTool,
     searchRef,
     apiRef,
-    closeExportDialog,
   });
   useSketchiziCanvasDismissal({ dismissUnpinnedDrawersFromCanvas });
-  useSketchiziExportLifecycle({ apiRef, showToast, closeExportDialog });
   useEffect(() => {
     if (!collaborationCanEdit && libraryOpen) closePanel("icon-library");
   }, [closePanel, collaborationCanEdit, libraryOpen]);
@@ -683,7 +664,6 @@ function App() {
     fileActionsRef,
     reopenClosedTab,
     closedTabCount: closedTabs.length,
-    openExportStudio: () => setExportStudioOpen(true),
     openKubernetesStudio: () => setKubernetesStudioOpen(true),
     openDockerComposeStudio: () => setDockerStudioOpen(true),
     toggleSystemDesignStudio: systemDesign.toggle,
@@ -1856,7 +1836,6 @@ function App() {
         chapterNav={chapterNav}
         onNavigateChapter={navigateToChapter}
         onDownloadRecoveryBackup={downloadRecoveryBackup}
-        onOpenExport={() => setExportStudioOpen(true)}
         onOpenTemplates={() => setDesignStudioOpen(true)}
         onToggleMinimap={() => setMinimapOpen((o) => !o)}
         minimapOpen={minimapOpen}
@@ -2321,13 +2300,6 @@ function App() {
       )}
       {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
       {kubernetesStudioOpen && <KubernetesStudio onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} onApplyResourceYaml={applyKubernetesResourceYaml} />}
-      {exportStudioOpen && (
-        <ExportStudioModal
-          isOpen={exportStudioOpen}
-          onClose={() => setExportStudioOpen(false)}
-          apiRef={apiRef}
-        />
-      )}
       {templatesModalOpen && (
         <ArchitectureTemplatesModal
           isOpen={templatesModalOpen}
