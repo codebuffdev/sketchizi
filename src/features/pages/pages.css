@@ -545,3 +545,7 @@
 .pages-book-workspace.rail-collapsed .pages-chapters-rail { width: auto; padding: 8px 10px; border-radius: 999px; }
 .pages-book-workspace.rail-collapsed .pages-rail-heading strong { display: inline; }
 .app:has(.pages-book-workspace) .canvas-pages-page-surface { background-image: none !important; }
+
+/* The editorial title field replaces the legacy floating page-name overlay. */
+.app:has(.pages-book-workspace) .canvas-pages-page-name,
+.app:has(.pages-book-workspace) .canvas-pages-page-name-input { display: none !important; }
