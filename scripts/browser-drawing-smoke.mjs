@@ -218,7 +218,7 @@ try {
     await page.getByText("Selected shape actions", { exact: true }).waitFor();
     console.log("PASS: a rectangle survives immediate reload and remains selectable.");
 
-    await page.getByRole("button", { name: "Create new canvas" }).click();
+    await page.getByRole("button", { name: "Create new tab" }).click();
     const secondTab = page.locator('.canvas-tab[title="Canvas 2"]');
     await secondTab.waitFor();
     const secondX = Math.round(bounds.x + bounds.width * 0.42);
