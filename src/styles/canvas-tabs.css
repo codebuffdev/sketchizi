@@ -1935,7 +1935,10 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
   border-radius: 0;
   background: transparent;
   color: #0f172a;
-  font: 600 13px/1.2 inherit;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
   box-shadow: none;
 }
 .app.theme-dark .canvas-tabs-bar .canvas-tab-rename-input {
