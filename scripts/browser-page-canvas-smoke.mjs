@@ -104,12 +104,14 @@ try {
  assert(Math.abs(canvasMetrics.width - Math.round(canvasMetrics.cssWidth * canvasMetrics.dpr)) <= 2, 'Canvas backing width must match its physical HiDPI width');
  assert(Math.abs(canvasMetrics.height - Math.round(canvasMetrics.cssHeight * canvasMetrics.dpr)) <= 2, 'Canvas backing height must match its physical HiDPI height');
  const layerOrder = await page.evaluate(() => ({
+  sheet: getComputedStyle(document.querySelector('.pages-book-sheet')).zIndex,
   paper: getComputedStyle(document.querySelector('.pages-book-edge')).zIndex,
   texture: getComputedStyle(document.querySelector('.pages-book-canvas-zone')).zIndex,
   drawing: getComputedStyle(document.querySelector('.layer-canvas')).zIndex,
   ui: getComputedStyle(document.querySelector('.layer-ui__wrapper')).zIndex,
   header: getComputedStyle(document.querySelector('.pages-book-ui')).zIndex,
  }));
+ assert.equal(layerOrder.sheet, '0');
  assert.equal(layerOrder.paper, '0');
  assert.equal(layerOrder.texture, '0');
  assert.equal(layerOrder.drawing, '2');
