@@ -1667,9 +1667,9 @@ body:has(.app[data-canvas-view="pages"]),
 .pages-delete-confirm-submit:hover:not(:disabled) { background:#be123c; }
 .pages-delete-confirm-actions button:focus-visible { outline:2px solid #64748b; outline-offset:3px; }
 .pages-delete-confirm-actions button:disabled { cursor:wait; opacity:.65; }
-.app.theme-dark .pages-delete-confirm-dialog { border-color:#334155; background:#111827; color:#e2e8f0; box-shadow:0 24px 70px rgb(0 0 0 / 48%); }
-.app.theme-dark .pages-delete-confirm-dialog h2 { color:#f8fafc; }
-.app.theme-dark .pages-delete-confirm-dialog p { color:#94a3b8; }
-.app.theme-dark .pages-delete-confirm-cancel { border-color:#475569; background:#1e293b; color:#cbd5e1; }
-.app.theme-dark .pages-delete-confirm-cancel:hover:not(:disabled) { background:#334155; }
+:root:has(.app.theme-dark) .pages-delete-confirm-dialog { border-color:#334155; background:#111827; color:#e2e8f0; box-shadow:0 24px 70px rgb(0 0 0 / 48%); }
+:root:has(.app.theme-dark) .pages-delete-confirm-dialog h2 { color:#f8fafc; }
+:root:has(.app.theme-dark) .pages-delete-confirm-dialog p { color:#94a3b8; }
+:root:has(.app.theme-dark) .pages-delete-confirm-cancel { border-color:#475569; background:#1e293b; color:#cbd5e1; }
+:root:has(.app.theme-dark) .pages-delete-confirm-cancel:hover:not(:disabled) { background:#334155; }
 @media (max-width:520px) { .pages-delete-confirm-dialog { padding:22px; } .pages-delete-confirm-actions { flex-direction:column-reverse; } .pages-delete-confirm-actions button { width:100%; } }
