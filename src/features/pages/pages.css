@@ -1164,47 +1164,6 @@ body:has(.app[data-canvas-view="pages"]),
   color: #34d399 !important;
 }
 
-/* The chapter navigator and Zen pill share one fixed flex row. */
-.pages-bottom-actions {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 10060;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: calc(100vw - 40px);
-  pointer-events: none;
-}
-.pages-bottom-actions > * { pointer-events: auto; }
-.pages-bottom-actions .canvas-pages-navigation {
-  position: static !important;
-  right: auto !important;
-  bottom: auto !important;
-  z-index: auto !important;
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: min(620px, calc(100vw - 90px));
-}
-.pages-bottom-actions .sk-zen-pill {
-  position: static !important;
-  right: auto !important;
-  bottom: auto !important;
-  flex: 0 0 auto;
-}
-@media (max-width: 767px) {
-  .pages-bottom-actions {
-    right: 10px;
-    bottom: 12px;
-    max-width: calc(100vw - 20px);
-    gap: 10px;
-  }
-  .pages-bottom-actions .canvas-pages-navigation {
-    max-width: calc(100vw - 84px);
-  }
-}
-
-
 /* Accessible, borderless editorial fields. Keep all keyboard and focus
    affordances emerald/slate; never inherit Excalidraw's purple focus ring. */
 .pages-editorial-header {
@@ -1549,3 +1508,147 @@ body:has(.app[data-canvas-view="pages"]),
 .app.theme-dark .pages-book-workspace .pages-book-title-input { color: #94a3b8 !important; }
 .app.theme-dark .pages-book-workspace .pages-book-title-input:hover:not(:focus) { border-bottom-color: #334155 !important; }
 .app.theme-dark .pages-book-workspace .pages-book-title-input:focus { border-bottom-color: #34d399 !important; }
+
+
+/* All Pages controls live in the editorial masthead; keep the canvas perimeter clear. */
+.pages-book-workspace .pages-editorial-header {
+  max-width: 1220px !important;
+  margin: 62px auto 0 !important;
+  padding: 0 32px 16px !important;
+  gap: 22px !important;
+}
+.pages-book-workspace .pages-editorial-copy {
+  flex: 1 1 420px !important;
+}
+.pages-book-workspace .pages-editorial-actions {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  flex-wrap: nowrap !important;
+  gap: 10px !important;
+}
+.pages-book-workspace .pages-editorial-actions .canvas-pages-navigation {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 1000 !important;
+  display: flex !important;
+  align-items: center !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  max-width: min(560px, 48vw) !important;
+  gap: 3px !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--ui-text-strong, #1f2937) !important;
+  box-shadow: none !important;
+}
+.pages-book-workspace .pages-header-chapter-controller > button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+  min-width: 27px !important;
+  height: 30px !important;
+  padding: 0 7px !important;
+  border: 1px solid transparent !important;
+  border-radius: 7px !important;
+  background: transparent !important;
+  color: #64748b !important;
+  font-size: 12px !important;
+}
+.pages-book-workspace .pages-header-chapter-controller > button:hover:not(:disabled) {
+  border-color: #d1fae5 !important;
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-header-chapter-controller > button {
+  color: #94a3b8 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-header-chapter-controller > button:hover:not(:disabled) {
+  border-color: #14532d !important;
+  background: #052e24 !important;
+  color: #6ee7b7 !important;
+}
+.pages-book-workspace .pages-header-chapter-controller .canvas-pages-chapter-index {
+  position: relative !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+}
+.pages-book-workspace .pages-header-chapter-controller .canvas-pages-chapter-trigger {
+  max-width: min(290px, 24vw) !important;
+  min-width: 120px !important;
+  height: 30px !important;
+  padding: 0 8px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+.pages-book-workspace .pages-header-chapter-controller .canvas-pages-chapter-popover {
+  top: calc(100% + 8px) !important;
+  right: 0 !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 1000 !important;
+}
+.pages-book-workspace .pages-header-chapter-controller .canvas-pages-delete {
+  min-width: auto !important;
+  padding: 0 8px !important;
+  font-size: 11px !important;
+  white-space: nowrap !important;
+}
+.pages-book-workspace .pages-header-chapter-controller .canvas-pages-add {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  min-width: auto !important;
+  height: 30px !important;
+  padding: 0 9px !important;
+  border: 1px solid rgb(5 150 105 / 24%) !important;
+  border-radius: 8px !important;
+  background: rgb(5 150 105 / 8%) !important;
+  color: #047857 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+.app.theme-dark .pages-book-workspace .pages-header-chapter-controller .canvas-pages-add {
+  border-color: rgb(52 211 153 / 25%) !important;
+  background: rgb(52 211 153 / 10%) !important;
+  color: #6ee7b7 !important;
+}
+.pages-book-workspace .pages-header-chapter-controller .canvas-pages-add:hover:not(:disabled) {
+  background: rgb(5 150 105 / 15%) !important;
+}
+.pages-book-workspace .pages-header-chapter-controller button:focus-visible {
+  outline: 2px solid #059669 !important;
+  outline-offset: 2px !important;
+}
+@media (max-width: 1100px) {
+  .pages-book-workspace .pages-editorial-header {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+  .pages-book-workspace .pages-editorial-actions {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+  .pages-book-workspace .pages-editorial-actions .canvas-pages-navigation {
+    max-width: 100% !important;
+  }
+}
+@media (max-width: 767px) {
+  .pages-book-workspace .pages-editorial-header {
+    margin-top: 64px !important;
+    padding: 0 18px 14px !important;
+  }
+  .pages-book-workspace .pages-header-chapter-controller .canvas-pages-chapter-trigger {
+    max-width: 42vw !important;
+  }
+}
