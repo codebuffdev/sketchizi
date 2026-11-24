@@ -393,8 +393,21 @@ export async function deleteDocument(id) {
       };
       try {
         const transaction = db.transaction(STORE_NAME, "readwrite");
-        const request = transaction.objectStore(STORE_NAME).delete(id);
-        request.onerror = () => finish(reject, toPersistenceError(request.error, "Unable to delete this notebook.", "write"));
+        const store = transaction.objectStore(STORE_NAME);
+        const manifestRequest = store.get("canvas-tabs-manifest");
+        manifestRequest.onsuccess = () => {
+          const storedTabs = manifestRequest.result?.tabs;
+          if (Array.isArray(storedTabs)) {
+            const remainingTabs = storedTabs.filter(tab => tab?.id !== id);
+            store.put({
+              tabs: prepareTabsForPersistence(remainingTabs),
+              savedAt: Date.now(),
+            }, "canvas-tabs-manifest");
+            saveCanvasTabsPagehideBackup(remainingTabs);
+          }
+        };
+        manifestRequest.onerror = () => finish(reject, toPersistenceError(manifestRequest.error, "Unable to delete this notebook.", "write"));
+        store.delete(id);
         transaction.onerror = () => finish(reject, toPersistenceError(transaction.error, "Unable to delete this notebook.", "write"));
         transaction.onabort = () => finish(reject, toPersistenceError(transaction.error, "Unable to delete this notebook.", "write"));
         transaction.oncomplete = () => finish(resolve, true);
