@@ -17,6 +17,7 @@ test("New Chapter creates a new isolated Excalidraw page and exposes both chapte
   assert.match(pages, /const createPage = \(\) =>/);
   assert.match(pages, /pageSkeleton\(elements, responsiveSize, crypto\.randomUUID\(\)/);
   assert.match(pages, /className="canvas-pages-add"/);
+  assert.match(pages, /<span>\\+ Chapter<\\/span>/);
 });
 
 test("chapter title, subtitle, and key formula are editable and persisted on the page record", () => {
