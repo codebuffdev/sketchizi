@@ -707,6 +707,22 @@
 
 
 /* The Pages overlay is deliberately non-stacking so canvas layers can interleave. */
+.pages-book-workspace {
+  position: static;
+  inset: auto;
+  z-index: auto;
+}
+.pages-book-sheet {
+  position: fixed;
+  z-index: 0;
+}
+.pages-book-ui {
+  position: fixed;
+  z-index: 10040;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
 /* Keep all book decoration behind Excalidraw's native HiDPI canvas. The paper
    itself is CSS-painted; the matching Excalidraw paper element is transparent. */
 .pages-book-workspace { z-index: auto; }
