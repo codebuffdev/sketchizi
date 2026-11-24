@@ -97,7 +97,7 @@ test("book sheet defaults to widescreen and offers a persisted Standard or Wide 
   assert.match(workspace, /pages-width-switcher/);
   assert.match(workspace, /\['Standard', 'Wide'\]/);
   assert.match(workspace, /onWidthChange\(value\)/);
-  assert.match(pages, /const setPageWidthMode = \(mode, page = active\)/);
+  assert.match(pages, /const setPageWidthMode = \(mode, page = active, refreshCanvas = true\)/);
   assert.match(pages, /pageWidthMode: mode/);
   assert.match(pages, /onWidthChange=\{setPageWidthMode\}/);
   assert.match(pages, /window\.innerWidth - 56/);
