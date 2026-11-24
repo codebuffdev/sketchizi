@@ -44,7 +44,7 @@ export default function CanvasTabs({
     if (!node || typeof ResizeObserver === "undefined") return undefined;
     const updateCapacity = () => {
       const width = node.getBoundingClientRect().width;
-      setMaxVisibleCount(Math.max(2, Math.min(6, Math.floor((width - 112) / 104))));
+      setMaxVisibleCount(Math.max(2, Math.min(6, Math.floor((width - 92) / 92))));
     };
     updateCapacity();
     const observer = new ResizeObserver(updateCapacity);
