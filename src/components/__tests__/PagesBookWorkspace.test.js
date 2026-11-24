@@ -29,13 +29,13 @@ test("book workspace receives the chapter collection and completion callback", (
   assert.match(pages, /onToggleRead=\{toggleChapterRead\}/);
 });
 
-test("chapter title, subtitle, and key formula are editable and persisted on the page record", () => {
+test("chapter title and one-line summary are editable and persisted on the page record", () => {
   assert.match(workspace, /aria-label="Chapter title"/);
   assert.match(workspace, /onPatch\(\{ chapterTitle: e\.target\.value \}\)/);
   assert.match(workspace, /aria-label="Chapter subtitle"/);
+  assert.match(workspace, /placeholder="Add a chapter summary or focus\.\.\."/);
   assert.match(workspace, /onPatch\(\{ tagline: e\.target\.value \}\)/);
-  assert.match(workspace, /aria-label="Key formula or rule of thumb"/);
-  assert.match(workspace, /onPatch\(\{ keyNote: e\.target\.value \}\)/);
+  assert.doesNotMatch(workspace, /keyNote|RULE OF THUMB|Key formula or rule of thumb/);
   assert.match(pages, /customData: \{ \.\.\.element\.customData, \.\.\.patch \}/);
   assert.match(pages, /activeChapterId: page\.id/);
   assert.match(pages, /p\.id === persistedActiveId/);
@@ -102,12 +102,17 @@ test("chapter workspace is full-bleed and removes the boxed sheet width controls
   assert.match(pages, /<PagesBookWorkspace pages=\{pages\} active=\{active\} index=\{index\}/);
   assert.doesNotMatch(pages, /setPageWidthMode|canvas-pages-resize-hit/);
   assert.match(styles, /\.pages-book-sheet \{[\s\S]*?inset: 0 !important;[\s\S]*?width: 100vw !important;[\s\S]*?height: 100vh !important/);
-  assert.match(styles, /max-width: 1180px !important/);
-  assert.match(styles, /margin: 68px auto 0 !important/);
-  assert.match(styles, /padding: 0 32px 18px !important/);
+  assert.match(styles, /max-width: 1160px !important/);
+  assert.match(styles, /margin: 64px auto 0 !important/);
+  assert.match(styles, /padding: 0 32px 16px !important/);
   assert.match(styles, /border-bottom: 1px solid var\(--book-border\)/);
   assert.match(styles, /bottom: 58px !important/);
-  assert.match(styles, /display: none !important/);
+  assert.match(workspace, /pages-paper-switcher/);
+  assert.match(workspace, /pages-mark-read/);
+  assert.match(styles, /\.pages-editorial-title-row/);
+  assert.match(styles, /\.pages-mark-read\[aria-pressed="true"\]/);
+  assert.doesNotMatch(workspace, /pages-book-folio/);
+  assert.doesNotMatch(styles, /pages-book-folio/);
 });
 
 test("Pages paper and textures stay behind fully opaque native canvas rendering", () => {
