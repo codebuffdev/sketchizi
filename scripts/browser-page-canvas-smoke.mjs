@@ -68,15 +68,16 @@ try {
  await activeTabTitle.dblclick();
  await page.locator('.canvas-tab-rename-input').waitFor({state:'visible'});
  await page.locator('.canvas-tab-rename-input').press('Escape');
- await page.getByRole('button',{name:'Canvas options'}).click();
- const documentMenu = page.getByRole('dialog',{name:'Canvas options'});
+ const tabActions = page.locator('.canvas-tab-item.is-active .canvas-tab-menu-trigger');
+ await tabActions.click();
+ const documentMenu = page.locator('.canvas-tabs-tab-menu-portal');
  await documentMenu.waitFor({state:'visible'});
- for (const action of ['Save locally','Save to Cloud Workspace','Save to file','Download recovery backup','Export studio']) {
+ for (const action of ['Save locally','Save to Cloud','Save to file','Recovery backup','Export studio']) {
   assert.equal(await documentMenu.getByRole('button',{name:new RegExp(action,'i')}).count(),1,action+' must be discoverable in the canvas menu');
  }
  assert(await documentMenu.getByText('Save & sync',{exact:true}).count()===1,'Save actions must have a clear section heading');
- assert(await documentMenu.getByText('Download & export',{exact:true}).count()===1,'Download and export actions must have a clear section heading');
- await page.getByRole('button',{name:'Canvas options'}).click();
+ assert(await documentMenu.getByText('Export',{exact:true}).count()===1,'Download and export actions must have a clear section heading');
+ await page.keyboard.press('Escape');
  await documentMenu.waitFor({state:'detached'});
  assert.equal(await canvasStyle().count(),1,'Header must render one Canvas style control');
  await chooseCanvasMode('pages');
@@ -168,8 +169,8 @@ try {
  const blueprintMenu = page.getByRole('menu',{name:'Starter architectures'});
  await blueprintMenu.getByRole('menuitem').first().click();
  await studio.locator('[data-node-id]').first().waitFor({state:'visible'});
- await page.getByRole('button',{name:'Canvas options'}).click();
- const exportMenu = page.getByRole('dialog',{name:'Canvas options'});
+ await tabActions.click();
+ const exportMenu = page.locator('.canvas-tabs-tab-menu-portal');
  await exportMenu.getByRole('button',{name:/Export studio/i}).click();
  const exportStudio = page.getByRole('dialog',{name:'Export Studio'});
  await exportStudio.waitFor({state:'visible'});
