@@ -156,11 +156,31 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   // Let the paper sheet show through Excalidraw's drawing canvas. Restore the
   // user's normal canvas background when leaving Pages mode.
   useEffect(() => {
-    if (!api) return undefined;
-    if (mode !== 'pages') return undefined;
-    const currentBackground = api.getAppState?.()?.viewBackgroundColor;
-    if (previousViewBackgroundRef.current === null) {
-      previousViewBackgroundRef.current = currentBackground ?? '#ffffff';
+    if (!api || mode !== 'pages') return undefined;
+    const appState = api.getAppState?.() || {};
+    const sceneElements = api.getSceneElementsIncludingDeleted();
+    const savedBackground = sceneElements.find(element =>
+      element.type === 'frame' && element.customData?.[PAGE_MARKER] &&
+      typeof element.customData?.pagesPreviousViewBackgroundColor === 'string'
+    )?.customData?.pagesPreviousViewBackgroundColor;
+    const fallbackBackground = appState.theme === 'dark' ? '#121212' : '#ffffff';
+    const previousBackground = appState.viewBackgroundColor && appState.viewBackgroundColor !== 'transparent'
+      ? appState.viewBackgroundColor
+      : (savedBackground || fallbackBackground);
+    previousViewBackgroundRef.current = { color: previousBackground, theme: appState.theme };
+    const nextElements = sceneElements.map(element => {
+      if (element.type !== 'frame' || !element.customData?.[PAGE_MARKER] ||
+          element.customData.pagesPreviousViewBackgroundColor === previousBackground) return element;
+      return {
+        ...element,
+        customData: { ...element.customData, pagesPreviousViewBackgroundColor: previousBackground },
+        version: (element.version || 0) + 1,
+        versionNonce: Math.floor(Math.random() * 2147483647),
+        updated: Date.now(),
+      };
+    });
+    if (nextElements.some((element, index) => element !== sceneElements[index])) {
+      api.updateScene({ elements: nextElements, captureUpdate: CaptureUpdateAction.NEVER });
     }
     api.updateScene({
       appState: { viewBackgroundColor: 'transparent' },
@@ -168,10 +188,14 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     });
     requestExcalidrawCanvasRefresh();
     return () => {
-      const previousBackground = previousViewBackgroundRef.current;
-      if (previousBackground !== null) {
+      const previous = previousViewBackgroundRef.current;
+      if (previous) {
+        const currentTheme = api.getAppState?.()?.theme;
+        const restoreBackground = currentTheme && previous.theme && currentTheme !== previous.theme
+          ? (currentTheme === 'dark' ? '#121212' : '#ffffff')
+          : previous.color;
         api.updateScene({
-          appState: { viewBackgroundColor: previousBackground },
+          appState: { viewBackgroundColor: restoreBackground },
           captureUpdate: CaptureUpdateAction.NEVER,
         });
         previousViewBackgroundRef.current = null;
@@ -459,6 +483,12 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     const created = convertToExcalidrawElements(pageSkeleton(elements, responsiveSize, crypto.randomUUID(), paperBackground), { regenerateIds: false });
     const frame = created.find(e => e.type === 'frame');
     if (frame) frame.name = `Page ${nextOrder}`;
+    if (frame && previousViewBackgroundRef.current?.color) {
+      frame.customData = {
+        ...frame.customData,
+        pagesPreviousViewBackgroundColor: previousViewBackgroundRef.current.color,
+      };
+    }
     update([...elements, ...created]);
     const currentView = api.getAppState?.();
     previousViewportRef.current = currentView ? { scrollX: currentView.scrollX, scrollY: currentView.scrollY, zoom: currentView.zoom } : null;
