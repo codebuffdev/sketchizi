@@ -950,7 +950,7 @@ export default function DesktopAppHeader({
                 <span className={"canvas-tabs-save-status " + (
                   ((isCloudDocument && ["pending", "saving", "error", "conflict"].includes(cloudSaveState))
                     || (currentDocumentFileBacked && currentDocumentDirty)
-                    || (!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "error"].includes(saveState))) ? "is-unsaved" : "is-saved")}
+                    || (!isCloudDocument && !currentDocumentFileBacked)) ? "is-unsaved" : "is-saved")}
                   title={!isCloudDocument && !currentDocumentFileBacked ? "This draft is automatically saved in this browser. Save to a file or Cloud Workspace for a portable copy." : "Changes are saved."}>
                   <i aria-hidden="true" />
                   {((isCloudDocument && ["pending", "saving", "error", "conflict"].includes(cloudSaveState))
