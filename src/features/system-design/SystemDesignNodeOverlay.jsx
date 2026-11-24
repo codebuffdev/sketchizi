@@ -3,7 +3,7 @@ import { PORTS, choosePorts, getPortPoint, nearestPort, pointAlong, roundedPath,
 import { nodeFacets, serviceNames } from "./yamlPreview.js";
 import { formatRps, packetCountForRps } from "./trafficSimulator.js";
 import { PrimitiveIcon } from "./PrimitiveIcon.jsx";
-import { getNodeContentScale } from "./nodeCardScale.js";
+import { nodeCapacity } from "./trafficSimulator.js";
 
 const STATUS_LABEL = { healthy: "Healthy", elevated: "Elevated", overloaded: "Overloaded", lagging: "Lagging", down: "Down" };
 const stop = (event) => event.stopPropagation();
@@ -239,61 +239,67 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           const isDropTarget = dropTarget?.id === node.id;
           const showPorts = canEdit && (selected || hoverId === node.id || drag?.fromId === node.id || armedConnect?.nodeId === node.id || isDropTarget);
           const facets = nodeFacets(node, mode, names);
-          const contentScale = getNodeContentScale(node.width, node.height);
+          const density = node.width >= 340 && node.height >= 165 ? "hero" : node.width >= 250 && node.height >= 115 ? "medium" : "compact";
+          const capacity = nodeCapacity(node);
+          const utilization = telemetry?.utilization;
+          const utilizationPercent = Number.isFinite(utilization) ? Math.max(0, Math.min(100, Math.round(utilization * 100))) : utilization === Infinity ? 100 : 0;
+          const replicas = Math.max(1, Number(node.replicas) || 1);
+          const rpsLabel = simulate && telemetry ? formatRps(telemetry.incomingRps) : "—";
+          const p95Label = simulate && telemetry && telemetry.p95Ms != null ? telemetry.p95Ms + "ms" : "—";
+          const runtimeMeta = mode === "compose" ? (facets.badge || "external") + " · " + (facets.chips[0] || "runtime") : mode === "k8s" ? (facets.badge || "external") + " · " + facets.sub : (facets.badge || node.protocol || "TCP") + " · :" + (node.port || "—");
           const status = simulate && telemetry ? telemetry.status : node.health === "down" ? "down" : node.health === "degraded" ? "elevated" : "healthy";
           return (
             <div key={node.id} className={`sd-node is-${node.accent} s-${status}${selected ? " is-selected" : ""}${hoverId === node.id ? " is-hovered" : ""}${isDropTarget ? " is-drop-target" : ""}${armedConnect?.nodeId === node.id ? " is-connect-armed" : ""}`}
               style={{ left: node.x, top: node.y, width: node.width, height: node.height }} data-node-id={node.id} data-kind={node.kind}>
-              <div className="sd-node-content" style={{ transform: `scale(${contentScale})` }}>
-              <div className="sd-node-head">
-                <button type="button" className={`sd-node-icon-button${node.customIcon ? " has-custom-icon" : ""}`}
-                  title="Insert or change tech icon" aria-label={`Insert or change tech icon for ${node.label}`}
-                  disabled={!canEdit} onPointerDown={stop} onClick={(event) => {
-                    stop(event); event.preventDefault(); onOpenIconLibrary?.(node);
-                  }}>
-                  {node.customIcon?.src
-                    ? <img className="sd-node-custom-icon" src={node.customIcon.src} alt={node.customIcon.name || ""} draggable={false} />
-                    : <PrimitiveIcon kind={node.kind} accent={node.accent} className="sd-node-icon" />}
-                  <span className="sd-node-icon-add" aria-hidden="true">+</span>
-                </button>
-                {editingId === node.id
-                  ? <LabelEditor initial={node.label} onDone={(value) => { setEditingId(null); if (value) actions.updateNodeMeta(node.id, { label: value }); }} />
-                  : <strong className="sd-node-label">{node.label}</strong>}
-                {facets.badge && <span className={`sd-mode-badge sd-mono is-${facets.badgeTone}`}>{facets.badge}</span>}
-              </div>
-              <div className={`sd-node-sub${mode === "compose" ? " sd-mono" : ""}`}>{facets.sub}</div>
-              <div className="sd-node-foot">
-                {mode === "canvas" ? (
-                  simulate && telemetry ? (
-                    <>
-                      <span className="sd-pill sd-mono" title="Incoming requests per second">RPS {formatRps(telemetry.incomingRps)}</span>
-                      <span className="sd-pill sd-mono" title="p95 latency">{telemetry.p95Ms == null ? "p95 —" : `p95 ${telemetry.p95Ms}ms`}</span>
-                      <span className="sd-pill sd-mono" title="Utilization">{"UTIL " + (Number.isFinite(telemetry.utilization) ? Math.round(telemetry.utilization * 100) : "∞") + "%"}</span>
-                      <span className={`sd-status sd-mono s-${telemetry.status}`}>{STATUS_LABEL[telemetry.status]}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="sd-pill sd-mono is-quiet" title="Starts when you press Simulate">RPS —</span>
-                      <span className="sd-pill sd-mono is-quiet" title="Starts when you press Simulate">p95 —</span>
-                      {node.health !== "healthy" && <span className={`sd-status sd-mono s-${status}`}>{STATUS_LABEL[status]}</span>}
-                    </>
-                  )
-                ) : (
-                  <>
-                    {facets.chips.map((chip) => <span key={chip} className="sd-pill sd-mono">{chip}</span>)}
-                    {simulate && telemetry
-                      ? <span className={`sd-status sd-mono s-${telemetry.status}`}>{STATUS_LABEL[telemetry.status]}</span>
-                      : node.health !== "healthy" && <span className={`sd-status sd-mono s-${status}`}>{STATUS_LABEL[status]}</span>}
-                  </>
-                )}
-              </div>
-              {simulate && telemetry && (
-                <div className={`sd-util s-${telemetry.status}`} role="meter" aria-label={`${node.label} utilization`}
-                  aria-valuemin={0} aria-valuemax={100} aria-valuenow={Number.isFinite(telemetry.utilization) ? Math.round(telemetry.utilization * 100) : 100}
-                  title={`Utilization ${Number.isFinite(telemetry.utilization) ? Math.round(telemetry.utilization * 100) : "∞"}%`}>
-                  <i style={{ width: `${Math.min(100, Number.isFinite(telemetry.utilization) ? telemetry.utilization * 100 : 100)}%` }} />
+              <div className={"sd-node-content is-" + density}>
+                <div className="sd-node-head">
+                  <button type="button" className={"sd-node-icon-button" + (node.customIcon ? " has-custom-icon" : "")}
+                    title="Insert or change tech icon" aria-label={"Insert or change tech icon for " + node.label}
+                    disabled={!canEdit} onPointerDown={stop} onClick={(event) => {
+                      stop(event); event.preventDefault(); onOpenIconLibrary?.(node);
+                    }}>
+                    {node.customIcon?.src
+                      ? <img className="sd-node-custom-icon" src={node.customIcon.src} alt={node.customIcon.name || ""} draggable={false} />
+                      : <PrimitiveIcon kind={node.kind} accent={node.accent} className="sd-node-icon" />}
+                    <span className="sd-node-icon-add" aria-hidden="true">+</span>
+                  </button>
+                  <div className="sd-node-title-wrap">
+                    <strong className="sd-node-label">{node.label}</strong>
+                    {density === "hero" && <span className="sd-node-hero-sub">{facets.sub}</span>}
+                  </div>
+                  {density !== "compact" && <span className={"sd-status sd-mono s-" + status}>{STATUS_LABEL[status] || "Idle"}</span>}
+                  {density === "hero" && <span className="sd-replica-badge">{replicas} {replicas === 1 ? "replica" : "replicas"}</span>}
                 </div>
-              )}
+                {density === "compact" ? <>
+                  <div className={"sd-node-sub" + (mode === "compose" ? " sd-mono" : "")}>{facets.sub}</div>
+                  <div className="sd-node-foot">
+                    {mode === "canvas" ? <>
+                      <span className={"sd-pill sd-mono" + (!simulate ? " is-quiet" : "")}>RPS {rpsLabel}</span>
+                      <span className={"sd-pill sd-mono" + (!simulate ? " is-quiet" : "")}>p95 {p95Label}</span>
+                    </> : facets.chips.map((chip) => <span key={chip} className="sd-pill sd-mono">{chip}</span>)}
+                  </div>
+                </> : density === "medium" ? <>
+                  <div className="sd-node-medium-middle">
+                    <div className={"sd-node-sub" + (mode === "compose" ? " sd-mono" : "")}>{facets.sub}</div>
+                    <div className="sd-node-capacity">{replicas}× · {capacity ? formatRps(capacity) : "—"} RPS cap</div>
+                    <div className={"sd-util sd-util-inline s-" + status} role="meter" aria-label={node.label + " utilization"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={utilizationPercent}><i style={{ width: utilizationPercent + "%" }} /></div>
+                  </div>
+                  <div className="sd-node-foot sd-node-metric-strip">
+                    <span><small>RPS</small><b>{rpsLabel}</b></span>
+                    <span><small>p95</small><b>{p95Label}</b></span>
+                    <span><small>UTIL</small><b>{simulate && telemetry ? (Number.isFinite(utilization) ? utilizationPercent + "%" : "∞") : "—"}</b></span>
+                  </div>
+                </> : <>
+                  <div className="sd-node-hero-body">
+                    <div className="sd-node-telemetry">
+                      <div><small>RPS</small><b>{rpsLabel}</b></div>
+                      <div><small>p95 Latency</small><b>{p95Label}</b></div>
+                      <div><small>Utilization</small><b>{simulate && telemetry ? (Number.isFinite(utilization) ? utilizationPercent + "%" : "∞") : "—"}</b></div>
+                    </div>
+                    <div className={"sd-util sd-util-inline s-" + status} role="meter" aria-label={node.label + " utilization"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={utilizationPercent}><i style={{ width: utilizationPercent + "%" }} /></div>
+                  </div>
+                  <div className="sd-node-hero-footer"><span>{runtimeMeta}</span><span>{capacity ? formatRps(capacity) + " RPS capacity" : "External workload"}</span></div>
+                </>}
               </div>
               {PORTS.map((port) => (
                 <button key={port} type="button" tabIndex={-1}
