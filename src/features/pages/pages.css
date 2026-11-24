@@ -535,3 +535,8 @@
 .pages-book-workspace.rail-collapsed .pages-rail-heading strong { display: none; }
 .canvas-pages-navigation { max-width: min(620px, calc(100vw - 24px)); gap: 4px; }
 .canvas-pages-navigation > span { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* The chapter rail collapses into a labeled pill without obscuring the sheet. */
+.pages-book-workspace.rail-collapsed .pages-chapters-rail { width: auto; padding: 8px 10px; border-radius: 999px; }
+.pages-book-workspace.rail-collapsed .pages-rail-heading strong { display: inline; }
+.app:has(.pages-book-workspace) .canvas-pages-page-surface { background-image: none !important; }
