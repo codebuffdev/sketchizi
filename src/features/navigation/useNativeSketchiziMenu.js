@@ -212,7 +212,7 @@ export function useNativeSketchiziMenu({
       });
 
       // Remove image export and canvas-find actions from menus and context menus.
-      const blockedMenuLabels = new Set(["export image", "export image...", "find on canvas"]);
+      const blockedMenuLabels = new Set(["export image", "export image...", "export image…", "find on canvas"]);
       document.querySelectorAll("body *").forEach((node) => {
         if (node.children.length) return;
         const label = node.textContent?.replace(/\\s+/g, " ").trim().toLowerCase() || "";
