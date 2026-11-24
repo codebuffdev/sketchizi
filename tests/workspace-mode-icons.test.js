@@ -28,6 +28,7 @@ test("page tabs keep the notebook glyph while add controls use distinct plus gly
   const tabs = read("../src/components/app/CanvasTabs.jsx");
   const menu = read("../src/features/navigation/useNativeSketchiziMenu.js");
   const pages = read("../src/features/pages/CanvasPages.jsx");
+  const pageWorkspace = read("../src/features/pages/PagesBookWorkspace.jsx");
   const pageStyles = read("../src/features/pages/pages.css");
   assert.match(tabs, /WorkspaceModeIcon/);
   assert.ok(tabs.includes("tab.type"));
@@ -37,11 +38,11 @@ test("page tabs keep the notebook glyph while add controls use distinct plus gly
   assert.ok(menu.includes('getWorkspaceModeIconMarkup("canvas")'));
   assert.ok(menu.includes('getWorkspaceModeIconMarkup("pages")'));
   assert.doesNotMatch(pages, /WorkspaceModeIcon/);
-  assert.ok(pages.includes('className="canvas-pages-add-icon" width="15" height="15" viewBox="0 0 24 24"'));
-  assert.ok(pages.includes('strokeWidth="1.85"'));
-  assert.ok(pages.includes('<polyline points="14 2 14 8 20 8" />'));
-  assert.ok(pages.includes('<line x1="12" y1="12" x2="12" y2="18" />'));
-  assert.ok(pageStyles.includes(".app.theme-dark .canvas-pages-navigation .canvas-pages-add:hover"));
+  assert.ok(pageWorkspace.includes('className="canvas-pages-add-icon" width="15" height="15" viewBox="0 0 24 24"'));
+  assert.ok(pageWorkspace.includes('strokeWidth="1.85"'));
+  assert.ok(pageWorkspace.includes('<polyline points="14 2 14 8 20 8" />'));
+  assert.ok(pageWorkspace.includes('<line x1="12" y1="12" x2="12" y2="18" />'));
+  assert.ok(pageStyles.includes(".app.theme-dark .pages-book-workspace .pages-header-chapter-controller .canvas-pages-add"));
   assert.ok(pageStyles.includes("color: #047857"));
   assert.ok(pageStyles.includes("color: #6ee7b7"));
 });
