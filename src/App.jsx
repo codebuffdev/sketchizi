@@ -60,6 +60,7 @@ const SystemDesignStudio = lazy(() => import("./features/system-design/SystemDes
 const DockerComposeStudio = lazy(() => import("./features/docker-compose/ui/DockerComposeStudio.jsx"));
 const KubernetesStudio = lazy(() => import("./features/kubernetes-studio/ui/KubernetesStudio.jsx"));
 const ArchitectureTemplatesModal = lazy(() => import("./components/app/ArchitectureTemplatesModal"));
+const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"));
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { getTabCloudMeta } from "./features/workspace/tabCloudState.js";
 import ZenHud from "./components/app/ZenHud.jsx";
@@ -170,6 +171,7 @@ function App() {
 
   const [minimapOpen, setMinimapOpen] = useState(false);
   const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
+  const [exportStudioOpen, setExportStudioOpen] = useState(false);
   const minimapDragRef = useRef(null);
   const minimapController = useMinimapController({ apiRef, minimapOpen });
   const { minimapScene, updateMinimap, centerOnMinimap } = minimapController;
@@ -308,6 +310,7 @@ function App() {
     if (
       minimapOpen ||
       templatesModalOpen ||
+      exportStudioOpen ||
       designStudioOpen ||
       dockerStudioOpen ||
       kubernetesStudioOpen ||
@@ -320,6 +323,7 @@ function App() {
     nativeMenuOpen,
     minimapOpen,
     templatesModalOpen,
+    exportStudioOpen,
     designStudioOpen,
     dockerStudioOpen,
     kubernetesStudioOpen,
@@ -581,6 +585,8 @@ function App() {
     setDesignStudioOpen,
     templatesModalOpen,
     setTemplatesModalOpen,
+    exportStudioOpen,
+    setExportStudioOpen,
     collaborationOpen,
     setCollaborationOpen,
     connectionMode,
@@ -1835,6 +1841,7 @@ function App() {
         chapterNav={chapterNav}
         onNavigateChapter={navigateToChapter}
         onDownloadRecoveryBackup={downloadRecoveryBackup}
+        onOpenExportStudio={() => setExportStudioOpen(true)}
         onOpenTemplates={() => setDesignStudioOpen(true)}
         onToggleMinimap={() => setMinimapOpen((o) => !o)}
         minimapOpen={minimapOpen}
@@ -2122,6 +2129,8 @@ function App() {
           </section>
         </div>
       )}
+
+      <ExportStudioModal isOpen={exportStudioOpen} onClose={() => setExportStudioOpen(false)} apiRef={apiRef} filename={(currentFile?.name || cloudDocumentName || "architecture-diagram").replace(/\\.[^.]+$/, "")} />
 
       <CommandPalette
         open={commandPaletteOpen}
