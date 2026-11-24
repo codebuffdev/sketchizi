@@ -273,6 +273,10 @@ try {
  assert.equal(await page.getByRole('button', { name: 'Fit', exact: true }).count(), 0);
  await page.screenshot({path:'/tmp/sketchizi-page-desktop.png'});
 
+ // Remove the second chapter first to verify normal multi-page deletion
+ // switches to the remaining page; then exercise the final-page confirmation.
+ await page.getByRole('button', { name: 'Delete', exact: true }).click();
+ await page.waitForFunction(() => document.querySelector('.canvas-pages-chapter-trigger')?.textContent.trim().startsWith('01 / 01'));
  // A final-page delete is cancellable; confirmation closes its tab instead of
  // leaving the editor on an empty Pages grid.
  await page.getByRole('button', { name: 'Delete', exact: true }).click();
