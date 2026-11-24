@@ -211,5 +211,5 @@ test("deleting the only Pages chapter requires accessible confirmation and close
   assert.match(persistence, /recentStore\.delete\(id\)/);
   assert.match(styles, /pages-delete-confirm-submit/);
   assert.match(styles, /#e11d48/);
-  assert.match(styles, /\.app\.theme-dark \.pages-delete-confirm-dialog/);
+  assert.match(styles, /:root:has\(\.app\.theme-dark\) \.pages-delete-confirm-dialog/);
 });
