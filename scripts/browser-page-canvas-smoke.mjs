@@ -48,9 +48,11 @@ async function ensureHeaderVisible() {
   await reveal.click({ force: true });
  }
  await page.waitForFunction(() => document.querySelector('.desktop-app-header')?.getAttribute('aria-hidden') === 'false');
- const pin = page.locator('.desktop-app-header-pin-button');
- if (await pin.getAttribute('aria-pressed') !== 'true') await pin.click({ force: true });
- await page.waitForFunction(() => document.querySelector('.desktop-app-header-pin-button')?.getAttribute('aria-pressed') === 'true');
+ const pin = page.locator('.desktop-app-header[aria-hidden="false"] .desktop-app-header-pin-button').first();
+ if (await pin.getAttribute('aria-pressed') !== 'true') {
+  await pin.evaluate(element => element.click());
+ }
+ await page.waitForFunction(() => document.querySelector('.desktop-app-header[aria-hidden="false"] .desktop-app-header-pin-button')?.getAttribute('aria-pressed') === 'true');
 }
 async function closeAiAskIfOpen() {
  const toggle = page.getByRole('button', { name: 'AI Ask', exact: true });
