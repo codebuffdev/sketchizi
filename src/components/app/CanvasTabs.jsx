@@ -147,37 +147,45 @@ export default function CanvasTabs({
     const isActive = activeId === tab.id;
     const mode = tab.isTodoTab ? "todo" : tab.type === "page" || tab.type === "pages" ? "pages" : tab.type || "canvas";
     const isDirty = Boolean(tab.dirty || tab.syncMeta?.syncStatus === "dirty" || tab.syncMeta?.syncStatus === "error" || (isActive && /pending|saving|error/.test(activeStatusClass)));
+    const isEditing = isActive && activeRenameAction?.type === "input";
     return (
       <div className={`canvas-tab-item${isActive ? " is-active" : ""}`} key={tab.id}>
-        <button
-          type="button"
-          role="tab"
-          className={`canvas-tab${isActive ? " is-active" : ""}`}
-          aria-selected={isActive}
-          title={tab.name}
-          draggable={!disabled && !tab.isTodoTab}
-          onDragStart={(event) => {
-            if (tab.isTodoTab) { event.preventDefault(); return; }
-            dragId.current = tab.id;
-            event.dataTransfer.effectAllowed = "move";
-            event.dataTransfer.setData("text/plain", tab.id);
-          }}
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => handleDrop(event, tab.id)}
-          onDragEnd={() => { dragId.current = null; }}
-          onClick={() => { setOverflowOpen(false); setTabMenuOpenId(null); onSelect?.(tab.id); }}
-          onDoubleClick={() => {
-            if (tab.isTodoTab) return;
-            onSelect?.(tab.id);
-            setTabMenuOpenId(null);
-            onRename?.(tab.id);
-          }}
-          disabled={disabled}
-        >
-          {tab.isTodoTab ? <TodoGlyph /> : <WorkspaceModeIcon mode={mode} className={`canvas-tab-icon canvas-tab-icon--${mode}`} />}
-          {isActive && activeRenameAction?.type === "input" ? activeRenameAction : <span className="canvas-tab-name">{getTabDisplayName(tab.name)}</span>}
-          {isDirty && <span className="canvas-tab-dirty" role="status" aria-label="Unsaved changes" title="Unsaved changes" />}
-        </button>
+        {isEditing ? (
+          <div className="canvas-tab-editing-label">
+            <WorkspaceModeIcon mode={mode} className={`canvas-tab-icon canvas-tab-icon--${mode}`} />
+            {activeRenameAction}
+          </div>
+        ) : (
+          <button
+            type="button"
+            role="tab"
+            className={`canvas-tab${isActive ? " is-active" : ""}`}
+            aria-selected={isActive}
+            title={tab.name}
+            draggable={!disabled && !tab.isTodoTab}
+            onDragStart={(event) => {
+              if (tab.isTodoTab) { event.preventDefault(); return; }
+              dragId.current = tab.id;
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", tab.id);
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => handleDrop(event, tab.id)}
+            onDragEnd={() => { dragId.current = null; }}
+            onClick={() => { setOverflowOpen(false); setTabMenuOpenId(null); onSelect?.(tab.id); }}
+            onDoubleClick={() => {
+              if (tab.isTodoTab) return;
+              onSelect?.(tab.id);
+              setTabMenuOpenId(null);
+              onRename?.(tab.id);
+            }}
+            disabled={disabled}
+          >
+            {tab.isTodoTab ? <TodoGlyph /> : <WorkspaceModeIcon mode={mode} className={`canvas-tab-icon canvas-tab-icon--${mode}`} />}
+            <span className="canvas-tab-name">{getTabDisplayName(tab.name)}</span>
+            {isDirty && <span className="canvas-tab-dirty" role="status" aria-label="Unsaved changes" title="Unsaved changes" />}
+          </button>
+        )}
         {isActive && !tab.isTodoTab && (
           <button
             ref={tabMenuTriggerRef}
@@ -192,7 +200,7 @@ export default function CanvasTabs({
               setOverflowOpen(false);
               setTabMenuOpenId((current) => current === tab.id ? null : tab.id);
             }}
-            disabled={disabled}
+            disabled={disabled || isEditing}
           ><ChevronGlyph /></button>
         )}
         {onClose && <button type="button" className="canvas-tab-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); setTabMenuOpenId(null); onClose(tab.id); }} disabled={disabled}><CloseGlyph /></button>}
