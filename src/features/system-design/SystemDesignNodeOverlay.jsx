@@ -190,9 +190,12 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
   return (
     <div className="sd-overlay" aria-hidden={false}>
       <div className="sd-layer" style={layerStyle}>
-        <svg className="sd-edges" style={{ left: edgeViewport.left, top: edgeViewport.top }}
-          width={edgeViewport.width} height={edgeViewport.height} viewBox={edgeViewport.viewBox}
-          overflow="visible" aria-hidden="true">
+        <svg className="sd-edges" style={{
+          left: edgeViewport.left, top: edgeViewport.top,
+          width: `${edgeViewport.width}px`, height: `${edgeViewport.height}px`,
+          maxWidth: "none", maxHeight: "none", flex: "none",
+        }} width={edgeViewport.width} height={edgeViewport.height}
+          viewBox={edgeViewport.viewBox} preserveAspectRatio="none" overflow="visible" aria-hidden="true">
           <defs>
             <marker id="sd-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
               <path d="M1.5 1.5 8 5 1.5 8.5" className="sd-arrow-head" fill="none" />
