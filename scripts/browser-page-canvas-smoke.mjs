@@ -26,8 +26,8 @@ async function chooseCanvasMode(mode) {
  await canvasStyle().click();
  const optionLabel = mode === 'pages' ? 'Pages' : 'Infinite canvas';
  await page.getByText(optionLabel, { exact: true }).click();
- if (mode === 'pages') await page.getByRole('navigation', { name: 'Page navigation' }).waitFor();
- else await page.getByRole('navigation', { name: 'Page navigation' }).waitFor({ state: 'detached' });
+ if (mode === 'pages') await page.getByRole('navigation', { name: 'Chapter navigation' }).waitFor();
+ else await page.getByRole('navigation', { name: 'Chapter navigation' }).waitFor({ state: 'detached' });
 }
 const pages = es => es.filter(e=>e.type==='frame' && e.customData?.sketchiziPage);
 const canvasStyle = () => page.getByRole('button',{name:'Canvas style',exact:true});
@@ -76,11 +76,11 @@ try {
  await documentMenu.waitFor({state:'detached'});
  assert.equal(await canvasStyle().count(),1,'Header must render one Canvas style control');
  await chooseCanvasMode('pages');
- await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
+ await page.getByRole('navigation',{name:'Chapter navigation'}).waitFor();
  let es = await waitScene(es=>pages(es).length===1);
  const initialPage = pages(es)[0];
  assert(initialPage.width > 0 && initialPage.height > 0, 'New page must have usable dimensions');
- assert(Math.abs(initialPage.width / initialPage.height - 55 / 27) < 0.02, 'New page must preserve the configured 55:27 aspect ratio');
+ assert(Math.abs(initialPage.width / initialPage.height - 800 / 1120) < 0.02, 'New page must preserve the configured 800:1120 portrait aspect ratio');
  assert(initialPage.width <= 1440 * 0.8 + 1 && initialPage.height <= 1000 * 0.8 + 1, 'New page must fit within 80% of the available viewport');
  // Rename through the visible page-name editor rather than relying on a
  // removed prompt-based page-creation flow.
@@ -89,7 +89,7 @@ try {
  await pageNameInput.fill('Cover');
  await pageNameInput.press('Enter');
  await page.waitForFunction(()=>document.querySelector('.canvas-pages-page-name')?.textContent.trim()==='Cover');
- assert(await page.locator('.canvas-pages-page-surface').evaluate(el=>getComputedStyle(el).backgroundImage!=='none'),'Page interior grid must be visible');
+ assert(await page.locator('.pages-book-canvas-zone.texture-dots').evaluate(el=>getComputedStyle(el).backgroundImage!=='none'),'Editorial dot texture must be visible');
  const dock = await page.getByRole('navigation',{name:'Drawing tools'}).boundingBox();
  assert(dock && dock.width>0 && dock.height>0,'Drawing dock must remain visible in Pages mode');
  // Drag the visible southeast page handle and verify the frame and paper resize together.
@@ -120,19 +120,19 @@ try {
  es = await waitScene(es=>pages(es).length===2);
  await renameActivePage('Details');
  es = await waitScene(es=>pages(es).length===2 && pages(es).some(p=>p.name==='Details'));
- const navigation=page.getByRole('navigation',{name:'Page navigation'});
+ const navigation=page.getByRole('navigation',{name:'Chapter navigation'});
  await navigation.getByRole('button').nth(0).click();
- await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('1 / 2'));
+ await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('01 / 02'));
  assert.equal(await page.locator('.canvas-pages-page-name').innerText(),'Cover');
  await navigation.getByRole('button').nth(1).click();
- await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('2 / 2'));
+ await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('02 / 02'));
  assert.equal(await page.locator('.canvas-pages-page-name').innerText(),'Details');
  await page.reload();
- await page.getByRole('navigation',{name:'Page navigation'}).waitFor();
+ await page.getByRole('navigation',{name:'Chapter navigation'}).waitFor();
  await ensureHeaderVisible();
  await closeAiAskIfOpen();
  await chooseCanvasMode('infinite');
- assert.equal(await page.getByRole('navigation',{name:'Page navigation'}).count(),0);
+ assert.equal(await page.getByRole('navigation',{name:'Chapter navigation'}).count(),0);
  assert.equal(await page.locator('.canvas-pages-mask').count(),0,'Infinite canvas must remove the Pages mask');
  assert.equal(pages(await scene()).length,2,'Switching views must preserve all pages');
  // Re-enter Pages mode through the same workspace choice event used by startup.
@@ -148,7 +148,7 @@ try {
  await page.setViewportSize({width:1440,height:1000});
  await ensureHeaderVisible();
  await chooseCanvasMode('pages');
- await page.getByRole('button',{name:'Fit page',exact:true}).click();
+ await page.getByRole('button',{name:'Fit',exact:true}).click();
  await page.screenshot({path:'/tmp/sketchizi-page-desktop.png'});
 
  // Exercise the restored document-tab Export Studio against a real System Design graph.
