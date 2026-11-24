@@ -44,13 +44,21 @@ test("Dots, Ruled, and Clean paper textures are selectable per chapter", () => {
   assert.match(styles, /\.pages-book-canvas-zone\.texture-ruled/);
 });
 
-test("previous/next navigation and the Chapters rail select the matching chapter", () => {
-  assert.match(workspace, /aria-label="Chapters"/);
-  assert.match(workspace, /onClick=\{\(\) => onSelect\(page\)\}/);
+test("the bottom-right navigator is the sole chapter index with completion, delete, and add actions", () => {
+  assert.doesNotMatch(workspace, /pages-chapters-rail|pages-rail-heading/);
+  assert.match(pages, /className="canvas-pages-chapter-trigger"/);
+  assert.match(pages, /aria-expanded=\{chapterIndexOpen\}/);
+  assert.match(pages, /className="canvas-pages-chapter-popover"/);
+  assert.match(pages, /onMouseDown=\{event => event\.stopPropagation\(\)\}/);
+  assert.match(pages, /onClick=\{\(\) => toggleChapterRead\(page\)\}/);
+  assert.match(pages, /onClick=\{\(\) => deletePage\(page\)\}/);
+  assert.match(pages, /＋ New Chapter/);
   assert.match(pages, /aria-label="Previous chapter"/);
   assert.match(pages, /aria-label="Next chapter"/);
   assert.match(pages, /fit\(pages\[index-1\]\)/);
   assert.match(pages, /fit\(pages\[index\+1\]\)/);
+  assert.match(styles, /bottom: calc\(100% \+ 10px\)/);
+  assert.match(styles, /z-index: 1000/);
 });
 
 test("chapter metadata and diagram elements persist together in the existing IndexedDB tab snapshot", () => {
