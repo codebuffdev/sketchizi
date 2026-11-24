@@ -20,6 +20,15 @@ test("New Chapter creates an isolated Excalidraw page from the navigator and cha
   assert.ok(pages.includes("<span>+ Chapter</span>"));
 });
 
+test("book workspace receives the chapter collection and completion callback", () => {
+  assert.match(workspace, /pages = \[\]/);
+  assert.match(workspace, /onToggleRead/);
+  assert.match(workspace, /pages\.length/);
+  assert.match(workspace, /onToggleRead\(active\)/);
+  assert.match(pages, /<PagesBookWorkspace pages=\{pages\}/);
+  assert.match(pages, /onToggleRead=\{toggleChapterRead\}/);
+});
+
 test("chapter title, subtitle, and key formula are editable and persisted on the page record", () => {
   assert.match(workspace, /aria-label="Chapter title"/);
   assert.match(workspace, /onPatch\(\{ chapterTitle: e\.target\.value \}\)/);
