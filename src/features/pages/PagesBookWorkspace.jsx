@@ -8,10 +8,17 @@ export default function PagesBookWorkspace({
   const title = meta.chapterTitle ?? active?.name ?? 'Untitled Page';
   const [bookTitleDraft, setBookTitleDraft] = useState(bookTitle);
   useEffect(() => setBookTitleDraft(bookTitle), [bookTitle]);
-  const saveBookTitle = () => {
+  const saveBookTitle = async () => {
     const nextTitle = bookTitleDraft.trim().slice(0, 120);
-    if (nextTitle && nextTitle !== bookTitle) onRenameBookTitle?.(nextTitle);
-    else setBookTitleDraft(bookTitle);
+    if (nextTitle && nextTitle !== bookTitle && onRenameBookTitle) {
+      try {
+        await onRenameBookTitle(nextTitle);
+      } catch {
+        setBookTitleDraft(bookTitle);
+      }
+    } else {
+      setBookTitleDraft(bookTitle);
+    }
   };
   const summary = meta.tagline || '';
   const texture = meta.paperTexture || 'Dots';
