@@ -5,22 +5,6 @@ import { getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, 
 import './pages.css';
 import PagesBookWorkspace from './PagesBookWorkspace.jsx';
 
-const PAGE_WORKSPACE_TINT = 0.25;
-
-function mixHexColors(baseColor, tintColor, tintAmount) {
-  const base = baseColor.match(/^#([\da-f]{6})$/i)?.[1];
-  const tint = tintColor.match(/^#([\da-f]{6})$/i)?.[1];
-  if (!base || !tint) return baseColor;
-  const channels = [0, 2, 4].map(offset => {
-    const baseChannel = Number.parseInt(base.slice(offset, offset + 2), 16);
-    const tintChannel = Number.parseInt(tint.slice(offset, offset + 2), 16);
-    return Math.round(baseChannel * (1 - tintAmount) + tintChannel * tintAmount)
-      .toString(16)
-      .padStart(2, '0');
-  });
-  return `#${channels.join('')}`;
-}
-
 function getPagePaperBackground(appState) {
   return appState?.theme === 'dark' ? '#111827' : '#ffffff';
 }
