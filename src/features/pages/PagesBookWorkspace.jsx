@@ -1,15 +1,56 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export default function PagesBookWorkspace({
   pages = [], active, index = 0, canEdit = true, onToggleRead, onPatch,
   bookTitle = 'Untitled drawing', onRenameBookTitle,
   chapterIndexOpen = false, chapterIndexRef, onToggleChapterIndex,
-  onSelectChapter, onDeleteChapter, onAddChapter,
+  onSelectChapter, onDeleteChapter, onDeleteOnlyPage, onAddChapter,
 }) {
   const meta = active && active.customData || {};
   const title = meta.chapterTitle ?? active?.name ?? 'Untitled Page';
   const [bookTitleDraft, setBookTitleDraft] = useState(bookTitle);
+  const [deleteOnlyPageOpen, setDeleteOnlyPageOpen] = useState(false);
+  const [deleteOnlyPagePending, setDeleteOnlyPagePending] = useState(false);
+  const deleteOnlyPageConfirmRef = useRef(null);
+  const deleteChapterButtonRef = useRef(null);
   useEffect(() => setBookTitleDraft(bookTitle), [bookTitle]);
+  const confirmDeleteOnlyPage = async () => {
+    if (deleteOnlyPagePending) return;
+    setDeleteOnlyPagePending(true);
+    try {
+      const deleted = await onDeleteOnlyPage?.(active);
+      if (deleted !== false) setDeleteOnlyPageOpen(false);
+    } finally {
+      setDeleteOnlyPagePending(false);
+    }
+  };
+  useEffect(() => {
+    if (!deleteOnlyPageOpen) return undefined;
+    deleteOnlyPageConfirmRef.current?.focus();
+    const handleDialogKeys = event => {
+      if (event.key !== 'Escape' && event.key !== 'Enter') return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      if (event.key === 'Escape') {
+        setDeleteOnlyPageOpen(false);
+        setDeleteOnlyPagePending(false);
+        requestAnimationFrame(() => deleteChapterButtonRef.current?.focus());
+      } else {
+        confirmDeleteOnlyPage();
+      }
+    };
+    window.addEventListener('keydown', handleDialogKeys, true);
+    return () => window.removeEventListener('keydown', handleDialogKeys, true);
+  }, [deleteOnlyPageOpen, deleteOnlyPagePending]);
+  const requestDeleteChapter = page => {
+    if (!page) return;
+    if (pages.length === 1) {
+      setDeleteOnlyPageOpen(true);
+      return;
+    }
+    onDeleteChapter?.(page);
+  };
   const saveBookTitle = async () => {
     const nextTitle = bookTitleDraft.trim().slice(0, 120);
     if (nextTitle && nextTitle !== bookTitle && onRenameBookTitle) {
@@ -134,7 +175,7 @@ export default function PagesBookWorkspace({
                         onClick={() => onToggleRead(page)}>{page.customData?.completed ? '✓' : '○'}</button>
                       <button type="button" className="canvas-pages-chapter-remove"
                         aria-label={'Delete ' + (page.customData?.chapterTitle || page.name || 'page')}
-                        disabled={!canEdit} onClick={() => onDeleteChapter(page)}>×</button>
+                        disabled={!canEdit} onClick={() => requestDeleteChapter(page)}>×</button>
                     </div>)}
                   </div>
                   <button type="button" className="canvas-pages-chapter-new" disabled={!canEdit}
@@ -143,8 +184,8 @@ export default function PagesBookWorkspace({
               </div>
               <button type="button" aria-label="Next chapter" disabled={index < 0 || index >= pages.length - 1}
                 onClick={() => onSelectChapter(pages[index + 1])}>›</button>
-              <button type="button" className="canvas-pages-delete" disabled={!active || !canEdit}
-                onClick={() => onDeleteChapter(active)}>Delete</button>
+              <button ref={deleteChapterButtonRef} type="button" className="canvas-pages-delete" disabled={!active || !canEdit}
+                onClick={() => requestDeleteChapter(active)}>Delete</button>
               <button type="button" className="canvas-pages-add" aria-label="Add Chapter" title="Add Chapter"
                 disabled={!canEdit} onClick={onAddChapter}>
                 <svg className="canvas-pages-add-icon" width="15" height="15" viewBox="0 0 24 24"
@@ -161,6 +202,29 @@ export default function PagesBookWorkspace({
           </div>
         </header>
       </section>
+      {deleteOnlyPageOpen && (
+        <div className="pages-delete-confirm-backdrop" onMouseDown={event => {
+          if (event.target === event.currentTarget && !deleteOnlyPagePending) {
+            setDeleteOnlyPageOpen(false);
+            requestAnimationFrame(() => deleteChapterButtonRef.current?.focus());
+          }
+        }}>
+          <section className="pages-delete-confirm-dialog" role="dialog" aria-modal="true"
+            aria-labelledby="pages-delete-confirm-title" aria-describedby="pages-delete-confirm-description">
+            <div className="pages-delete-confirm-icon" aria-hidden="true">!</div>
+            <h2 id="pages-delete-confirm-title">Delete &quot;{bookTitle || 'Untitled drawing'}&quot;?</h2>
+            <p id="pages-delete-confirm-description">This is the only page remaining. Deleting it will permanently remove this notebook and close its tab.</p>
+            <div className="pages-delete-confirm-actions">
+              <button type="button" className="pages-delete-confirm-cancel" disabled={deleteOnlyPagePending}
+                onClick={() => { setDeleteOnlyPageOpen(false); requestAnimationFrame(() => deleteChapterButtonRef.current?.focus()); }}>Cancel</button>
+              <button ref={deleteOnlyPageConfirmRef} type="button" className="pages-delete-confirm-submit"
+                disabled={deleteOnlyPagePending} onClick={confirmDeleteOnlyPage}>
+                {deleteOnlyPagePending ? 'Deleting…' : 'Delete & Close'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
