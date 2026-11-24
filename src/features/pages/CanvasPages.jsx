@@ -413,7 +413,10 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     if (!api || !canEdit) return;
     const elements = api.getSceneElementsIncludingDeleted();
     const appState = api.getAppState();
-    const responsiveSize = getResponsivePageSize(appState);
+    const responsiveSize = {
+      width: Math.round(Math.min(1360, Math.max(320, window.innerWidth - 56))),
+      height: Math.round(Math.min(10000, Math.max(320, window.innerHeight - 124))),
+    };
     if (!validSize(responsiveSize.width, responsiveSize.height)) { setError('The available canvas area is too small to create a page.'); return; }
     const nextOrder = getPages(elements).reduce((n, page) => Math.max(n, page.customData?.pageOrder || 0), 0) + 1;
     const paperBackground = getPagePaperBackground(appState);
@@ -439,8 +442,8 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     const appState = api.getAppState?.() || {};
     const width = mode === 'Standard'
       ? 860
-      : Math.round(Math.min(1360, Math.max(320, Number(appState.width || 0) - 56)));
-    const height = Math.round(Math.min(10000, Math.max(Number(page.height || 720), Number(appState.height || 0) - 124, 320)));
+      : Math.round(Math.min(1360, Math.max(320, window.innerWidth - 56)));
+    const height = Math.round(Math.min(10000, Math.max(Number(page.height || 720), window.innerHeight - 124, 320)));
     const elements = api.getSceneElementsIncludingDeleted().map(element => {
       const isFrame = element.id === page.id;
       const isPaper = element.customData?.sketchiziPagePaper === page.id;
@@ -459,6 +462,13 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   useEffect(() => {
     if (mode !== 'pages' || !active || !canEdit || active.customData?.pageWidthMode) return;
     setPageWidthMode('Wide', active);
+  }, [mode, active?.id, active?.customData?.pageWidthMode, canEdit]);
+
+  useEffect(() => {
+    if (mode !== 'pages' || !active || active.customData?.pageWidthMode !== 'Wide' || !canEdit) return undefined;
+    const resizeWideSheet = () => setPageWidthMode('Wide', activePageRef.current);
+    window.addEventListener('resize', resizeWideSheet);
+    return () => window.removeEventListener('resize', resizeWideSheet);
   }, [mode, active?.id, active?.customData?.pageWidthMode, canEdit]);
 
   const toggleChapterRead = page => {
