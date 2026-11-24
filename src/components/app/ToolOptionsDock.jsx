@@ -873,8 +873,9 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     if (liveState.editingTextElement?.id) selectedIds.add(liveState.editingTextElement.id);
     const scene = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
     const next = arrangeElements(scene, selectedIds, layout, 24);
-    if (next === scene || next.every((element, index) => element === scene[index])) return;
-    api.updateScene({ elements: next, commitToHistory: true, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    if (next !== scene && !next.every((element, index) => element === scene[index])) {
+      api.updateScene({ elements: next, commitToHistory: true, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    }
     setAlignPopoverOpen(false);
   };
 
