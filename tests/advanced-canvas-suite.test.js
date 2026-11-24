@@ -9,7 +9,6 @@ const appHeader = readFileSync(new URL("../src/components/app/DesktopAppHeader.j
 const appSource = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 const canvasSource = readFileSync(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
 const toolbarSource = readFileSync(new URL("../src/components/app/ContextualFormattingToolbar.jsx", import.meta.url), "utf8");
-const exportModalSource = readFileSync(new URL("../src/components/app/ExportStudioModal.jsx", import.meta.url), "utf8");
 const templatesModalSource = readFileSync(new URL("../src/components/app/ArchitectureTemplatesModal.jsx", import.meta.url), "utf8");
 const packInsertionSource = readFileSync(new URL("../src/features/templates/architecturePackInsertion.js", import.meta.url), "utf8");
 const advancedCss = readFileSync(new URL("../src/styles/advanced-canvas-suite.css", import.meta.url), "utf8");
@@ -27,19 +26,22 @@ test("Capability 1: Canvas Mini-Map Navigator is integrated with header toggle a
   assert.ok(advancedCss.includes(".app.theme-dark .minimap-viewport"), "Has dark theme viewport background");
 });
 
-test("Capability 2: High-Res Export Studio offers 1x/2x/3x scale, background modes, and 1-click clipboard", () => {
-  assert.ok(appHeader.includes("onOpenExport"), "Header accepts onOpenExport prop");
-  assert.ok(appHeader.includes("onOpenExport?.()") && appHeader.includes("Export studio…"), "Save menu opens Export Studio");
-  assert.ok(appSource.includes("<ExportStudioModal"), "App mounts ExportStudioModal");
-
-  assert.ok(exportModalSource.includes("Resolution Scale"), "Modal provides resolution scale controls");
-  assert.ok(exportModalSource.includes("[1, 2, 3]"), "Supports 1x, 2x, 3x multipliers");
-  assert.ok(exportModalSource.includes("Dark Surface") && exportModalSource.includes("Transparent"), "Supports dark, light, transparent backgrounds");
-  assert.ok(exportModalSource.includes("Copy Image to Clipboard"), "Has 1-click clipboard button");
-  assert.ok(exportModalSource.includes("navigator.clipboard?.write"), "Uses native clipboard write API");
-  assert.ok(exportModalSource.includes("Download PNG") && exportModalSource.includes("Download SVG"), "Provides download buttons");
+test("Capability 2: Export Studio is available in document dropdown while native image export and find stay disabled", () => {
+  const nativeMenu = readFileSync(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
+  const commands = readFileSync(new URL("../src/features/commands/commandRegistry.js", import.meta.url), "utf8");
+  const stackExport = readFileSync(new URL("../src/features/system-design/ExportStackModal.jsx", import.meta.url), "utf8");
+  assert.ok(appHeader.includes("<h3>Download &amp; export</h3>"));
+  assert.ok(appHeader.includes("Export studio..."));
+  assert.ok(appHeader.includes("Choose PNG, SVG, clipboard and export settings"));
+  assert.match(appSource, /ExportStudioModal/);
+  assert.match(appSource, /exportStudioOpen/);
+  assert.match(appSource, /systemDesignWorkspace = systemDesign/);
+  assert.match(nativeMenu, /blockedMenuLabels = new Set/);
+  assert.match(nativeMenu, /key === "f"/);
+  assert.doesNotMatch(commands, /export\.image|export\.studio|export\.diagram-yaml-png/);
+  assert.match(stackExport, /compileStack\(nodes, edges, target\)/);
+  assert.match(stackExport, /Download/);
 });
-
 test("Capability 3: Architecture Starter Packs contain production cloud and interview templates", () => {
   assert.ok(appHeader.includes("onOpenTemplates"), "Header accepts onOpenTemplates prop");
   assert.ok(appSource.includes("<ArchitectureTemplatesModal"), "App mounts ArchitectureTemplatesModal");

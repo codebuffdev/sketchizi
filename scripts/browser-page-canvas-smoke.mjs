@@ -24,8 +24,8 @@ async function renameActivePage(name) {
 }
 async function chooseCanvasMode(mode) {
  await canvasStyle().click();
- const buttonName = mode === 'pages' ? /Pages Organize/ : /Infinite canvas Draw/;
- await page.getByRole('button', { name: buttonName }).click();
+ const optionLabel = mode === 'pages' ? 'Pages' : 'Infinite canvas';
+ await page.getByText(optionLabel, { exact: true }).click();
  if (mode === 'pages') await page.getByRole('navigation', { name: 'Page navigation' }).waitFor();
  else await page.getByRole('navigation', { name: 'Page navigation' }).waitFor({ state: 'detached' });
 }
@@ -60,7 +60,6 @@ try {
  await page.route('**/api/**',r=>r.fulfill({json:{authenticated:false,user:null}}));
  await page.goto(`${process.env.SKETCHIZI_BASE_URL || 'http://127.0.0.1:4173'}/?editor=1`);
  await page.locator('.excalidraw').waitFor();
- await page.locator('.canvas-tab-status-dot.is-saved').waitFor({state:'attached',timeout:20000});
  await chooseStartupPages();
  await ensureHeaderVisible();
  // The canvas document menu must make every save/download/export action obvious.
@@ -151,8 +150,43 @@ try {
  await chooseCanvasMode('pages');
  await page.getByRole('button',{name:'Fit page',exact:true}).click();
  await page.screenshot({path:'/tmp/sketchizi-page-desktop.png'});
+
+ // Exercise the restored document-tab Export Studio against a real System Design graph.
+ await page.keyboard.press('Control+K');
+ const palette = page.locator('.sketchizi-command-palette');
+ await palette.waitFor({state:'visible'});
+ await page.keyboard.type('system design');
+ await palette.getByText(/Open System Design Studio/i).click();
+ const studio = page.getByTestId('system-design-studio');
+ await studio.waitFor({state:'visible'});
+ const workspaceToolbar = page.getByRole('toolbar',{name:'System design workspace'});
+ await workspaceToolbar.getByRole('button',{name:'Blueprints'}).click();
+ const blueprintMenu = page.getByRole('menu',{name:'Starter architectures'});
+ await blueprintMenu.getByRole('menuitem').first().click();
+ await studio.locator('[data-node-id]').first().waitFor({state:'visible'});
+ await page.getByRole('button',{name:'Canvas options'}).click();
+ const exportMenu = page.getByRole('dialog',{name:'Canvas options'});
+ await exportMenu.getByRole('button',{name:/Export studio/i}).click();
+ const exportStudio = page.getByRole('dialog',{name:'Export Studio'});
+ await exportStudio.waitFor({state:'visible'});
+ await exportStudio.getByText('Diagram preview',{exact:true}).waitFor({state:'visible'});
+ await exportStudio.locator('.sketchizi-system-export-preview svg [data-node-id]').first().waitFor({state:'visible'});
+ await exportStudio.getByRole('button',{name:'Download PNG'}).waitFor({state:'visible'});
+ await exportStudio.getByRole('button',{name:'Download SVG'}).waitFor({state:'visible'});
+ await exportStudio.getByRole('button',{name:'Close export studio'}).click();
+
+ // The Excalidraw WORKSPACE hamburger keeps both built-in actions stripped.
+ await page.getByRole('button',{name:'Open application menu'}).click();
+ const workspaceMenu = page.locator('.dropdown-menu-container').first();
+ await workspaceMenu.waitFor({state:'visible'});
+ await page.waitForFunction(() => { const blocked = new Set(["Export image", "Export image...", "Export image…", "Find on canvas"]); return ![...document.querySelectorAll(".dropdown-menu-container *")].some(node => node.children.length === 0 && blocked.has(node.textContent.trim())); });
+ assert.equal(await workspaceMenu.getByText('Export image...',{exact:true}).count(),0,'Hamburger must not expose Export image');
+ assert.equal(await workspaceMenu.getByText('Find on canvas',{exact:true}).count(),0,'Hamburger must not expose Find on canvas');
+ assert(await workspaceMenu.getByText(/Reset (the )?canvas/i).count()>=1,'Hamburger must retain Reset canvas');
+ await page.getByRole('button',{name:'Close application menu'}).click();
+
  assert.deepEqual(errors,[]);
- console.log('PASS: single selector, page grid/name, dock, drag resize, light/dark sync, page creation/navigation, persistence and infinite-canvas return');
+ console.log('PASS: pages canvas plus document Export Studio live System Design preview, while native hamburger image export/find stay removed');
 } catch (error) {
  await page.screenshot({path:'/tmp/sketchizi-page-failure.png'});
  console.error('Page diagnostics:', await page.locator('body').innerText(), errors);

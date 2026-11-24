@@ -415,9 +415,10 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
 
   return useMemo(() => ({
     store, enabled, open, close, toggle,
+    activeTabId: activeCanvasId, workspaceByTabId,
     mode, setMode, simulate, setSimulate, loadRps, setLoadRps, inspectorOpen, setInspectorOpen,
     getTabState, restoreTabState,
     gridEnabled, setGridEnabled, gridSize, canEdit,
     actions: { addNode, addUpstreamClient, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint },
-  }), [store, enabled, open, close, toggle, mode, setMode, simulate, setSimulate, loadRps, setLoadRps, inspectorOpen, setInspectorOpen, getTabState, restoreTabState, gridEnabled, setGridEnabled, gridSize, canEdit, addNode, addUpstreamClient, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint]);
+  }), [store, enabled, open, close, toggle, activeCanvasId, workspaceByTabId, mode, setMode, simulate, setSimulate, loadRps, setLoadRps, inspectorOpen, setInspectorOpen, getTabState, restoreTabState, gridEnabled, setGridEnabled, gridSize, canEdit, addNode, addUpstreamClient, connect, updateNodeMeta, updateEdge, deleteSelection, autoLayout, loadBlueprint]);
 }

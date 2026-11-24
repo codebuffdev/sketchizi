@@ -7,6 +7,7 @@ import PropertiesPanel from "./PropertiesPanel";
 import { CaptureUpdateAction, convertToExcalidrawElements, getCommonBounds, restoreElements } from "@excalidraw/excalidraw";
 import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
+import { registerExportStudioShortcut } from "./features/navigation/exportStudioShortcut.js";
 import { useMoreTools } from "./features/navigation/useMoreTools";
 import { useSketchiziPreferences } from "./features/navigation/useSketchiziPreferences";
 import { countLiveElements, describeClosedAt } from "./features/workspace/closedTabs.js";
@@ -36,7 +37,6 @@ import CollaborationUI from "./components/app/CollaborationUI";
 import MoreTools from "./components/app/MoreTools";
 import { useIconInsertion } from "./features/icon-library/useIconInsertion";
 import { useCommandPalette } from "./features/navigation/useCommandPalette";
-import { useSketchiziExportLifecycle } from "./features/navigation/useSketchiziExportLifecycle";
 import { createSketchiziCommandRegistry } from "./features/commands/commandRegistry";
 import { insertArchitecturePack as insertArchitecturePackIntoScene } from "./features/templates/architecturePackInsertion";
 const CreateDesignScreen = lazy(() => import("./features/design/ui/CreateDesignScreen.jsx"));
@@ -60,8 +60,8 @@ import DesktopAppHeader from "./components/app/DesktopAppHeader";
 const SystemDesignStudio = lazy(() => import("./features/system-design/SystemDesignStudio.jsx"));
 const DockerComposeStudio = lazy(() => import("./features/docker-compose/ui/DockerComposeStudio.jsx"));
 const KubernetesStudio = lazy(() => import("./features/kubernetes-studio/ui/KubernetesStudio.jsx"));
-const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"));
 const ArchitectureTemplatesModal = lazy(() => import("./components/app/ArchitectureTemplatesModal"));
+const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"));
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { getTabCloudMeta } from "./features/workspace/tabCloudState.js";
 import ZenHud from "./components/app/ZenHud.jsx";
@@ -171,8 +171,8 @@ function App() {
   const handleExcalidrawAPI = useCallback((api) => { apiRef.current = api || null; setApiReady(Boolean(api)); }, []);
 
   const [minimapOpen, setMinimapOpen] = useState(false);
-  const [exportStudioOpen, setExportStudioOpen] = useState(false);
   const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
+  const [exportStudioOpen, setExportStudioOpen] = useState(false);
   const minimapDragRef = useRef(null);
   const minimapController = useMinimapController({ apiRef, minimapOpen });
   const { minimapScene, updateMinimap, centerOnMinimap } = minimapController;
@@ -310,8 +310,8 @@ function App() {
     // floating tool surfaces that are opened outside usePanelState.
     if (
       minimapOpen ||
-      exportStudioOpen ||
       templatesModalOpen ||
+      exportStudioOpen ||
       designStudioOpen ||
       dockerStudioOpen ||
       kubernetesStudioOpen ||
@@ -323,8 +323,8 @@ function App() {
   }, [
     nativeMenuOpen,
     minimapOpen,
-    exportStudioOpen,
     templatesModalOpen,
+    exportStudioOpen,
     designStudioOpen,
     dockerStudioOpen,
     kubernetesStudioOpen,
@@ -497,17 +497,6 @@ function App() {
     persistCanvasTabs(renamedTabs);
   }, [cloudDiagramId, showToast, persistCanvasTabs]);
 
-  const closeExportDialog = useCallback(() => {
-    const api = apiRef.current;
-    if (!api) return;
-    const appState = api.getAppState?.();
-    if (appState?.openDialog?.name !== "imageExport") return;
-    api.updateScene({
-      appState: { ...appState, openDialog: null },
-      captureUpdate: CaptureUpdateAction.NEVER,
-    });
-  }, []);
-
   const openCollaborationDetails = useCallback(() => {
     const activeCollaboration = Boolean(
       collaborationRoom &&
@@ -595,20 +584,18 @@ function App() {
     setMinimapOpen,
     designStudioOpen,
     setDesignStudioOpen,
-    exportStudioOpen,
-    setExportStudioOpen,
     templatesModalOpen,
     setTemplatesModalOpen,
+    exportStudioOpen,
+    setExportStudioOpen,
     collaborationOpen,
     setCollaborationOpen,
     connectionMode,
     activateSelectionTool,
     searchRef,
     apiRef,
-    closeExportDialog,
   });
   useSketchiziCanvasDismissal({ dismissUnpinnedDrawersFromCanvas });
-  useSketchiziExportLifecycle({ apiRef, showToast, closeExportDialog });
   useEffect(() => {
     if (!collaborationCanEdit && libraryOpen) closePanel("icon-library");
   }, [closePanel, collaborationCanEdit, libraryOpen]);
@@ -656,7 +643,7 @@ function App() {
     iconInsertion.addIconToCanvas(icon, rect.left + rect.width / 2, rect.top + rect.height / 2);
   };
   const systemDesign = useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gridEnabled, setGridEnabled, gridSize, canEdit: collaborationCanEdit, canvasTabsRef, activeCanvasIdRef, persistSystemDesignState });
-  systemDesignRef.current = systemDesign;
+  systemDesignRef.current = systemDesign; if (apiRef.current) apiRef.current.systemDesignWorkspace = systemDesign;
   const { target: iconAssignmentTarget, open: openSystemDesignIconLibrary, assign: assignSystemDesignNodeIcon, close: closeIconLibrary } = useSystemDesignIconAssignment({
     systemDesign, setInitialSource: setIconLibraryInitialSource, setSearch, searchRef, openPanel, closePanel, markRecentlyUsed,
   });
@@ -683,7 +670,6 @@ function App() {
     fileActionsRef,
     reopenClosedTab,
     closedTabCount: closedTabs.length,
-    openExportStudio: () => setExportStudioOpen(true),
     openKubernetesStudio: () => setKubernetesStudioOpen(true),
     openDockerComposeStudio: () => setDockerStudioOpen(true),
     toggleSystemDesignStudio: systemDesign.toggle,
@@ -1742,6 +1728,8 @@ function App() {
     };
   }, [isWelcomeOrDashboardOpen]);
 
+  useEffect(() => registerExportStudioShortcut({ openExportStudio: () => setExportStudioOpen(true) }), []);
+
   useEffect(() => {
     const onKeyDown = (event) => {
       const isZenShortcut = event.altKey && !event.ctrlKey && !event.metaKey && (event.code === "KeyZ" || String(event.key).toLowerCase() === "z");
@@ -1856,7 +1844,7 @@ function App() {
         chapterNav={chapterNav}
         onNavigateChapter={navigateToChapter}
         onDownloadRecoveryBackup={downloadRecoveryBackup}
-        onOpenExport={() => setExportStudioOpen(true)}
+        onOpenExportStudio={() => setExportStudioOpen(true)}
         onOpenTemplates={() => setDesignStudioOpen(true)}
         onToggleMinimap={() => setMinimapOpen((o) => !o)}
         minimapOpen={minimapOpen}
@@ -2145,6 +2133,8 @@ function App() {
         </div>
       )}
 
+      <Suspense fallback={null}>{exportStudioOpen && <ExportStudioModal isOpen={exportStudioOpen} onClose={() => setExportStudioOpen(false)} apiRef={apiRef} isDarkTheme={isDarkTheme} filename={(currentFile?.name || cloudDocumentName || "architecture-diagram").replace(/\.[^.]+$/, "")} />}</Suspense>
+
       <CommandPalette
         open={commandPaletteOpen}
         onClose={closeCommandPalette}
@@ -2321,13 +2311,6 @@ function App() {
       )}
       {dockerStudioOpen && <DockerComposeStudio onClose={() => setDockerStudioOpen(false)} onCreateDiagram={createComposeDiagram} />}
       {kubernetesStudioOpen && <KubernetesStudio onClose={() => setKubernetesStudioOpen(false)} onCreateDiagram={createKubernetesDiagram} onApplyResourceYaml={applyKubernetesResourceYaml} />}
-      {exportStudioOpen && (
-        <ExportStudioModal
-          isOpen={exportStudioOpen}
-          onClose={() => setExportStudioOpen(false)}
-          apiRef={apiRef}
-        />
-      )}
       {templatesModalOpen && (
         <ArchitectureTemplatesModal
           isOpen={templatesModalOpen}

@@ -7,8 +7,8 @@ const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 const OPTIONAL_COMPONENTS = [
   ["CreateDesignScreen", "./features/design/ui/CreateDesignScreen.jsx"],
   ["CloudSaveDialog", "./features/workspace/CloudSaveDialog.jsx"],
-  ["ExportStudioModal", "./components/app/ExportStudioModal"],
   ["ArchitectureTemplatesModal", "./components/app/ArchitectureTemplatesModal"],
+  ["ExportStudioModal", "./components/app/ExportStudioModal"],
 ];
 
 test("optional studios load on demand, while core Excalidraw remains eagerly available", () => {
@@ -24,7 +24,7 @@ test("optional studios load on demand, while core Excalidraw remains eagerly ava
 test("each lazy studio retains its original open gate and creation callbacks", () => {
   assert.match(app, /\{designStudioOpen && \(\s*<CreateDesignScreen/);
   assert.match(app, /onCreate=\{createDesignFromStudio\}/);
-  assert.match(app, /\{exportStudioOpen && \(\s*<ExportStudioModal/);
   assert.match(app, /\{templatesModalOpen && \(\s*<ArchitectureTemplatesModal/);
   assert.match(app, /\{cloudSaveDialogOpen && <CloudSaveDialog/);
+  assert.ok(app.includes("{exportStudioOpen && <ExportStudioModal isOpen={exportStudioOpen}"));
 });

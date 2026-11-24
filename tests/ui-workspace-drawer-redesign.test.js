@@ -118,7 +118,10 @@ test("native utility rows never truncate labels and show shortcuts as kbd badges
   assert.match(kbd, /padding: 2px 6px/);
   assert.match(kbd, /border-radius: 6px/);
   assert.match(menu, /document\.createElement\("kbd"\)/);
-  for (const text of ["Export Image", "Find on Canvas", "Reset Canvas"]) assert.ok(menu.includes(`label: "${text}"`), `missing ${text}`);
+  assert.match(menu, /label: "Reset Canvas"/);
+  assert.doesNotMatch(menu, /label: "Export Image"/);
+  assert.doesNotMatch(menu, /label: "Find on Canvas"/);
+  assert.match(menu, /blockedMenuLabels = new Set/);
 });
 
 test("Reset Canvas has a destructive rose tint and the old reset label is still recognised by trim logic", () => {
@@ -133,4 +136,12 @@ test("legacy accessibility, test and file-workflow contracts remain", () => {
   }
   assert.match(menu, /aria-expanded="true"/);
   assert.match(menuCss, /prefers-reduced-motion: reduce/);
+});
+test("native image export and canvas find stay removed while Export Studio owns its shortcut", () => {
+  const shortcut = read("../src/features/navigation/exportStudioShortcut.js");
+  assert.match(menu, /blockedMenuLabels = new Set/);
+  assert.ok(menu.includes('if (key === "f")'));
+  assert.ok(!menu.includes('key === "e" && event.shiftKey'));
+  assert.ok(shortcut.includes('target.addEventListener("keydown", onKeyDown, true)'));
+  assert.match(app, /registerExportStudioShortcut/);
 });

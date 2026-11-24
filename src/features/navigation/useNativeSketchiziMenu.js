@@ -64,6 +64,11 @@ export function useNativeSketchiziMenu({
     const onKeyDown = (event) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
       const key = event.key.toLowerCase();
+      // Disable Excalidraw Find globally. Ctrl/Cmd+Shift+E is routed to the custom Export Studio handler.
+      if (key === "f") {
+        event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation?.();
+        return;
+      }
       const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
       if (typing && !event.target.closest?.(".excalidraw")) return;
       if (key === "o" && !event.shiftKey) {
@@ -75,10 +80,10 @@ export function useNativeSketchiziMenu({
       }
     };
     document.addEventListener("click", onClick, true);
-    document.addEventListener("keydown", onKeyDown, true);
+    window.addEventListener("keydown", onKeyDown, true);
     return () => {
       document.removeEventListener("click", onClick, true);
-      document.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("keydown", onKeyDown, true);
     };
   }, [apiRef, fileActionsRef, markCanvasBackgroundCustom, useThemeDefaultBackground]);
 
@@ -206,11 +211,22 @@ export function useNativeSketchiziMenu({
         if ((node.tagName === "BUTTON" || node.getAttribute?.("role") === "button") && text === "Install") node.remove();
       });
 
-      // Canvas utility rows: relabel to the drawer's wording, tag them for styling, and
-      // turn their shortcut hint into a <kbd> badge. Only text/attributes change, never handlers.
+      // Remove image export and canvas-find actions from menus and context menus.
+      const blockedMenuLabels = new Set(["export image", "export image...", "export image…", "find on canvas"]);
+      document.querySelectorAll("body *").forEach((node) => {
+        if (node.children.length) return;
+        const label = node.textContent?.replace(/\\s+/g, " ").trim().toLowerCase() || "";
+        if (!blockedMenuLabels.has(label)) return;
+        const item = node.closest("button, a, [role='menuitem'], li, .dropdown-menu-item, .context-menu-item, .menu-item") || node.parentElement;
+        if (item && item !== document.body) item.remove();
+      });
+      document.querySelectorAll('[data-testid="image-export-button"], [data-testid="search-menu-button"]').forEach((node) => {
+        const item = node.closest("button, a, [role='menuitem'], li, .dropdown-menu-item, .context-menu-item, .menu-item") || node;
+        if (item && item !== document.body) item.remove();
+      });
+
+      // Keep only Reset Canvas among Excalidraw's bottom utility actions.
       const utilLabels = [
-        { key: "export", match: /^export image(\.\.\.)?$/i, label: "Export Image", testId: "image-export-button" },
-        { key: "find", match: /^find on canvas$/i, label: "Find on Canvas", testId: "search-menu-button" },
         { key: "reset", match: /^reset (the )?canvas$/i, label: "Reset Canvas", testId: "clear-canvas-button" },
       ];
       document.querySelectorAll(".dropdown-menu:has([data-sketchizi-custom-menu-block]) .dropdown-menu-item, .dropdown-menu:has([data-sketchizi-custom-menu-block]) button[data-testid]").forEach((row) => {
@@ -239,8 +255,7 @@ export function useNativeSketchiziMenu({
         const hasNativeMenuAction = (container) => [...container.querySelectorAll("*")].some((node) => {
           if (node.children.length !== 0) return false;
           const label = node.textContent?.replace(/\s+/g, " ").trim().toLowerCase() || "";
-          return label === "export image..." || label === "export image" ||
-            label === "find on canvas" || label === "reset the canvas" || label === "reset canvas";
+          return label === "reset the canvas" || label === "reset canvas";
         });
         const menuParent = [...document.querySelectorAll(".dropdown-menu-container")]
           .find(hasNativeMenuAction);

@@ -52,3 +52,43 @@ test("Ctrl+K finds Kubernetes Studio, Docker Compose Studio and the icon library
     await expect(palette).toHaveCount(0);
   }
 });
+test("document dropdown opens Export Studio with a live System Design preview while hamburger stays clean", async ({ page }) => {
+  await openCanvas(page);
+
+  const shortcut = process.platform === "darwin" ? "Meta+K" : "Control+K";
+  await page.keyboard.press(shortcut);
+  const palette = page.locator(".sketchizi-command-palette");
+  await expect(palette).toBeVisible();
+  await page.keyboard.type("system design");
+  await palette.getByText(/Open System Design Studio/i).click();
+
+  const studio = page.getByTestId("system-design-studio");
+  await expect(studio).toBeVisible();
+  const toolbar = page.getByRole("toolbar", { name: "System design workspace" });
+  await toolbar.getByRole("button", { name: "Blueprints" }).click();
+  const blueprintMenu = page.getByRole("menu", { name: "Starter architectures" });
+  await expect(blueprintMenu.getByRole("menuitem").first()).toBeVisible();
+  await blueprintMenu.getByRole("menuitem").first().click();
+
+  await expect(studio.locator("[data-node-id]").first()).toBeVisible();
+  await page.getByRole("button", { name: "Canvas options" }).click();
+  const canvasOptions = page.getByRole("dialog", { name: "Canvas options" });
+  await expect(canvasOptions.getByText("Recovery backup")).toBeVisible();
+  await expect(canvasOptions.getByText("Export studio...")).toBeVisible();
+  await canvasOptions.getByRole("button", { name: "Export studio" }).click();
+
+  const exportStudio = page.getByRole("dialog", { name: "Export Studio" });
+  await expect(exportStudio).toBeVisible();
+  await expect(exportStudio.getByText("Diagram preview")).toBeVisible();
+  await expect(exportStudio.locator(".sketchizi-system-export-preview svg [data-node-id]").first()).toBeVisible();
+  await expect(exportStudio.getByRole("button", { name: "Download PNG" })).toBeVisible();
+  await expect(exportStudio.getByRole("button", { name: "Download SVG" })).toBeVisible();
+  await exportStudio.getByRole("button", { name: "Close export studio" }).click();
+
+  await page.getByRole("button", { name: "Open application menu" }).click();
+  const nativeMenu = page.locator(".dropdown-menu-container").first();
+  await expect(nativeMenu).toBeVisible();
+  await expect(nativeMenu.getByText("Export image...", { exact: true })).toHaveCount(0);
+  await expect(nativeMenu.getByText("Find on canvas", { exact: true })).toHaveCount(0);
+  await expect(nativeMenu.getByText("Reset canvas", { exact: true })).toBeVisible();
+});

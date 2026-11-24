@@ -1292,8 +1292,7 @@ html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .
 
 html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-community-section > .sketchizi-drawer-divider:last-child { margin-bottom: 6px !important; }
 
-/* Canvas utility rows (Excalidraw-native): Export Image, Find on Canvas, Reset Canvas.
-   The icon + label group never shrinks, so labels can no longer truncate to "Export im...". */
+/* Excalidraw-native Reset Canvas utility row. */
 html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .dropdown-menu-item {
   display: flex !important;
   align-items: center;
