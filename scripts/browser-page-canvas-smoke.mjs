@@ -179,6 +179,7 @@ try {
  await page.getByRole('button',{name:'Open application menu'}).click();
  const workspaceMenu = page.locator('.dropdown-menu-container').first();
  await workspaceMenu.waitFor({state:'visible'});
+ await page.waitForFunction(() => ![...document.querySelectorAll('.dropdown-menu-container *')].some(node => node.children.length === 0 && /^(Export image(?:\\.\\.\\.|…)?|Find on canvas)$/i.test(node.textContent.trim())));
  assert.equal(await workspaceMenu.getByText('Export image...',{exact:true}).count(),0,'Hamburger must not expose Export image');
  assert.equal(await workspaceMenu.getByText('Find on canvas',{exact:true}).count(),0,'Hamburger must not expose Find on canvas');
  assert(await workspaceMenu.getByText(/Reset (the )?canvas/i).count()>=1,'Hamburger must retain Reset canvas');
