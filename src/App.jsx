@@ -817,7 +817,7 @@ function App() {
       window.removeEventListener("sketchizi:workspace-create-tab", createWorkspaceTab);
       window.removeEventListener("sketchizi:workspace-open-local-file", openLocalFileInNewTab);
     };
-  }, [createCanvasTab, fileActionsRef]);
+  }, [createCanvasTab, fileActionsRef, activeCanvasIdRef, canvasTabsRef, persistCanvasTabs, currentFileRef]);
 
   const applyKubernetesResourceYaml = useCallback((resource) => {
     const api = apiRef.current;
