@@ -47,11 +47,18 @@ export default function TopWorkspaceBar({
 }) {
   const [loadOpen, setLoadOpen] = useState(false);
   const [blueprintsOpen, setBlueprintsOpen] = useState(false);
+  const [blueprintQuery, setBlueprintQuery] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
   const simRef = useRef(null);
   const blueprintsRef = useRef(null);
   const closeLoad = useCallback(() => setLoadOpen(false), []);
   const closeBlueprints = useCallback(() => setBlueprintsOpen(false), []);
+  const filteredBlueprints = BLUEPRINTS.filter((blueprint) => [
+    blueprint.label, blueprint.description, blueprint.chapter, blueprint.category,
+  ].filter(Boolean).join(" ").toLocaleLowerCase().includes(blueprintQuery.trim().toLocaleLowerCase()));
+  const blueprintGroups = ["Core Patterns", "Alex Xu · System Design"].map((category) => ({
+    category, items: filteredBlueprints.filter((blueprint) => blueprint.category === category),
+  })).filter((group) => group.items.length);
   useDismiss(simRef, loadOpen, closeLoad);
   useDismiss(blueprintsRef, blueprintsOpen, closeBlueprints);
 
@@ -70,13 +77,21 @@ export default function TopWorkspaceBar({
             </IconButton>
             {blueprintsOpen && (
               <div className="sd-popover sd-blueprint-menu" role="menu" aria-label="Starter architectures">
-                {BLUEPRINTS.map((blueprint) => (
-                  <button key={blueprint.id} type="button" role="menuitem" disabled={!canEdit}
-                    onClick={() => { onLoadBlueprint?.(blueprint.id); setBlueprintsOpen(false); }}>
-                    <strong>{blueprint.label}</strong>
-                    <small>{blueprint.description}</small>
-                  </button>
-                ))}
+                <input className="sd-blueprint-search" type="search" placeholder="Filter blueprints..."
+                  aria-label="Filter blueprints" value={blueprintQuery}
+                  onChange={(event) => setBlueprintQuery(event.target.value)} />
+                {blueprintGroups.length ? blueprintGroups.map((group) => (
+                  <section className="sd-blueprint-group" key={group.category}>
+                    <h3>{group.category.toLocaleUpperCase()}</h3>
+                    {group.items.map((blueprint) => (
+                      <button key={blueprint.id} type="button" role="menuitem" disabled={!canEdit}
+                        onClick={() => { onLoadBlueprint?.(blueprint.id); setBlueprintsOpen(false); setBlueprintQuery(""); }}>
+                        <strong>{blueprint.label}</strong>
+                        <small>{blueprint.chapter ? `${blueprint.chapter} · ` : ""}{blueprint.description}</small>
+                      </button>
+                    ))}
+                  </section>
+                )) : <p className="sd-blueprint-empty">No matching blueprints</p>}
               </div>
             )}
           </div>
