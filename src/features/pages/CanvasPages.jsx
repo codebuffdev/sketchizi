@@ -4,6 +4,7 @@ import { CaptureUpdateAction, convertToExcalidrawElements } from '@excalidraw/ex
 import { getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, getPageFitViewport, getResponsivePageSize, isElementWithinPage, PAGE_MARKER } from './pageModel.js';
 import { canvasColorForDisplay, canvasColorForScene } from '../navigation/canvasColors.js';
 import { getCanvasBackground } from '../navigation/canvasTheme.js';
+import WorkspaceModeIcon from '../workspace/WorkspaceModeIcon.jsx';
 import './pages.css';
 
 const PAGE_WORKSPACE_TINT = 0.25;
@@ -574,7 +575,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
       })}
     </>,host)}
     {mode === 'pages' && host && createPortal(<>
-      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}>＋</button></nav>
+      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}><WorkspaceModeIcon mode="pages" className="canvas-pages-add-icon" /></button></nav>
     </>,host)}
   </>;
 }

@@ -1805,6 +1805,7 @@ function App() {
         onCanvasAppearanceChange={handleCanvasAppearanceChange}
         onToggleGrid={toggleGrid}
         canvasMode={canvasPageContext.mode}
+        systemDesignActive={Boolean(systemDesign.active)}
         spellcheckEnabled={spellcheckEnabled}
         onToggleSpellcheck={toggleSpellcheck}
         onGridStyleChange={setGridStyle}
@@ -1849,7 +1850,7 @@ function App() {
         onToggleMinimap={() => setMinimapOpen((o) => !o)}
         minimapOpen={minimapOpen}
         isZenMode={isZenMode}
-        canvasTabs={canvasTabs.map((tab) => ({ ...tab, syncMeta: getTabCloudMeta(tab, tab.id === activeCanvasId ? { dirty: documentDirty, cloudSaveState } : null) })).flatMap((tab) => tab.todoTabOpen ? [tab, { id: `todo:${tab.id}`, name: "Todo", isTodoTab: true, canvasId: tab.id }] : [tab])}
+        canvasTabs={canvasTabs.map((tab) => { const systemDesignActive = Boolean(tab.snapshot?.systemDesign?.active || (tab.id === activeCanvasId && systemDesign.active)); const type = systemDesignActive ? "system-design" : (tab.id === activeCanvasId && canvasPageContext.mode === "pages" ? "pages" : "canvas"); return { ...tab, type, systemDesignActive, syncMeta: getTabCloudMeta(tab, tab.id === activeCanvasId ? { dirty: documentDirty, cloudSaveState } : null) }; }).flatMap((tab) => tab.todoTabOpen ? [tab, { id: `todo:${tab.id}`, name: "Todo", isTodoTab: true, canvasId: tab.id, type: "canvas" }] : [tab])}
         activeCanvasId={activeWorkspaceTabId}
         canvasId={activeCanvasId}
         canvasStartDate={canvasTabs.find((tab) => tab.id === activeCanvasId)?.startDate || getLocalDateString()}

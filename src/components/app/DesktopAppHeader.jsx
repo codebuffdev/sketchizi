@@ -157,6 +157,7 @@ export default function DesktopAppHeader({
   onCanvasAppearanceChange,
   onToggleGrid,
   canvasMode = "infinite",
+  systemDesignActive = false,
   spellcheckEnabled = false,
   onToggleSpellcheck,
   onGridStyleChange,
@@ -1009,6 +1010,7 @@ export default function DesktopAppHeader({
             </div>
           }
           showAddButton
+          newTabMode={systemDesignActive ? "system-design" : canvasMode === "pages" ? "pages" : "canvas"}
         />
       </div>
 

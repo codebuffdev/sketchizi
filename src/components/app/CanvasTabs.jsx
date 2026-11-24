@@ -2,16 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getTabDisplayName } from "../../features/workspace/tabLabel.js";
 import { describeTabSync, getTabStatusClass } from "../../features/workspace/tabCloudState.js";
 import { countLiveElements, describeClosedAt } from "../../features/workspace/closedTabs.js";
-
-function CanvasGlyph() {
-  return (
-    <svg className="canvas-tab-icon" viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="3" width="14" height="14" rx="2" />
-      <path d="m6 12 2.2-2.3 2.1 2 1.7-1.6L14 12" />
-      <path d="M6 6.5h3" />
-    </svg>
-  );
-}
+import WorkspaceModeIcon from "../../features/workspace/WorkspaceModeIcon.jsx";
 
 function TodoGlyph() {
   return (
@@ -47,21 +38,11 @@ function ReopenGlyph() {
   );
 }
 
-function NewCanvasGlyph() {
-  return (
-    <svg className="canvas-tabs-add-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3.5" y="5" width="13" height="14" rx="2" />
-      <path d="M8 5V3.8A1.8 1.8 0 0 1 9.8 2h9.4A1.8 1.8 0 0 1 21 3.8v10.4a1.8 1.8 0 0 1-1.8 1.8H16" />
-      <path d="M10 12h6M13 9v6" />
-    </svg>
-  );
-}
-
 function CloseGlyph() {
   return <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" /></svg>;
 }
 
-export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, onRename, closedTabs = [], onReopenClosedTab, onDeleteClosedTab, onClearClosedTabs, activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved", activeStatusLabel = "Saved", disabled = false, showAddButton = true }) {
+export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, onRename, closedTabs = [], onReopenClosedTab, onDeleteClosedTab, onClearClosedTabs, activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved", activeStatusLabel = "Saved", disabled = false, showAddButton = true, newTabMode = "canvas" }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [activeMenuOpen, setActiveMenuOpen] = useState(false);
   const [closedMenuOpen, setClosedMenuOpen] = useState(false);
@@ -164,7 +145,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
         onDoubleClick={() => { if (!tab.isTodoTab) { setOverflowOpen(false); setActiveMenuOpen(true); onRename?.(tab.id); } }}
         disabled={disabled}
       >
-        {tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}
+        {tab.isTodoTab ? <TodoGlyph /> : <WorkspaceModeIcon mode={tab.type || "canvas"} className={`canvas-tab-icon canvas-tab-icon--${tab.type || "canvas"}`} />}
         <span className="canvas-tab-name">{getTabDisplayName(tab.name)}</span>
         {tab.syncMeta?.sourceType === "cloud" ? <TabSyncBadge meta={tab.syncMeta} /> : tab.isTodoTab ? null : activeId === tab.id ? <span className={`canvas-tab-status-dot ${activeStatusClass}`} role="status" aria-label={activeStatusLabel} title={activeStatusLabel} /> : tab.syncMeta && <span className={`canvas-tab-status-dot ${getTabStatusClass(tab.syncMeta)}`} role="status" aria-label={describeTabSync(tab.syncMeta)} title={describeTabSync(tab.syncMeta)} />}
       </button>
@@ -187,7 +168,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
                 {hiddenTabs.map((tab) => (
                   <div className="canvas-tabs-overflow-item" role="none" key={tab.id}>
                     <button type="button" role="menuitem" className={activeId === tab.id ? "is-active" : ""} onClick={() => { onSelect?.(tab.id); setOverflowOpen(false); }}>
-                      <span className="canvas-tabs-overflow-name">{tab.isTodoTab ? <TodoGlyph /> : <CanvasGlyph />}<span className="canvas-tabs-overflow-label" title={tab.name}>{getTabDisplayName(tab.name)}</span></span>
+                      <span className="canvas-tabs-overflow-name">{tab.isTodoTab ? <TodoGlyph /> : <WorkspaceModeIcon mode={tab.type || "canvas"} className={`canvas-tab-icon canvas-tab-icon--${tab.type || "canvas"}`} />}<span className="canvas-tabs-overflow-label" title={tab.name}>{getTabDisplayName(tab.name)}</span></span>
                       {tab.syncMeta?.sourceType === "cloud" ? <TabSyncBadge meta={tab.syncMeta} /> : tab.syncMeta && !tab.isTodoTab && <span className={`canvas-tab-status-dot ${getTabStatusClass(tab.syncMeta)}`} role="status" aria-label={describeTabSync(tab.syncMeta)} title={describeTabSync(tab.syncMeta)} />}
                     </button>
                     {onClose && <button type="button" className="canvas-tab-close canvas-tabs-overflow-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={() => { setOverflowOpen(false); onClose(tab.id); }} disabled={disabled}><CloseGlyph /></button>}
@@ -223,7 +204,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
             )}
           </div>
         )}
-        {showAddButton && <button type="button" className="canvas-tabs-add" aria-label="Create new canvas" title="Create new canvas" onClick={() => { setOverflowOpen(false); onCreate?.(); }} disabled={disabled}><NewCanvasGlyph /></button>}
+        {showAddButton && <button type="button" className="canvas-tabs-add" aria-label="Create new canvas" title="Create new canvas" onClick={() => { setOverflowOpen(false); onCreate?.(); }} disabled={disabled}><WorkspaceModeIcon mode={newTabMode} className={`canvas-tab-icon canvas-tab-icon--${newTabMode}`} /></button>}
         </div>
       </div>
       {activeMenuOpen && activeMenu && <div className="canvas-tabs-active-menu" role="dialog" aria-label="Canvas options">{activeMenu}</div>}

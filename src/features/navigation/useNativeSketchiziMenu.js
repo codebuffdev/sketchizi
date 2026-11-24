@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { countLiveElements, describeClosedAt } from "../workspace/closedTabs.js";
 import { getRecentFileActivityLabel, getRecentFileAvailability, getRecentFileOriginLabel, getRecentFileTypeLabel } from "../files/recentFilePresentation.js";
 import { getRecentFolderActivityLabel, getRecentFolderAvailability, getRecentFolderTypeLabel } from "../files/recentFolderPresentation.js";
+import { getWorkspaceModeIconMarkup } from "../workspace/WorkspaceModeIcon.jsx";
 
 export function useNativeSketchiziMenu({
   apiRef,
@@ -267,8 +268,8 @@ export function useNativeSketchiziMenu({
           recentSection.className = "sketchizi-native-settings-section sketchizi-recent-files-section";
           recentSection.innerHTML = `<div class="sketchizi-drawer-head"><div class="sketchizi-native-settings-title">Workspace</div><span class="sketchizi-drawer-tag">Sketchizi</span></div>
 <div class="sketchizi-ws-tiles" role="group" aria-label="Workspace actions">
-<button type="button" class="sketchizi-ws-tile" data-sketchizi-canvas-mode="infinite" aria-pressed="false"><span class="sketchizi-ws-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12c2.2-5.8 5.2-5.8 9 0s6.8 5.8 9 0c-2.2-5.8-5.2-5.8-9 0S5.2 17.8 3 12Z"/></svg></span><span class="sketchizi-ws-tile-label">Canvas</span></button>
-<button type="button" class="sketchizi-ws-tile" data-sketchizi-canvas-mode="pages" aria-pressed="false"><span class="sketchizi-ws-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3.5" width="12" height="15" rx="1.5"/><path d="M8 7.5h6M8 11h6M8 14.5h4"/><path d="M9 20.5h10a1 1 0 0 0 1-1v-13"/></svg></span><span class="sketchizi-ws-tile-label">Pages</span></button>
+<button type="button" class="sketchizi-ws-tile" data-sketchizi-canvas-mode="infinite" aria-pressed="false"><span class="sketchizi-ws-tile-icon is-canvas" aria-hidden="true">${getWorkspaceModeIconMarkup("canvas")}</span><span class="sketchizi-ws-tile-label">Canvas</span></button>
+<button type="button" class="sketchizi-ws-tile" data-sketchizi-canvas-mode="pages" aria-pressed="false"><span class="sketchizi-ws-tile-icon is-pages" aria-hidden="true">${getWorkspaceModeIconMarkup("pages")}</span><span class="sketchizi-ws-tile-label">Pages</span></button>
 <button type="button" class="sketchizi-ws-tile" data-sketchizi-open-workspace><span class="sketchizi-ws-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 16.5a3.5 3.5 0 0 0-3.7-3.5 5.5 5.5 0 0 0-10.6-1.3A3.8 3.8 0 0 0 6.5 19H19a3 3 0 0 0 1-2.5Z"/></svg></span><span class="sketchizi-ws-tile-label">Cloud Files</span></button>
 <button type="button" class="sketchizi-ws-tile" data-sketchizi-open-file><span class="sketchizi-ws-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7.5Z"/></svg></span><span class="sketchizi-ws-tile-label">Open File</span></button>
 </div>
