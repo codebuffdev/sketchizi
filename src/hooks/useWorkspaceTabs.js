@@ -267,7 +267,7 @@ export function useWorkspaceTabs({
       (Array.isArray(storedSnapshot.chapters) && storedSnapshot.chapters.length > 0);
     let snapshot = storedSnapshot;
     if (isPagesTab && getPages(storedElements).length === 0) {
-      const seeded = createDefaultPagesSnapshot(api, storedSnapshot.chapters?.[0]);
+      const seeded = createDefaultPagesSnapshot(api, storedSnapshot.chapters?.[0] || tab?.chapters?.[0]);
       snapshot = {
         ...seeded,
         ...storedSnapshot,
