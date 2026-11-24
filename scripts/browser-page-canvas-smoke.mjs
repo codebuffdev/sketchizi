@@ -142,13 +142,13 @@ try {
  assert(es.find(e=>e.customData?.sketchiziPagePaper===pages(es)[0].id)?.width===pages(es)[0].width,'Page paper must track the resized frame');
  // Verify both themes update the Pages workspace without leaving the mode.
  await ensureHeaderVisible();
- await ensureHeaderVisible();
  await page.getByRole('button',{name:'Appearance and canvas background'}).click();
  await page.getByRole('button',{name:'Light',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-light'));
  assert(await page.locator('.canvas-pages-mask-panel').first().evaluate(el=>getComputedStyle(el).backgroundColor!=='rgb(17, 24, 32)'));
  await page.getByRole('button',{name:'Dark',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-dark'));
+ await ensureHeaderVisible();
  await page.getByRole('button',{name:'Appearance and canvas background'}).click();
  // Draw through the actual canvas, then ensure the new shape belongs to this page.
  await page.mouse.click(500,400); // Focus the canvas before using its tool shortcut.
