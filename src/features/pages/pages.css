@@ -1098,3 +1098,108 @@ body:has(.app[data-canvas-view="pages"]),
   .pages-editorial-copy .pages-chapter-heading { min-width: 0; font-size: 21px !important; }
   .pages-editorial-actions { gap: 7px !important; }
 }
+
+
+/* Keep Excalidraw transparent so the CSS-painted chapter paper remains visible. */
+.pages-canvas-wrapper .excalidraw,
+.pages-canvas-wrapper .excalidraw .layer-ui__wrapper {
+  background: transparent !important;
+  --default-bg-color: transparent !important;
+}
+.pages-book-workspace .pages-book-sheet {
+  background: var(--book-paper) !important;
+}
+.pages-book-workspace .pages-book-canvas-zone {
+  z-index: 0 !important;
+  pointer-events: none !important;
+  background-color: var(--book-paper) !important;
+}
+.pages-book-workspace .pages-book-canvas-zone.texture-dots {
+  background-image: radial-gradient(circle, var(--book-dot) 1.25px, transparent 1.25px) !important;
+  background-size: 22px 22px !important;
+}
+.pages-book-workspace .pages-book-canvas-zone.texture-ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 27px,
+    var(--book-rule) 27px,
+    var(--book-rule) 28px
+  ) !important;
+  background-position: 0 136px !important;
+  background-size: auto !important;
+}
+.pages-book-workspace .pages-book-canvas-zone.texture-clean {
+  background-image: none !important;
+}
+.pages-book-workspace {
+  --book-paper: #ffffff;
+  --book-dot: #cbd5e1;
+  --book-rule: #e2e8f0;
+}
+.app.theme-dark .pages-book-workspace {
+  --book-paper: #0f141d;
+  --book-dot: #2b3648;
+  --book-rule: #1e293b;
+}
+.pages-chapter-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 23px;
+  box-sizing: border-box;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: rgb(5 150 105 / 10%);
+  color: #059669 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em !important;
+}
+.app.theme-dark .pages-chapter-eyebrow {
+  background: rgb(52 211 153 / 12%);
+  color: #34d399 !important;
+}
+
+/* The chapter navigator and Zen pill share one fixed flex row. */
+.pages-bottom-actions {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 10060;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 40px);
+  pointer-events: none;
+}
+.pages-bottom-actions > * { pointer-events: auto; }
+.pages-bottom-actions .canvas-pages-navigation {
+  position: static !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(620px, calc(100vw - 90px));
+}
+.pages-bottom-actions .sk-zen-pill {
+  position: static !important;
+  right: auto !important;
+  bottom: auto !important;
+  flex: 0 0 auto;
+}
+@media (max-width: 767px) {
+  .pages-bottom-actions {
+    right: 10px;
+    bottom: 12px;
+    max-width: calc(100vw - 20px);
+    gap: 10px;
+  }
+  .pages-bottom-actions .canvas-pages-navigation {
+    max-width: calc(100vw - 84px);
+  }
+}
