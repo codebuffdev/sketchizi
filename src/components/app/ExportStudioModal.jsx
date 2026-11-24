@@ -58,12 +58,12 @@ export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = 
           edges: systemGraph.edges.filter((edge) => data.elements.some((element) => element.id === edge.from) && data.elements.some((element) => element.id === edge.to)) }
       : systemGraph;
     const overlay = buildSystemDesignSvg({ ...overlayGraph, simulation, mode, background: "transparent", darkMode, padding: 24 });
-    const inner = overlay.replace(/^<svg[^>]*>/, "").replace(/<\\/svg>\\s*$/, "");
+    const inner = overlay.replace(/^<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
     const sceneElements = data.elements;
     const minX = Math.min(...sceneElements.map((element) => Number(element.x) || 0));
     const minY = Math.min(...sceneElements.map((element) => Number(element.y) || 0));
     const positionedOverlay = `<g transform="translate(${24 - minX} ${24 - minY})">${inner}</g>`;
-    return nativeMarkup.replace(/<\\/svg>\\s*$/, `${positionedOverlay}</svg>`);
+    return nativeMarkup.replace(/<\/svg>\s*$/, `${positionedOverlay}</svg>`);
   };
 
   const makePng = async () => {
@@ -104,7 +104,7 @@ export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = 
     setBusy(true);
     try {
       let blob;
-      if (systemSvg) blob = await exportSystemDesignImage({ ...systemGraph, simulation, mode: systemDesign?.mode, background: bgMode, darkMode, format: "svg" });
+      if (systemSvg) blob = new Blob([await getCombinedSystemSvg()], { type: "image/svg+xml;charset=utf-8" });
       else {
         const data = getExportData();
         if (!data?.elements.length) throw new Error("No elements to export");
