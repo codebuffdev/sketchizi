@@ -37,9 +37,9 @@ test("chapter title, subtitle, and key formula are editable and persisted on the
   assert.match(workspace, /aria-label="Key formula or rule of thumb"/);
   assert.match(workspace, /onPatch\(\{ keyNote: e\.target\.value \}\)/);
   assert.match(pages, /customData: \{ \.\.\.element\.customData, \.\.\.patch \}/);
-  assert.match(pages, /customData\.activeChapterId = page\.id/);
+  assert.match(pages, /activeChapterId: page\.id/);
   assert.match(pages, /p\.id === persistedActiveId/);
-  assert.match(pages, /chapterAppState =/);
+  assert.match(tabs, /frame\.customData\?\.chapterAppState \|\| \{/);
   assert.match(tabs, /const chapters = chapterFrames\.map/);
   assert.match(tabs, /activeChapterId,/);
   assert.match(tabs, /appState: sanitizeTabAppState\(frame\.customData\?\.chapterAppState/);
@@ -115,7 +115,8 @@ test("Pages paper and textures stay behind fully opaque native canvas rendering"
   assert.match(pages, /viewBackgroundColor: 'transparent'/);
   assert.match(pages, /requestExcalidrawCanvasRefresh/);
   assert.match(pages, /window\.dispatchEvent\(new Event\('resize'\)\)/);
-  assert.match(pages, /fit\(active\); requestExcalidrawCanvasRefresh\(\)/);
+  assert.match(pages, /moveChapter\(targetPage, 0, 0\)/);
+  assert.match(pages, /scrollX: 0, scrollY: 0, zoom: \{ value: 1 \}/);
   assert.match(styles, /\.pages-book-workspace \{ z-index: auto; \}/);
   assert.match(styles, /\.pages-book-sheet \{ z-index: 0; \}/);
   assert.match(styles, /\.pages-book-canvas-zone \{ z-index: 0; \}/);
