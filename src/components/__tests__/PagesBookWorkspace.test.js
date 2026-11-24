@@ -54,8 +54,8 @@ test("previous/next navigation and the Chapters rail select the matching chapter
 
 test("chapter metadata and diagram elements persist together in the existing IndexedDB tab snapshot", () => {
   assert.match(pages, /customData: \{ \.\.\.element\.customData, \.\.\.patch \}/);
-  assert.match(tabs, /const sceneElements = activeApi\?\.getSceneElementsIncludingDeleted/);
-  assert.match(tabs, /const sceneAppState = activeApi\?\.getAppState/);
+  assert.match(tabs, /const sceneElements = Array\.isArray\(elements\) \? elements : \(api\?\.getSceneElementsIncludingDeleted/);
+  assert.match(tabs, /const sceneAppState = appState \|\| api\?\.getAppState/);
   assert.match(persistence, /indexedDB\.open\(DB_NAME, DB_VERSION\)/);
   assert.match(persistence, /canvas-tabs-manifest/);
   assert.match(workspace, /paperTexture/);
