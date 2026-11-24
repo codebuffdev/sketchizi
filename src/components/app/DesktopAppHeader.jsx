@@ -955,7 +955,7 @@ export default function DesktopAppHeader({
                   <i aria-hidden="true" />
                   {((isCloudDocument && ["pending", "saving", "error", "conflict"].includes(cloudSaveState))
                     || (currentDocumentFileBacked && currentDocumentDirty)
-                    || (!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "error"].includes(saveState))) ? "Local Draft" : "Saved"}
+                    || (!isCloudDocument && !currentDocumentFileBacked)) ? "Local Draft" : "Saved"}
                 </span>
               </div>
               <section className="canvas-tabs-menu-section" aria-label="Save and sync">
