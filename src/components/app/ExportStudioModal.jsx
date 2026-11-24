@@ -4,6 +4,10 @@ import { readGraph } from "../../features/system-design/sceneModel.js";
 import { simulateTraffic } from "../../features/system-design/trafficSimulator.js";
 import { buildSystemDesignSvg, exportSystemDesignImage } from "../../features/system-design/exportSystemDesignImage.js";
 
+const EMPTY_SNAPSHOT = Object.freeze({ elements: [] });
+const noopSubscribe = () => () => {};
+const getEmptySnapshot = () => EMPTY_SNAPSHOT;
+
 export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = "architecture-diagram" }) {
   const [scale, setScale] = useState(2);
   const [bgMode, setBgMode] = useState("dark");
@@ -12,12 +16,11 @@ export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = 
   const [statusMessage, setStatusMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const workspace = apiRef?.current?.systemDesignWorkspace;
-  const emptySnapshot = { elements: [] };
-  const subscribe = workspace?.store?.subscribe || (() => () => {});
-  const getSnapshot = workspace?.store?.getSnapshot || (() => emptySnapshot);
+  const subscribe = workspace?.store?.subscribe || noopSubscribe;
+  const getSnapshot = workspace?.store?.getSnapshot || getEmptySnapshot;
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const sceneElements = apiRef?.current?.getSceneElements?.() || [];
-  const systemGraph = useMemo(() => workspace?.enabled ? readGraph(snapshot.elements) : readGraph(sceneElements), [workspace?.enabled, snapshot.elements, sceneElements]);
+  const systemGraph = useMemo(() => workspace ? (workspace.enabled ? readGraph(snapshot.elements) : { nodes: [], edges: [] }) : readGraph(sceneElements), [workspace?.enabled, snapshot.elements, sceneElements]);
   const simulation = useMemo(() => systemGraph.nodes.length ? simulateTraffic({
     nodes: systemGraph.nodes, edges: systemGraph.edges,
     totalRps: workspace?.simulate ? workspace.loadRps : 0,
