@@ -36,7 +36,7 @@ test("uses theme-inheriting SVG strokes for toolbar icons", () => {
   assert.ok(component.includes('fill="none"'));
   assert.ok(!component.includes('light = false'));
   assert.ok(!component.includes('stroke={light ?'));
-  assert.doesNotMatch(component, /<Icon\\s/);
+  assert.ok(!component.includes("<Icon "));
 });
 
 test("uses shared light/dark theme tokens throughout the floating toolbar", () => {
@@ -53,6 +53,6 @@ test("uses shared light/dark theme tokens throughout the floating toolbar", () =
   assert.ok(styles.includes(".sd-command-load {"));
   assert.ok(styles.includes("border: 1px solid var(--sd-border)"));
   const toolbarStyles = styles.slice(styles.indexOf("/* Floating command bar:"), styles.indexOf("@media (max-width: 760px)"));
-  assert.doesNotMatch(toolbarStyles, /background:\\s*#(?:ffffff|1e293b|f1f5f9|475569|0f172a|cbd5e1)/);
+  assert.ok(!/background:\s*#(?:ffffff|1e293b|f1f5f9|475569|0f172a|cbd5e1)/.test(toolbarStyles));
   assert.doesNotMatch(styles, /sd-auto-layout-trigger|sd-components-trigger/);
 });
