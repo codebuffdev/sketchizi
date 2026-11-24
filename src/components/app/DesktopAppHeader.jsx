@@ -203,6 +203,7 @@ export default function DesktopAppHeader({
   canvasDateDisabled = false,
   onSelectCanvasTab,
   onCreateCanvasTab,
+  onDuplicateCanvasTab,
   onReorderCanvasTabs,
   onCloseCanvasTab,
   closedTabs = [],
@@ -921,6 +922,7 @@ export default function DesktopAppHeader({
           activeId={activeCanvasId}
           onSelect={onSelectCanvasTab}
           onCreate={onCreateCanvasTab}
+          onDuplicate={onDuplicateCanvasTab}
           closedTabs={closedTabs}
           onReopenClosedTab={onReopenClosedTab}
           onDeleteClosedTab={onDeleteClosedTab}
