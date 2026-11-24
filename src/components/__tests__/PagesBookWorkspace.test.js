@@ -92,23 +92,23 @@ test("Pages book styling uses the muted slate and emerald palette without purple
 });
 
 
-test("book sheet defaults to widescreen and offers a persisted Standard or Wide width toggle", () => {
-  assert.match(workspace, /widthMode = 'Wide'/);
-  assert.match(workspace, /pages-width-switcher/);
-  assert.match(workspace, /\['Standard', 'Wide'\]/);
-  assert.match(workspace, /onWidthChange\(value\)/);
-  assert.match(pages, /const setPageWidthMode = \(mode, page = active, refreshCanvas = true\)/);
-  assert.match(pages, /pageWidthMode: mode/);
-  assert.match(pages, /onWidthChange=\{setPageWidthMode\}/);
-  assert.match(pages, /window\.innerWidth - 56/);
-  assert.match(pages, /window\.innerHeight - 124/);
-  assert.ok(styles.includes('width: min(1360px, calc(100vw - 56px));'));
-  assert.match(styles, /min-height: calc\(100vh - 124px\)/);
-  assert.match(styles, /padding: 20px 32px 16px/);
-  assert.match(styles, /padding: 10px 32px/);
-  assert.match(styles, /pages-editorial-copy/);
+test("chapter workspace is full-bleed and removes the boxed sheet width controls", () => {
+  assert.doesNotMatch(workspace, /pages-width-switcher|Standard|Wide/);
+  assert.doesNotMatch(workspace, /pageRect|pages-book-edge|pages-book-spine/);
+  assert.match(pages, /function getFullBleedPageSize\(\)/);
+  assert.match(pages, /width: Math\.max\(320, Math\.round\(window\.innerWidth\)\)/);
+  assert.match(pages, /height: Math\.max\(320, Math\.round\(window\.innerHeight\)\)/);
+  assert.match(pages, /const resizeChapter = \(\) =>/);
+  assert.match(pages, /<PagesBookWorkspace pages=\{pages\} active=\{active\} index=\{index\}/);
+  assert.doesNotMatch(pages, /setPageWidthMode|canvas-pages-resize-hit/);
+  assert.match(styles, /\.pages-book-sheet \{[\s\S]*?inset: 0 !important;[\s\S]*?width: 100vw !important;[\s\S]*?height: 100vh !important/);
+  assert.match(styles, /max-width: 1180px !important/);
+  assert.match(styles, /margin: 68px auto 0 !important/);
+  assert.match(styles, /padding: 0 32px 18px !important/);
+  assert.match(styles, /border-bottom: 1px solid var\(--book-border\)/);
+  assert.match(styles, /bottom: 58px !important/);
+  assert.match(styles, /display: none !important/);
 });
-
 
 test("Pages paper and textures stay behind fully opaque native canvas rendering", () => {
   assert.match(pages, /function getPagePaperBackground\(appState, isPagesMode = false\)\s*\{[\s\S]*?if \(isPagesMode\)[\s\S]*?return 'transparent'/);
