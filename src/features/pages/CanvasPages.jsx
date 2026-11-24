@@ -20,6 +20,13 @@ function requestExcalidrawCanvasRefresh() {
   }));
 }
 
+function getFullBleedPageSize() {
+  return {
+    width: Math.max(320, Math.round(window.innerWidth)),
+    height: Math.max(320, Math.round(window.innerHeight)),
+  };
+}
+
 function runAfterCanvasLayoutSettles(api, callback) {
   let frame = 0;
   let attempts = 0;
@@ -56,13 +63,11 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   const [activeId, setActiveId] = useState(null);
   const [error, setError] = useState('');
   const [pageMask, setPageMask] = useState(null);
-  const [revealedResizeEdge, setRevealedResizeEdge] = useState(null);
   const [inlineName, setInlineName] = useState(null);
   const [chapterIndexOpen, setChapterIndexOpen] = useState(false);
   const chapterIndexRef = useRef(null);
   const inlineNameInputRef = useRef(null);
   const cancelInlineNameRef = useRef(false);
-  const touchResizeTimerRef = useRef(null);
   const activeIdRef = useRef(null);
   const initialFitRef = useRef(false);
   const previousViewBackgroundRef = useRef(null);
@@ -220,12 +225,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     document.addEventListener('mousedown', closeOnOutsideMouseDown);
     return () => document.removeEventListener('mousedown', closeOnOutsideMouseDown);
   }, [chapterIndexOpen]);
-
-  useEffect(() => {
-    setRevealedResizeEdge(null);
-    window.clearTimeout(touchResizeTimerRef.current);
-  }, [mode, active?.id]);
-  useEffect(() => () => window.clearTimeout(touchResizeTimerRef.current), []);
 
   // Keep the canvas mode available to CSS so navigation controls can adopt
   // the visual treatment chosen for Pages or the infinite canvas.
@@ -402,10 +401,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
 
   useEffect(() => {
     if (mode !== 'pages' || !activePageRef.current || !api) { setPageMask(null); return; }
-    // Fit only when entering Pages mode or switching pages. Resizing updates
-    // the active page dimensions on every pointer move; fitting on those
-    // updates changes the zoom under the pointer and makes the page appear
-    // to shrink while it is being dragged.
     const refresh = () => {
       const page = activePageRef.current;
       if (page) fit(page);
@@ -416,69 +411,39 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     return () => window.removeEventListener('resize', refresh);
   }, [api, mode, active?.id]);
 
-  const startResize = (event, edge) => {
-    if (!canEdit || !active || !api) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const start = { x: event.clientX, y: event.clientY };
-    const original = { x: active.x, y: active.y, width: active.width, height: active.height };
-    const pointerId = event.pointerId;
-    const move = e => {
-      if (e.pointerId !== pointerId) return;
-      const zoom = Math.max(0.01, Number(api.getAppState()?.zoom?.value || 1));
-      const dx = (e.clientX - start.x) / zoom;
-      const dy = (e.clientY - start.y) / zoom;
-      const horizontal = edge.includes('w') || edge.includes('e');
-      const vertical = edge.includes('n') || edge.includes('s');
-      const width = horizontal ? Math.max(320, Math.min(10000, original.width + (edge.includes('w') ? -dx : dx))) : original.width;
-      const height = vertical ? Math.max(320, Math.min(10000, original.height + (edge.includes('n') ? -dy : dy))) : original.height;
-      const x = edge.includes('w') ? original.x + original.width - width : original.x;
-      const y = edge.includes('n') ? original.y + original.height - height : original.y;
+  // Every chapter is a viewport-sized artboard. Keep its native Excalidraw
+  // frame and transparent paper companion in lockstep with browser resizes.
+  useEffect(() => {
+    if (mode !== 'pages' || !active || !api) return undefined;
+    const resizeChapter = () => {
+      const page = activePageRef.current;
+      if (!page) return;
+      const size = getFullBleedPageSize();
+      if (page.width === size.width && page.height === size.height) return;
       const elements = api.getSceneElementsIncludingDeleted().map(element => {
-        if (element.id !== active.id && element.customData?.sketchiziPagePaper !== active.id) return element;
-        return { ...element, x, y, width, height, version: (element.version || 0) + 1,
+        if (element.id !== page.id && element.customData?.sketchiziPagePaper !== page.id) return element;
+        return { ...element, width: size.width, height: size.height,
+          version: (element.version || 0) + 1,
           versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
       });
-      api.updateScene({ elements, captureUpdate: CaptureUpdateAction.EVENTUALLY });
-      const nextPage = { ...active, x, y, width, height };
-      setPageMask(getPageViewportMask(nextPage, api.getAppState()));
-      setPages(current => current.map(page => page.id === active.id ? nextPage : page));
+      api.updateScene({ elements, captureUpdate: CaptureUpdateAction.NEVER });
+      const resizedPage = { ...page, ...size };
+      setPages(current => current.map(item => item.id === page.id ? resizedPage : item));
+      window.requestAnimationFrame(() => {
+        if (activeIdRef.current === page.id) fitViewportToPage(resizedPage);
+      });
     };
-    const finish = e => {
-      if (e.pointerId !== pointerId) return;
-      window.removeEventListener('pointermove', move, true);
-      window.removeEventListener('pointerup', finish, true);
-      window.removeEventListener('pointercancel', finish, true);
-    };
-    window.addEventListener('pointermove', move, true);
-    window.addEventListener('pointerup', finish, true);
-    window.addEventListener('pointercancel', finish, true);
-  };
-
-  const handleResizePointerDown = (event, edge) => {
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-    if (event.pointerType === 'touch' && revealedResizeEdge !== edge) {
-      event.preventDefault();
-      event.stopPropagation();
-      setRevealedResizeEdge(edge);
-      window.clearTimeout(touchResizeTimerRef.current);
-      touchResizeTimerRef.current = window.setTimeout(() => setRevealedResizeEdge(null), 3000);
-      return;
-    }
-    window.clearTimeout(touchResizeTimerRef.current);
-    setRevealedResizeEdge(null);
-    startResize(event, edge);
-  };
+    resizeChapter();
+    window.addEventListener('resize', resizeChapter);
+    return () => window.removeEventListener('resize', resizeChapter);
+  }, [api, mode, active?.id]);
 
   const blockOutsidePage = event => { event.preventDefault(); event.stopPropagation(); };
   const update = elements => api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
   const createPage = () => {
     if (!api || !canEdit) return;
     const elements = api.getSceneElementsIncludingDeleted();
-    const responsiveSize = {
-      width: Math.round(Math.min(1360, Math.max(320, window.innerWidth - 56))),
-      height: Math.round(Math.min(10000, Math.max(320, window.innerHeight - 124))),
-    };
+    const responsiveSize = getFullBleedPageSize();
     if (!validSize(responsiveSize.width, responsiveSize.height)) { setError('The available canvas area is too small to create a page.'); return; }
     const nextOrder = getPages(elements).reduce((n, page) => Math.max(n, page.customData?.pageOrder || 0), 0) + 1;
     const paperBackground = getPagePaperBackground(api.getAppState?.(), true);
@@ -505,40 +470,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
           versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
       : element));
   };
-  const setPageWidthMode = (mode, page = active, refreshCanvas = true) => {
-    if (!page || !api || !canEdit || !['Standard', 'Wide'].includes(mode)) return;
-    const width = mode === 'Standard'
-      ? 860
-      : Math.round(Math.min(1360, Math.max(320, window.innerWidth - 56)));
-    const height = Math.round(Math.min(10000, Math.max(Number(page.height || 720), window.innerHeight - 124, 320)));
-    const elements = api.getSceneElementsIncludingDeleted().map(element => {
-      const isFrame = element.id === page.id;
-      const isPaper = element.customData?.sketchiziPagePaper === page.id;
-      if (!isFrame && !isPaper) return element;
-      return {
-        ...element, width, height,
-        ...(isFrame ? { customData: { ...element.customData, pageWidthMode: mode } } : {}),
-        version: (element.version || 0) + 1,
-        versionNonce: Math.floor(Math.random() * 2147483647),
-        updated: Date.now(),
-      };
-    });
-    api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
-    fit({ ...page, width, height, customData: { ...page.customData, pageWidthMode: mode } });
-    if (refreshCanvas) requestExcalidrawCanvasRefresh();
-  };
-  useEffect(() => {
-    if (mode !== 'pages' || !active || !canEdit || active.customData?.pageWidthMode) return;
-    setPageWidthMode('Wide', active);
-  }, [mode, active?.id, active?.customData?.pageWidthMode, canEdit]);
-
-  useEffect(() => {
-    if (mode !== 'pages' || !active || active.customData?.pageWidthMode !== 'Wide' || !canEdit) return undefined;
-    const resizeWideSheet = () => setPageWidthMode('Wide', activePageRef.current, false);
-    window.addEventListener('resize', resizeWideSheet);
-    return () => window.removeEventListener('resize', resizeWideSheet);
-  }, [mode, active?.id, active?.customData?.pageWidthMode, canEdit]);
-
   const toggleChapterRead = page => {
     if (!page || !canEdit || !api) return;
     const completed = !Boolean(page.customData?.completed);
@@ -647,10 +578,8 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   };
   return <>
     {mode === 'pages' && pageMask && host && createPortal(
-      <PagesBookWorkspace pages={pages} active={active} index={index} pageRect={pageMask.pageRect}
-        canEdit={canEdit} widthMode={active?.customData?.pageWidthMode || 'Wide'} onWidthChange={setPageWidthMode}
-        onSelect={fit} onAdd={add} onDelete={deletePage}
-        onToggleRead={toggleChapterRead} onPatch={patchChapter} />, host)}
+      <PagesBookWorkspace pages={pages} active={active} index={index}
+        canEdit={canEdit} onToggleRead={toggleChapterRead} onPatch={patchChapter} />, host)}
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask">
         {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
@@ -672,37 +601,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
       /> : <button type="button" className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>,
       host,
     )}
-    {mode === 'pages' && canEdit && active && pageMask && host && createPortal(<>
-      {['nw','n','ne','e','se','s','sw','w'].map(edge => {
-        const rect = pageMask.pageRect;
-        const reach = 28;
-        const inset = reach / 2;
-        const positions = {
-          nw: { left: rect.left - reach, top: rect.top - reach, width: reach, height: reach },
-          n: { left: rect.left + inset, top: rect.top - reach, width: Math.max(0, rect.width - reach), height: reach },
-          ne: { left: rect.left + rect.width, top: rect.top - reach, width: reach, height: reach },
-          e: { left: rect.left + rect.width, top: rect.top + inset, width: reach, height: Math.max(0, rect.height - reach) },
-          se: { left: rect.left + rect.width, top: rect.top + rect.height, width: reach, height: reach },
-          s: { left: rect.left + inset, top: rect.top + rect.height, width: Math.max(0, rect.width - reach), height: reach },
-          sw: { left: rect.left - reach, top: rect.top + rect.height, width: reach, height: reach },
-          w: { left: rect.left - reach, top: rect.top + inset, width: reach, height: Math.max(0, rect.height - reach) },
-        };
-        const isCorner = edge.length === 2;
-        const label = isCorner
-          ? `Drag page from ${edge.toUpperCase()} corner to adjust width and height`
-          : `Drag page ${edge === 'n' || edge === 's' ? 'edge to adjust height' : 'edge to adjust width'}`;
-        return <button
-          key={edge}
-          type="button"
-          className={`canvas-pages-resize-hit is-${edge}${revealedResizeEdge === edge ? ' is-revealed' : ''}`}
-          style={positions[edge]}
-          aria-label={label}
-          title={label}
-          onPointerDown={event => handleResizePointerDown(event, edge)}
-          onContextMenu={event => event.preventDefault()}
-        />;
-      })}
-    </>,host)}
     {mode === 'pages' && host && createPortal(<>
       <nav className="canvas-pages-navigation" aria-label="Chapter navigation">
         <button type="button" aria-label="Previous chapter" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button>
