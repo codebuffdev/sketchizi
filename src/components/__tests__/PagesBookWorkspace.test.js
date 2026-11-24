@@ -150,11 +150,24 @@ test("Pages paper textures show through transparent Excalidraw in light and dark
 });
 
 test("chapter badge is a zero-padded number and navigator shares a flex row with Zen", () => {
-  assert.match(workspace, /\{String\(index \+ 1\)\.padStart\(2, '0'\)\}/);
-  assert.doesNotMatch(workspace, />CH \{String\(index/);
+  assert.match(workspace, /<span>\{String\(index \+ 1\)\.padStart\(2, '0'\)\}<\/span>/);
+  assert.match(workspace, /pages-eyebrow-separator/);
   assert.match(styles, /font-variant-numeric: tabular-nums/);
   assert.match(pages, /className="pages-bottom-actions"/);
   assert.match(app, /document\.querySelector\("\.pages-bottom-actions"\)/);
   assert.match(styles, /\.pages-bottom-actions \{[\s\S]*?display: flex;[\s\S]*?align-items: center;[\s\S]*?gap: 10px/);
   assert.match(styles, /\.pages-bottom-actions \.sk-zen-pill \{[\s\S]*?position: static !important/);
+  assert.match(workspace, /title=\{value\} aria-label=\{value\} aria-pressed=\{texture === value\}/);
+  assert.match(workspace, /<svg viewBox="0 0 16 16"/);
+  assert.doesNotMatch(workspace, />\{value\}<\/button>/);
+  assert.match(styles, /max-width: 1180px !important/);
+  assert.match(styles, /margin: 62px auto 0 !important/);
+  assert.match(styles, /padding: 0 36px 18px !important/);
+  assert.match(styles, /border-bottom: 1px solid #e2e8f0 !important/);
+  assert.match(styles, /pages-editorial-copy::before/);
+  assert.match(styles, /width: 3px/);
+  assert.match(styles, /font-size: 26px !important/);
+  assert.match(styles, /font-size: 14px !important/);
+  assert.match(styles, /height: 28px !important/);
+
 });
