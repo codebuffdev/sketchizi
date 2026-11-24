@@ -304,6 +304,21 @@ export function useWorkspaceTabs({
     if (activeTab && (activeTab.snapshot || activeTab.type === "pages" || activeTab.type === "page")) applyCanvasTabSnapshot(activeTab);
   }, [apiReady, activeCanvasId, applyCanvasTabSnapshot]);
 
+  const setActiveCanvasTabType = useCallback((type) => {
+    const tabId = activeCanvasIdRef.current;
+    const currentTab = canvasTabsRef.current.find(tab => tab.id === tabId);
+    if (!currentTab) return;
+    let snapshot = currentTab.snapshot || captureCanvasTabSnapshot();
+    if (type === "pages" && getPages(snapshot?.elements || []).length === 0) {
+      snapshot = { ...snapshot, ...createDefaultPagesSnapshot(apiRef.current) };
+    }
+    const nextTabs = canvasTabsRef.current.map(tab => tab.id === tabId
+      ? { ...tab, type: type === "pages" ? "pages" : "canvas", snapshot }
+      : tab);
+    persistCanvasTabs(nextTabs);
+    if (type === "pages") applyCanvasTabSnapshot(nextTabs.find(tab => tab.id === tabId));
+  }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, applyCanvasTabSnapshot]);
+
   const switchCanvasTab = useCallback((nextId) => {
     if (!nextId || nextId === activeCanvasIdRef.current) return;
     const previousId = activeCanvasIdRef.current;
