@@ -95,10 +95,10 @@ try {
  assert.equal(es.find(e => e.customData?.sketchiziPagePaper === pages(es)[0].id)?.width, 1360);
  // Assert the actual backing store is sized for a 2x HiDPI display, not CSS-scaled.
  const canvasMetrics = await page.evaluate(() => {
-  const canvases = [...document.querySelectorAll('.desktop-canvas-region .excalidraw canvas')]
+  const canvases = [...document.querySelectorAll('.desktop-canvas-region canvas')]
    .filter(el => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().height > 0);
   const canvas = canvases.find(el => !String(el.className).includes('layer-ui')) || canvases[0];
-  if (!canvas) return { dpr: window.devicePixelRatio, candidates: [...document.querySelectorAll('.desktop-canvas-region .excalidraw *')]
+  if (!canvas) return { dpr: window.devicePixelRatio, candidates: [...document.querySelectorAll('.desktop-canvas-region *')]
    .filter(el => String(el.className || '').includes('layer-canvas'))
    .map(el => ({ tag: el.tagName, className: String(el.className) })) };
   const rect = canvas.getBoundingClientRect();
