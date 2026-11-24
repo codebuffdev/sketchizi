@@ -57,8 +57,8 @@ function runAfterCanvasLayoutSettles(api, callback) {
   return () => window.cancelAnimationFrame(frame);
 }
 
-export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, onPageContextChange, bookTitle, onRenameBookTitle, onDeleteOnlyPage }) {
-  const [mode, setMode] = useState(() => { try { return localStorage.getItem('sketchizi.canvasView') === 'pages' ? 'pages' : 'infinite'; } catch { return 'infinite'; } });
+export default function CanvasPages({ api, workspaceMode = "infinite", canEdit = true, aiPanelOpen = false, onPageContextChange, bookTitle, onRenameBookTitle, onDeleteOnlyPage }) {
+  const [mode, setMode] = useState(() => workspaceMode === "pages" ? "pages" : "infinite");
   const [pages, setPages] = useState([]);
   const [canvasTheme, setCanvasTheme] = useState(() => api?.getAppState?.()?.theme || "light");
   const [activeId, setActiveId] = useState(null);
@@ -495,6 +495,11 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     setError(''); setMode('pages'); fit(frame);
   };
   const add = () => { createPage(); };
+  useEffect(() => {
+    const nextMode = workspaceMode === "pages" ? "pages" : "infinite";
+    if (mode !== nextMode) changeMode(nextMode);
+  }, [workspaceMode, mode, api, pages, active?.id]);
+
   const patchChapter = patch => {
     if (!active || !canEdit || !api) return;
     update(api.getSceneElementsIncludingDeleted().map(element => element.id === active.id
