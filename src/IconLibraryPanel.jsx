@@ -341,7 +341,8 @@ export default function IconLibraryPanel({
     systemDesignIcons,
   ]);
 
-  const shownIcons = displayedIcons.slice(0, iconDisplayLimit);
+  const assignmentIcons = assignmentMode ? displayedIcons.filter((icon) => icon.source !== "system-design") : displayedIcons;
+  const shownIcons = assignmentIcons.slice(0, iconDisplayLimit);
 
   const sourceTabs = [
     { id: "system-design", label: "System Design (22)" },
