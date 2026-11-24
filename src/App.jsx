@@ -394,6 +394,7 @@ function App() {
     switchCanvasTab,
     selectWorkspaceTab,
     createCanvasTab,
+    duplicateCanvasTab,
     reopenClosedTab,
     deleteClosedTab,
     clearClosedTabs,
@@ -1862,6 +1863,7 @@ function App() {
         onSelectCanvasTab={selectWorkspaceTab}
         onCloseTodoTab={closeTodoTab}
         onCreateCanvasTab={createCanvasTab}
+        onDuplicateCanvasTab={duplicateCanvasTab}
         onReorderCanvasTabs={reorderCanvasTabs}
         onCloseCanvasTab={closeCanvasTab}
         closedTabs={closedTabs}
