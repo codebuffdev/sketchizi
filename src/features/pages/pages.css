@@ -1500,3 +1500,20 @@ body:has(.app[data-canvas-view="pages"]),
   .pages-book-workspace .pages-chapter-heading,
   .pages-book-workspace .pages-chapter-tagline { transition: none !important; }
 }
+
+
+/* Clip the decorative paper texture at the masthead divider. The sheet stays
+   full-bleed; only its non-interactive dot/rule paint starts below the header. */
+.pages-book-workspace .pages-book-canvas-zone {
+  clip-path: inset(156px 0 0 0);
+}
+@media (max-width: 900px) {
+  .pages-book-workspace .pages-book-canvas-zone {
+    clip-path: inset(200px 0 0 0);
+  }
+}
+@media (max-width: 767px) {
+  .pages-book-workspace .pages-book-canvas-zone {
+    clip-path: inset(202px 0 0 0);
+  }
+}
