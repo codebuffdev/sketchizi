@@ -1850,7 +1850,7 @@ function App() {
         onToggleMinimap={() => setMinimapOpen((o) => !o)}
         minimapOpen={minimapOpen}
         isZenMode={isZenMode}
-        canvasTabs={canvasTabs.map((tab) => { const type = getWorkspaceTabMode(tab, activeCanvasId, canvasPageContext.mode); return { ...tab, type, systemDesignActive, syncMeta: getTabCloudMeta(tab, tab.id === activeCanvasId ? { dirty: documentDirty, cloudSaveState } : null) }; }).flatMap((tab) => tab.todoTabOpen ? [tab, { id: `todo:${tab.id}`, name: "Todo", isTodoTab: true, canvasId: tab.id, type: "canvas" }] : [tab])}
+        canvasTabs={canvasTabs.map((tab) => { const type = getWorkspaceTabMode(tab, activeCanvasId, canvasPageContext.mode); return { ...tab, type, syncMeta: getTabCloudMeta(tab, tab.id === activeCanvasId ? { dirty: documentDirty, cloudSaveState } : null) }; }).flatMap((tab) => tab.todoTabOpen ? [tab, { id: `todo:${tab.id}`, name: "Todo", isTodoTab: true, canvasId: tab.id, type: "canvas" }] : [tab])}
         activeCanvasId={activeWorkspaceTabId}
         canvasId={activeCanvasId}
         canvasStartDate={canvasTabs.find((tab) => tab.id === activeCanvasId)?.startDate || getLocalDateString()}
