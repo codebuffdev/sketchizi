@@ -923,6 +923,7 @@ export default function DesktopAppHeader({
           onSelect={onSelectCanvasTab}
           onCreate={onCreateCanvasTab}
           onDuplicate={onDuplicateCanvasTab}
+          isDark={Boolean(isDarkTheme)}
           closedTabs={closedTabs}
           onReopenClosedTab={onReopenClosedTab}
           onDeleteClosedTab={onDeleteClosedTab}
