@@ -945,3 +945,38 @@ body:has(.pages-book-workspace) .sketchizi-appearance {
 .pages-editorial-header button {
   pointer-events: auto !important;
 }
+
+/* Pages is a viewport-bounded workspace: no document or canvas scrolling. */
+.app[data-canvas-view="pages"] .desktop-canvas-region,
+.app[data-canvas-view="pages"] .desktop-canvas-view,
+.app[data-canvas-view="pages"] .canvas {
+  box-sizing: border-box !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-width: 100vw !important;
+  min-height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+}
+.app[data-canvas-view="pages"] .desktop-canvas-region {
+  position: fixed !important;
+  inset: 0 !important;
+}
+.app[data-canvas-view="pages"] .canvas {
+  position: absolute !important;
+  inset: 0 !important;
+}
+
+/* The hand tool and Excalidraw's escape-to-content affordance have no role
+   when the active chapter is permanently fitted to the viewport. */
+.app[data-canvas-view="pages"] .excalidraw [data-testid="toolbar-hand"],
+.app[data-canvas-view="pages"] .excalidraw button[aria-label="Hand"],
+.app[data-canvas-view="pages"] .excalidraw button[title="Hand"],
+.app[data-canvas-view="pages"] .excalidraw .ToolIcon_type_hand,
+.app[data-canvas-view="pages"] .excalidraw .sketchizi-scroll-back-control,
+.app[data-canvas-view="pages"] .excalidraw button[aria-label="Scroll back to content"] {
+  display: none !important;
+}
