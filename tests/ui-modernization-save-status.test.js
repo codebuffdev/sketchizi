@@ -90,6 +90,6 @@ test("canvas tabs support double-click inline rename without a permanent pencil 
   assert.match(tabs, /activeRenameAction\?\.type === "input"/);
   assert.match(tabs, /onDoubleClick=\{\(\) => \{/);
   assert.match(tabs, /onRename\?\.\(tab\.id\)/);
-  assert.match(header, /className="desktop-app-document-identity-name-input"/);
+  assert.match(header, /desktop-app-document-identity-name-input canvas-tab-rename-input/);
   assert.match(tabStyles, /\.canvas-tab-editing-label/);
 });
