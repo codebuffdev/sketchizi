@@ -466,8 +466,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       // editable controls. The Primary Dock palette uses role="dialog", but
       // Escape there must still clear the element selection and restore the
       // full dock; treating every dialog as protected swallowed that action.
-      if (target?.closest?.(
-        "input, textarea, select, .sk-tool-choice-menu, .sk-tool-layer-menu, [role='menu']",
+      if (alignPopoverOpen || target?.closest?.(
+        "input, textarea, select, .sk-tool-choice-menu, .sk-tool-layer-menu, .sk-tool-align-popover, [role='menu']",
       )) return;
 
       // Capture Escape before Excalidraw consumes it so selection is cleared consistently.
@@ -487,7 +487,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     };
     window.addEventListener("keydown", handleEscapeToPrimaryDock, true);
     return () => window.removeEventListener("keydown", handleEscapeToPrimaryDock, true);
-  }, [apiRef, onClearSelection]);
+  }, [apiRef, onClearSelection, alignPopoverOpen]);
 
   const appState = apiRef?.current?.getAppState?.() || {};
   useEffect(() => {
@@ -543,6 +543,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     if (previousSelectionKeyRef.current === selectionKey) return;
     previousSelectionKeyRef.current = selectionKey;
     collapseDockImmediately();
+    setAlignPopoverOpen(false);
   }, [selectionKey]);
   useEffect(() => {
     const revealForCanvasHover = (event) => {
