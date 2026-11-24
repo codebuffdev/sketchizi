@@ -3,6 +3,7 @@ import { PORTS, choosePorts, getPortPoint, nearestPort, pointAlong, roundedPath,
 import { nodeFacets, serviceNames } from "./yamlPreview.js";
 import { formatRps, packetCountForRps } from "./trafficSimulator.js";
 import { PrimitiveIcon } from "./PrimitiveIcon.jsx";
+import { getNodeContentScale } from "./nodeCardScale.js";
 
 const STATUS_LABEL = { healthy: "Healthy", elevated: "Elevated", overloaded: "Overloaded", lagging: "Lagging", down: "Down" };
 const stop = (event) => event.stopPropagation();
@@ -238,10 +239,12 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
           const isDropTarget = dropTarget?.id === node.id;
           const showPorts = canEdit && (selected || hoverId === node.id || drag?.fromId === node.id || armedConnect?.nodeId === node.id || isDropTarget);
           const facets = nodeFacets(node, mode, names);
+          const contentScale = getNodeContentScale(node.width, node.height);
           const status = simulate && telemetry ? telemetry.status : node.health === "down" ? "down" : node.health === "degraded" ? "elevated" : "healthy";
           return (
             <div key={node.id} className={`sd-node is-${node.accent} s-${status}${selected ? " is-selected" : ""}${hoverId === node.id ? " is-hovered" : ""}${isDropTarget ? " is-drop-target" : ""}${armedConnect?.nodeId === node.id ? " is-connect-armed" : ""}`}
               style={{ left: node.x, top: node.y, width: node.width, height: node.height }} data-node-id={node.id} data-kind={node.kind}>
+              <div className="sd-node-content" style={{ transform: `scale(${contentScale})` }}>
               <div className="sd-node-head">
                 <button type="button" className={`sd-node-icon-button${node.customIcon ? " has-custom-icon" : ""}`}
                   title="Insert or change tech icon" aria-label={`Insert or change tech icon for ${node.label}`}
@@ -291,6 +294,7 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
                   <i style={{ width: `${Math.min(100, Number.isFinite(telemetry.utilization) ? telemetry.utilization * 100 : 100)}%` }} />
                 </div>
               )}
+              </div>
               {PORTS.map((port) => (
                 <button key={port} type="button" tabIndex={-1}
                   className={`sd-port is-${port}${showPorts ? " is-visible" : ""}${isDropTarget && dropPort === port ? " is-target" : ""}${armedConnect?.nodeId === node.id && (armedConnect.port === port || armedConnect.port == null) ? " is-armed" : ""}`}
