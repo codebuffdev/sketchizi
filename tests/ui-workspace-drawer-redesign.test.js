@@ -118,7 +118,10 @@ test("native utility rows never truncate labels and show shortcuts as kbd badges
   assert.match(kbd, /padding: 2px 6px/);
   assert.match(kbd, /border-radius: 6px/);
   assert.match(menu, /document\.createElement\("kbd"\)/);
-  for (const text of ["Export Image", "Find on Canvas", "Reset Canvas"]) assert.ok(menu.includes(`label: "${text}"`), `missing ${text}`);
+  assert.match(menu, /label: "Reset Canvas"/);
+  assert.doesNotMatch(menu, /label: "Export Image"/);
+  assert.doesNotMatch(menu, /label: "Find on Canvas"/);
+  assert.match(menu, /blockedMenuLabels = new Set/);
 });
 
 test("Reset Canvas has a destructive rose tint and the old reset label is still recognised by trim logic", () => {
