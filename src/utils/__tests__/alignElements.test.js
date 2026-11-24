@@ -153,7 +153,9 @@ test("ToolOptionsDock exposes the Align trigger, upward portal, and live selecti
   assert.ok(source.includes("api.getSceneElements?.()"));
   assert.ok(source.includes("selectedElementIds"));
   assert.ok(source.includes("applyAlignmentToSelection(api, layout"));
-  assert.ok(source.includes("commitToHistory: true"));
+  assert.ok(source.includes("captureUpdate: CaptureUpdateAction.IMMEDIATELY"));
+  const utility = await readFile(new URL("../alignElements.js", import.meta.url), "utf8");
+  assert.ok(utility.includes("commitToHistory: true"));
   assert.ok(styles.includes("width: 34px;"));
   assert.ok(styles.includes("height: 34px;"));
   assert.ok(styles.includes("background: rgba(148, 163, 184, .14)"));
