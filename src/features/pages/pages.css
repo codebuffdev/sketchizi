@@ -708,12 +708,14 @@
 
 /* The Pages overlay stays non-stacking; expanded app popovers temporarily outrank sheet controls. */
 .app.canvas-first-header:has(.pages-book-workspace) .desktop-app-header { z-index: 10060 !important; }
-.app:has(.pages-book-workspace):has(.desktop-app-header [aria-expanded="true"]) .pages-book-ui {
+.app:has(.pages-book-workspace):has(.appearance-trigger[aria-expanded="true"]) .pages-book-ui {
   z-index: 500;
 }
 .app:has(.pages-book-workspace) [role="dialog"],
-.app:has(.pages-book-workspace) [role="menu"],
-.app:has(.pages-book-workspace) [role="listbox"] {
+body:has(.pages-book-workspace) [role="dialog"],
+body:has(.pages-book-workspace) [role="menu"],
+body:has(.pages-book-workspace) [role="listbox"],
+body:has(.pages-book-workspace) .sketchizi-appearance {
   z-index: 10080 !important;
 }
 .pages-book-workspace {
