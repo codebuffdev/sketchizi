@@ -2199,3 +2199,10 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
   white-space: nowrap;
 }
 .canvas-tabs-tab-menu-portal.is-dark .canvas-tabs-active-menu-content kbd { border-color: #334155; background: #1e293b; color: #94a3b8; }
+
+.canvas-tabs-active-menu-action-button .canvas-action-icon svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.85;
+}
