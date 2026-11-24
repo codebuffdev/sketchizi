@@ -726,7 +726,7 @@
 /* Keep all book decoration behind Excalidraw's native HiDPI canvas. The paper
    itself is CSS-painted; the matching Excalidraw paper element is transparent. */
 .pages-book-workspace { z-index: auto; }
-.pages-book-sheet { z-index: auto; }
+.pages-book-sheet { z-index: 0; }
 .pages-book-edge { z-index: 0; background: var(--book-paper); }
 .pages-book-spine {
   z-index: 1;
