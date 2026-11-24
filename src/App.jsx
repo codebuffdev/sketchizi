@@ -2130,7 +2130,7 @@ function App() {
         </div>
       )}
 
-      <Suspense fallback={null}><ExportStudioModal isOpen={exportStudioOpen} onClose={() => setExportStudioOpen(false)} apiRef={apiRef} isDarkTheme={isDarkTheme} filename={(currentFile?.name || cloudDocumentName || "architecture-diagram").replace(/\.[^.]+$/, "")} /></Suspense>
+      <Suspense fallback={null}>{exportStudioOpen && <ExportStudioModal isOpen={exportStudioOpen} onClose={() => setExportStudioOpen(false)} apiRef={apiRef} isDarkTheme={isDarkTheme} filename={(currentFile?.name || cloudDocumentName || "architecture-diagram").replace(/\.[^.]+$/, "")} />}</Suspense>
 
       <CommandPalette
         open={commandPaletteOpen}
