@@ -206,7 +206,7 @@ test("Pages routing follows tab identity and hydration seeds an empty legacy Pag
   assert.match(tabs, /const isPagesTab = tab\?\.type === "pages"/);
   assert.match(tabs, /if \(isPagesTab && getPages\(storedElements\)\.length === 0\)/);
   assert.match(tabs, /type: "pages", snapshot/);
-  assert.match(tabs, /hasPageChapters \|\| normalized\.type === "pages"/);
+  assert.match(tabs, /return hasPageChapters \? \{ \.\.\.normalized, type: "pages" \}/);
   assert.match(tabs, /if \(activeTab\.snapshot \|\| activeTab\.type === "pages"\) applyCanvasTabSnapshot\(activeTab\)/);
 });
 
