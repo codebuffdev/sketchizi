@@ -22,21 +22,22 @@ export function buildSystemDesignSvg({
   const safeNodes = (nodes || []).filter((node) => node && Number.isFinite(Number(node.x)) && Number.isFinite(Number(node.y)));
   if (!safeNodes.length) return "";
   const byId = new Map(safeNodes.map((node) => [node.id, node]));
-  const minX = Math.min(...safeNodes.map((node) => node.x));
-  const minY = Math.min(...safeNodes.map((node) => node.y));
-  const maxX = Math.max(...safeNodes.map((node) => node.x + Math.max(1, number(node.width, 204))));
-  const maxY = Math.max(...safeNodes.map((node) => node.y + Math.max(1, number(node.height, 88))));
-  const bounds = { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
-  const surface = background === "transparent" ? "none" : darkMode ? "#12141c" : "#ffffff";
-  const card = darkMode ? "#202633" : "#ffffff";
-  const border = darkMode ? "#3b4658" : "#d6deea";
-  const primary = darkMode ? "#f8fafc" : "#172033";
-  const secondary = darkMode ? "#a7b3c5" : "#64748b";
   const routes = (edges || []).filter((edge) => byId.has(edge.from) && byId.has(edge.to)).map((edge) => {
     const from = byId.get(edge.from), to = byId.get(edge.to);
     const points = routeOrthogonal(from, edge.fromPort || "right", to, edge.toPort || "left");
     return { edge, points, path: roundedPath(points) };
   });
+  const routePoints = routes.flatMap(({ points }) => points);
+  const minX = Math.min(...safeNodes.map((node) => node.x), ...routePoints.map((point) => point.x));
+  const minY = Math.min(...safeNodes.map((node) => node.y), ...routePoints.map((point) => point.y));
+  const maxX = Math.max(...safeNodes.map((node) => node.x + Math.max(1, number(node.width, 204))), ...routePoints.map((point) => point.x));
+  const maxY = Math.max(...safeNodes.map((node) => node.y + Math.max(1, number(node.height, 88))), ...routePoints.map((point) => point.y));
+  const bounds = { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
+  const surface = background === "transparent" ? "none" : background === "dark" ? "#12141c" : "#ffffff";
+  const card = darkMode ? "#202633" : "#ffffff";
+  const border = darkMode ? "#3b4658" : "#d6deea";
+  const primary = darkMode ? "#f8fafc" : "#172033";
+  const secondary = darkMode ? "#a7b3c5" : "#64748b";
   const names = serviceNames(safeNodes);
   const edgeMarkup = routes.map(({ edge, points, path }) => {
     const mid = pointAlong(points, 0.5);
