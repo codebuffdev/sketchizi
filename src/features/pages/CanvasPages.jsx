@@ -513,6 +513,7 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
     setError(''); setMode('pages'); onWorkspaceModeChange?.('pages'); fit(frame);
   };
   const add = () => { createPage(); };
+  // Tab selection owns the route; this sync must not rewrite tab identity.
   useEffect(() => {
     const nextMode = workspaceMode === "pages" ? "pages" : "infinite";
     if (mode !== nextMode) changeMode(nextMode, false);
