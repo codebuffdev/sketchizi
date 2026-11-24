@@ -31,7 +31,7 @@ test("Capability 2: Export Studio is available in document dropdown while native
   const commands = readFileSync(new URL("../src/features/commands/commandRegistry.js", import.meta.url), "utf8");
   const stackExport = readFileSync(new URL("../src/features/system-design/ExportStackModal.jsx", import.meta.url), "utf8");
   assert.ok(appHeader.includes("<h3>Export</h3>"));
-  assert.ok(appHeader.includes("Export studio..."));
+  assert.ok(appHeader.includes("<strong>Export Studio...</strong>"));
   assert.ok(appHeader.includes("Export Studio opens PNG, SVG, clipboard and export settings"));
   assert.match(appSource, /ExportStudioModal/);
   assert.match(appSource, /exportStudioOpen/);
