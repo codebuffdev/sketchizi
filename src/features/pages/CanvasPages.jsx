@@ -449,7 +449,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     const paperBackground = getPagePaperBackground(api.getAppState?.(), true);
     const created = convertToExcalidrawElements(pageSkeleton(elements, responsiveSize, crypto.randomUUID(), paperBackground), { regenerateIds: false });
     const frame = created.find(e => e.type === 'frame');
-    if (frame) frame.name = `Page ${nextOrder}`;
+    if (frame) frame.name = `Chapter ${String(nextOrder).padStart(2, '0')}`;
     if (frame && previousViewBackgroundRef.current?.color) {
       frame.customData = {
         ...frame.customData,
