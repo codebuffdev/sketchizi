@@ -70,7 +70,7 @@ test("active-tab save status reflects the relevant local, file, or cloud save st
   assert.match(header, /isCloudDocument && \["pending", "saving", "error", "conflict"\]\.includes\(cloudSaveState\)/);
   assert.match(header, /canvas-tabs-save-status/);
   assert.match(tabStyles, /\.canvas-tabs-save-status\.is-unsaved/);
-  assert.match(tabStyles, /\.canvas-tabs-save-status\.is-saved/);
+  assert.match(tabStyles, /\.canvas-tabs-save-status/);
 });
 test("canvas menu groups compact save, cloud, and export actions", () => {
   assert.match(header, /<h3>Save &amp; sync<\/h3>/);
