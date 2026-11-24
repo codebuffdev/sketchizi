@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { compileStack } from "./stackCompiler.js";
 import { Icon } from "./PrimitiveIcon.jsx";
-import { exportSystemDesignImage } from "./exportSystemDesignImage.js";
 
 const TARGETS = [
   { id: "k8s", label: "Kubernetes", filename: "k8s-stack.yaml" },
@@ -19,12 +18,6 @@ export default function ExportStackModal({ nodes, edges, onClose }) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch { setCopied(false); }
-  };
-  const downloadDiagram = async (format) => {
-    const blob = await exportSystemDesignImage({ nodes, edges, background: "dark", darkMode: true, scale: 2, format });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a"); anchor.href = url; anchor.download = format === "svg" ? "system-design-diagram.svg" : "system-design-diagram_2x.png"; anchor.click();
-    URL.revokeObjectURL(url);
   };
   const download = () => {
     const blob = new Blob([manifest], { type: "text/yaml;charset=utf-8" });
@@ -46,8 +39,6 @@ export default function ExportStackModal({ nodes, edges, onClose }) {
           {TARGETS.map((item) => <button key={item.id} type="button" role="tab" aria-selected={target === item.id}
             className={target === item.id ? "is-active" : ""} onClick={() => { setTarget(item.id); setCopied(false); }}>{item.label}</button>)}
           <span className="sd-yaml-file sd-mono">{active.filename}</span>
-          <button type="button" className="sd-export-secondary" onClick={() => downloadDiagram("png")}>Export Diagram PNG (2x)</button>
-          <button type="button" className="sd-export-secondary" onClick={() => downloadDiagram("svg")}>Export Diagram SVG</button>
         </div>
         <pre className="sd-export-code sd-mono" tabIndex={0} aria-label={active.label + " manifest"}>{manifest}</pre>
         <footer className="sd-export-foot">
