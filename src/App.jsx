@@ -761,7 +761,7 @@ function App() {
       if (Date.now() - startedAt < 3000) window.requestAnimationFrame(attempt);
     };
     window.requestAnimationFrame(attempt);
-  }, [createCanvasTab, fileActionsRef]);
+  }, [createCanvasTab, fileActionsRef, activeCanvasIdRef, canvasTabsRef, persistCanvasTabs, currentFileRef]);
 
   useEffect(() => {
     const handleWorkspaceCanvasChoice = (event) => {
@@ -782,6 +782,14 @@ function App() {
       startupChoiceMadeRef.current = true;
       setStartupChooserOpen(false);
       createCanvasTab();
+      const createdId = activeCanvasIdRef.current;
+      const existingTabs = canvasTabsRef.current;
+      const nextName = mode === "pages"
+        ? `Page ${existingTabs.reduce((max, tab) => Math.max(max, Number(String(tab.name || "").match(/^Page (\\d+)$/)?.[1] || 0)), 0) + 1}`
+        : null;
+      persistCanvasTabs(existingTabs.map((tab) => tab.id === createdId
+        ? { ...tab, type: mode === "pages" ? "pages" : "canvas", ...(nextName ? { name: nextName } : {}) }
+        : tab));
       if (mode === "pages") {
         window.requestAnimationFrame(() => {
           window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "pages" } }));
@@ -792,7 +800,16 @@ function App() {
       startupChoiceMadeRef.current = true;
       setStartupChooserOpen(false);
       createCanvasTab();
-      window.requestAnimationFrame(() => fileActionsRef.current.openDrawingFromDisk?.());
+      const createdId = activeCanvasIdRef.current;
+      persistCanvasTabs(canvasTabsRef.current.map((tab) => tab.id === createdId ? { ...tab, type: "canvas" } : tab));
+      window.requestAnimationFrame(() => {
+        Promise.resolve(fileActionsRef.current.openDrawingFromDisk?.()).then(() => {
+          const openedName = currentFileRef.current?.name;
+          if (!openedName) return;
+          const cleanName = openedName.replace(/\\.(sketchizi|excalidraw|json)$/i, "");
+          persistCanvasTabs(canvasTabsRef.current.map((tab) => tab.id === createdId ? { ...tab, name: cleanName } : tab));
+        });
+      });
     };
     window.addEventListener("sketchizi:workspace-create-tab", createWorkspaceTab);
     window.addEventListener("sketchizi:workspace-open-local-file", openLocalFileInNewTab);
