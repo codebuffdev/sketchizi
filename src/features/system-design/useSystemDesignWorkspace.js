@@ -355,7 +355,7 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     const ids = new Map(blueprint.nodes.map((n) => [n.key, newId("sd")]));
     const nodeSkeletons = blueprint.nodes.map((n) => createNodeSkeleton(
       n.kind,
-      { x: origin.x + n.at[0] * BLUEPRINT_GRID.columnWidth, y: origin.y + n.at[1] * BLUEPRINT_GRID.rowHeight },
+      { x: origin.x + (Number.isFinite(n.x) ? n.x : n.at[0] * BLUEPRINT_GRID.columnWidth), y: origin.y + (Number.isFinite(n.y) ? n.y : n.at[1] * BLUEPRINT_GRID.rowHeight) },
       n.overrides || {},
       ids.get(n.key),
     ));
@@ -364,13 +364,13 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     }]));
     const blueprintPairs = new Set();
     const edgeSkeletons = blueprint.edges.filter((edge) => {
-      const pair = JSON.stringify([edge.from, edge.to]);
+      const pair = JSON.stringify([edge.fromNode || edge.from, edge.toNode || edge.to]);
       if (blueprintPairs.has(pair)) return false;
       blueprintPairs.add(pair);
       return true;
     }).map((edge) => createEdgeSkeleton(
-      rects.get(ids.get(edge.from)), rects.get(ids.get(edge.to)),
-      edge.protocol ? { protocol: edge.protocol } : {}, newId("sdedge"),
+      rects.get(ids.get(edge.fromNode || edge.from)), rects.get(ids.get(edge.toNode || edge.to)),
+      { ...(edge.protocol ? { protocol: edge.protocol } : {}), ...(edge.fromPort && edge.toPort ? { fromPort: edge.fromPort, toPort: edge.toPort } : {}) }, newId("sdedge"),
     ));
     const created = restoreElements(convertToExcalidrawElements([...nodeSkeletons, ...edgeSkeletons]), null);
     commit([...api.getSceneElementsIncludingDeleted(), ...created]);
