@@ -17,7 +17,7 @@ export default function PagesBookWorkspace({
         <header className="pages-editorial-header">
           <div className="pages-editorial-copy">
             <div className="pages-editorial-title-row">
-              <span className="pages-chapter-eyebrow">{String(index + 1).padStart(2, '0')}</span>
+              <span className="pages-chapter-eyebrow"><span>{String(index + 1).padStart(2, '0')}</span><span className="pages-eyebrow-separator">·</span><span>CHAPTER</span></span>
               <input
                 className="pages-chapter-heading"
                 aria-label="Chapter title"
@@ -47,8 +47,29 @@ export default function PagesBookWorkspace({
           <div className="pages-editorial-actions">
             <div className="pages-paper-switcher" aria-label="Paper texture">
               {['Dots', 'Ruled', 'Clean'].map(value => (
-                <button type="button" key={value} aria-pressed={texture === value}
-                  disabled={!canEdit} onClick={() => onPatch({ paperTexture: value })}>{value}</button>
+                <button type="button" key={value} className="pages-paper-icon"
+                  title={value} aria-label={value} aria-pressed={texture === value}
+                  disabled={!canEdit} onClick={() => onPatch({ paperTexture: value })}>
+                  <svg viewBox="0 0 16 16" width="15" height="15" fill="none"
+                    stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round"
+                    aria-hidden="true">
+                    {value === 'Dots' ? (
+                      <><circle cx="3" cy="3" r=".65" fill="currentColor" stroke="none" />
+                        <circle cx="8" cy="3" r=".65" fill="currentColor" stroke="none" />
+                        <circle cx="13" cy="3" r=".65" fill="currentColor" stroke="none" />
+                        <circle cx="3" cy="8" r=".65" fill="currentColor" stroke="none" />
+                        <circle cx="8" cy="8" r=".65" fill="currentColor" stroke="none" />
+                        <circle cx="13" cy="8" r=".65" fill="currentColor" stroke="none" />
+                        <circle cx="3" cy="13" r=".65" fill="currentColor" stroke="none" />
+                        <circle cx="8" cy="13" r=".65" fill="currentColor" stroke="none" />
+                        <circle cx="13" cy="13" r=".65" fill="currentColor" stroke="none" /></>
+                    ) : value === 'Ruled' ? (
+                      <><path d="M2 3.5h12M2 7.5h12M2 11.5h12" /></>
+                    ) : (
+                      <><path d="M3 1.75h7l3 3v9.5H3z" /><path d="M10 1.75v3h3" /></>
+                    )}
+                  </svg>
+                </button>
               ))}
             </div>
             <button type="button" className="pages-mark-read"
