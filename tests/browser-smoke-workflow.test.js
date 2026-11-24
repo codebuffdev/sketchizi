@@ -27,9 +27,9 @@ test("System Design browser smoke uses the shared Icon Library and top-bar actio
   assert.match(script, /\.sd-dock/);
 });
 
-test("browser drawing smoke waits for the current active-tab status marker", async () => {
+test("browser drawing smoke waits for the compact active-tab identity", async () => {
   const drawingScript = await readFile(new URL("../scripts/browser-drawing-smoke.mjs", import.meta.url), "utf8");
-  assert.match(drawingScript, /\.canvas-tab\.is-active \.canvas-tab-status-dot/);
+  assert.match(drawingScript, /\.canvas-tab-item\.is-active \.canvas-tab-name/);
   assert.doesNotMatch(drawingScript, /canvas-tab-status-dot\.is-ready/);
 });
 
