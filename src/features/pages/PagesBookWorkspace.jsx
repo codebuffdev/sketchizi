@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 export default function PagesBookWorkspace({
   pages = [], active, index = 0, canEdit = true, onToggleRead, onPatch,
+  bookTitle = 'Untitled drawing', onRenameBookTitle,
 }) {
   const meta = active && active.customData || {};
-  const title = meta.chapterTitle ?? active?.name ?? ('Chapter ' + (index + 1));
+  const title = meta.chapterTitle ?? active?.name ?? 'Untitled Page';
+  const [bookTitleDraft, setBookTitleDraft] = useState(bookTitle);
+  useEffect(() => setBookTitleDraft(bookTitle), [bookTitle]);
+  const saveBookTitle = () => {
+    const nextTitle = bookTitleDraft.trim().slice(0, 120);
+    if (nextTitle && nextTitle !== bookTitle) onRenameBookTitle?.(nextTitle);
+    else setBookTitleDraft(bookTitle);
+  };
   const summary = meta.tagline || '';
   const texture = meta.paperTexture || 'Dots';
 
@@ -17,7 +25,19 @@ export default function PagesBookWorkspace({
         <header className="pages-editorial-header">
           <div className="pages-editorial-copy">
             <div className="pages-editorial-title-row">
-              <span className="pages-chapter-eyebrow"><span>{String(index + 1).padStart(2, '0')}</span><span className="pages-eyebrow-separator">·</span><span>CHAPTER</span></span>
+              <span className="pages-chapter-eyebrow"><span>{String(index + 1).padStart(2, '0')}</span><span className="pages-eyebrow-separator">·</span><input
+                className="pages-book-title-input"
+                aria-label="Book / notebook title"
+                value={bookTitleDraft}
+                maxLength={120}
+                disabled={!canEdit}
+                onPointerDown={e => e.stopPropagation()}
+                onMouseDown={e => e.stopPropagation()}
+                onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { e.preventDefault(); setBookTitleDraft(bookTitle); e.currentTarget.blur(); } }}
+                onKeyUp={e => e.stopPropagation()}
+                onChange={e => setBookTitleDraft(e.target.value)}
+                onBlur={saveBookTitle}
+              /></span>
               <input
                 className="pages-chapter-heading"
                 aria-label="Chapter title"
@@ -28,14 +48,14 @@ export default function PagesBookWorkspace({
                 onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') e.currentTarget.blur(); }}
                 onKeyUp={e => e.stopPropagation()}
                 onChange={e => onPatch({ chapterTitle: e.target.value })}
-                onBlur={() => { if (!title.trim()) onPatch({ chapterTitle: 'Untitled Chapter' }); }}
+                onBlur={() => { if (!title.trim()) onPatch({ chapterTitle: 'Untitled Page' }); }}
               />
             </div>
             <input
               className="pages-chapter-tagline"
               aria-label="Chapter subtitle"
               value={summary}
-              placeholder="Add a chapter summary or focus..."
+              placeholder="Add a page summary or focus..."
               disabled={!canEdit}
               onPointerDown={e => e.stopPropagation()}
               onMouseDown={e => e.stopPropagation()}
