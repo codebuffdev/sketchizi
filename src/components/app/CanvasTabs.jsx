@@ -42,7 +42,7 @@ function CloseGlyph() {
   return <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" /></svg>;
 }
 
-export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, onRename, closedTabs = [], onReopenClosedTab, onDeleteClosedTab, onClearClosedTabs, activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved", activeStatusLabel = "Saved", disabled = false, showAddButton = true, newTabMode = "canvas" }) {
+export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, onRename, closedTabs = [], onReopenClosedTab, onDeleteClosedTab, onClearClosedTabs, activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved", activeStatusLabel = "Saved", disabled = false, showAddButton = true }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [activeMenuOpen, setActiveMenuOpen] = useState(false);
   const [closedMenuOpen, setClosedMenuOpen] = useState(false);
