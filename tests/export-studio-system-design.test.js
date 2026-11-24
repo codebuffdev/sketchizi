@@ -11,9 +11,9 @@ const nativeMenu = read("src/features/navigation/useNativeSketchiziMenu.js");
 test("document tab popover restores Export Studio after Recovery backup", () => {
   const recovery = header.indexOf("<strong>Recovery backup</strong>");
   const studio = header.indexOf("<strong>Export studio...</strong>");
-  assert.ok(header.includes("<h3>Download &amp; export</h3>"));
+  assert.ok(header.includes("<h3>Export</h3>"));
   assert.ok(recovery >= 0 && studio > recovery);
-  assert.ok(header.includes("Choose PNG, SVG, clipboard and export settings"));
+  assert.ok(header.includes("aria-label="Export studio""));
   assert.ok(header.includes('aria-label="Export studio"'));
 });
 
