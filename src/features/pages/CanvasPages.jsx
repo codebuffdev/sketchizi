@@ -418,7 +418,9 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   const patchChapter = patch => {
     if (!active || !canEdit || !api) return;
     update(api.getSceneElementsIncludingDeleted().map(element => element.id === active.id
-      ? { ...element, customData: { ...element.customData, ...patch }, version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
+      ? { ...element, ...(typeof patch.chapterTitle === 'string' ? { name: patch.chapterTitle } : {}),
+          customData: { ...element.customData, ...patch }, version: (element.version || 0) + 1,
+          versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
       : element));
   };
   const toggleChapterRead = page => {
