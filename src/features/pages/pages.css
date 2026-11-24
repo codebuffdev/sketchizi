@@ -707,6 +707,7 @@
 
 
 /* The Pages overlay is deliberately non-stacking so canvas layers can interleave. */
+.app:has(.pages-book-workspace) .desktop-app-header { z-index: 10060 !important; }
 .pages-book-workspace {
   position: static;
   inset: auto;
