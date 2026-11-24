@@ -69,3 +69,39 @@ test("every blueprint runs through traffic simulation and both stack compilers",
     assert.doesNotThrow(() => compileKubernetesStack(nodes, edges), blueprint.id + ": Kubernetes compilation");
   }
 });
+
+test("the Notification System blueprint has explicit channel, consent, callback, and audit flows", () => {
+  const blueprint = BLUEPRINTS.find((item) => item.id === "notification-system");
+  assert.ok(blueprint, "notification blueprint exists");
+  const nodes = new Map(blueprint.nodes.map((node) => [node.key, node]));
+  for (const key of ["prefs", "tokens", "bus", "pushQueue", "emailQueue", "push", "email", "pushProvider", "emailProvider", "webhook", "log"]) {
+    assert.ok(nodes.has(key), "missing notification component: " + key);
+  }
+  assert.match(nodes.get("pushProvider").overrides.subtitle, /Push delivery APIs/);
+  assert.match(nodes.get("emailProvider").overrides.subtitle, /SMS.*email delivery APIs/);
+  assert.doesNotMatch(nodes.get("pushProvider").overrides.subtitle, /Stripe|LLM|Rate-limited/);
+  assert.doesNotMatch(nodes.get("emailProvider").overrides.subtitle, /Stripe|LLM|Rate-limited/);
+
+  const pairs = new Set(blueprint.edges.map((edge) => `${edge.fromNode}->${edge.toNode}`));
+  for (const pair of [
+    "service->prefs", "prefs->tokens", "tokens->bus",
+    "bus->pushQueue", "bus->emailQueue",
+    "pushQueue->push", "emailQueue->email",
+    "push->pushProvider", "email->emailProvider",
+    "pushProvider->webhook", "emailProvider->webhook", "webhook->log",
+  ]) assert.ok(pairs.has(pair), "missing notification flow: " + pair);
+
+  const sceneNodes = blueprint.nodes.map((item) => ({
+    id: item.key,
+    ...createNodeMeta(item.kind, item.overrides || {}),
+  }));
+  const sceneEdges = blueprint.edges.map((item) => ({
+    id: item.id, from: item.fromNode, to: item.toNode, protocol: item.protocol,
+  }));
+  const simulation = simulateTraffic({ nodes: sceneNodes, edges: sceneEdges, totalRps: 10000 });
+  assert.equal(simulation.edges["bus-pushQueue"].rps, 10000, "push topic receives broadcast traffic");
+  assert.equal(simulation.edges["bus-emailQueue"].rps, 10000, "email topic receives broadcast traffic");
+  assert.equal(simulation.nodes.push.status, "healthy");
+  assert.equal(simulation.nodes.email.status, "healthy");
+  assert.equal(simulation.nodes.log.status, "healthy");
+});
