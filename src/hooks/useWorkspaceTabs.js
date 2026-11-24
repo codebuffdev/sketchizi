@@ -308,7 +308,7 @@ export function useWorkspaceTabs({
     const tabId = activeCanvasIdRef.current;
     const currentTab = canvasTabsRef.current.find(tab => tab.id === tabId);
     if (!currentTab) return;
-    let snapshot = currentTab.snapshot || captureCanvasTabSnapshot();
+    let snapshot = apiRef.current ? captureCanvasTabSnapshot() : (currentTab.snapshot || {});
     if (type === "pages" && getPages(snapshot?.elements || []).length === 0) {
       snapshot = { ...snapshot, ...createDefaultPagesSnapshot(apiRef.current) };
     }
