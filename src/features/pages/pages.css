@@ -991,3 +991,128 @@ body:has(.app[data-canvas-view="pages"]),
 .app[data-canvas-view="pages"] .sketchizi-grid-spotlight {
   display: none !important;
 }
+
+
+/* Minimal editorial chapter strip: chapter identity left, paper and reading
+   controls right. No folio/footer occupies the lower canvas. */
+.pages-editorial-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 28px !important;
+  width: 100% !important;
+  max-width: 1160px !important;
+  box-sizing: border-box !important;
+  margin: 64px auto 0 !important;
+  padding: 0 32px 16px !important;
+  border-bottom: 1px solid var(--book-border) !important;
+  pointer-events: none !important;
+}
+.pages-editorial-copy {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  pointer-events: none !important;
+}
+.pages-editorial-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.pages-chapter-eyebrow {
+  flex: 0 0 auto;
+  color: #059669 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .08em !important;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.app.theme-dark .pages-chapter-eyebrow { color: #34d399 !important; }
+.pages-editorial-copy .pages-chapter-heading {
+  flex: 0 1 auto;
+  width: min(100%, 620px);
+  min-width: 160px;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #0f172a !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -.025em !important;
+}
+.app.theme-dark .pages-editorial-copy .pages-chapter-heading { color: #f8fafc !important; }
+.pages-editorial-copy .pages-chapter-tagline {
+  display: block;
+  width: min(100%, 650px);
+  min-width: 0;
+  margin: 6px 0 0 !important;
+  padding: 0 !important;
+  color: #64748b !important;
+  font-size: 13.5px !important;
+  line-height: 1.45;
+}
+.pages-editorial-copy .pages-chapter-tagline::placeholder { color: #94a3b8; opacity: 1; }
+.pages-editorial-actions {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  pointer-events: none !important;
+}
+.pages-editorial-actions .pages-paper-switcher,
+.pages-editorial-actions .pages-mark-read { pointer-events: auto !important; }
+.pages-paper-switcher {
+  padding: 3px !important;
+  border-radius: 9px !important;
+  background: var(--book-panel) !important;
+}
+.pages-paper-switcher button {
+  min-height: 27px;
+  padding: 5px 9px !important;
+  font-size: 10px !important;
+  font-weight: 600;
+}
+.pages-paper-switcher button[aria-pressed="true"] {
+  background: #05966916 !important;
+  color: #047857 !important;
+}
+.app.theme-dark .pages-paper-switcher button[aria-pressed="true"] { color: #6ee7b7 !important; }
+.pages-mark-read {
+  min-height: 29px;
+  padding: 5px 10px !important;
+  border: 1px solid var(--book-border) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--book-muted) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  white-space: nowrap;
+}
+.pages-mark-read[aria-pressed="true"] {
+  border-color: rgb(5 150 105 / 24%) !important;
+  background: rgb(5 150 105 / 9%) !important;
+  color: #047857 !important;
+}
+.app.theme-dark .pages-mark-read[aria-pressed="true"] { color: #6ee7b7 !important; }
+.pages-editorial-header input,
+.pages-editorial-header button { pointer-events: auto !important; }
+@media (max-width: 900px) {
+  .pages-editorial-header {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-top: 58px !important;
+    padding: 0 24px 14px !important;
+  }
+  .pages-editorial-copy { width: 100%; }
+  .pages-editorial-actions { justify-content: flex-start !important; }
+}
+@media (max-width: 767px) {
+  .pages-editorial-header { margin-top: 64px !important; padding: 0 18px 12px !important; }
+  .pages-editorial-title-row { gap: 9px; }
+  .pages-editorial-copy .pages-chapter-heading { min-width: 0; font-size: 21px !important; }
+  .pages-editorial-actions { gap: 7px !important; }
+}
