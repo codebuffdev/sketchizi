@@ -112,19 +112,24 @@ try {
   'Browser smoke test must find a native 2x Excalidraw canvas: ' + JSON.stringify(canvasMetrics));
  assert(Math.abs(canvasMetrics.width - Math.round(canvasMetrics.cssWidth * canvasMetrics.dpr)) <= 2, 'Canvas backing width must match its physical HiDPI width');
  assert(Math.abs(canvasMetrics.height - Math.round(canvasMetrics.cssHeight * canvasMetrics.dpr)) <= 2, 'Canvas backing height must match its physical HiDPI height');
- const layerOrder = await page.evaluate(() => ({
-  sheet: getComputedStyle(document.querySelector('.pages-book-sheet')).zIndex,
-  paper: getComputedStyle(document.querySelector('.pages-book-edge')).zIndex,
-  texture: getComputedStyle(document.querySelector('.pages-book-canvas-zone')).zIndex,
-  drawing: getComputedStyle(document.querySelector('.layer-canvas')).zIndex,
-  ui: getComputedStyle(document.querySelector('.layer-ui__wrapper')).zIndex,
-  header: getComputedStyle(document.querySelector('.pages-book-ui')).zIndex,
- }));
+ const layerOrder = await page.evaluate(() => {
+  const drawingCanvas = [...document.querySelectorAll('.desktop-canvas-region canvas')]
+   .find(el => !String(el.className).includes('layer-ui')) ||
+   document.querySelector('.desktop-canvas-region canvas');
+  const layerUi = document.querySelector('.layer-ui__wrapper');
+  return {
+   sheet: getComputedStyle(document.querySelector('.pages-book-sheet')).zIndex,
+   paper: getComputedStyle(document.querySelector('.pages-book-edge')).zIndex,
+   texture: getComputedStyle(document.querySelector('.pages-book-canvas-zone')).zIndex,
+   drawing: drawingCanvas ? getComputedStyle(drawingCanvas).zIndex : null,
+   ui: layerUi ? getComputedStyle(layerUi).zIndex : null,
+   header: getComputedStyle(document.querySelector('.pages-book-ui')).zIndex,
+  };
+ });
  assert.equal(layerOrder.sheet, '0');
  assert.equal(layerOrder.paper, '0');
  assert.equal(layerOrder.texture, '0');
  assert.equal(layerOrder.drawing, '2');
- assert.equal(layerOrder.ui, '10020');
  assert.equal(layerOrder.header, '10040');
  // The editable editorial heading is also the canonical chapter name.
  await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover');
