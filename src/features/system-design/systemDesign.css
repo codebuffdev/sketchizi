@@ -518,19 +518,59 @@
 
 .sd-context-custom-icon { display: block; width: 20px; height: 20px; flex: 0 0 20px; object-fit: contain; }
 
-/* Keep the live card bounds (and connector ports) at the resized dimensions; scale only the
-   original 204×88 content plane from its top-left corner. */
+/* Responsive System Design cards: native-size content reflows within the live node bounds. */
+.sd-node { overflow: hidden; }
 .sd-node-content {
-  position: absolute;
-  inset: 0 auto auto 0;
-  width: 204px;
-  height: 88px;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
   box-sizing: border-box;
-  padding: 10px 8px 14px;
+  padding: clamp(10px, 4%, 18px);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transform-origin: top left;
+  gap: 4px;
+  overflow: hidden;
   pointer-events: none;
 }
 .sd-node-content .sd-node-icon-button { pointer-events: auto; }
+.sd-node-head { flex: 0 0 auto; min-height: 22px; gap: 7px; }
+.sd-node-title-wrap { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; overflow: hidden; }
+.sd-node-label { min-width: 0; font-size: 13px; line-height: 1.2; }
+.sd-node-sub { flex: 0 1 auto; min-width: 0; line-height: 1.25; }
+.sd-node-foot { flex: 0 0 auto; min-width: 0; }
+.sd-node-icon-button { flex: 0 0 22px; width: 22px; height: 22px; min-width: 22px; }
+.sd-node-icon-button .sd-node-icon { width: 16px; height: 16px; }
+.sd-node-custom-icon { width: 17px; height: 17px; }
+.sd-node-medium-middle { display: flex; flex: 1 1 auto; flex-direction: column; justify-content: center; gap: 5px; min-height: 0; overflow: hidden; }
+.sd-node-capacity { color: var(--sd-text-2); font-size: 10px; line-height: 1.2; white-space: nowrap; }
+.sd-util.sd-util-inline { position: relative; inset: auto; flex: 0 0 5px; width: 100%; height: 5px; margin: 0; }
+.sd-node-metric-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: 100%; }
+.sd-node-metric-strip > span { display: flex; min-width: 0; flex-direction: column; gap: 2px; padding: 3px 6px; border-radius: 7px; background: var(--sd-soft); overflow: hidden; }
+.sd-node-metric-strip small, .sd-node-telemetry small { color: var(--sd-text-2); font-size: 9px; line-height: 1.1; letter-spacing: .04em; text-transform: uppercase; }
+.sd-node-metric-strip b { overflow: hidden; color: var(--sd-text); font-size: 11px; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+.sd-node-content.is-medium .sd-node-icon-button { flex-basis: 32px; width: 32px; height: 32px; min-width: 32px; border-radius: 10px; }
+.sd-node-content.is-medium .sd-node-icon-button .sd-node-icon { width: 22px; height: 22px; }
+.sd-node-content.is-medium .sd-node-custom-icon { width: 25px; height: 25px; }
+.sd-node-content.is-medium .sd-node-label { font-size: 15px; }
+.sd-node-content.is-medium .sd-node-sub { font-size: 12.5px; }
+.sd-node-content.is-medium .sd-status { margin-left: auto; }
+.sd-node-hero-sub { color: var(--sd-text-2); font-size: 13px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sd-replica-badge { flex: 0 0 auto; padding: 3px 7px; border-radius: 7px; background: var(--sd-soft); color: var(--sd-text-2); font-size: 10px; font-weight: 650; white-space: nowrap; }
+.sd-node-hero-body { display: flex; flex: 1 1 auto; flex-direction: column; justify-content: center; gap: 10px; min-height: 0; }
+.sd-node-telemetry { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sd-node-telemetry > div { display: flex; min-width: 0; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--sd-border); border-radius: 10px; background: var(--sd-soft); overflow: hidden; }
+.sd-node-telemetry > div:nth-child(1) { background: rgba(5,150,105,.07); }
+.sd-node-telemetry > div:nth-child(2) { background: rgba(100,116,139,.08); }
+.sd-node-telemetry > div:nth-child(3) { background: rgba(217,119,6,.08); }
+.sd-node-telemetry b { overflow: hidden; color: var(--sd-text); font-size: 17px; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+.sd-node-hero-footer { display: flex; justify-content: space-between; gap: 10px; min-width: 0; padding-top: 7px; border-top: 1px solid var(--sd-border); color: var(--sd-text-2); font-family: "JetBrains Mono", Consolas, monospace; font-size: 10px; white-space: nowrap; }
+.sd-node-hero-footer span { overflow: hidden; text-overflow: ellipsis; }
+.sd-node-content.is-hero .sd-node-head { min-height: 40px; }
+.sd-node-content.is-hero .sd-node-icon-button { flex-basis: 40px; width: 40px; height: 40px; min-width: 40px; border-radius: 12px; }
+.sd-node-content.is-hero .sd-node-icon-button .sd-node-icon { width: 28px; height: 28px; }
+.sd-node-content.is-hero .sd-node-custom-icon { width: 32px; height: 32px; }
+.sd-node-content.is-hero .sd-node-label { font-size: 17px; }
+
