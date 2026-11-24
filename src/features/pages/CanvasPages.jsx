@@ -251,8 +251,8 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
       name: active.name || `Page ${index + 1}`,
       order: active.customData?.pageOrder ?? index + 1,
     } : null;
-    onPageContextChange?.({ mode, page, pageCount: pages.length });
-  }, [active?.id, active?.name, active?.customData?.pageOrder, index, mode, onPageContextChange, pages.length]);
+    onPageContextChange?.({ mode, page, pageCount: displayPages.length });
+  }, [active?.id, active?.name, active?.customData?.pageOrder, index, mode, onPageContextChange, displayPages.length]);
   useEffect(() => {
     if (!chapterIndexOpen) return undefined;
     const closeOnOutsideMouseDown = event => {
