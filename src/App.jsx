@@ -806,7 +806,7 @@ function App() {
         Promise.resolve(fileActionsRef.current.openDrawingFromDisk?.()).then(() => {
           const openedName = currentFileRef.current?.name;
           if (!openedName) return;
-          const cleanName = openedName.replace(/\\.(sketchizi|excalidraw|json)$/i, "");
+          const cleanName = openedName.replace(/\.(sketchizi|excalidraw|json)$/i, "");
           persistCanvasTabs(canvasTabsRef.current.map((tab) => tab.id === createdId ? { ...tab, name: cleanName } : tab));
         });
       });
