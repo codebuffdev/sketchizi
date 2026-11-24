@@ -60,7 +60,7 @@ test("save status stylesheet is imported with the other stylesheets before CSS r
 test("active-tab save header uses one status pill without repeating storage banners", () => {
   assert.match(header, /const storageLocation = isCloudDocument \? "Cloud" : currentDocumentFileBacked \? "File" : "Browser"/);
   assert.match(header, /canvas-tabs-save-status/);
-  assert.match(header, /isCloudDocument \? "Cloud Workspace"/);
+  assert.match(header, /cloudStatusLabels\[cloudSaveState\]/);
   assert.doesNotMatch(header, /Browser draft<\/span>/);
   assert.doesNotMatch(header, /desktop-app-document-location/);
 });
