@@ -342,7 +342,7 @@ try {
  const pagesTile = page.locator('[data-sketchizi-canvas-mode="pages"]');
  await pagesTile.waitFor({state:'visible'});
  await pagesTile.click();
- await page.locator('.pages-book-workspace').waitFor({state:'visible'});
+ await page.getByRole('navigation', { name: 'Chapter navigation' }).waitFor({state:'visible'});
  const createdPagesTab = page.locator('.canvas-tab.is-active');
  const createdPagesTabName = (await createdPagesTab.locator('.canvas-tab-name').textContent()).trim();
  assert.match(await createdPagesTab.locator('.canvas-tab-icon').getAttribute('class'), /pages/);
@@ -353,13 +353,13 @@ try {
  await page.waitForFunction(() => document.querySelector('.canvas-tab.is-active .canvas-tab-name')?.textContent.trim() === 'Canvas 1');
  await page.locator('.pages-book-workspace').waitFor({state:'detached'});
  await page.getByRole('tab').filter({hasText:createdPagesTabName}).click();
- await page.locator('.pages-book-workspace').waitFor({state:'visible'});
+ await page.getByRole('navigation', { name: 'Chapter navigation' }).waitFor({state:'visible'});
  await page.waitForFunction(() => document.querySelector('.canvas-pages-chapter-trigger')?.textContent.trim().startsWith('01 / 01'));
 
  // Reload with the Pages tab active; IndexedDB hydration must preserve its
  // identity and immediately restore the bounded Pages workspace.
  await page.reload();
- await page.locator('.pages-book-workspace').waitFor({state:'visible', timeout:20000});
+ await page.getByRole('navigation', { name: 'Chapter navigation' }).waitFor({state:'visible', timeout:20000});
  await page.waitForFunction(() => document.querySelector('.canvas-pages-chapter-trigger')?.textContent.trim().startsWith('01 / 01'));
 
  assert.deepEqual(errors,[]);
