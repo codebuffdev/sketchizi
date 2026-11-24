@@ -82,17 +82,10 @@ try {
  let es = await waitScene(es=>pages(es).length===1);
  const initialPage = pages(es)[0];
  assert(initialPage.width > 0 && initialPage.height > 0, 'New page must have usable dimensions');
- assert.equal(initialPage.width, 1360, 'New Wide page must use the 1360px desktop sheet width cap');
- assert.equal(initialPage.height, 876, 'New Wide page must reserve 124px of viewport height');
- assert(initialPage.width > initialPage.height, 'New page must use a widescreen editorial spread by default');
- assert.equal(await page.getByRole('button', { name: 'Wide', exact: true }).getAttribute('aria-pressed'), 'true');
- // Width changes update the native frame and its transparent paper backing together.
- await page.getByRole('button', { name: 'Standard', exact: true }).click();
- es = await waitScene(elements => pages(elements)[0]?.width === 860);
- assert.equal(es.find(e => e.customData?.sketchiziPagePaper === pages(es)[0].id)?.width, 860);
- await page.getByRole('button', { name: 'Wide', exact: true }).click();
- es = await waitScene(elements => pages(elements)[0]?.width === 1360);
- assert.equal(es.find(e => e.customData?.sketchiziPagePaper === pages(es)[0].id)?.width, 1360);
+ assert.equal(initialPage.width, 1440, 'New chapter must span the full viewport width');
+ assert.equal(initialPage.height, 1000, 'New chapter must span the full viewport height');
+ assert.equal(await page.getByRole('button', { name: 'Standard', exact: true }).count(), 0, 'Pages must not expose boxed width presets');
+ assert.equal(await page.getByRole('button', { name: 'Wide', exact: true }).count(), 0, 'Pages must not expose boxed width presets');
  // Assert the actual backing store is sized for a 2x HiDPI display, not CSS-scaled.
  const canvasMetrics = await page.evaluate(() => {
   const canvases = [...document.querySelectorAll('.desktop-canvas-region canvas')]
@@ -119,7 +112,6 @@ try {
   const layerUi = document.querySelector('.layer-ui__wrapper');
   return {
    sheet: getComputedStyle(document.querySelector('.pages-book-sheet')).zIndex,
-   paper: getComputedStyle(document.querySelector('.pages-book-edge')).zIndex,
    texture: getComputedStyle(document.querySelector('.pages-book-canvas-zone')).zIndex,
    drawing: drawingCanvas ? getComputedStyle(drawingCanvas).zIndex : null,
    ui: layerUi ? getComputedStyle(layerUi).zIndex : null,
@@ -127,9 +119,8 @@ try {
   };
  });
  assert.equal(layerOrder.sheet, '0');
- assert.equal(layerOrder.paper, '0');
  assert.equal(layerOrder.texture, '0');
- assert.equal(layerOrder.drawing, '2');
+ assert.equal(layerOrder.drawing, '1');
  assert.equal(layerOrder.header, '10040');
  // The editable editorial heading is also the canonical chapter name.
  await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover');
@@ -148,16 +139,12 @@ try {
  assert(await page.locator('.pages-book-canvas-zone.texture-dots').evaluate(el=>getComputedStyle(el).backgroundImage!=='none'),'Editorial dot texture must be visible');
  const dock = await page.getByRole('navigation',{name:'Drawing tools'}).boundingBox();
  assert(dock && dock.width>0 && dock.height>0,'Drawing dock must remain visible in Pages mode');
- // Drag the visible southeast page handle and verify the frame and paper resize together.
- const beforeWidth = pages(es)[0].width;
- const handle = await page.locator('.canvas-pages-resize-hit.is-se').boundingBox();
- assert(handle,'Page resize handle must be visible');
- await page.mouse.move(handle.x+handle.width/2,handle.y+handle.height/2);
- await page.mouse.down();
- await page.mouse.move(handle.x+handle.width/2+36,handle.y+handle.height/2+28,{steps:8});
- await page.mouse.up();
- es = await waitScene(es=>pages(es)[0]?.width>beforeWidth);
- assert(es.find(e=>e.customData?.sketchiziPagePaper===pages(es)[0].id)?.width===pages(es)[0].width,'Page paper must track the resized frame');
+ // The full-bleed paper and canvas must occupy the complete desktop viewport.
+ const sheetBounds = await page.locator('.pages-book-sheet').boundingBox();
+ const canvasBounds = await page.locator('.desktop-canvas-region').boundingBox();
+ assert.deepEqual({ width: Math.round(sheetBounds.width), height: Math.round(sheetBounds.height) }, { width: 1440, height: 1000 });
+ assert.deepEqual({ width: Math.round(canvasBounds.width), height: Math.round(canvasBounds.height) }, { width: 1440, height: 1000 });
+ assert.equal(await page.locator('.canvas-pages-resize-hit').count(), 0, 'Full-bleed chapters must not expose page resize grips');
  // Verify both themes update the Pages workspace without leaving the mode.
  await ensureHeaderVisible();
  await page.getByRole('button',{name:'Appearance and canvas background'}).click();
@@ -196,6 +183,8 @@ try {
  // Re-enter Pages mode through the same workspace choice event used by startup.
  await chooseCanvasMode('pages');
  await page.setViewportSize({width:390,height:844});
+ es = await waitScene(elements => pages(elements)[0]?.width === 390 && pages(elements)[0]?.height === 844);
+ assert.equal(es.find(e => e.customData?.sketchiziPagePaper === pages(es)[0].id)?.width, 390, 'Paper backing must resize with the mobile chapter frame');
  await ensureHeaderVisible();
  await canvasStyle().click();
  const menu=await page.getByRole('dialog',{name:'Canvas style'}).boundingBox();
