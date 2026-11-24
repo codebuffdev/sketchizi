@@ -54,20 +54,20 @@ test("Dots, Ruled, and Clean paper textures are selectable per chapter", () => {
   assert.match(styles, /\.pages-book-canvas-zone\.texture-ruled/);
 });
 
-test("the bottom-right navigator is the sole chapter index with completion, delete, and add actions", () => {
+test("the chapter index, completion, delete, and add actions live in the editorial header", () => {
   assert.doesNotMatch(workspace, /pages-chapters-rail|pages-rail-heading/);
-  assert.match(pages, /className="canvas-pages-chapter-trigger"/);
-  assert.match(pages, /aria-expanded=\{chapterIndexOpen\}/);
-  assert.match(pages, /className="canvas-pages-chapter-popover"/);
-  assert.match(pages, /onMouseDown=\{event => event\.stopPropagation\(\)\}/);
-  assert.match(pages, /onClick=\{\(\) => toggleChapterRead\(page\)\}/);
-  assert.match(pages, /onClick=\{\(\) => deletePage\(page\)\}/);
-  assert.match(pages, /＋ New Chapter/);
-  assert.match(pages, /aria-label="Previous chapter"/);
-  assert.match(pages, /aria-label="Next chapter"/);
-  assert.match(pages, /fit\(pages\[index-1\]\)/);
-  assert.match(pages, /fit\(pages\[index\+1\]\)/);
-  assert.match(styles, /bottom: calc\(100% \+ 10px\)/);
+  assert.match(workspace, /className="canvas-pages-chapter-trigger"/);
+  assert.match(workspace, /aria-expanded=\{chapterIndexOpen\}/);
+  assert.match(workspace, /className="canvas-pages-chapter-popover"/);
+  assert.match(workspace, /onMouseDown=\{event => event\.stopPropagation\(\)\}/);
+  assert.match(workspace, /onClick=\{\(\) => onToggleRead\(page\)\}/);
+  assert.match(workspace, /onClick=\{\(\) => onDeleteChapter\(page\)\}/);
+  assert.match(workspace, /＋ New Chapter/);
+  assert.match(workspace, /aria-label="Previous chapter"/);
+  assert.match(workspace, /aria-label="Next chapter"/);
+  assert.match(pages, /onSelectChapter=\{page => \{ if \(page\) fit\(page\); setChapterIndexOpen\(false\); \}\}/);
+  assert.match(styles, /top: calc\(100% \+ 8px\)/);
+  assert.match(styles, /right: 0 !important/);
   assert.match(styles, /z-index: 1000/);
 });
 
@@ -149,7 +149,7 @@ test("Pages paper textures show through transparent Excalidraw in light and dark
   assert.match(styles, /--book-rule: #1e293b/);
 });
 
-test("chapter badge is a zero-padded number and navigator shares a flex row with Zen", () => {
+test("chapter eyebrow and chapter controller share the editorial masthead without bottom floating controls", () => {
   assert.match(workspace, /<span>\{String\(index \+ 1\)\.padStart\(2, '0'\)\}<\/span>/);
   assert.match(workspace, /pages-eyebrow-separator/);
   assert.doesNotMatch(workspace, /CHAPTER/);
@@ -164,10 +164,13 @@ test("chapter badge is a zero-padded number and navigator shares a flex row with
   assert.match(styles, /\.pages-book-title-input/);
   assert.match(pages, /bookTitle=\{bookTitle\} onRenameBookTitle=\{onRenameBookTitle\}/);
   assert.match(styles, /font-variant-numeric: tabular-nums/);
-  assert.match(pages, /className="pages-bottom-actions"/);
-  assert.match(app, /document\.querySelector\("\.pages-bottom-actions"\)/);
-  assert.match(styles, /\.pages-bottom-actions \{[\s\S]*?display: flex;[\s\S]*?align-items: center;[\s\S]*?gap: 10px/);
-  assert.match(styles, /\.pages-bottom-actions \.sk-zen-pill \{[\s\S]*?position: static !important/);
+  assert.match(workspace, /pages-header-chapter-controller/);
+  assert.match(pages, /chapterIndexOpen=\{chapterIndexOpen\}/);
+  assert.match(pages, /onAddChapter=\{\(\) => \{ add\(\); setChapterIndexOpen\(false\); \}\}/);
+  assert.doesNotMatch(pages, /pages-bottom-actions/);
+  assert.doesNotMatch(app, /pages-bottom-actions/);
+  assert.doesNotMatch(styles, /pages-bottom-actions/);
+  assert.match(app, /canvasPageContext\.mode !== "pages"/);
   assert.match(workspace, /title=\{value\} aria-label=\{value\} aria-pressed=\{texture === value\}/);
   assert.match(workspace, /<svg viewBox="0 0 16 16"/);
   assert.doesNotMatch(workspace, />\{value\}<\/button>/);
