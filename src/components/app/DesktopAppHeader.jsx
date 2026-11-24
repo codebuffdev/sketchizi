@@ -966,7 +966,7 @@ export default function DesktopAppHeader({
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Save Locally</strong></span>
                     {currentDocumentDirty || ["pending", "saving", "error"].includes(saveState) ? <span className="canvas-tabs-action-state is-pending">Unsaved</span> : <kbd>Ctrl+S</kbd>}
                   </button>
-                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveToCloud?.()} disabled={cloudSaveState === "loading" || cloudSaveState === "saving"} aria-label="Save to Cloud">
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveToCloud?.()} disabled={cloudSaveState === "loading" || cloudSaveState === "saving"} aria-label="Save to Cloud Workspace">
                     <CanvasActionIcon name="cloud" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Save to Cloud</strong></span>
                     <span className="canvas-tabs-action-state is-cloud">Cloud</span>
