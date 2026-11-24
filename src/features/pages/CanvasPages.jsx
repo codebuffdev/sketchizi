@@ -175,16 +175,16 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     const savedViewport = targetChapter?.customData?.chapterAppState;
     const shouldRestoreViewport = Boolean(savedViewport && (isInitialFit || previousChapterId !== page.id));
     const nextElements = sceneElements.map(element => {
-      if (element.id === previousChapterId && previousChapterId !== page.id) {
-        return { ...element, customData: { ...element.customData, chapterAppState: {
-          zoom: sceneAppState.zoom, scrollX: sceneAppState.scrollX, scrollY: sceneAppState.scrollY,
-        } }, version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
-      }
-      if (firstChapter && element.id === firstChapter.id && element.customData?.activeChapterId !== page.id) {
-        return { ...element, customData: { ...element.customData, activeChapterId: page.id },
-          version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
-      }
-      return element;
+      const savePreviousViewport = element.id === previousChapterId && previousChapterId !== page.id;
+      const saveActiveId = Boolean(firstChapter && element.id === firstChapter.id && element.customData?.activeChapterId !== page.id);
+      if (!savePreviousViewport && !saveActiveId) return element;
+      const customData = { ...element.customData };
+      if (savePreviousViewport) customData.chapterAppState = {
+        zoom: sceneAppState.zoom, scrollX: sceneAppState.scrollX, scrollY: sceneAppState.scrollY,
+      };
+      if (saveActiveId) customData.activeChapterId = page.id;
+      return { ...element, customData, version: (element.version || 0) + 1,
+        versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
     });
     activeIdRef.current = page.id;
     initialFitRef.current = true;
