@@ -370,7 +370,7 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
       return true;
     }).map((edge) => createEdgeSkeleton(
       rects.get(ids.get(edge.fromNode || edge.from)), rects.get(ids.get(edge.toNode || edge.to)),
-      { ...(edge.protocol ? { protocol: edge.protocol } : {}), ...(edge.fromPort && edge.toPort ? { fromPort: edge.fromPort, toPort: edge.toPort } : {}) }, newId("sdedge"),
+      { ...(edge.protocol ? { protocol: edge.protocol } : {}), ...(edge.lineStyle ? { lineStyle: edge.lineStyle } : {}), ...(edge.fromPort && edge.toPort ? { fromPort: edge.fromPort, toPort: edge.toPort } : {}) }, newId("sdedge"),
     ));
     const created = restoreElements(convertToExcalidrawElements([...nodeSkeletons, ...edgeSkeletons]), null);
     commit([...api.getSceneElementsIncludingDeleted(), ...created]);
