@@ -175,9 +175,12 @@ export default function CanvasTabs({
             onClick={() => { setOverflowOpen(false); setTabMenuOpenId(null); onSelect?.(tab.id); }}
             onDoubleClick={() => {
               if (tab.isTodoTab) return;
-              onSelect?.(tab.id);
               setTabMenuOpenId(null);
-              onRename?.(tab.id);
+              if (isActive) onRename?.(tab.id);
+              else {
+                onSelect?.(tab.id);
+                window.requestAnimationFrame(() => onRename?.(tab.id));
+              }
             }}
             disabled={disabled}
           >
