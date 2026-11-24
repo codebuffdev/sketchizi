@@ -186,6 +186,7 @@ try {
  await page.setViewportSize({width:390,height:844});
  es = await waitScene(elements => pages(elements)[0]?.width === 390 && pages(elements)[0]?.height === 844);
  assert.equal(es.find(e => e.customData?.sketchiziPagePaper === pages(es)[0].id)?.width, 390, 'Paper backing must resize with the mobile chapter frame');
+ assert.equal(es.find(e => e.customData?.sketchiziPagePaper === pages(es)[0].id)?.height, 844, 'Paper backing must match the mobile viewport height');
  await ensureHeaderVisible();
  await canvasStyle().click();
  const menu=await page.getByRole('dialog',{name:'Canvas style'}).boundingBox();
