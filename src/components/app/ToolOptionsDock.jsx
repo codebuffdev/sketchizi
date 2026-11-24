@@ -868,22 +868,10 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const arrangeSelection = (layout) => {
     const api = apiRef?.current;
     if (!api) return;
-    const liveState = api.getAppState?.() || {};
-    const selectedIds = Object.entries(liveState.selectedElementIds || {})
-      .filter(([, isSelected]) => isSelected)
-      .map(([id]) => id);
-    // Never merge the dock's React props into this set: they can describe the
-    // previous selection for a render after Excalidraw has already changed it.
-    const scene = api.getSceneElements?.() || [];
-    if (selectedIds.length < 2 || scene.length === 0) return;
-    const updatedElements = arrangeElements(scene, selectedIds, layout, 24);
-    if (updatedElements !== scene) {
-      api.updateScene({
-        elements: updatedElements,
-        commitToHistory: true,
-        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
-      });
-    }
+    // Read the selection and scene at click time; dock props can be one render stale.
+    applyAlignmentToSelection(api, layout, {
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
     setAlignPopoverOpen(false);
   };
 
