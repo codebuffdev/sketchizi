@@ -4,7 +4,7 @@ export default function PagesBookWorkspace({
   pages = [], active, index = 0, canEdit = true, onToggleRead, onPatch,
 }) {
   const meta = active && active.customData || {};
-  const title = meta.chapterTitle || active?.name || ('Chapter ' + (index + 1));
+  const title = meta.chapterTitle ?? active?.name ?? ('Chapter ' + (index + 1));
   const summary = meta.tagline || '';
   const texture = meta.paperTexture || 'Dots';
 
@@ -23,7 +23,12 @@ export default function PagesBookWorkspace({
                 aria-label="Chapter title"
                 value={title}
                 disabled={!canEdit}
+                onPointerDown={e => e.stopPropagation()}
+                onMouseDown={e => e.stopPropagation()}
+                onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') e.currentTarget.blur(); }}
+                onKeyUp={e => e.stopPropagation()}
                 onChange={e => onPatch({ chapterTitle: e.target.value })}
+                onBlur={() => { if (!title.trim()) onPatch({ chapterTitle: 'Untitled Chapter' }); }}
               />
             </div>
             <input
@@ -32,6 +37,10 @@ export default function PagesBookWorkspace({
               value={summary}
               placeholder="Add a chapter summary or focus..."
               disabled={!canEdit}
+              onPointerDown={e => e.stopPropagation()}
+              onMouseDown={e => e.stopPropagation()}
+              onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') e.currentTarget.blur(); }}
+              onKeyUp={e => e.stopPropagation()}
               onChange={e => onPatch({ tagline: e.target.value })}
             />
           </div>
