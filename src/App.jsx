@@ -7,6 +7,7 @@ import PropertiesPanel from "./PropertiesPanel";
 import { CaptureUpdateAction, convertToExcalidrawElements, getCommonBounds, restoreElements } from "@excalidraw/excalidraw";
 import { usePanelState } from "./features/navigation/usePanelState";
 import { useNativeSketchiziMenu } from "./features/navigation/useNativeSketchiziMenu";
+import { registerExportStudioShortcut } from "./features/navigation/exportStudioShortcut.js";
 import { useMoreTools } from "./features/navigation/useMoreTools";
 import { useSketchiziPreferences } from "./features/navigation/useSketchiziPreferences";
 import { countLiveElements, describeClosedAt } from "./features/workspace/closedTabs.js";
@@ -1726,6 +1727,8 @@ function App() {
       window.removeEventListener("keydown", handleWelcomeKeyDown, true);
     };
   }, [isWelcomeOrDashboardOpen]);
+
+  useEffect(() => registerExportStudioShortcut({ openExportStudio: () => setExportStudioOpen(true) }), []);
 
   useEffect(() => {
     const onKeyDown = (event) => {
