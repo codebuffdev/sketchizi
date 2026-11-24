@@ -515,3 +515,5 @@
   color: var(--sd-text-2); background: var(--sd-soft); font-size: 11px;
 }
 .sd-icon-assignment-row > span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sd-context-custom-icon { display: block; width: 20px; height: 20px; flex: 0 0 20px; object-fit: contain; }
