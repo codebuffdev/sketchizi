@@ -15,8 +15,7 @@ import { applyCanvasAppearance, getCanvasAppearanceFromBackground, getCanvasAppe
 import { useSketchiziEscape, useSketchiziCanvasDismissal } from "./features/navigation/useSketchiziEscape";
 import { useDrawerPresence } from "./features/navigation/useDrawerPresence";
 import { useDocumentPersistence } from "./hooks/useDocumentPersistence";
-import { useSystemDesignWorkspace } from "./features/system-design/useSystemDesignWorkspace.js";
-import { useSystemDesignIconAssignment } from "./features/system-design/useSystemDesignIconAssignment.js";
+import { useSystemDesignWorkspace } from "./features/system-design/useSystemDesignWorkspace.js"; import { useSystemDesignIconAssignment } from "./features/system-design/useSystemDesignIconAssignment.js";
 import { useWorkspaceTabState } from "./hooks/useWorkspaceTabState";
 import { useWorkspaceTabs } from "./hooks/useWorkspaceTabs";
 import { useCollaboration } from "./features/collaboration/useCollaboration";
