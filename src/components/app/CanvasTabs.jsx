@@ -204,7 +204,35 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
             )}
           </div>
         )}
-        {showAddButton && <button type="button" className="canvas-tabs-add" aria-label="Create new tab" title="Create new tab" onClick={() => { setOverflowOpen(false); onCreate?.(); }} disabled={disabled}><svg className="canvas-tabs-add-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M12 8v8M8 12h8" /></svg></button>}
+        {showAddButton && (
+          <button
+            type="button"
+            className="canvas-tabs-add"
+            aria-label="Create new tab"
+            title="Create new tab"
+            onClick={() => {
+              setOverflowOpen(false);
+              onCreate?.();
+            }}
+            disabled={disabled}
+          >
+            <svg
+              className="canvas-tabs-add-icon"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="3" />
+              <path d="M12 8v8M8 12h8" />
+            </svg>
+          </button>
+        )}
         </div>
       </div>
       {activeMenuOpen && activeMenu && <div className="canvas-tabs-active-menu" role="dialog" aria-label="Canvas options">{activeMenu}</div>}
