@@ -1,18 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getTabDisplayName } from "../../features/workspace/tabLabel.js";
-import { describeTabSync, getTabStatusClass } from "../../features/workspace/tabCloudState.js";
 import { countLiveElements, describeClosedAt } from "../../features/workspace/closedTabs.js";
 import WorkspaceModeIcon from "../../features/workspace/WorkspaceModeIcon.jsx";
 
 function TodoGlyph() {
   return <svg className="canvas-tab-icon canvas-tab-todo-icon" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="2.5" width="14" height="15" rx="2" /><path d="m5.5 7 1.2 1.2L9 5.8M11 7h3.5M5.5 13l1.2 1.2L9 11.8M11 13h3.5" /></svg>;
-}
-
-function TabSyncBadge({ meta }) {
-  if (!meta || meta.sourceType !== "cloud") return null;
-  const label = describeTabSync(meta);
-  return <span className={`canvas-tab-sync is-${meta.syncStatus}`} role="status" aria-label={label} title={label} />;
 }
 
 function ReopenGlyph() {
@@ -30,8 +23,8 @@ function ChevronGlyph() {
 export default function CanvasTabs({
   tabs, activeId, onSelect, onCreate, onDuplicate, onClose, onReorder, onRename,
   closedTabs = [], onReopenClosedTab, onDeleteClosedTab, onClearClosedTabs,
-  activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved",
-  activeStatusLabel = "Saved", disabled = false, showAddButton = true, newTabMode = "canvas", isDark = false,
+  activeMenu = null, activeStatusClass = "is-saved",
+  disabled = false, showAddButton = true, newTabMode = "canvas", isDark = false,
 }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [tabMenuOpenId, setTabMenuOpenId] = useState(null);
@@ -269,7 +262,6 @@ export default function CanvasTabs({
         </div>,
         document.body
       )}
-      {activeRenameAction && <span className="canvas-tab-inline-rename">{activeRenameAction}</span>}
     </div>
   );
 }
