@@ -1,21 +1,16 @@
 export const PAGE_MARKER = 'sketchiziPage';
-// Editorial handbook sheets use a portrait 800 × 1120 canvas proportion.
-// The displayed size is fitted to the viewport while preserving this ratio.
-export const DEFAULT_PAGE_SIZE = { width: 800, height: 1120 };
-export const PAGE_ASPECT_RATIO = 800 / 1120;
+// Editorial handbook sheets default to a widescreen spread.
+export const DEFAULT_PAGE_SIZE = { width: 1360, height: 900 };
+export const PAGE_ASPECT_RATIO = 1360 / 900;
 
-export function getResponsivePageSize(appState, margin = 0.8) {
-  const zoom = Number(appState?.zoom?.value ?? appState?.zoom ?? 1);
+export function getResponsivePageSize(appState) {
   const viewportWidth = Number(appState?.width || 0);
   const viewportHeight = Number(appState?.height || 0);
-  if (!Number.isFinite(zoom) || zoom <= 0 || viewportWidth <= 0 || viewportHeight <= 0) {
-    return { ...DEFAULT_PAGE_SIZE };
-  }
-  // Fit the page within 80% of the available screen space, preserving its
-  // requested physical-page aspect ratio at every viewport size.
-  const width = Math.min(viewportWidth * margin / zoom, viewportHeight * margin / zoom * PAGE_ASPECT_RATIO, 10000);
-  const safeWidth = Math.max(80 * PAGE_ASPECT_RATIO, width);
-  return { width: Math.round(safeWidth), height: Math.round(safeWidth / PAGE_ASPECT_RATIO) };
+  if (viewportWidth <= 0 || viewportHeight <= 0) return { ...DEFAULT_PAGE_SIZE };
+  return {
+    width: Math.round(Math.min(1360, Math.max(320, viewportWidth - 56))),
+    height: Math.round(Math.min(10000, Math.max(320, viewportHeight - 124))),
+  };
 }
 export const PAGE_PRESETS = { Wide: DEFAULT_PAGE_SIZE, A4: { width: 1123, height: 1587 }, Letter: { width: 1275, height: 1650 } };
 export const getPages = (elements) => elements.filter(e => !e.isDeleted && e.type === 'frame' && e.customData?.[PAGE_MARKER]).sort((a,b) => (a.customData.pageOrder ?? 0) - (b.customData.pageOrder ?? 0));
