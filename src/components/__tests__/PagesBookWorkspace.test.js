@@ -13,13 +13,14 @@ const persistence = readFileSync(resolve(here, "../../persistence.js"), "utf8");
 const tabs = readFileSync(resolve(here, "../../hooks/useWorkspaceTabs.js"), "utf8");
 const styles = readFileSync(resolve(here, "../../features/pages/pages.css"), "utf8");
 
-test("New Chapter creates an isolated Excalidraw page from the navigator and chapter index", () => {
-  assert.match(pages, /className="canvas-pages-chapter-new"/);
-  assert.match(pages, /onClick=\{\(\) => \{ add\(\); setChapterIndexOpen\(false\); \}\}/);
+test("New Chapter creates an isolated Excalidraw page from the header controller and chapter index", () => {
+  assert.match(workspace, /className="canvas-pages-chapter-new"/);
+  assert.match(workspace, /onClick=\{onAddChapter\}/);
+  assert.match(pages, /onAddChapter=\{\(\) => \{ add\(\); setChapterIndexOpen\(false\); \}\}/);
   assert.match(pages, /const createPage = \(\) =>/);
   assert.match(pages, /pageSkeleton\(elements, responsiveSize, crypto\.randomUUID\(\)/);
-  assert.match(pages, /className="canvas-pages-add"/);
-  assert.ok(pages.includes("<span>+ Chapter</span>"));
+  assert.match(workspace, /className="canvas-pages-add"/);
+  assert.ok(workspace.includes("<span>+ Chapter</span>"));
 });
 
 test("book workspace receives the chapter collection and completion callback", () => {
