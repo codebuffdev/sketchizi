@@ -108,8 +108,16 @@ export function readEdge(element, nodes = []) {
   const isTaggedEdge = data.role === "edge";
   const start = arrowEndpoint(element, "start");
   const end = arrowEndpoint(element, "end");
-  const from = start?.id || data.from || nodeAtArrowEndpoint(start, nodes);
-  const to = end?.id || data.to || nodeAtArrowEndpoint(end, nodes, from);
+  // Tagged System Design edges carry authoritative endpoint IDs in customData. Excalidraw may
+  // infer/rewrite startBinding and endBinding while converting arrow skeletons; those inferred
+  // bindings can attach to a neighbouring card and must never override the blueprint topology.
+  // Native, untagged arrows still resolve from their explicit bindings first.
+  const from = isTaggedEdge
+    ? (data.from || start?.id || nodeAtArrowEndpoint(start, nodes))
+    : (start?.id || data.from || nodeAtArrowEndpoint(start, nodes));
+  const to = isTaggedEdge
+    ? (data.to || end?.id || nodeAtArrowEndpoint(end, nodes, from))
+    : (end?.id || data.to || nodeAtArrowEndpoint(end, nodes, from));
   if (!from || !to || (!isTaggedEdge && !nodes.some((node) => node.id === from) || !nodes.some((node) => node.id === to))) return null;
   return {
     id: element.id,
