@@ -105,3 +105,22 @@ test('Pages component does not register stale popover handlers or dereference a 
  assert.doesNotMatch(source, /\broot\.current/);
  assert.match(source, /inlineName && inlineName\.pageId === active\?\.id/);
 });
+
+
+test('Pages keeps the paper texture behind the transparent HiDPI Excalidraw canvas', async () => {
+ const { readFile } = await import('node:fs/promises');
+ const pages = await readFile(new URL('../src/features/pages/CanvasPages.jsx', import.meta.url), 'utf8');
+ const styles = await readFile(new URL('../src/features/pages/pages.css', import.meta.url), 'utf8');
+ assert.match(pages, /function getPagePaperBackground\(\)\s*\{[\s\S]*?return 'transparent'/);
+ assert.match(pages, /viewBackgroundColor: 'transparent'/);
+ assert.match(pages, /window\.dispatchEvent\(new Event\('resize'\)\)/);
+ assert.match(pages, /fit\(active\); requestExcalidrawCanvasRefresh\(\)/);
+ assert.match(styles, /\.pages-book-workspace \{ z-index: auto; \}/);
+ assert.match(styles, /\.pages-book-edge \{ z-index: 0; background: var\(--book-paper\); \}/);
+ assert.match(styles, /\.pages-book-canvas-zone \{ z-index: 0; \}/);
+ assert.match(styles, /\.layer-canvas \{[\s\S]*?z-index: 2 !important/);
+ assert.match(styles, /\.excalidraw-textEditorContainer \{[\s\S]*?z-index: 10030 !important/);
+ assert.match(styles, /\.excalidraw-textEditorContainer textarea \{[\s\S]*?background: transparent !important/);
+ assert.match(styles, /width: 16px/);
+ assert.doesNotMatch(styles, /transform:\s*scale\(/);
+});
