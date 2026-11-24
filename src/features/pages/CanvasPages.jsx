@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CaptureUpdateAction, convertToExcalidrawElements } from '@excalidraw/excalidraw';
-import { getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, getPageFitViewport, getResponsivePageSize, isElementWithinPage, PAGE_MARKER } from './pageModel.js';
+import { getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, getPageFitViewport, isElementWithinPage, PAGE_MARKER } from './pageModel.js';
 import './pages.css';
 import PagesBookWorkspace from './PagesBookWorkspace.jsx';
 
