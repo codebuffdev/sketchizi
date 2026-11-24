@@ -91,7 +91,11 @@ function App() {
   const [isZenMode, setIsZenMode] = useState(false);
   const isZenModeRef = useRef(false);
   const exitZenMode = useCallback(() => setIsZenMode(false), []);
-  const [canvasPageContext, setCanvasPageContext] = useState({ mode: "infinite", page: null, pageCount: 0 });
+  const [canvasPageContext, setCanvasPageContext] = useState(() => {
+    try {
+      return { mode: localStorage.getItem("sketchizi.active-workspace-tab-mode") === "pages" ? "pages" : "infinite", page: null, pageCount: 0 };
+    } catch { return { mode: "infinite", page: null, pageCount: 0 }; }
+  });
   const [startupChooserOpen, setStartupChooserOpen] = useState(false);
   const startupChoiceMadeRef = useRef(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
@@ -1878,6 +1882,7 @@ function App() {
         canvasAppearance={canvasAppearance}
         onCanvasAppearanceChange={handleCanvasAppearanceChange}
         onToggleGrid={toggleGrid}
+        workspaceMode={canvasTabsReady ? getWorkspaceTabMode(canvasTabs.find(tab => tab.id === activeCanvasId)) : canvasPageContext.mode}
         canvasMode={canvasPageContext.mode}
         spellcheckEnabled={spellcheckEnabled}
         onToggleSpellcheck={toggleSpellcheck}
@@ -2025,7 +2030,7 @@ function App() {
             nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
-            pageContext={{ ...canvasPageContext, mode: getWorkspaceTabMode(canvasTabs.find(tab => tab.id === activeCanvasId)) === "pages" ? "pages" : "infinite" }}
+            pageContext={{ ...canvasPageContext, mode: (canvasTabsReady ? getWorkspaceTabMode(canvasTabs.find(tab => tab.id === activeCanvasId)) : canvasPageContext.mode) === "pages" ? "pages" : "infinite" }}
             key={activeCanvasId}
             canvasId={activeCanvasId}
             onToolStyleChange={toolStyles.recordToolStyle}
