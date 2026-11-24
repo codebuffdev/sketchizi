@@ -187,6 +187,7 @@ export default function DesktopAppHeader({
   canvasApi,
   aiAskOpen = false,
   onPageContextChange,
+  onWorkspaceModeChange,
   onDeleteOnlyPage,
   workspaceMode = "infinite",
   canEditCanvas,
