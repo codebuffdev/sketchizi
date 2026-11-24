@@ -396,3 +396,33 @@
 
 /* Keep the add-page affordance on the same compact notebook glyph system. */
 .canvas-pages-add .canvas-pages-add-icon { display:block; width:15px; height:15px; }
+
+/* Distinguish adding a page within the document from creating a workspace tab. */
+.canvas-pages-navigation .canvas-pages-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--ui-text-muted, #64748b);
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.canvas-pages-navigation .canvas-pages-add:hover:not(:disabled) {
+  color: #047857;
+  border-color: rgb(5 150 105 / 22%);
+  background: rgb(16 185 129 / 9%);
+}
+.app.theme-dark .canvas-pages-navigation .canvas-pages-add {
+  color: #aeb9c8;
+}
+.app.theme-dark .canvas-pages-navigation .canvas-pages-add:hover:not(:disabled) {
+  color: #6ee7b7;
+  border-color: rgb(110 231 183 / 24%);
+  background: rgb(16 185 129 / 14%);
+}
+.canvas-pages-navigation button:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+.canvas-pages-add .canvas-pages-add-icon { flex: 0 0 15px; }
