@@ -189,6 +189,10 @@ export function useWorkspaceTabs({
     const normalizedTabs = nextTabs.map((tab) => ({ ...tab, active: tab.id === activeCanvasIdRef.current }));
     canvasTabsRef.current = normalizedTabs;
     setCanvasTabs(normalizedTabs);
+    try {
+      const activeTab = normalizedTabs.find(tab => tab.id === activeCanvasIdRef.current);
+      localStorage.setItem("sketchizi.active-workspace-tab-mode", activeTab?.type === "pages" || activeTab?.type === "page" ? "pages" : "infinite");
+    } catch { /* The IndexedDB tab manifest remains authoritative. */ }
     if (canvasTabsSaveTimerRef.current) window.clearTimeout(canvasTabsSaveTimerRef.current);
     canvasTabsSaveTimerRef.current = window.setTimeout(() => {
       canvasTabsSaveTimerRef.current = null;
@@ -775,6 +779,7 @@ export function useWorkspaceTabs({
         const activeId = restoredTabs.find((tab) => tab.active)?.id || restoredTabs[0].id;
         const activeTab = restoredTabs.find((tab) => tab.id === activeId) || restoredTabs[0];
         setActiveWorkspaceTabId(activeTab.todoTabOpen && activeTab.todoTabActive ? `todo:${activeId}` : activeId);
+        try { localStorage.setItem("sketchizi.active-workspace-tab-mode", activeTab.type === "pages" ? "pages" : "infinite"); } catch { /* Optional startup hint. */ }
         canvasTabsRef.current = restoredTabs;
         setCanvasTabs(restoredTabs);
         saveCanvasTabs(restoredTabs).catch(() => {});
