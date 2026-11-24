@@ -7,7 +7,11 @@ page.on('pageerror', error => errors.push(error.message));
 async function scene() {
  return page.evaluate(async () => {
   const db = await new Promise((resolve,reject) => { const r=indexedDB.open('sketchizi-local-state'); r.onsuccess=()=>resolve(r.result); r.onerror=()=>reject(r.error); });
-  try { return await new Promise((resolve,reject)=> { const r=db.transaction('documents','readonly').objectStore('documents').get('main'); r.onsuccess=()=>resolve(r.result?.elements?.filter(e=>!e.isDeleted)||[]); r.onerror=()=>reject(r.error); }); } finally { db.close(); }
+  try { return await new Promise((resolve,reject)=> {
+   const r=db.transaction('documents','readonly').objectStore('documents').get('canvas-tabs-manifest');
+   r.onsuccess=()=>{ const tabs=r.result?.tabs||[]; const active=tabs.find(tab=>tab.active)||tabs[0]; resolve(active?.snapshot?.elements?.filter(e=>!e.isDeleted)||[]); };
+   r.onerror=()=>reject(r.error);
+  }); } finally { db.close(); }
  });
 }
 async function waitScene(predicate) {
