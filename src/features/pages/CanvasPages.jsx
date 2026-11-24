@@ -434,6 +434,33 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
           versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
       : element));
   };
+  const setPageWidthMode = (mode, page = active) => {
+    if (!page || !api || !canEdit || !['Standard', 'Wide'].includes(mode)) return;
+    const appState = api.getAppState?.() || {};
+    const width = mode === 'Standard'
+      ? 860
+      : Math.round(Math.min(1360, Math.max(320, Number(appState.width || 0) - 56)));
+    const height = Math.round(Math.min(10000, Math.max(Number(page.height || 720), Number(appState.height || 0) - 124, 320)));
+    const elements = api.getSceneElementsIncludingDeleted().map(element => {
+      const isFrame = element.id === page.id;
+      const isPaper = element.customData?.sketchiziPagePaper === page.id;
+      if (!isFrame && !isPaper) return element;
+      return {
+        ...element, width, height,
+        ...(isFrame ? { customData: { ...element.customData, pageWidthMode: mode } } : {}),
+        version: (element.version || 0) + 1,
+        versionNonce: Math.floor(Math.random() * 2147483647),
+        updated: Date.now(),
+      };
+    });
+    api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    fit({ ...page, width, height, customData: { ...page.customData, pageWidthMode: mode } });
+  };
+  useEffect(() => {
+    if (mode !== 'pages' || !active || !canEdit || active.customData?.pageWidthMode) return;
+    setPageWidthMode('Wide', active);
+  }, [mode, active?.id, active?.customData?.pageWidthMode, canEdit]);
+
   const toggleChapterRead = page => {
     if (!page || !canEdit || !api) return;
     const completed = !Boolean(page.customData?.completed);
@@ -543,7 +570,8 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   return <>
     {mode === 'pages' && pageMask && host && createPortal(
       <PagesBookWorkspace pages={pages} active={active} index={index} pageRect={pageMask.pageRect}
-        canEdit={canEdit} onSelect={fit} onAdd={add} onDelete={deletePage}
+        canEdit={canEdit} widthMode={active?.customData?.pageWidthMode || 'Wide'} onWidthChange={setPageWidthMode}
+        onSelect={fit} onAdd={add} onDelete={deletePage}
         onToggleRead={toggleChapterRead} onPatch={patchChapter} />, host)}
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask">
