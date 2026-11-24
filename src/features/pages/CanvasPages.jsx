@@ -505,7 +505,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
           versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
       : element));
   };
-  const setPageWidthMode = (mode, page = active) => {
+  const setPageWidthMode = (mode, page = active, refreshCanvas = true) => {
     if (!page || !api || !canEdit || !['Standard', 'Wide'].includes(mode)) return;
     const width = mode === 'Standard'
       ? 860
@@ -525,7 +525,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     });
     api.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
     fit({ ...page, width, height, customData: { ...page.customData, pageWidthMode: mode } });
-    requestExcalidrawCanvasRefresh();
+    if (refreshCanvas) requestExcalidrawCanvasRefresh();
   };
   useEffect(() => {
     if (mode !== 'pages' || !active || !canEdit || active.customData?.pageWidthMode) return;
@@ -534,7 +534,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
 
   useEffect(() => {
     if (mode !== 'pages' || !active || active.customData?.pageWidthMode !== 'Wide' || !canEdit) return undefined;
-    const resizeWideSheet = () => setPageWidthMode('Wide', activePageRef.current);
+    const resizeWideSheet = () => setPageWidthMode('Wide', activePageRef.current, false);
     window.addEventListener('resize', resizeWideSheet);
     return () => window.removeEventListener('resize', resizeWideSheet);
   }, [mode, active?.id, active?.customData?.pageWidthMode, canEdit]);
