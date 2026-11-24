@@ -8,6 +8,7 @@ const OPTIONAL_COMPONENTS = [
   ["CreateDesignScreen", "./features/design/ui/CreateDesignScreen.jsx"],
   ["CloudSaveDialog", "./features/workspace/CloudSaveDialog.jsx"],
   ["ArchitectureTemplatesModal", "./components/app/ArchitectureTemplatesModal"],
+  ["ExportStudioModal", "./components/app/ExportStudioModal"],
 ];
 
 test("optional studios load on demand, while core Excalidraw remains eagerly available", () => {
