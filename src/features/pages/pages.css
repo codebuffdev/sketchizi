@@ -1330,7 +1330,9 @@ body:has(.app[data-canvas-view="pages"]),
 }
 .pages-book-workspace .pages-eyebrow-separator { color: #94a3b8 !important; }
 .pages-book-workspace .pages-chapter-heading {
-  width: min(100%, 420px) !important;
+  width: 280px !important;
+  max-width: min(100%, 420px) !important;
+  field-sizing: content;
   min-width: 160px !important;
   margin: 0 !important;
   padding: 0 0 2px !important;
