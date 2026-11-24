@@ -625,5 +625,5 @@ export function useNativeSketchiziMenu({
       window.visualViewport?.removeEventListener("resize", scheduleCleanup);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [canvasMode, currentFolder, currentFolderFiles, fileActionsRef, handleFileError, markCanvasBackgroundCustom, openCloudWorkspace, recentFiles, recentFolders, closedTabs, refreshCurrentFolderFiles, useThemeDefaultBackground]);
+  }, [currentFolder, currentFolderFiles, fileActionsRef, handleFileError, markCanvasBackgroundCustom, openCloudWorkspace, recentFiles, recentFolders, closedTabs, refreshCurrentFolderFiles, useThemeDefaultBackground]);
 }
