@@ -20,11 +20,8 @@ async function waitScene(predicate) {
  throw new Error('Expected page scene was not persisted: '+JSON.stringify(await scene()));
 }
 async function renameActivePage(name) {
- await page.locator('.canvas-pages-page-name').click();
- const input = page.getByRole('textbox', { name: 'Edit page name' });
- await input.fill(name);
- await input.press('Enter');
- await page.waitForFunction(expected => document.querySelector('.canvas-pages-page-name')?.textContent?.trim() === expected, name);
+ await page.getByRole('textbox', { name: 'Chapter title' }).fill(name);
+ await waitScene(elements => pages(elements).some(item => item.name === name));
 }
 async function chooseCanvasMode(mode) {
  await canvasStyle().click();
@@ -86,13 +83,9 @@ try {
  assert(initialPage.width > 0 && initialPage.height > 0, 'New page must have usable dimensions');
  assert(Math.abs(initialPage.width / initialPage.height - 800 / 1120) < 0.02, 'New page must preserve the configured 800:1120 portrait aspect ratio');
  assert(initialPage.width <= 1440 * 0.8 + 1 && initialPage.height <= 1000 * 0.8 + 1, 'New page must fit within 80% of the available viewport');
- // Rename through the visible page-name editor rather than relying on a
- // removed prompt-based page-creation flow.
- await page.locator('.canvas-pages-page-name').click();
- const pageNameInput = page.getByRole('textbox',{name:'Edit page name'});
- await pageNameInput.fill('Cover');
- await pageNameInput.press('Enter');
- await page.waitForFunction(()=>document.querySelector('.canvas-pages-page-name')?.textContent.trim()==='Cover');
+ // The editable editorial heading is also the canonical chapter name.
+ await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover');
+ es = await waitScene(elements => pages(elements)[0]?.name === 'Cover');
  // Exercise inline editorial metadata and per-chapter paper texture persistence.
  await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover chapter');
  es = await waitScene(es => pages(es)[0]?.customData?.chapterTitle === 'Cover chapter');
@@ -138,10 +131,10 @@ try {
  const navigation=page.getByRole('navigation',{name:'Chapter navigation'});
  await navigation.getByRole('button').nth(0).click();
  await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('01 / 02'));
- assert.equal(await page.locator('.canvas-pages-page-name').innerText(),'Cover');
+ assert.equal(await page.getByRole('textbox', { name: 'Chapter title' }).inputValue(),'Cover chapter');
  await navigation.getByRole('button').nth(1).click();
  await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('02 / 02'));
- assert.equal(await page.locator('.canvas-pages-page-name').innerText(),'Details');
+ assert.equal(await page.getByRole('textbox', { name: 'Chapter title' }).inputValue(),'Details');
  await page.reload();
  await page.getByRole('navigation',{name:'Chapter navigation'}).waitFor();
  await ensureHeaderVisible();
