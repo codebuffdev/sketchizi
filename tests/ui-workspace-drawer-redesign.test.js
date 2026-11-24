@@ -140,8 +140,8 @@ test("legacy accessibility, test and file-workflow contracts remain", () => {
 test("native image export and canvas find stay removed while Export Studio owns its shortcut", () => {
   const shortcut = read("../src/features/navigation/exportStudioShortcut.js");
   assert.match(menu, /blockedMenuLabels = new Set/);
-  assert.match(menu, /if \\(key === "f"\\)/);
-  assert.doesNotMatch(menu, /key === "e" && event\\.shiftKey/);
-  assert.match(shortcut, /target\\.addEventListener\\("keydown", onKeyDown, true\\)/);
+  assert.ok(menu.includes('if (key === "f")'));
+  assert.ok(!menu.includes('key === "e" && event.shiftKey'));
+  assert.ok(shortcut.includes('target.addEventListener("keydown", onKeyDown, true)'));
   assert.match(app, /registerExportStudioShortcut/);
 });
