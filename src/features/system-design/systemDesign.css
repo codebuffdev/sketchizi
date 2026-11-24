@@ -74,13 +74,13 @@
 /* Overlay layer (scene-space) */
 .sd-overlay { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .sd-layer { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
-.sd-edges { position: absolute; left: 0; top: 0; overflow: visible; }
-.sd-edge path { stroke: #94a3b8; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.sd-edges { position: absolute; left: 0; top: 0; z-index: 0; display: block; overflow: visible; pointer-events: none; }
+.sd-edge path { stroke: #64748b; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .sd-edge.is-dashed path { stroke-dasharray: 6 5; }
 .sd-edge.is-ok path { stroke: var(--sd-emerald); } .sd-edge.is-warm path { stroke: var(--sd-amber); } .sd-edge.is-hot path { stroke: var(--sd-red); }
 .sd-edge.is-selected path { stroke-width: 2.6; stroke: var(--sd-emerald); }
 .sd-edge.is-ok path, .sd-edge.is-warm path, .sd-edge.is-hot path { stroke-width: 2.4; }
-.sd-arrow-head { stroke: #94a3b8; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.sd-arrow-head { stroke: #64748b; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .sd-packet { fill: var(--sd-emerald); stroke: var(--sd-card); stroke-width: 1.2; } .is-warm .sd-packet { fill: var(--sd-amber); } .is-hot .sd-packet { fill: var(--sd-red); }
 .sd-edge-preview { stroke: var(--sd-emerald); stroke-width: 1.8; stroke-dasharray: 4 4; }
 .sd-badge b { font-weight: 700; color: var(--sd-text); }
@@ -93,7 +93,7 @@
 /* Node cards. The card is the ONLY thing drawn for a node: the native Excalidraw rectangle underneath is an invisible
    hit-target, and Excalidraw's own selection box (dashed outline + resize handles) is the ONE selection indicator.
    So a selected card draws no outline or ring of its own, only a faint tint. */
-.sd-node { position: absolute; box-sizing: border-box; padding: 10px 12px 14px; border-radius: 14px; background: var(--sd-card); border: 1px solid var(--sd-border); box-shadow: 0 4px 14px rgba(15,23,42,.09), 0 1px 2px rgba(15,23,42,.08); pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; overflow: visible; }
+.sd-node { position: absolute; z-index: 1; box-sizing: border-box; padding: 10px 12px 14px; border-radius: 14px; background: var(--sd-card); border: 1px solid var(--sd-border); box-shadow: 0 4px 14px rgba(15,23,42,.09), 0 1px 2px rgba(15,23,42,.08); pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; overflow: visible; }
 .sd-node.is-selected { box-shadow: inset 0 0 0 999px rgba(5,150,105,.045), 0 4px 14px rgba(15,23,42,.09), 0 1px 2px rgba(15,23,42,.08); }
 .sd-node.is-drop-target { border-color: var(--sd-emerald); }
 .sd-node-head { display: flex; align-items: center; gap: 7px; min-width: 0; }
