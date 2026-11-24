@@ -24,8 +24,8 @@ async function renameActivePage(name) {
 }
 async function chooseCanvasMode(mode) {
  await canvasStyle().click();
- const buttonName = mode === 'pages' ? /Pages Fixed/ : /Infinite canvas Draw/;
- await page.getByRole('button', { name: buttonName }).click();
+ const optionLabel = mode === 'pages' ? 'Pages' : 'Infinite canvas';
+ await page.getByText(optionLabel, { exact: true }).click();
  if (mode === 'pages') await page.getByRole('navigation', { name: 'Page navigation' }).waitFor();
  else await page.getByRole('navigation', { name: 'Page navigation' }).waitFor({ state: 'detached' });
 }
