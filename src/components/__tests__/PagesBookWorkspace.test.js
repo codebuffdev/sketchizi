@@ -7,7 +7,7 @@ import { dirname, resolve } from "node:path";
 const here = dirname(fileURLToPath(import.meta.url));
 const workspace = readFileSync(resolve(here, "../../features/pages/PagesBookWorkspace.jsx"), "utf8");
 const pages = readFileSync(resolve(here, "../../features/pages/CanvasPages.jsx"), "utf8");
-const persistence = readFileSync(resolve(here, "../../features/persistence/useSketchPersistence.js"), "utf8");
+const persistence = readFileSync(resolve(here, "../../persistence.js"), "utf8");
 const tabs = readFileSync(resolve(here, "../../hooks/useDocumentPersistence.js"), "utf8");
 const styles = readFileSync(resolve(here, "../../features/pages/pages.css"), "utf8");
 
@@ -49,8 +49,8 @@ test("chapter metadata and diagram elements persist together in the existing Ind
   assert.match(pages, /customData: \{ \.\.\.element\.customData, \.\.\.patch \}/);
   assert.match(tabs, /elements: activeApi\?\.getSceneElementsIncludingDeleted/);
   assert.match(tabs, /appState: activeApi\?\.getAppState/);
-  assert.match(persistence, /indexedDB/);
-  assert.match(persistence, /elements/);
+  assert.match(persistence, /indexedDB\.open\(DB_NAME, DB_VERSION\)/);
+  assert.match(persistence, /snapshot/);
   assert.match(workspace, /paperTexture/);
   assert.match(workspace, /keyNote/);
 });
