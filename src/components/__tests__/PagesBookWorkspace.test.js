@@ -102,6 +102,7 @@ test("book sheet defaults to widescreen and offers a persisted Standard or Wide 
   assert.match(pages, /onWidthChange=\{setPageWidthMode\}/);
   assert.match(pages, /window\.innerWidth - 56/);
   assert.match(pages, /window\.innerHeight - 124/);
+  assert.ok(styles.includes('width: min(1360px, calc(100vw - 56px));'));
   assert.match(styles, /min-height: calc\(100vh - 124px\)/);
   assert.match(styles, /padding: 20px 32px 16px/);
   assert.match(styles, /padding: 10px 32px/);
