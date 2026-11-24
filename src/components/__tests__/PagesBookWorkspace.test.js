@@ -27,7 +27,7 @@ test("chapter title, subtitle, and key formula are editable and persisted on the
   assert.match(workspace, /aria-label="Key formula or rule of thumb"/);
   assert.match(workspace, /onPatch\(\{ keyNote: e\.target\.value \}\)/);
   assert.match(pages, /customData: \{ \.\.\.element\.customData, \.\.\.patch \}/);
-  assert.match(pages, /activeChapterId: page\.id/);
+  assert.match(pages, /customData\.activeChapterId = page\.id/);
   assert.match(pages, /p\.id === persistedActiveId/);
   assert.match(pages, /chapterAppState =/);
   assert.match(tabs, /const chapters = chapterFrames\.map/);
@@ -53,8 +53,8 @@ test("previous/next navigation and the Chapters rail select the matching chapter
 
 test("chapter metadata and diagram elements persist together in the existing IndexedDB tab snapshot", () => {
   assert.match(pages, /customData: \{ \.\.\.element\.customData, \.\.\.patch \}/);
-  assert.match(tabs, /elements: activeApi\?\.getSceneElementsIncludingDeleted/);
-  assert.match(tabs, /appState: activeApi\?\.getAppState/);
+  assert.match(tabs, /const sceneElements = activeApi\?\.getSceneElementsIncludingDeleted/);
+  assert.match(tabs, /const sceneAppState = activeApi\?\.getAppState/);
   assert.match(persistence, /indexedDB\.open\(DB_NAME, DB_VERSION\)/);
   assert.match(persistence, /canvas-tabs-manifest/);
   assert.match(workspace, /paperTexture/);
