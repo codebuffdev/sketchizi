@@ -24,13 +24,24 @@ test("workspace icons have slate light/dark colors and emerald System Design col
   assert.doesNotMatch(styles, /--ct-accent:\s*#[67][0-9a-f]{5}/i);
 });
 
-test("tabs, hamburger workspace tiles, and page creation share the mode glyphs", () => {
+test("page tabs keep the notebook glyph while add controls use distinct plus glyphs", () => {
   const tabs = read("../src/components/app/CanvasTabs.jsx");
   const menu = read("../src/features/navigation/useNativeSketchiziMenu.js");
   const pages = read("../src/features/pages/CanvasPages.jsx");
+  const pageStyles = read("../src/features/pages/pages.css");
   assert.match(tabs, /WorkspaceModeIcon/);
-  assert.match(tabs, /tab\.type/);
-  assert.match(menu, /getWorkspaceModeIconMarkup\("canvas"\)/);
-  assert.match(menu, /getWorkspaceModeIconMarkup\("pages"\)/);
-  assert.match(pages, /WorkspaceModeIcon mode="pages"/);
+  assert.match(tabs, /tab\\.type/);
+  assert.match(tabs, /Create new tab/);
+  assert.match(tabs, /<rect x="3" y="3" width="18" height="18" rx="3" \\/>/);
+  assert.match(tabs, /<path d="M12 8v8M8 12h8" \\/>/);
+  assert.match(menu, /getWorkspaceModeIconMarkup\\("canvas"\\)/);
+  assert.match(menu, /getWorkspaceModeIconMarkup\\("pages"\\)/);
+  assert.doesNotMatch(pages, /WorkspaceModeIcon/);
+  assert.match(pages, /className="canvas-pages-add-icon" width="15" height="15" viewBox="0 0 24 24"/);
+  assert.match(pages, /strokeWidth="1\\.85"/);
+  assert.match(pages, /<polyline points="14 2 14 8 20 8" \\/>/);
+  assert.match(pages, /<line x1="12" y1="12" x2="12" y2="18" \\/>/);
+  assert.match(pageStyles, /\\.app\\.theme-dark \\.canvas-pages-navigation \\.canvas-pages-add:hover/);
+  assert.match(pageStyles, /color: #047857/);
+  assert.match(pageStyles, /color: #6ee7b7/);
 });
