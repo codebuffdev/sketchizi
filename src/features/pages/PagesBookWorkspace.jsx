@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function PagesBookWorkspace({
   pages = [], active, index = 0, canEdit = true, onToggleRead, onPatch,
@@ -210,7 +211,7 @@ export default function PagesBookWorkspace({
           </div>
         </header>
       </section>
-      {deleteOnlyPageOpen && (
+      {deleteOnlyPageOpen && createPortal(
         <div className="pages-delete-confirm-backdrop" onMouseDown={event => {
           if (event.target === event.currentTarget && !deleteOnlyPagePending) {
             setDeleteOnlyPageOpen(false);
@@ -231,7 +232,8 @@ export default function PagesBookWorkspace({
               </button>
             </div>
           </section>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
