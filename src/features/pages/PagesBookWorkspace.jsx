@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 export default function PagesBookWorkspace({
-  pages = [], active, index = 0, pageRect, canEdit = true,
-  onSelect, onAdd, onDelete, onToggleRead, onPatch,
+  active, index = 0, pageRect, canEdit = true, onPatch,
 }) {
   const meta = active && active.customData || {};
   const title = meta.chapterTitle || active?.name || ('Chapter ' + (index + 1));
