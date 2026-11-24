@@ -11,6 +11,18 @@ export const OPPOSITE_PORT = { top: "bottom", bottom: "top", left: "right", righ
 export const PORT_STUB = 24;
 export const CORNER_RADIUS = 10;
 
+/** SVG viewport covering the complete scene bounds, including negative blueprint coordinates. */
+export function getSceneViewport(nodes, margin = 96) {
+  if (!nodes?.length) return { left: 0, top: 0, width: 1, height: 1, viewBox: "0 0 1 1" };
+  const minX = Math.min(...nodes.map((node) => node.x)) - margin;
+  const minY = Math.min(...nodes.map((node) => node.y)) - margin;
+  const maxX = Math.max(...nodes.map((node) => node.x + node.width)) + margin;
+  const maxY = Math.max(...nodes.map((node) => node.y + node.height)) + margin;
+  const width = Math.max(1, maxX - minX);
+  const height = Math.max(1, maxY - minY);
+  return { left: minX, top: minY, width, height, viewBox: `${minX} ${minY} ${width} ${height}` };
+}
+
 export function getPortPoint(rect, port) {
   const { x, y, width, height } = rect;
   switch (port) {
