@@ -182,3 +182,25 @@ test('Pages browser smoke verifies the editorial summary, header chapter control
  assert.match(smoke, /radial-gradient/);
  assert.match(smoke, /rgb\(15, 20, 29\)/);
 });
+
+test('Pages tabs are routed by tab identity and repaired before the Pages workspace renders', async () => {
+ const { readFile } = await import('node:fs/promises');
+ const app = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
+ const tabs = await readFile(new URL('../src/hooks/useWorkspaceTabs.js', import.meta.url), 'utf8');
+ const modeIcon = await readFile(new URL('../src/features/workspace/WorkspaceModeIcon.jsx', import.meta.url), 'utf8');
+ const pages = await readFile(new URL('../src/features/pages/CanvasPages.jsx', import.meta.url), 'utf8');
+ const header = await readFile(new URL('../src/components/app/DesktopAppHeader.jsx', import.meta.url), 'utf8');
+ assert.match(tabs, /function createDefaultPagesSnapshot\(api, existingChapter = null\)/);
+ assert.match(tabs, /type: isPagesTab \? "pages" : requestedType/);
+ assert.match(tabs, /setActiveCanvasTabType,/);
+ assert.match(tabs, /if \(isPagesTab && getPages\(storedElements\)\.length === 0\)/);
+ assert.match(tabs, /const hasPageChapters =/);
+ assert.match(tabs, /localStorage\.setItem\("sketchizi\.active-workspace-tab-mode"/);
+ assert.match(modeIcon, /tab\?\.type === "pages"/);
+ assert.doesNotMatch(modeIcon, /pageMode === "pages"/);
+ assert.match(header, /workspaceMode=\{workspaceMode\}/);
+ assert.match(pages, /workspaceMode = "infinite"/);
+ assert.match(pages, /const livePages = api\?\.getSceneElementsIncludingDeleted\?\.\(\) \|\| \[\]/);
+ assert.match(app, /workspaceMode=\{canvasTabsReady \? getWorkspaceTabMode/);
+ assert.match(app, /pageContext=\{\{ \.\.\.canvasPageContext, mode: \(canvasTabsReady/);
+});
