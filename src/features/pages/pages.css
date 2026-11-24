@@ -501,7 +501,7 @@
   min-height: 720px;
   border: 1px solid var(--book-border);
   border-radius: 6px 14px 14px 6px;
-  background: var(--book-paper);
+  background: transparent;
   box-shadow: 0 2px 5px #0f172a0a, 0 18px 48px #0f172a20, 0 42px 90px #0f172a12;
   pointer-events: none;
 }
