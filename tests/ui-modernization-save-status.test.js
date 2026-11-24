@@ -77,13 +77,13 @@ test("active-tab status dot follows local autosave state, not file dirty state",
 
 test("canvas menu groups save, cloud, download and backup actions with clear descriptions", () => {
   assert.match(header, /<h3>Save &amp; sync<\/h3>/);
-  assert.match(header, /<h3>Download &amp; backup<\/h3>/);
+  assert.ok(header.includes("<h3>Download &amp; export</h3>"));
   assert.match(header, /aria-label="Save locally"/);
   assert.match(header, /aria-label="Save to Cloud Workspace"/);
   assert.ok(header.includes('aria-label={currentDocumentFileBacked ? "Save" : "Save to file…"}'));
   assert.match(header, /aria-label="Download recovery backup"/);
   assert.match(header, /aria-label="Export studio"/);
-  assert.match(header, /Export studio\\.\\.\\./);
+  assert.ok(header.includes("Export studio..."));
   assert.match(header, /Choose PNG, SVG, clipboard and export settings/);
   assert.match(header, /Keep a copy on this device/);
   assert.match(header, /Sync with your Cloud Workspace/);
