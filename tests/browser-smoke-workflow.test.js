@@ -70,7 +70,9 @@ test("browser smoke launches studios from the command palette, not the retired S
   const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
   const app = await read("src/App.jsx");
   assert.ok(app.includes('aria-label={libraryOpen ? "Close icon library" : "Open icon library"}'));
-  assert.ok(app.includes('aria-label="Icon Library"') === false || true);
+  const iconLibrary = await read("src/IconLibraryPanel.jsx");
+  assert.ok(iconLibrary.includes('aria-label="Icon Library"'));
+  assert.ok(iconLibrary.includes("System Design (22)"));
   const palette = await read("src/components/app/CommandPalette.jsx");
   const registry = await read("src/features/commands/commandRegistry.js");
   const docker = await read("src/features/docker-compose/ui/DockerComposeStudio.jsx");
