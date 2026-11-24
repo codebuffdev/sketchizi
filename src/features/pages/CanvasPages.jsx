@@ -165,44 +165,48 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
 
   const fit = page => {
     if (!page || !api) return;
+    const previousChapterId = activeIdRef.current;
+    const isInitialFit = !initialFitRef.current;
+    const sceneElements = api.getSceneElementsIncludingDeleted();
+    const sceneAppState = api.getAppState?.() || {};
+    const chapterFrames = getPages(sceneElements);
+    const firstChapter = chapterFrames[0];
+    const targetChapter = chapterFrames.find(frame => frame.id === page.id);
+    const savedViewport = targetChapter?.customData?.chapterAppState;
+    const shouldRestoreViewport = Boolean(savedViewport && (isInitialFit || previousChapterId !== page.id));
+    const nextElements = sceneElements.map(element => {
+      if (element.id === previousChapterId && previousChapterId !== page.id) {
+        return { ...element, customData: { ...element.customData, chapterAppState: {
+          zoom: sceneAppState.zoom, scrollX: sceneAppState.scrollX, scrollY: sceneAppState.scrollY,
+        } }, version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
+      }
+      if (firstChapter && element.id === firstChapter.id && element.customData?.activeChapterId !== page.id) {
+        return { ...element, customData: { ...element.customData, activeChapterId: page.id },
+          version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
+      }
+      return element;
+    });
     activeIdRef.current = page.id;
     initialFitRef.current = true;
     setActiveId(page.id);
-    // Keep the active chapter identity in the page-frame metadata so it travels
-    // with the canvas tab's IndexedDB snapshot across reloads and tab switches.
-    const chapterFrames = getPages(api.getSceneElementsIncludingDeleted());
-    const firstChapter = chapterFrames[0];
-    if (firstChapter && firstChapter.customData?.activeChapterId !== page.id) {
-      api.updateScene({
-        elements: api.getSceneElementsIncludingDeleted().map(element => element.id === firstChapter.id
-          ? { ...element, customData: { ...element.customData, activeChapterId: page.id },
-              version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
-          : element),
-        captureUpdate: CaptureUpdateAction.NEVER,
-      });
-    }
-    // Keep the frame unselected: selecting the frame can capture pointer
-    // interactions in Excalidraw and prevent the normal drawing/text tools
-    // from starting strokes inside the page. The page boundary and resize
-    // affordances are provided by the Pages overlay instead.
+    // Chapter identity and its viewport travel with the page-frame metadata
+    // inside the canvas tab's IndexedDB snapshot.
     api.updateScene({
+      elements: nextElements,
       appState: { selectedElementIds: {}, selectedGroupIds: {} },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
+    if (shouldRestoreViewport) {
+      api.updateScene({ appState: savedViewport, captureUpdate: CaptureUpdateAction.NEVER });
+      setPageMask(getPageViewportMask(page, { ...api.getAppState(), ...savedViewport }));
+      return;
+    }
     api.scrollToContent?.([page], { fitToContent: true, animate: false });
-    // Excalidraw's fit-to-content uses nearly all available canvas space.
-    // Scale the fitted view down slightly and recenter it to retain a visible
-    // workspace gutter around the page on every page switch and Fit page.
     window.requestAnimationFrame(() => {
       if (activeIdRef.current !== page.id) return;
       const fittedState = api.getAppState();
       const pageViewport = getPageFitViewport(page, fittedState, 1);
-      if (pageViewport) {
-        api.updateScene({
-          appState: pageViewport,
-          captureUpdate: CaptureUpdateAction.NEVER,
-        });
-      }
+      if (pageViewport) api.updateScene({ appState: pageViewport, captureUpdate: CaptureUpdateAction.NEVER });
     });
   };
   const fitViewportToPage = page => {
