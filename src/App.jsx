@@ -466,6 +466,13 @@ function App() {
     systemDesignRef,
   });
 
+  const handlePageContextChange = useCallback((context) => {
+    setCanvasPageContext(context);
+    const activeTab = canvasTabsRef.current.find(tab => tab.id === activeCanvasIdRef.current);
+    if (context?.mode === "pages" && activeTab?.type !== "pages") setActiveCanvasTabType("pages");
+    else if (context?.mode === "infinite" && activeTab?.type === "pages") setActiveCanvasTabType("canvas");
+  }, [setActiveCanvasTabType]);
+
   const handleDeleteOnlyPagesNotebook = useCallback(async () => {
     const tabId = activeCanvasIdRef.current;
     const activeTab = canvasTabsRef.current.find(tab => tab.id === tabId);
@@ -1894,7 +1901,7 @@ function App() {
         themeMode={themeMode}
         canvasApi={apiRef.current}
         aiAskOpen={aiAskOpen}
-        onPageContextChange={setCanvasPageContext}
+        onPageContextChange={handlePageContextChange}
         onDeleteOnlyPage={handleDeleteOnlyPagesNotebook}
         canEditCanvas={collaborationCanEdit}
         isDarkTheme={isDarkTheme}
