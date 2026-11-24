@@ -16,10 +16,10 @@ const ICONS = {
   chevron: <><path d="m7 10 5 5 5-5" /></>,
 };
 
-function ToolbarIcon({ name, light = false }) {
+function ToolbarIcon({ name }) {
   return (
     <svg className="sd-command-icon" width="17" height="17" viewBox="0 0 24 24"
-      fill="none" stroke={light ? "#ffffff" : "#1e293b"} strokeWidth="1.9"
+      fill="none" stroke="currentColor" strokeWidth="1.9"
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
       {ICONS[name]}
     </svg>
@@ -38,7 +38,7 @@ function IconButton({ label, shortcut, children, className = "", ...props }) {
 
 /**
  * Compact three-zone command pill. All toolbar glyphs are local SVGs with explicit
- * slate/white strokes so their contrast never depends on inherited icon color.
+ * currentColor strokes so they follow the toolbar button and active-state theme tokens.
  */
 export default function TopWorkspaceBar({
   mode, onModeChange, simulate, onSimulateChange, loadRps, onLoadChange,
@@ -102,7 +102,7 @@ export default function TopWorkspaceBar({
             <button type="button" className={`sd-sim-main sd-command-sim-main${simulate ? " is-on" : ""}`}
               aria-pressed={simulate} onClick={() => onSimulateChange(!simulate)}
               title={simulate ? "Stop simulation" : "Simulate traffic"}>
-              <ToolbarIcon name={simulate ? "stop" : "play"} light={Boolean(simulate)} />
+              <ToolbarIcon name={simulate ? "stop" : "play"} />
               <span>Simulate</span>
             </button>
             <button type="button" className={`sd-sim-caret sd-command-sim-caret${simulate ? " is-on" : ""}`}
@@ -110,7 +110,7 @@ export default function TopWorkspaceBar({
               aria-haspopup="menu" aria-expanded={loadOpen}
               onClick={() => setLoadOpen((open) => !open)}>
               <span className="sd-command-load">{formatRps(loadRps)}</span>
-              <ToolbarIcon name="chevron" light={Boolean(simulate)} />
+              <ToolbarIcon name="chevron" />
             </button>
             {loadOpen && (
               <div className="sd-popover sd-load-menu" role="menu" aria-label="Simulated load">

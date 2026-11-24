@@ -28,27 +28,39 @@ test("exposes the requested icon-first actions and keyboard tooltips", () => {
   assert.match(component, /data-tooltip=\{tooltip\}/);
 });
 
-test("uses explicit high-contrast inline SVG strokes for toolbar icons", () => {
-  assert.match(component, /width="17" height="17"/);
-  assert.match(component, /stroke=\{light \? "#ffffff" : "#1e293b"\}/);
-  assert.match(component, /strokeWidth="1\.9"/);
-  assert.match(component, /strokeLinecap="round"/);
-  assert.match(component, /strokeLinejoin="round"/);
-  assert.match(component, /fill="none"/);
-  assert.doesNotMatch(component, /<Icon\s/);
+test("uses theme-inheriting SVG strokes for toolbar icons", () => {
+  assert.ok(component.includes('stroke="currentColor"'));
+  assert.ok(component.includes('strokeWidth="1.9"'));
+  assert.ok(component.includes('strokeLinecap="round"'));
+  assert.ok(component.includes('strokeLinejoin="round"'));
+  assert.ok(component.includes('fill="none"'));
+  assert.ok(!component.includes('light = false'));
+  assert.ok(!component.includes('stroke={light ?'));
+  assert.ok(!component.includes("<Icon "));
 });
 
-test("keeps the mode switch and simulation load control compact", () => {
-  assert.match(component, /item\.id === "k8s" \? "K8s"/);
-  assert.match(component, /sd-command-load/);
-  assert.match(component, /aria-pressed=\{simulate\}/);
-  assert.match(styles, /height: 44px/);
-  assert.match(styles, /padding: 5px 8px/);
-  assert.match(styles, /border-radius: 14px/);
-  assert.match(styles, /background: #ffffff/);
-  assert.match(styles, /width: 32px/);
-  assert.match(styles, /height: 32px/);
-  assert.match(styles, /background: #f1f5f9/);
-  assert.match(styles, /background: #059669/);
+test("uses shared light/dark theme tokens throughout the floating toolbar", () => {
+  assert.ok(studio.includes('className={`sd-root${isDarkTheme ? " is-dark" : ""}`}'));
+  assert.ok(styles.includes(".sd-root.is-dark {"));
+  assert.ok(styles.includes(".sd-root .sd-topbar-pill {"));
+  assert.ok(styles.includes("background: var(--sd-surface)"));
+  assert.ok(styles.includes("border-color: var(--sd-border)"));
+  assert.ok(styles.includes(".sd-root .sd-command-icon-btn {"));
+  assert.ok(styles.includes("color: var(--sd-text-2)"));
+  assert.ok(styles.includes("opacity: .72"));
+  assert.ok(styles.includes(".sd-root .sd-command-sim-main"));
+
+  assert.ok(styles.includes("--sd-surface: rgba(30,41,59,.86)"));
+  assert.ok(styles.includes(".sd-surface { pointer-events: auto; background: var(--sd-surface)"));
+  assert.ok(styles.includes(".sd-command-divider { height: 22px; margin: 0 2px; background: var(--sd-border)"));
+  assert.ok(styles.includes("color: var(--sd-text-2)"));
+  assert.ok(styles.includes(".sd-command-modes {"));
+  assert.ok(styles.includes("background: var(--sd-soft)"));
+  assert.ok(styles.includes("background: var(--sd-card)"));
+  assert.ok(styles.includes(".sd-command-sim-main, .sd-command-sim-caret"));
+  assert.ok(styles.includes(".sd-command-load {"));
+  assert.ok(styles.includes("border: 1px solid var(--sd-border)"));
+  const toolbarStyles = styles.slice(styles.indexOf("/* Floating command bar:"), styles.indexOf("@media (max-width: 760px)"));
+  assert.ok(!/background:\s*#(?:ffffff|1e293b|f1f5f9|475569|0f172a|cbd5e1)/.test(toolbarStyles));
   assert.doesNotMatch(styles, /sd-auto-layout-trigger|sd-components-trigger/);
 });
