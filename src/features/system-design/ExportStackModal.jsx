@@ -51,8 +51,7 @@ export default function ExportStackModal({ nodes, edges, onClose }) {
         </div>
         <pre className="sd-export-code sd-mono" tabIndex={0} aria-label={active.label + " manifest"}>{manifest}</pre>
         <footer className="sd-export-foot">
-          <span>{nodes.length} nodes · {edges.length} connections · {manifest.split("
-").length} lines</span>
+          <span>{nodes.length} nodes · {edges.length} connections · {manifest.split("\n").length} lines</span>
           <div><button type="button" className="sd-export-secondary" onClick={copy}><Icon name={copied ? "check" : "copy"} size={14} />{copied ? "Copied" : "Copy to Clipboard"}</button>
             <button type="button" className="sd-export-primary" onClick={download}><Icon name="download" size={14} />Download {target === "k8s" ? ".yaml" : ".yml"}</button></div>
         </footer>
