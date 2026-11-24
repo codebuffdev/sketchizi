@@ -704,3 +704,43 @@
   .pages-book-canvas-zone { inset: 190px 0 42px; }
   .pages-book-folio { padding: 10px 20px; }
 }
+
+
+/* Keep all book decoration behind Excalidraw's native HiDPI canvas. The paper
+   itself is CSS-painted; the matching Excalidraw paper element is transparent. */
+.pages-book-workspace { z-index: auto; }
+.pages-book-sheet { z-index: auto; }
+.pages-book-edge { z-index: 0; background: var(--book-paper); }
+.pages-book-spine {
+  z-index: 1;
+  left: 0;
+  width: 16px;
+  pointer-events: none;
+}
+.pages-book-canvas-zone { z-index: 0; }
+.pages-editorial-header,
+.pages-book-folio { z-index: 10040; }
+.app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .layer-canvas {
+  position: relative;
+  z-index: 2 !important;
+}
+.app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .layer-canvas canvas {
+  background: transparent !important;
+  opacity: 1 !important;
+}
+.app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .layer-ui__wrapper {
+  z-index: 10020 !important;
+}
+.app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .excalidraw-textEditorContainer {
+  z-index: 10030 !important;
+  opacity: 1 !important;
+}
+.app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .excalidraw-textEditorContainer textarea {
+  background: transparent !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: currentColor;
+}
+.app:has(.pages-book-workspace) .canvas-pages-page-surface {
+  background-color: transparent !important;
+  background-image: none !important;
+}
