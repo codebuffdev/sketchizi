@@ -2326,6 +2326,7 @@ function App() {
           isOpen={exportStudioOpen}
           onClose={() => setExportStudioOpen(false)}
           apiRef={apiRef}
+          systemDesign={systemDesign}
         />
       )}
       {templatesModalOpen && (
