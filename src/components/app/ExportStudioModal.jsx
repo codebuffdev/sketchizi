@@ -1,256 +1,120 @@
 import React, { useMemo, useState, useSyncExternalStore } from "react";
+import { exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
 import { readGraph } from "../../features/system-design/sceneModel.js";
 import { simulateTraffic } from "../../features/system-design/trafficSimulator.js";
 import { buildSystemDesignSvg, exportSystemDesignImage } from "../../features/system-design/exportSystemDesignImage.js";
-import { exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
+
+const EMPTY_SNAPSHOT = Object.freeze({ elements: [] });
+const noopSubscribe = () => () => {};
+const getEmptySnapshot = () => EMPTY_SNAPSHOT;
 
 export default function ExportStudioModal({ isOpen, onClose, apiRef, systemDesign, filename = "architecture-diagram" }) {
   const [scale, setScale] = useState(2);
-  const [bgMode, setBgMode] = useState("dark"); // "transparent" | "dark" | "light"
+  const [bgMode, setBgMode] = useState("dark");
+  const [darkMode, setDarkMode] = useState(true);
   const [exportOnlySelected, setExportOnlySelected] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
-  const systemSnapshot = useSyncExternalStore(systemDesign?.store?.subscribe || (() => () => {}), systemDesign?.store?.getSnapshot || (() => ({ elements: [] })), systemDesign?.store?.getSnapshot || (() => ({ elements: [] })));
+  const subscribe = systemDesign?.store?.subscribe || noopSubscribe;
+  const getSnapshot = systemDesign?.store?.getSnapshot || getEmptySnapshot;
+  const systemSnapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const systemGraph = useMemo(() => systemDesign?.enabled ? readGraph(systemSnapshot.elements) : null, [systemDesign?.enabled, systemSnapshot.elements]);
-  const systemSimulation = useMemo(() => systemGraph ? simulateTraffic({ nodes: systemGraph.nodes, edges: systemGraph.edges, totalRps: systemDesign?.simulate ? systemDesign.loadRps : 0 }) : null, [systemGraph, systemDesign?.simulate, systemDesign?.loadRps]);
-  const systemSvg = useMemo(() => systemGraph?.nodes?.length ? buildSystemDesignSvg({ ...systemGraph, simulation: systemSimulation, mode: systemDesign?.mode, background: bgMode, darkMode, padding: 24 }) : "", [systemGraph, systemSimulation, systemDesign?.mode, bgMode, darkMode]);
+  const simulation = useMemo(() => systemGraph ? simulateTraffic({
+    nodes: systemGraph.nodes, edges: systemGraph.edges,
+    totalRps: systemDesign?.simulate ? systemDesign.loadRps : 0,
+  }) : null, [systemGraph, systemDesign?.simulate, systemDesign?.loadRps]);
+  const systemSvg = useMemo(() => systemGraph?.nodes?.length ? buildSystemDesignSvg({
+    ...systemGraph, simulation, mode: systemDesign?.mode, background: bgMode, darkMode, padding: 24,
+  }) : "", [systemGraph, simulation, systemDesign?.mode, bgMode, darkMode]);
 
   if (!isOpen) return null;
 
-  const getExportElementsAndState = () => {
+  const getExportData = () => {
     const api = apiRef?.current;
     if (!api) return null;
-
     const allElements = api.getSceneElements?.() || [];
     const appState = api.getAppState?.() || {};
-    const selectedIds = new Set(
-      Object.entries(appState.selectedElementIds || {})
-        .filter(([, selected]) => selected)
-        .map(([id]) => id)
-    );
-
-    const elements = exportOnlySelected && selectedIds.size > 0
-      ? allElements.filter((el) => selectedIds.has(el.id))
-      : allElements.filter((el) => !el.isDeleted && !el.deleted);
-
-    const exportBackground = bgMode !== "transparent";
-    const viewBackgroundColor = bgMode === "dark" ? "#12141c" : "#ffffff";
-
+    const selectedIds = new Set(Object.entries(appState.selectedElementIds || {}).filter(([, selected]) => selected).map(([id]) => id));
+    const elements = exportOnlySelected && selectedIds.size
+      ? allElements.filter((element) => selectedIds.has(element.id))
+      : allElements.filter((element) => !element.isDeleted && !element.deleted);
     return {
       elements,
-      appState: {
-        ...appState,
-        exportBackground,
-        viewBackgroundColor,
-        exportScale: scale,
-        exportPadding: 24,
-      },
+      appState: { ...appState, exportBackground: bgMode !== "transparent", viewBackgroundColor: bgMode === "dark" ? "#12141c" : "#ffffff", exportScale: scale, exportPadding: 24 },
       files: api.getFiles?.() || {},
     };
   };
 
-  const handleCopyToClipboard = async () => {
-    setBusy(true);
-    setStatusMessage("Generating image…");
-    try {
-      const data = getExportElementsAndState();
-      if (systemSvg) {
-        const blob = await exportSystemDesignImage({ ...systemGraph, simulation: systemSimulation, mode: systemDesign?.mode, background: bgMode, darkMode, scale, format: "png" });
-        if (navigator.clipboard?.write && window.ClipboardItem) { await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); setStatusMessage("✓ Copied PNG to clipboard!"); }
-        else setStatusMessage("Clipboard API not supported in this browser");
-        return;
-      }
-      if (!data || data.elements.length === 0) {
-        setStatusMessage("No elements to export");
-        return;
-      }
-
-      const blob = await exportToBlob({
-        elements: data.elements,
-        appState: data.appState,
-        files: data.files,
-        mimeType: "image/png",
-      });
-
-      if (navigator.clipboard?.write && window.ClipboardItem) {
-        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        setStatusMessage("✓ Copied PNG to clipboard!");
-      } else {
-        setStatusMessage("Clipboard API not supported in this browser");
-      }
-    } catch (err) {
-      console.error(err);
-      setStatusMessage("Failed to copy image");
-    } finally {
-      setBusy(false);
-    }
+  const makePng = async () => {
+    if (systemSvg) return exportSystemDesignImage({ ...systemGraph, simulation, mode: systemDesign?.mode, background: bgMode, darkMode, scale, format: "png" });
+    const data = getExportData();
+    if (!data?.elements.length) throw new Error("No elements to export");
+    return exportToBlob({ elements: data.elements, appState: data.appState, files: data.files, mimeType: "image/png" });
   };
-
+  const downloadBlob = (blob, extension) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = extension === "png" ? `${filename}_${scale}x.png` : `${filename}.svg`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  const handleCopyToClipboard = async () => {
+    setBusy(true); setStatusMessage("Generating image…");
+    try {
+      const blob = await makePng();
+      if (!navigator.clipboard?.write || !window.ClipboardItem) throw new Error("Clipboard API not supported in this browser");
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      setStatusMessage("✓ Copied PNG to clipboard!");
+    } catch (error) { console.error(error); setStatusMessage(error.message === "Clipboard API not supported in this browser" ? error.message : "Failed to copy image"); }
+    finally { setBusy(false); }
+  };
   const handleDownloadPng = async () => {
     setBusy(true);
-    try {
-      const data = getExportElementsAndState();
-      if (!data) return;
-
-      const blob = await exportToBlob({
-        elements: data.elements,
-        appState: data.appState,
-        files: data.files,
-        mimeType: "image/png",
-      });
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${filename}_${scale}x.png`;
-      link.click();
-      URL.revokeObjectURL(url);
-      setStatusMessage("✓ PNG downloaded");
-    } catch (err) {
-      console.error(err);
-      setStatusMessage("Failed to download PNG");
-    } finally {
-      setBusy(false);
-    }
+    try { downloadBlob(await makePng(), "png"); setStatusMessage("✓ PNG downloaded"); }
+    catch (error) { console.error(error); setStatusMessage("Failed to download PNG"); }
+    finally { setBusy(false); }
   };
-
   const handleDownloadSvg = async () => {
     setBusy(true);
     try {
-      const data = getExportElementsAndState();
-      if (!data) return;
-
-      const svg = await exportToSvg({
-        elements: data.elements,
-        appState: data.appState,
-        files: data.files,
-      });
-
-      const svgString = new XMLSerializer().serializeToString(svg);
-      const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${filename}.svg`;
-      link.click();
-      URL.revokeObjectURL(url);
-      setStatusMessage("✓ SVG downloaded");
-    } catch (err) {
-      console.error(err);
-      setStatusMessage("Failed to download SVG");
-    } finally {
-      setBusy(false);
-    }
+      let blob;
+      if (systemSvg) blob = await exportSystemDesignImage({ ...systemGraph, simulation, mode: systemDesign?.mode, background: bgMode, darkMode, format: "svg" });
+      else {
+        const data = getExportData();
+        if (!data?.elements.length) throw new Error("No elements to export");
+        const svg = await exportToSvg({ elements: data.elements, appState: data.appState, files: data.files });
+        blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: "image/svg+xml;charset=utf-8" });
+      }
+      downloadBlob(blob, "svg"); setStatusMessage("✓ SVG downloaded");
+    } catch (error) { console.error(error); setStatusMessage("Failed to download SVG"); }
+    finally { setBusy(false); }
   };
-
   const handleCopyMarkdown = () => {
-    const md = `![${filename}](./${filename}.png)`;
-    navigator.clipboard?.writeText(md);
+    navigator.clipboard?.writeText(`![${filename}](./${filename}.png)`);
     setStatusMessage("✓ Copied Markdown snippet!");
   };
 
   return (
-    <div className="sketchizi-export-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="sketchizi-export-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="sketchizi-export-modal" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
         <div className="sketchizi-export-header">
-          <div>
-            <h2 id="export-modal-title">Export Studio</h2>
-            <p>Generate high-resolution PNGs, SVGs, or copy directly to Slack/Notion.</p>
-          </div>
+          <div><h2 id="export-modal-title">Export Studio</h2><p>Generate high-resolution PNGs, SVGs, or copy directly to Slack/Notion.</p></div>
           <button type="button" className="sketchizi-modal-close" onClick={onClose} aria-label="Close export studio">×</button>
         </div>
-
         <div className="sketchizi-export-body">
-          {/* Resolution Multiplier */}
-          <div className="sketchizi-export-control-group">
-            <label className="sketchizi-export-label">Resolution Scale</label>
-            <div className="sketchizi-export-pill-row">
-              {[1, 2, 3].map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className={`sketchizi-export-pill ${scale === s ? "is-active" : ""}`}
-                  onClick={() => setScale(s)}
-                >
-                  {s}× {s === 2 ? "(Retina)" : s === 3 ? "(Ultra-HD)" : "(Standard)"}
-                </button>
-              ))}
-            </div>
+          <div className="sketchizi-export-control-group"><label className="sketchizi-export-label">Resolution Scale</label>
+            <div className="sketchizi-export-pill-row">{[1, 2, 3].map((value) => <button key={value} type="button" className={`sketchizi-export-pill ${scale === value ? "is-active" : ""}`} onClick={() => setScale(value)}>{value}× {value === 2 ? "(Retina)" : value === 3 ? "(Ultra-HD)" : "(Standard)"}</button>)}</div>
           </div>
-
-          {/* Background Mode */}
-          <div className="sketchizi-export-control-group">
-            <label className="sketchizi-export-label">Background</label>
-            <div className="sketchizi-export-pill-row">
-              {[
-                { id: "dark", label: "Dark Surface" },
-                { id: "light", label: "Light Surface" },
-                { id: "transparent", label: "Transparent" },
-              ].map((b) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  className={`sketchizi-export-pill ${bgMode === b.id ? "is-active" : ""}`}
-                  onClick={() => setBgMode(b.id)}
-                >
-                  {b.label}
-                </button>
-              ))}
-            </div>
+          <div className="sketchizi-export-control-group"><label className="sketchizi-export-label">Background</label>
+            <div className="sketchizi-export-pill-row">{[{ id: "dark", label: "Dark Surface" }, { id: "light", label: "Light Surface" }, { id: "transparent", label: "Transparent" }].map((item) => <button key={item.id} type="button" className={`sketchizi-export-pill ${bgMode === item.id ? "is-active" : ""}`} onClick={() => setBgMode(item.id)}>{item.label}</button>)}</div>
           </div>
-
-          <div className="sketchizi-export-control-group">
-            <label className="sketchizi-export-checkbox-label"><input type="checkbox" checked={darkMode} onChange={(e) => setDarkMode(e.target.checked)} /><span>Dark mode rendering</span></label>
-          </div>
-
-          {systemSvg && <div className="sketchizi-export-control-group" aria-label="Diagram preview"><label className="sketchizi-export-label">Diagram preview</label><div className="sketchizi-system-export-preview" style={{ background: bgMode === "transparent" ? "repeating-conic-gradient(#ddd 0% 25%, #fff 0% 50%) 50% / 16px 16px" : bgMode === "dark" ? "#12141c" : "#fff" }} dangerouslySetInnerHTML={{ __html: systemSvg }} /></div>}
-
-          {/* Scope Toggle */}
-          <div className="sketchizi-export-control-group">
-            <label className="sketchizi-export-checkbox-label">
-              <input
-                type="checkbox"
-                checked={exportOnlySelected}
-                onChange={(e) => setExportOnlySelected(e.target.checked)}
-              />
-              <span>Export selected elements only</span>
-            </label>
-          </div>
-
-          {/* Action Row */}
-          <div className="sketchizi-export-primary-action">
-            <button
-              type="button"
-              className="sketchizi-export-copy-btn"
-              onClick={handleCopyToClipboard}
-              disabled={busy}
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              <span>Copy Image to Clipboard</span>
-            </button>
-          </div>
-
-          <div className="sketchizi-export-downloads-row">
-            <button type="button" className="sketchizi-export-sub-btn" onClick={handleDownloadPng} disabled={busy}>
-              Download PNG
-            </button>
-            <button type="button" className="sketchizi-export-sub-btn" onClick={handleDownloadSvg} disabled={busy}>
-              Download SVG
-            </button>
-            <button type="button" className="sketchizi-export-sub-btn" onClick={handleCopyMarkdown}>
-              Copy Markdown
-            </button>
-          </div>
-
-          {statusMessage && (
-            <div className="sketchizi-export-status" role="status">
-              {statusMessage}
-            </div>
-          )}
+          <div className="sketchizi-export-control-group"><label className="sketchizi-export-checkbox-label"><input type="checkbox" checked={darkMode} onChange={(event) => setDarkMode(event.target.checked)} /><span>Dark mode rendering</span></label></div>
+          {systemSvg && <div className="sketchizi-export-control-group"><label className="sketchizi-export-label">Diagram preview</label><div className="sketchizi-system-export-preview" style={{ background: bgMode === "transparent" ? "repeating-conic-gradient(#ddd 0% 25%, #fff 0% 50%) 50% / 16px 16px" : bgMode === "dark" ? "#12141c" : "#fff" }} dangerouslySetInnerHTML={{ __html: systemSvg }} /></div>}
+          <div className="sketchizi-export-control-group"><label className="sketchizi-export-checkbox-label"><input type="checkbox" checked={exportOnlySelected} onChange={(event) => setExportOnlySelected(event.target.checked)} /><span>Export selected elements only</span></label></div>
+          <div className="sketchizi-export-primary-action"><button type="button" className="sketchizi-export-copy-btn" onClick={handleCopyToClipboard} disabled={busy}><span>Copy Image to Clipboard</span></button></div>
+          <div className="sketchizi-export-downloads-row"><button type="button" className="sketchizi-export-sub-btn" onClick={handleDownloadPng} disabled={busy}>Download PNG</button><button type="button" className="sketchizi-export-sub-btn" onClick={handleDownloadSvg} disabled={busy}>Download SVG</button><button type="button" className="sketchizi-export-sub-btn" onClick={handleCopyMarkdown}>Copy Markdown</button></div>
+          {statusMessage && <div className="sketchizi-export-status" role="status">{statusMessage}</div>}
         </div>
       </section>
     </div>
