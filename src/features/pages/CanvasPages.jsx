@@ -86,7 +86,8 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
         api.updateScene({elements:api.getSceneElementsIncludingDeleted().map(e => repairs.get(e.id) || e),captureUpdate:CaptureUpdateAction.NEVER});
         return;
       }
-      const selected = next.find(p => p.id === activeIdRef.current) || next[0];
+      const persistedActiveId = next.find(page => page.customData?.activeChapterId)?.customData?.activeChapterId;
+      const selected = next.find(p => p.id === activeIdRef.current) || next.find(p => p.id === persistedActiveId) || next[0];
       if (mode === 'pages' && selected) {
         const previous = new Map((sceneSnapshot.current || []).map(element => [element.id, element]));
         let rejected = false;
@@ -167,6 +168,19 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     activeIdRef.current = page.id;
     initialFitRef.current = true;
     setActiveId(page.id);
+    // Keep the active chapter identity in the page-frame metadata so it travels
+    // with the canvas tab's IndexedDB snapshot across reloads and tab switches.
+    const chapterFrames = getPages(api.getSceneElementsIncludingDeleted());
+    const firstChapter = chapterFrames[0];
+    if (firstChapter && firstChapter.customData?.activeChapterId !== page.id) {
+      api.updateScene({
+        elements: api.getSceneElementsIncludingDeleted().map(element => element.id === firstChapter.id
+          ? { ...element, customData: { ...element.customData, activeChapterId: page.id },
+              version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
+          : element),
+        captureUpdate: CaptureUpdateAction.NEVER,
+      });
+    }
     // Keep the frame unselected: selecting the frame can capture pointer
     // interactions in Excalidraw and prevent the normal drawing/text tools
     // from starting strokes inside the page. The page boundary and resize
