@@ -116,7 +116,7 @@ export default function SketchiziCanvas({
     // Canvas patterns are a Sketchizi presentation layer, independent of
     // Excalidraw's native grid. This prevents the native grid from stacking
     // underneath the selected custom pattern.
-    const showGrid = !!gridEnabled;
+    const showGrid = !!gridEnabled && pageContext?.mode !== "pages";
     node.classList.toggle("is-grid-enabled", !!showGrid);
     ["normal", "focus", "local", "dots", "ruled", "columns", "coordinates"].forEach((style) => {
       node.classList.toggle(`is-${style}-style`, gridStyle === style);
