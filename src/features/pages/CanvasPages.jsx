@@ -4,7 +4,6 @@ import { CaptureUpdateAction, convertToExcalidrawElements } from '@excalidraw/ex
 import { getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, getPageFitViewport, getResponsivePageSize, isElementWithinPage, PAGE_MARKER } from './pageModel.js';
 import { canvasColorForDisplay, canvasColorForScene } from '../navigation/canvasColors.js';
 import { getCanvasBackground } from '../navigation/canvasTheme.js';
-import WorkspaceModeIcon from '../workspace/WorkspaceModeIcon.jsx';
 import './pages.css';
 
 const PAGE_WORKSPACE_TINT = 0.25;
