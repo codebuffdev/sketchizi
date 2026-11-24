@@ -71,11 +71,11 @@ export default function ContextualInspectorDrawer({ selection, mode, simulation,
       {selection && <div className="sd-surface sd-pill-bar" role="toolbar" aria-label={isNode ? "Node options" : "Connector options"}>
         {isNode ? (
           <>
-            <PrimitiveIcon kind={item.kind} accent={item.accent} />
+            {item.customIcon?.src ? <img className="sd-context-custom-icon" src={item.customIcon.src} alt={item.customIcon.name || ""} /> : <PrimitiveIcon kind={item.kind} accent={item.accent} />}
             <input className="sd-inline-input" aria-label="Label" value={item.label} maxLength={60} disabled={!canEdit}
               onChange={(e) => patchNode({ label: e.target.value }, true)} onBlur={(e) => patchNode({ label: e.target.value.trim() || item.label })} onKeyDown={(e) => e.stopPropagation()} />
             <button type="button" className="sd-icon-assign-btn" disabled={!canEdit}
-              title="Insert or change tech icon" onClick={() => onOpenIconLibrary?.(item)}>Icon +</button>
+              title="Insert or change tech icon" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenIconLibrary?.(item); }}>Icon +</button>
             {item.customIcon && <button type="button" className="sd-icon-reset-btn" disabled={!canEdit}
               title="Reset to primitive icon" onClick={() => patchNode({ customIcon: null })}>Reset icon</button>}
           </>
