@@ -286,6 +286,13 @@ try {
  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
  assert.equal((await page.locator('.canvas-pages-chapter-trigger').textContent()).trim().startsWith('01 / 01'), true,
   'Cancel must preserve the sole page');
+ // Keep an adjacent Canvas tab open so confirmation must activate it.
+ await page.getByRole('button', { name: 'Create new tab' }).click();
+ await page.waitForFunction(() => document.querySelector('.canvas-tab.is-active .canvas-tab-name')?.textContent.trim() === 'Canvas 1');
+ await chooseCanvasMode('infinite');
+ await page.getByRole('tab').filter({ hasText: 'Page 1' }).click();
+ await page.waitForFunction(() => document.querySelector('.canvas-tab.is-active .canvas-tab-name')?.textContent.trim() === 'Page 1');
+ await chooseCanvasMode('pages');
  await page.getByRole('button', { name: 'Delete', exact: true }).click();
  await page.getByRole('dialog', { name: 'Delete "Page 1"?' }).getByRole('button', { name: 'Delete & Close' }).click();
  await page.waitForFunction(() => document.querySelector('.canvas-tab.is-active .canvas-tab-name')?.textContent.trim() === 'Canvas 1',
