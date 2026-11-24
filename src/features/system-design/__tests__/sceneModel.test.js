@@ -213,19 +213,19 @@ test("every blueprint edge is materialized with the exact generated System Desig
   for (const blueprint of BLUEPRINTS) {
     const ids = new Map(blueprint.nodes.map((node) => [node.key, `node-${node.key}`]));
     const nodes = blueprint.nodes.map((node) => asElement(
-      createNodeSkeleton(node.kind, { x: node.at[0] * 300, y: node.at[1] * 130 }, node.overrides || {}, ids.get(node.key)),
+      createNodeSkeleton(node.kind, { x: Number.isFinite(node.x) ? node.x : node.at[0] * 300, y: Number.isFinite(node.y) ? node.y : node.at[1] * 130 }, node.overrides || {}, ids.get(node.key)),
       ids.get(node.key),
     ));
     const rects = new Map(nodes.map((element) => [element.id, readNode(element)]));
     const edges = blueprint.edges.map((edge, index) => asElement(
-      createEdgeSkeleton(rects.get(ids.get(edge.from)), rects.get(ids.get(edge.to)), edge.protocol ? { protocol: edge.protocol } : {}, `edge-${index}`),
+      createEdgeSkeleton(rects.get(ids.get(edge.fromNode || edge.from)), rects.get(ids.get(edge.toNode || edge.to)), { ...(edge.protocol ? { protocol: edge.protocol } : {}), ...(edge.fromPort && edge.toPort ? { fromPort: edge.fromPort, toPort: edge.toPort } : {}) }, `edge-${index}`),
       `edge-${index}`,
     ));
     const graph = readGraph([...nodes, ...edges]);
     assert.equal(graph.nodes.length, blueprint.nodes.length, blueprint.id);
     assert.equal(graph.edges.length, blueprint.edges.length, blueprint.id);
     for (const edge of blueprint.edges) {
-      assert.ok(graph.edges.some((actual) => actual.from === ids.get(edge.from) && actual.to === ids.get(edge.to)), blueprint.id);
+      assert.ok(graph.edges.some((actual) => actual.from === ids.get(edge.fromNode || edge.from) && actual.to === ids.get(edge.toNode || edge.to)), blueprint.id);
     }
   }
 });
