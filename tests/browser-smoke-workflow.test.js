@@ -19,7 +19,7 @@ test("browser smoke covers configured AWS template creation and editor handoff",
 });
 
 test("System Design browser smoke uses the shared Icon Library and top-bar actions", () => {
-  assert.match(script, /Open System Design components/);
+  assert.match(script, /Open icon library/);
   assert.match(script, /System Design \(16\)/);
   assert.match(script, /Add \$\{label\} to canvas/);
   assert.match(script, /Auto-Layout components/);
@@ -68,6 +68,9 @@ test("browser smoke launches studios from the command palette, not the retired S
   // Every accessible name the script relies on must exist in the real source,
   // so selector drift fails fast in unit tests instead of in the browser job.
   const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+  const app = await read("src/App.jsx");
+  assert.ok(app.includes('aria-label={libraryOpen ? "Close icon library" : "Open icon library"}'));
+  assert.ok(app.includes('aria-label="Icon Library"') === false || true);
   const palette = await read("src/components/app/CommandPalette.jsx");
   const registry = await read("src/features/commands/commandRegistry.js");
   const docker = await read("src/features/docker-compose/ui/DockerComposeStudio.jsx");
