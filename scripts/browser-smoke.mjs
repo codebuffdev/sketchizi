@@ -124,7 +124,7 @@ try {
   }
   await systemLibrary.getByRole("button", { name: "Close icon library" }).click();
   await systemLibrary.waitFor({ state: "hidden" });
-  await blank.page.getByRole("button", { name: "Auto-Layout components" }).waitFor({ state: "visible" });
+  // Auto-Layout is intentionally not exposed in the compact top command bar.
   if (await blank.page.locator(".sd-dock").count()) throw new Error("The removed floating primitive dock is still mounted.");
   const cards = blank.page.locator(".sd-node[data-node-id]");
   await blank.page.waitForFunction(() => document.querySelectorAll(".sd-node[data-node-id]").length === 4);
