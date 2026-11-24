@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { arrangeElements } from "../alignElements.js";
+import { readFile } from "node:fs/promises";
+import { arrangeElements, applyAlignmentToSelection } from "../alignElements.js";
 
 const box = (id, x, y, width = 40, height = 30, extra = {}) => ({
   id, type: "rectangle", x, y, width, height, version: 1, versionNonce: 1, ...extra,
@@ -87,4 +88,68 @@ test("standard edge alignments align logical unit bounds without detaching bound
   const next = arrangeElements(scene, ["a", "b"], "left");
   assert.equal(moved(next, "a").x, moved(next, "b").x);
   assert.equal(moved(next, "label").x - moved(next, "a").x, 10);
+});
+
+
+test("live alignment reads current Excalidraw selection and commits an undoable scene update", () => {
+  const scene = [box("a", 0, 0), box("b", 120, 60), box("unselected", 500, 500)];
+  let update;
+  const api = {
+    getAppState: () => ({ selectedElementIds: { a: true, b: true, unselected: false } }),
+    getSceneElements: () => scene,
+    updateScene: (value) => { update = value; },
+  };
+  assert.equal(applyAlignmentToSelection(api, "horizontal"), true);
+  assert.ok(update);
+  assert.equal(update.commitToHistory, true);
+  assert.equal(update.elements.find((element) => element.id === "a").x, 0);
+  assert.equal(update.elements.find((element) => element.id === "b").x, 64);
+  assert.equal(update.elements.find((element) => element.id === "unselected").x, 500);
+});
+
+for (const layout of ["horizontal", "vertical", "square", "rectangle"]) {
+  test(`applyAlignmentToSelection sends changed coordinates to updateScene for ${layout}`, () => {
+    const scene = [
+      box("a", 20, 20, 30, 20),
+      box("b", 180, 90, 40, 30),
+      box("c", 80, 220, 35, 25),
+      box("d", 300, 310, 50, 40),
+    ];
+    let update = null;
+    const api = {
+      getAppState: () => ({ selectedElementIds: Object.fromEntries(scene.map((element) => [element.id, true])) }),
+      getSceneElements: () => scene,
+      updateScene: (payload) => { update = payload; },
+    };
+    assert.equal(applyAlignmentToSelection(api, layout), true);
+    assert.ok(update?.elements);
+    assert.ok(update.elements.some((element, index) =>
+      element.x !== scene[index].x || element.y !== scene[index].y,
+    ));
+  });
+}
+
+test("bound text remains centered in its parent box after the parent is arranged", () => {
+  const scene = [
+    box("parent-a", 0, 0, 100, 60, { boundElements: [{ id: "label-a", type: "text" }] }),
+    { id: "label-a", type: "text", x: 20, y: 20, width: 60, height: 20, containerId: "parent-a", version: 1 },
+    box("parent-b", 240, 120, 80, 50),
+  ];
+  const next = arrangeElements(scene, ["parent-a", "parent-b"], "horizontal");
+  const parent = moved(next, "parent-a");
+  const label = moved(next, "label-a");
+  assert.equal(label.x + label.width / 2, parent.x + parent.width / 2);
+  assert.equal(label.y + label.height / 2, parent.y + parent.height / 2);
+});
+
+test("ToolOptionsDock renders the minimalist Align trigger and a body-portaled upward popover", async () => {
+  const source = await readFile(new URL("../../components/app/ToolOptionsDock.jsx", import.meta.url), "utf8");
+  assert.match(source, /title="Align & Arrange"/);
+  assert.match(source, /width="18" height="18"[^>]*strokeWidth="1\.8"/);
+  assert.match(source, /M5 4v16M8 7h11M8 12h8M8 17h11/);
+  assert.match(source, /document\.body,/);
+  assert.match(source, /onMouseDown=\{\(event\) => event\.stopPropagation\(\)\}/);
+  assert.match(source, /api\.getSceneElements\?\.\(\)/);
+  assert.match(source, /selectedElementIds/);
+  assert.match(source, /commitToHistory: true/);
 });
