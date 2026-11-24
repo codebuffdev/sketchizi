@@ -32,17 +32,37 @@ import { DEFAULT_SYSTEM_DESIGN_TAB_STATE, persistSystemDesignTabState } from "..
  *
  * Moved verbatim out of App.jsx; declaration order (and therefore effect order) is unchanged.
  */
-function createDefaultPagesSnapshot(api) {
-  const chapterId = crypto.randomUUID();
+function createDefaultPagesSnapshot(api, existingChapter = null) {
+  const chapterId = existingChapter?.id || crypto.randomUUID();
+  const title = existingChapter?.title || "Untitled Page";
   const elements = convertToExcalidrawElements(pageSkeleton([], DEFAULT_PAGE_SIZE, chapterId), { regenerateIds: false })
     .map(element => element.id === chapterId ? {
       ...element,
-      name: "Untitled Page",
-      customData: { ...element.customData, pageOrder: 1, activeChapterId: chapterId, chapterTitle: "Untitled Page", paperTexture: "dots" },
+      name: title,
+      customData: {
+        ...element.customData,
+        pageOrder: 1,
+        activeChapterId: chapterId,
+        chapterTitle: title,
+        tagline: existingChapter?.subtitle || "",
+        completed: Boolean(existingChapter?.completed),
+        paperTexture: existingChapter?.paperTexture || "dots",
+      },
     } : element);
+  const chapter = {
+    ...(existingChapter || {}),
+    id: chapterId,
+    num: existingChapter?.num ?? "01",
+    title,
+    subtitle: existingChapter?.subtitle || "",
+    completed: Boolean(existingChapter?.completed),
+    paperTexture: existingChapter?.paperTexture || "dots",
+    elements,
+    appState: existingChapter?.appState || {},
+  };
   return {
     elements,
-    chapters: [{ id: chapterId, num: "01", title: "Untitled Page", subtitle: "", completed: false, paperTexture: "dots", elements, appState: {} }],
+    chapters: [chapter],
     activeChapterId: chapterId,
     appState: { viewBackgroundColor: api?.getAppState?.().viewBackgroundColor || "#ffffff", scrollX: 0, scrollY: 0, zoom: { value: 1 } },
     files: {}, metadata: {}, extensions: {}, format: "excalidraw",
@@ -242,7 +262,7 @@ export function useWorkspaceTabs({
       (Array.isArray(storedSnapshot.chapters) && storedSnapshot.chapters.length > 0);
     let snapshot = storedSnapshot;
     if (isPagesTab && getPages(storedElements).length === 0) {
-      const seeded = createDefaultPagesSnapshot(api);
+      const seeded = createDefaultPagesSnapshot(api, storedSnapshot.chapters?.[0]);
       snapshot = {
         ...seeded,
         ...storedSnapshot,
@@ -310,7 +330,7 @@ export function useWorkspaceTabs({
     if (!currentTab) return;
     let snapshot = apiRef.current ? captureCanvasTabSnapshot() : (currentTab.snapshot || {});
     if (type === "pages" && getPages(snapshot?.elements || []).length === 0) {
-      snapshot = { ...snapshot, ...createDefaultPagesSnapshot(apiRef.current) };
+      snapshot = { ...snapshot, ...createDefaultPagesSnapshot(apiRef.current, snapshot?.chapters?.[0]) };
     }
     const nextTabs = canvasTabsRef.current.map(tab => tab.id === tabId
       ? { ...tab, type: type === "pages" ? "pages" : "canvas", snapshot }
