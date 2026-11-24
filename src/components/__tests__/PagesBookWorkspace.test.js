@@ -198,7 +198,7 @@ test("deleting the only Pages chapter requires accessible confirmation and close
   assert.match(workspace, />Cancel<\/button>/);
   assert.match(workspace, /Delete & Close/);
   assert.match(workspace, /event\.key === 'Escape'/);
-  assert.match(workspace, /event\.key === 'Enter'/);
+  assert.match(workspace, /event\.key !== 'Escape' && event\.key !== 'Enter'/);
   assert.match(pages, /onDeleteOnlyPage=\{onDeleteOnlyPage\}/);
   assert.match(app, /await deleteDocument\(activeTab\.id\)/);
   assert.match(app, /performCloseCanvasTab\(activeTab\.id, \{ keepDraft: false \}\)/);
