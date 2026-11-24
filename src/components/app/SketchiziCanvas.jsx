@@ -854,15 +854,20 @@ export default function SketchiziCanvas({
       zenModeEnabled: false,
       zoom: { value: savedSketch?.appState?.zoom?.value ?? savedSketch?.appState?.zoom ?? 1 },
       currentItemFontFamily: normalizeFontFamilyId(savedSketch?.appState?.currentItemFontFamily) ?? DEFAULT_FONT_FAMILY_ID,
-      viewBackgroundColor: savedSketch?.appState?.viewBackgroundColor || getCanvasAppearanceBackground(activeAppearance, isDarkTheme),
+      viewBackgroundColor: pageContext?.mode === "pages" ? "transparent" : (savedSketch?.appState?.viewBackgroundColor || getCanvasAppearanceBackground(activeAppearance, isDarkTheme)),
       currentItemRoughness: savedSketch?.appState?.currentItemRoughness ?? (savedSketch ? 1 : getCanvasAppearanceRoughness(activeAppearance)),
       gridModeEnabled: false,
     },
     files: savedSketch?.files || {},
   }));
 
+  useEffect(() => {
+    if (pageContext?.mode !== "pages") return;
+    apiRef?.current?.updateScene?.({ appState: { viewBackgroundColor: "transparent" }, captureUpdate: "NEVER" });
+  }, [pageContext?.mode, pageContext?.page?.id, isDarkTheme, apiRef]);
+
   return (
-    <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
+    <main ref={canvasRootRef} className={`${viewModeEnabled ? "canvas viewer-mode" : "canvas"} canvas-appearance-${activeAppearance}${pageContext?.mode === "pages" ? " pages-canvas-wrapper" : ""}`} data-canvas-appearance={activeAppearance} onDropCapture={handleDrop} onPointerMove={updateCursorFromPointer} onPointerLeave={clearRemoteCursor}>
       {!hudSuppressed && <PrimaryDock
         rootRef={canvasRootRef}
         apiRef={apiRef}
