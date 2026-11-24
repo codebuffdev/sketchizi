@@ -957,3 +957,155 @@ body:has(.app.theme-light) {
   font-size: 15px;
   line-height: 1;
 }
+
+
+/* Align & Arrange — minimalist selection dock trigger and body-level popover. */
+.app .sketchizi-tool-options-dock .sk-tool-dock-divider {
+  display: block;
+  flex: 0 0 1px;
+  width: 1px;
+  height: 24px;
+  margin: 0 3px;
+  background: var(--sk-color-border, rgba(148, 163, 184, .28));
+}
+.app .sketchizi-tool-options-dock .sk-tool-align-control {
+  display: inline-flex;
+  align-items: center;
+}
+.app .sketchizi-tool-options-dock .sk-tool-align-trigger {
+  box-sizing: border-box;
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--sk-color-text, currentColor);
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.app .sketchizi-tool-options-dock .sk-tool-align-trigger:hover,
+.app .sketchizi-tool-options-dock .sk-tool-align-trigger:focus-visible {
+  color: inherit;
+  background: rgba(148, 163, 184, .14);
+  outline: none;
+}
+.app .sketchizi-tool-options-dock .sk-tool-align-trigger.is-active {
+  color: var(--sk-color-text, currentColor);
+  background: rgba(148, 163, 184, .18);
+}
+.sk-tool-align-popover {
+  z-index: 1000;
+  width: 320px;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid var(--sk-color-border, rgba(148, 163, 184, .28));
+  border-radius: 14px;
+  color: var(--sk-color-text, #e2e8f0);
+  background: var(--sk-color-surface, #17212b);
+  box-shadow: 0 16px 48px rgba(2, 6, 23, .28), 0 2px 8px rgba(2, 6, 23, .14);
+  transform: translateX(-50%);
+  transform-origin: bottom center;
+  animation: sk-tool-align-in .14s ease-out both;
+}
+.sk-tool-align-popover.is-closing { animation: sk-tool-align-out .13s ease-in both; }
+body:has(.app.theme-light) .sk-tool-align-popover {
+  --sk-color-text: #1e293b;
+  --sk-color-text-secondary: #64748b;
+  --sk-color-surface: #ffffff;
+  --sk-color-surface-soft: rgba(148, 163, 184, .07);
+  --sk-color-border: rgba(148, 163, 184, .28);
+}
+.sk-tool-align-section + .sk-tool-align-section {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--sk-color-border, rgba(148, 163, 184, .2));
+}
+.sk-tool-align-heading {
+  margin: 0 0 8px;
+  color: var(--sk-color-text-secondary, #94a3b8);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .075em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.sk-tool-align-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.sk-tool-align-layout-grid button {
+  display: flex;
+  min-width: 0;
+  min-height: 43px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border: 1px solid var(--sk-color-border, rgba(148, 163, 184, .2));
+  border-radius: 9px;
+  color: inherit;
+  background: var(--sk-color-surface-soft, rgba(148, 163, 184, .07));
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+}
+.sk-tool-align-layout-grid button:hover,
+.sk-tool-align-edge-grid button:hover {
+  color: inherit;
+  border-color: rgba(148, 163, 184, .4);
+  background: rgba(148, 163, 184, .14);
+}
+.sk-tool-align-layout-grid svg {
+  flex: 0 0 29px;
+  width: 29px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sk-tool-align-edge-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+.sk-tool-align-edge-grid button {
+  display: flex;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sk-color-border, rgba(148, 163, 184, .2));
+  border-radius: 8px;
+  color: inherit;
+  background: var(--sk-color-surface-soft, rgba(148, 163, 184, .07));
+  cursor: pointer;
+}
+.sk-tool-align-edge-grid svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@keyframes sk-tool-align-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(5px) scale(.985); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+@keyframes sk-tool-align-out {
+  from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  to { opacity: 0; transform: translateX(-50%) translateY(4px) scale(.985); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sk-tool-align-popover, .sk-tool-align-popover.is-closing { animation: none; }
+}

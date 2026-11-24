@@ -39,6 +39,9 @@ jobs:
       - name: Run System Design Studio unit tests
         run: npm run test:system-design
 
+      - name: Run Align & Arrange unit tests
+        run: node --test src/utils/__tests__/alignElements.test.js
+
       - name: Run automated regression suite
         id: regression
         continue-on-error: true

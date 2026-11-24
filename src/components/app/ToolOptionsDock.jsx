@@ -9,6 +9,7 @@ import { applyDarkModeFilter } from "@excalidraw/common";
 import { isHexColor } from "../../features/navigation/recentCustomColors.js";
 import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
 import { absolutePointsToPatch, getAbsolutePoints, getRoutingMode, getRoutingPatch, normalizeOrthogonalPath } from "../../features/canvas/arrowRouting.js";
+import { applyAlignmentToSelection } from "../../utils/alignElements.js";
 
 // Excalidraw reserves font-family ID 4 for host-provided custom fonts.
 // Register Kalam on the shared enum so its renderer resolves ID 4 to Kalam.
@@ -374,6 +375,11 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const dockRef = useRef(null);
   const [layerMenuOpen, setLayerMenuOpen] = useState(false);
   const [layerMenuPosition, setLayerMenuPosition] = useState(null);
+  const [alignPopoverOpen, setAlignPopoverOpen] = useState(false);
+  const [alignPopoverPosition, setAlignPopoverPosition] = useState(null);
+  const alignTriggerRef = useRef(null);
+  const alignMenuRef = useRef(null);
+  const alignPresence = usePresence(alignPopoverOpen, 130);
   const [opacityPopoverOpen, setOpacityPopoverOpen] = useState(false);
   const opacityPresence = usePresence(opacityPopoverOpen, 130);
   const [opacityDragging, setOpacityDragging] = useState(false);
@@ -460,8 +466,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       // editable controls. The Primary Dock palette uses role="dialog", but
       // Escape there must still clear the element selection and restore the
       // full dock; treating every dialog as protected swallowed that action.
-      if (target?.closest?.(
-        "input, textarea, select, .sk-tool-choice-menu, .sk-tool-layer-menu, [role='menu']",
+      if (alignPopoverOpen || target?.closest?.(
+        "input, textarea, select, .sk-tool-choice-menu, .sk-tool-layer-menu, .sk-tool-align-popover, [role='menu']",
       )) return;
 
       // Capture Escape before Excalidraw consumes it so selection is cleared consistently.
@@ -481,7 +487,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     };
     window.addEventListener("keydown", handleEscapeToPrimaryDock, true);
     return () => window.removeEventListener("keydown", handleEscapeToPrimaryDock, true);
-  }, [apiRef, onClearSelection]);
+  }, [apiRef, onClearSelection, alignPopoverOpen]);
 
   const appState = apiRef?.current?.getAppState?.() || {};
   useEffect(() => {
@@ -492,6 +498,32 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     window.addEventListener("pointerdown", closeOnOutsideClick, true);
     return () => window.removeEventListener("pointerdown", closeOnOutsideClick, true);
   }, [layerMenuOpen]);
+  useEffect(() => {
+    if (!alignPopoverOpen) return undefined;
+    const close = (event) => {
+      if (event.type === "keydown" && event.key === "Escape") {
+        event.preventDefault();
+        setAlignPopoverOpen(false);
+        alignTriggerRef.current?.focus();
+      } else if (event.type === "pointerdown" &&
+        !alignTriggerRef.current?.contains(event.target) &&
+        !alignMenuRef.current?.contains(event.target)) {
+        setAlignPopoverOpen(false);
+      } else if (event.type === "resize" || event.type === "scroll") {
+        setAlignPopoverOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", close, true);
+    document.addEventListener("keydown", close, true);
+    window.addEventListener("resize", close, true);
+    window.addEventListener("scroll", close, true);
+    return () => {
+      document.removeEventListener("pointerdown", close, true);
+      document.removeEventListener("keydown", close, true);
+      window.removeEventListener("resize", close, true);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, [alignPopoverOpen]);
   const selectedFromProps = selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
   const liveSelectedIds = Object.entries(appState.selectedElementIds || {})
     .filter(([, active]) => active)
@@ -511,6 +543,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     if (previousSelectionKeyRef.current === selectionKey) return;
     previousSelectionKeyRef.current = selectionKey;
     collapseDockImmediately();
+    setAlignPopoverOpen(false);
   }, [selectionKey]);
   useEffect(() => {
     const revealForCanvasHover = (event) => {
@@ -831,6 +864,28 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     setLayerMenuOpen(false);
   };
 
+
+  const arrangeSelection = (layout) => {
+    const api = apiRef?.current;
+    if (!api) return;
+    // Read the selection and scene at click time; dock props can be one render stale.
+    applyAlignmentToSelection(api, layout, {
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
+    setAlignPopoverOpen(false);
+  };
+
+  const openAlignPopover = () => {
+    if (alignPopoverOpen) { setAlignPopoverOpen(false); return; }
+    const rect = alignTriggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setAlignPopoverPosition({
+      left: rect.left + rect.width / 2,
+      bottom: window.innerHeight - rect.top + 10,
+    });
+    setAlignPopoverOpen(true);
+  };
+
   const setOpacityFromPointer = (event) => {
     const rect = opacityRef.current?.getBoundingClientRect();
     if (!rect?.width) return;
@@ -898,7 +953,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
                   <kbd><span>Ctrl</span><i>+</i><span>Shift</span><i>+</i><span>[</span></kbd>
                 </button>
               </div>,
-              document.querySelector(".app") || document.body,
+              document.body,
             )}
           </div>
   );
@@ -1069,12 +1124,52 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         </div>
       </DockGroup>}
 
-      {((showCornerRadius || showRoughness || !noLayerForTool) && <DockGroup label="Shape modifiers & layers">
+      {((showCornerRadius || showRoughness || !noLayerForTool || selected.length >= 2) && <DockGroup label="Shape modifiers & layers">
         {showCornerRadius && <DockSelect label="Corner radius" value={activeRoundness ? "rounded" : "sharp"} onChange={(value) => update({ roundness: value === "rounded" ? { type: 3 } : null })}>
           <option value="sharp">Sharp corners</option><option value="rounded">Rounded corners</option>
         </DockSelect>}
         {showRoughness && <VisualOptionSelect label="Roughness" value={roughness} onChange={(value) => update({ roughness: Number(value) })} kind="roughness" options={[{ value: 0, label: "Architect" }, { value: 1, label: "Artist" }, { value: 2, label: "Cartoonist" }]} />}
+
         {layerOrderControl}
+        {selected.length >= 2 && <>
+          <span className="sk-tool-dock-divider" aria-hidden="true" />
+          <div className="sk-tool-align-control">
+            <button ref={alignTriggerRef} type="button" className={`sk-tool-align-trigger${alignPopoverOpen ? " is-active" : ""}`}
+              aria-label="Align & Arrange" title="Align & Arrange" aria-haspopup="dialog" aria-expanded={alignPopoverOpen} onClick={openAlignPopover}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 4v16M8 7h11M8 12h8M8 17h11" />
+              </svg>
+            </button>
+            {alignPresence.mounted && alignPopoverPosition && createPortal(
+              <div ref={alignMenuRef} className={`sk-tool-align-popover${alignPresence.closing ? " is-closing" : ""}`}
+                role="dialog" aria-label="Align & Arrange" onMouseDown={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} style={{ position: "fixed", left: alignPopoverPosition.left, bottom: alignPopoverPosition.bottom }}>
+                <section className="sk-tool-align-section" aria-label="Smart layouts">
+                  <div className="sk-tool-align-heading">Smart layouts</div>
+                  <div className="sk-tool-align-layout-grid">
+                    <button type="button" onClick={() => arrangeSelection("horizontal")} title="Horizontal Line — 24px spacing"><svg viewBox="0 0 32 24" aria-hidden="true"><rect x="2" y="8" width="7" height="8" rx="1"/><rect x="13" y="8" width="7" height="8" rx="1"/><rect x="24" y="8" width="6" height="8" rx="1"/></svg><span>Horizontal line</span></button>
+                    <button type="button" onClick={() => arrangeSelection("vertical")} title="Vertical Line — 24px spacing"><svg viewBox="0 0 32 24" aria-hidden="true"><rect x="12" y="1" width="8" height="6" rx="1"/><rect x="12" y="9" width="8" height="6" rx="1"/><rect x="12" y="17" width="8" height="6" rx="1"/></svg><span>Vertical line</span></button>
+                    <button type="button" onClick={() => arrangeSelection("square")} title="Square / Compact Grid — 24px gaps"><svg viewBox="0 0 32 24" aria-hidden="true"><rect x="3" y="2" width="9" height="8" rx="1"/><rect x="20" y="2" width="9" height="8" rx="1"/><rect x="3" y="14" width="9" height="8" rx="1"/><rect x="20" y="14" width="9" height="8" rx="1"/></svg><span>Square grid</span></button>
+                    <button type="button" onClick={() => arrangeSelection("rectangle")} title="Wide Rectangle Grid — 2 rows, 24px gaps"><svg viewBox="0 0 32 24" aria-hidden="true"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="12" y="2" width="8" height="8" rx="1"/><rect x="22" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="12" y="14" width="8" height="8" rx="1"/><rect x="22" y="14" width="8" height="8" rx="1"/></svg><span>Rectangle grid</span></button>
+                  </div>
+                </section>
+                <section className="sk-tool-align-section" aria-label="Edge and center align">
+                  <div className="sk-tool-align-heading">Edge & center align</div>
+                  <div className="sk-tool-align-edge-grid">
+                    {[
+                      ["left", "Align left", "M4 4v16M9 6h11M9 12h8M9 18h11"],
+                      ["centerHorizontal", "Align horizontal center", "M12 3v18M4 6h6M14 6h6M6 12h5M13 12h5M4 18h6M14 18h6"],
+                      ["right", "Align right", "M20 4v16M4 6h11M7 12h8M4 18h11"],
+                      ["top", "Align top", "M4 4h16M6 9v11M12 9v8M18 9v11"],
+                      ["centerVertical", "Align vertical middle", "M3 12h18M6 4v6M12 4v5M18 4v6M6 14v6M12 15v5M18 14v6"],
+                      ["bottom", "Align bottom", "M4 20h16M6 4v11M12 7v8M18 4v11"],
+                    ].map(([layout, label, path]) => <button key={layout} type="button" aria-label={label} title={label} onClick={() => arrangeSelection(layout)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={path}/></svg></button>)}
+                  </div>
+                </section>
+              </div>,
+              document.querySelector(".app") || document.body,
+            )}
+          </div>
+        </>}
       </DockGroup>)}
 
       <DockGroup label="Opacity">
