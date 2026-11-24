@@ -1,15 +1,15 @@
 const TECHNOLOGY_QUERIES = [
-  [/\\bredis\\b/i, "redis"],
-  [/\\b(kafka|pub\\s*sub|event bus|message queue)\\b/i, "kafka"],
-  [/\\b(postgres(?:ql)?|postgres database)\\b/i, "postgres"],
-  [/\\b(mongo(?:db)?|document database|nosql)\\b/i, "mongodb"],
-  [/\\bnginx\\b/i, "nginx"],
-  [/\\b(s3|object storage|bucket)\\b/i, "s3"],
-  [/\\bclickhouse\\b/i, "clickhouse"],
-  [/\\b(twilio|sms)\\b/i, "twilio"],
-  [/\\b(stripe|payment|psp)\\b/i, "stripe"],
-  [/\\b(docker|container)\\b/i, "docker"],
-  [/\\b(aws|amazon web services)\\b/i, "aws"],
+  [["redis"], "redis"],
+  [["kafka", "pubsub", "pub sub", "event bus", "message queue"], "kafka"],
+  [["postgres", "postgresql"], "postgres"],
+  [["mongo", "mongodb", "document database", "nosql"], "mongodb"],
+  [["nginx"], "nginx"],
+  [["s3", "object storage", "bucket"], "s3"],
+  [["clickhouse"], "clickhouse"],
+  [["twilio", "sms"], "twilio"],
+  [["stripe", "payment", "psp"], "stripe"],
+  [["docker", "container"], "docker"],
+  [["aws", "amazon web services"], "aws"],
 ];
 
 const KIND_QUERIES = {
@@ -25,11 +25,12 @@ const KIND_QUERIES = {
 
 /** Best-effort search hint for the existing Icon Library; never silently assigns a brand icon. */
 export function inferTechnologyIconQuery(label, kind) {
-  const text = String(label || "");
-  for (const [pattern, query] of TECHNOLOGY_QUERIES) {
-    if (pattern.test(text)) return query;
+  const text = String(label || "").trim();
+  const normalized = text.toLowerCase();
+  for (const [terms, query] of TECHNOLOGY_QUERIES) {
+    if (terms.some((term) => normalized.includes(term))) return query;
   }
-  return KIND_QUERIES[kind] || text.trim().split(/\\s+/).slice(0, 2).join(" ");
+  return KIND_QUERIES[kind] || text.split(" ").filter(Boolean).slice(0, 2).join(" ");
 }
 
 /** Keep only serializable catalog fields; no React elements or runtime-only catalog objects enter the scene. */
