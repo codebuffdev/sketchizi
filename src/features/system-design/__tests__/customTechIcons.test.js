@@ -62,8 +62,8 @@ test("node slot and contextual controls open the library in assignment mode, and
   assert.match(drawer, /onOpenIconLibrary\?\.\(item\)/);
   assert.match(drawer, /Reset icon/);
   assert.match(studio, /onOpenIconLibrary=\{onOpenIconLibrary\}/);
-  assert.match(app, /setIconAssignment\(\{ nodeId: node\.id, nodeLabel: node\.label \}\)/);
-  assert.match(app, /systemDesign\.actions\.updateNodeMeta\(iconAssignment\.nodeId, \{ customIcon \}\)/);
+  assert.match(assignment, /setTarget\(\{ nodeId: node\.id, nodeLabel: node\.label \}\)/);
+  assert.match(assignment, /systemDesign\.actions\.updateNodeMeta\(target\.nodeId, \{ customIcon \}\)/);
   assert.match(app, /assignmentMode=\{Boolean\(iconAssignment\)\}/);
   assert.match(panel, /assignmentMode \? "Assign Icon to Node" : "Icon Library"/);
   assert.match(panel, /assignmentMode \? `Assign \$\{icon\.name\} to \$\{assignmentTargetLabel\}`/);
