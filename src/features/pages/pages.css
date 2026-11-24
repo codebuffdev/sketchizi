@@ -738,7 +738,7 @@
 .pages-book-canvas-zone { z-index: 0; }
 .pages-editorial-header,
 .pages-book-folio { z-index: 10040; }
-.app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .layer-canvas {
+.app:has(.pages-book-workspace) .desktop-canvas-region canvas {
   z-index: 2 !important;
 }
 /* Apply transparency to the full desktop canvas region, including direct sibling layers.
