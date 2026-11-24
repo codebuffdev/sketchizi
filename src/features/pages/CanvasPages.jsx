@@ -24,12 +24,7 @@ function mixHexColors(baseColor, tintColor, tintAmount) {
 }
 
 function getPagePaperBackground(appState) {
-  const isDarkTheme = appState?.theme === 'dark';
-  const savedCanvasColor = String(appState?.viewBackgroundColor || getCanvasBackground(isDarkTheme)).toLowerCase();
-  const visibleCanvasColor = canvasColorForDisplay(savedCanvasColor, isDarkTheme);
-  const workspaceColor = isDarkTheme ? '#111820' : '#f7f9fc';
-  const tintedColor = mixHexColors(visibleCanvasColor, workspaceColor, PAGE_WORKSPACE_TINT);
-  return canvasColorForScene(tintedColor, isDarkTheme);
+  return appState?.theme === 'dark' ? '#111827' : '#ffffff';
 }
 
 function runAfterCanvasLayoutSettles(api, callback) {
