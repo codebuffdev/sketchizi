@@ -235,7 +235,26 @@ export function useWorkspaceTabs({
   const applyCanvasTabSnapshot = useCallback((tab) => {
     const api = apiRef.current;
     if (!api?.updateScene) return;
-    const snapshot = tab?.snapshot || {};
+    const storedSnapshot = tab?.snapshot || {};
+    const storedElements = Array.isArray(storedSnapshot.elements) ? storedSnapshot.elements : [];
+    const isPagesTab = tab?.type === "pages" || tab?.type === "page" ||
+      (Array.isArray(tab?.chapters) && tab.chapters.length > 0) ||
+      (Array.isArray(storedSnapshot.chapters) && storedSnapshot.chapters.length > 0);
+    let snapshot = storedSnapshot;
+    if (isPagesTab && getPages(storedElements).length === 0) {
+      const seeded = createDefaultPagesSnapshot(api);
+      snapshot = {
+        ...seeded,
+        ...storedSnapshot,
+        elements: [...storedElements, ...seeded.elements],
+        chapters: seeded.chapters,
+        activeChapterId: storedSnapshot.activeChapterId || seeded.activeChapterId,
+      };
+      const updatedTabs = canvasTabsRef.current.map(item => item.id === tab.id
+        ? { ...item, type: "pages", snapshot }
+        : item);
+      persistCanvasTabs(updatedTabs);
+    }
     if (tab?.id) toolStyles.hydrateCanvas(tab.id, snapshot.toolStylePresets);
     if (tab?.id) systemDesignRef?.current?.restoreTabState?.(tab.id, snapshot.systemDesign);
     const elements = restoreElements(Array.isArray(snapshot.elements) ? snapshot.elements : [], null, { repairBindings: true });
@@ -271,7 +290,7 @@ export function useWorkspaceTabs({
     setSavedSketch(snapshot.elements ? { elements, appState: snapshot.appState || {}, files: snapshot.files || {}, metadata: snapshot.metadata || {}, extensions: snapshot.extensions || {}, format: snapshot.format || "excalidraw" } : null);
     setCurrentFile(snapshot.file || null, snapshot.fileSceneSignature || undefined);
     if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
-  }, [apiRef, setCurrentFile, setSavedSketch, toolStyles, systemDesignRef]);
+  }, [apiRef, setCurrentFile, setSavedSketch, toolStyles, systemDesignRef, persistCanvasTabs]);
 
   useEffect(() => {
     if (!apiReady || !apiRef.current) return;
@@ -282,7 +301,7 @@ export function useWorkspaceTabs({
       return;
     }
     const activeTab = canvasTabsRef.current.find((tab) => tab.id === activeCanvasId);
-    if (activeTab?.snapshot) applyCanvasTabSnapshot(activeTab);
+    if (activeTab && (activeTab.snapshot || activeTab.type === "pages" || activeTab.type === "page")) applyCanvasTabSnapshot(activeTab);
   }, [apiReady, activeCanvasId, applyCanvasTabSnapshot]);
 
   const switchCanvasTab = useCallback((nextId) => {
@@ -716,7 +735,7 @@ export function useWorkspaceTabs({
         saveCanvasTabs(restoredTabs).catch(() => {});
         activeCanvasIdRef.current = activeId;
         setActiveCanvasId(activeId);
-        if (activeTab.snapshot) applyCanvasTabSnapshot(activeTab);
+        if (activeTab.snapshot || activeTab.type === "pages") applyCanvasTabSnapshot(activeTab);
       } else {
         const initial = {
           id: "canvas-1", name: "Canvas 1", ...createTabDates(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
