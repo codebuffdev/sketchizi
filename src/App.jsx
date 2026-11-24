@@ -2016,7 +2016,7 @@ function App() {
             nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
-            pageContext={canvasPageContext}
+            pageContext={canvasTabs.find(tab => tab.id === activeCanvasId)?.type === "pages" ? { ...canvasPageContext, mode: "pages" } : canvasPageContext}
             key={activeCanvasId}
             canvasId={activeCanvasId}
             onToolStyleChange={toolStyles.recordToolStyle}
