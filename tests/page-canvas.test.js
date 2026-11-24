@@ -111,7 +111,7 @@ test('Pages keeps the paper texture behind the transparent HiDPI Excalidraw canv
  const { readFile } = await import('node:fs/promises');
  const pages = await readFile(new URL('../src/features/pages/CanvasPages.jsx', import.meta.url), 'utf8');
  const styles = await readFile(new URL('../src/features/pages/pages.css', import.meta.url), 'utf8');
- assert.match(pages, /function getPagePaperBackground\(\)\s*\{[\s\S]*?return 'transparent'/);
+ assert.match(pages, /function getPagePaperBackground\(appState, isPagesMode = false\)\s*\{[\s\S]*?if \(isPagesMode\)[\s\S]*?return 'transparent'/);
  assert.match(pages, /viewBackgroundColor: 'transparent'/);
  assert.match(pages, /pagesPreviousViewBackgroundColor/);
  assert.match(pages, /const restoreBackground = currentTheme/);
