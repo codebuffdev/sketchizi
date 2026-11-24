@@ -123,7 +123,7 @@ try {
   await viewport.waitFor({ state: "visible" });
   // Do not draw while IndexedDB restoration is still replacing the scene.
   await ensureHeaderVisible();
-  await page.locator(".canvas-tab.is-active .canvas-tab-status-dot").waitFor({ state: "attached", timeout: 20000 });
+  await page.locator(".canvas-tab-item.is-active .canvas-tab-name").waitFor({ state: "visible", timeout: 20000 });
   const bounds = await viewport.boundingBox();
   if (!bounds) throw new Error("Excalidraw viewport has no visible bounds.");
 
