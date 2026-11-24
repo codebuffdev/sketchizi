@@ -17,7 +17,7 @@ export default function PagesBookWorkspace({
         <header className="pages-editorial-header">
           <div className="pages-editorial-copy">
             <div className="pages-editorial-title-row">
-              <span className="pages-chapter-eyebrow">CH {String(index + 1).padStart(2, '0')}</span>
+              <span className="pages-chapter-eyebrow">{String(index + 1).padStart(2, '0')}</span>
               <input
                 className="pages-chapter-heading"
                 aria-label="Chapter title"
