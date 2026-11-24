@@ -95,7 +95,9 @@ try {
  assert.equal(es.find(e => e.customData?.sketchiziPagePaper === pages(es)[0].id)?.width, 1360);
  // Assert the actual backing store is sized for a 2x HiDPI display, not CSS-scaled.
  const canvasMetrics = await page.evaluate(() => {
-  const canvas = [...document.querySelectorAll('.layer-canvas canvas')].find(el => el.getBoundingClientRect().width > 0);
+  const canvas = [...document.querySelectorAll('.layer-canvas')].find(el =>
+   el instanceof HTMLCanvasElement && el.getBoundingClientRect().width > 0
+  );
   if (!canvas) return null;
   const rect = canvas.getBoundingClientRect();
   return { dpr: window.devicePixelRatio, width: canvas.width, height: canvas.height, cssWidth: rect.width, cssHeight: rect.height };
