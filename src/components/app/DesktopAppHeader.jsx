@@ -221,6 +221,7 @@ export default function DesktopAppHeader({
   chapterNav = null,
   onNavigateChapter,
   onDownloadRecoveryBackup,
+  onOpenExportStudio,
   onOpenTemplates,
   onToggleMinimap,
   minimapOpen = false,
@@ -982,7 +983,7 @@ export default function DesktopAppHeader({
               </div>
 
               <section className="canvas-tabs-menu-section" aria-label="Download and export">
-                <h3>Download &amp; backup</h3>
+                <h3>Download &amp; export</h3>
                 <div className="canvas-tabs-active-menu-actions">
                   <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { if (currentDocumentFileBacked) onSaveToFile?.(); else onSaveAs?.(); setSaveDetailsOpen(false); }} aria-label={currentDocumentFileBacked ? "Save" : "Save to file…"}>
                     <CanvasActionIcon name="save" />
@@ -997,6 +998,10 @@ export default function DesktopAppHeader({
                   <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onDownloadRecoveryBackup?.()} aria-label="Download recovery backup">
                     <CanvasActionIcon name="backup" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Recovery backup</strong><small>Download a portable backup of this canvas</small></span>
+                  </button>
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { setSaveDetailsOpen(false); onOpenExportStudio?.(); }} aria-label="Export studio">
+                    <CanvasActionIcon name="export" />
+                    <span className="canvas-tabs-active-menu-action-copy"><strong>Export studio...</strong><small>Choose PNG, SVG, clipboard and export settings</small></span>
                   </button>
                 </div>
               </section>
