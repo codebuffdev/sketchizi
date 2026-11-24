@@ -2025,7 +2025,7 @@ function App() {
             nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
-            pageContext={getWorkspaceTabMode(canvasTabs.find(tab => tab.id === activeCanvasId)) === "pages" ? { ...canvasPageContext, mode: "pages" } : canvasPageContext}
+            pageContext={{ ...canvasPageContext, mode: getWorkspaceTabMode(canvasTabs.find(tab => tab.id === activeCanvasId)) === "pages" ? "pages" : "infinite" }}
             key={activeCanvasId}
             canvasId={activeCanvasId}
             onToolStyleChange={toolStyles.recordToolStyle}
