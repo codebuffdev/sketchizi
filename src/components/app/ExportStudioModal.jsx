@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
 import { readGraph } from "../../features/system-design/sceneModel.js";
 import { simulateTraffic } from "../../features/system-design/trafficSimulator.js";
@@ -8,10 +8,11 @@ const EMPTY_SNAPSHOT = Object.freeze({ elements: [] });
 const noopSubscribe = () => () => {};
 const getEmptySnapshot = () => EMPTY_SNAPSHOT;
 
-export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = "architecture-diagram" }) {
+export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = "architecture-diagram", isDarkTheme = true }) {
   const [scale, setScale] = useState(2);
   const [bgMode, setBgMode] = useState("dark");
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(Boolean(isDarkTheme));
+  useEffect(() => { if (isOpen) setDarkMode(Boolean(isDarkTheme)); }, [isOpen, isDarkTheme]);
   const [exportOnlySelected, setExportOnlySelected] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [busy, setBusy] = useState(false);
