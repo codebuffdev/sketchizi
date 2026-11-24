@@ -13,16 +13,19 @@ const styles = readFileSync(resolve(here, "../../styles/responsive-menu.css"), "
 test("Canvas action appends and activates a fresh canvas tab", () => {
   assert.match(menu, /data-sketchizi-canvas-mode/);
   assert.match(menu, /sketchizi:workspace-create-tab/);
-  assert.match(app, /createWorkspaceTab[\s\S]*?createCanvasTab\(\)/);
+  assert.match(app, /createWorkspaceTab[\s\S]*?createCanvasTab\(\{ \.\.\.\(nextName \? \{ name: nextName \} : \{\}\), type: mode === "pages" \? "pages" : "canvas" \}\)/);
   assert.match(tabs, /const nextTabs = \[\.\.\.currentTabs, nextTab\]/);
   assert.match(tabs, /persistCanvasTabs\(nextTabs\);[\s\S]*?switchCanvasTab\(id\)/);
   assert.match(tabs, /elements: \[\], appState:/);
 });
 
-test("Pages action creates a separate tab before enabling page mode", () => {
+test("Pages action seeds a typed Pages tab before switching the active tab", () => {
   assert.match(menu, /sketchizi:workspace-create-tab/);
-  assert.match(app, /if \(mode === "pages"\)[\s\S]*?sketchizi:choose-canvas-mode/);
-  assert.match(app, /setStartupChooserOpen\(false\)/);
+  assert.match(app, /createCanvasTab\(\{ \.\.\.\(nextName \? \{ name: nextName \} : \{\}\), type: mode === "pages" \? "pages" : "canvas" \}\)/);
+  assert.match(tabs, /const isPagesTab = requestedType === "pages"/);
+  assert.match(tabs, /type: isPagesTab \? "pages" : requestedType/);
+  assert.match(tabs, /createDefaultPagesSnapshot\(apiRef\.current\)/);
+  assert.doesNotMatch(app, /requestAnimationFrame\(\(\) => \{[\s\S]*?choose-canvas-mode.*?pages/);
 });
 
 test("Cloud Files keeps the existing Cloud Workspace navigation flow", () => {
