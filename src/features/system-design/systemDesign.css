@@ -255,6 +255,60 @@
   .sd-export-foot button { flex: 1; justify-content: center; }
 }
 
+/* Final theme binding for the floating command bar.
+   The compact-bar block above intentionally controls geometry only; its legacy
+   light palette must never override the studio's live theme tokens. */
+.sd-root .sd-topbar-pill {
+  background: var(--sd-surface);
+  border-color: var(--sd-border);
+  color: var(--sd-text);
+  box-shadow: var(--sd-shadow);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+.sd-root .sd-command-icon-btn {
+  color: var(--sd-text-2);
+  background: transparent;
+}
+.sd-root .sd-command-icon-btn:hover:not(:disabled),
+.sd-root .sd-command-icon-btn:focus-visible,
+.sd-root .sd-command-icon-btn.is-active,
+.sd-root .sd-command-icon-btn.is-open {
+  color: var(--sd-text);
+  background: var(--sd-soft);
+}
+.sd-root .sd-command-icon-btn:disabled {
+  color: var(--sd-text-2);
+  opacity: .72;
+}
+.sd-root .sd-command-sim-main,
+.sd-root .sd-command-sim-caret {
+  color: var(--sd-text-2);
+  background: var(--sd-soft);
+}
+.sd-root .sd-command-sim-main:hover,
+.sd-root .sd-command-sim-caret:hover {
+  color: var(--sd-text);
+  background: var(--sd-card);
+}
+.sd-root .sd-command-sim-main.is-on,
+.sd-root .sd-command-sim-caret.is-on,
+.sd-root .sd-command-sim-main.is-on:hover,
+.sd-root .sd-command-sim-caret.is-on:hover {
+  color: #fff;
+  background: var(--sd-emerald);
+}
+.sd-root .sd-command-sim-main.is-on .sd-command-icon,
+.sd-root .sd-command-sim-caret.is-on .sd-command-icon {
+  color: #fff;
+}
+.sd-root .sd-command-sim-caret.is-on {
+  border-left-color: rgba(255,255,255,.32);
+}
+.sd-root .sd-command-load {
+  color: inherit;
+}
+
 /* During simulation, keep the diagnostic and selected-element controls in a single vertical stack. */
 .sd-root:has(.sd-diagnostic) .sd-topbar { display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
 .sd-root:has(.sd-diagnostic) .sd-topbar > .sd-topbar-pill,
