@@ -961,12 +961,12 @@ export default function DesktopAppHeader({
               <section className="canvas-tabs-menu-section" aria-label="Save and sync">
                 <h3>Save &amp; sync</h3>
                 <div className="canvas-tabs-active-menu-actions">
-                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveNow?.()} aria-label="Save locally">
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveNow?.()} aria-label="Save locally" data-close-tab-menu>
                     <CanvasActionIcon name="save" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Save Locally</strong></span>
                     {currentDocumentDirty || ["pending", "saving", "error"].includes(saveState) ? <span className="canvas-tabs-action-state is-pending">Unsaved</span> : <kbd>Ctrl+S</kbd>}
                   </button>
-                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveToCloud?.()} disabled={cloudSaveState === "loading" || cloudSaveState === "saving"} aria-label="Save to Cloud Workspace">
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onSaveToCloud?.()} disabled={cloudSaveState === "loading" || cloudSaveState === "saving"} aria-label="Save to Cloud Workspace" data-close-tab-menu>
                     <CanvasActionIcon name="cloud" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Save to Cloud</strong></span>
                     <span className="canvas-tabs-action-state is-cloud">Cloud</span>
@@ -976,15 +976,15 @@ export default function DesktopAppHeader({
               <section className="canvas-tabs-menu-section" aria-label="Export">
                 <h3>Export</h3>
                 <div className="canvas-tabs-active-menu-actions">
-                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { if (currentDocumentFileBacked) onSaveToFile?.(); else onSaveAs?.(); setSaveDetailsOpen(false); }} aria-label="Save to file">
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { if (currentDocumentFileBacked) onSaveToFile?.(); else onSaveAs?.(); setSaveDetailsOpen(false); }} aria-label="Save to file" data-close-tab-menu>
                     <CanvasActionIcon name="download" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Save to File...</strong></span>
                   </button>
-                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onDownloadRecoveryBackup?.()} aria-label="Recovery backup">
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => onDownloadRecoveryBackup?.()} aria-label="Recovery backup" data-close-tab-menu>
                     <CanvasActionIcon name="backup" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Recovery Backup</strong></span>
                   </button>
-                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { setSaveDetailsOpen(false); onOpenExportStudio?.(); }} aria-label="Export studio">
+                  <button type="button" className="canvas-tabs-active-menu-action-button" onClick={() => { setSaveDetailsOpen(false); onOpenExportStudio?.(); }} aria-label="Export studio" data-close-tab-menu>
                     <CanvasActionIcon name="export" />
                     <span className="canvas-tabs-active-menu-action-copy"><strong>Export Studio...</strong></span>
                     <kbd>Ctrl+Shift+E</kbd>
