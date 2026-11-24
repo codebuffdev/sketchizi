@@ -277,8 +277,9 @@
   -webkit-backdrop-filter: none;
 }
 .sd-command-zone { display: inline-flex; align-items: center; gap: 4px; flex: none; }
+/* Floating command bar: all colors inherit the same theme tokens as the studio surfaces. */
 .sd-command-zone-start, .sd-command-zone-actions { gap: 4px; }
-.sd-command-divider { height: 22px; margin: 0 2px; background: #cbd5e1; }
+.sd-command-divider { height: 22px; margin: 0 2px; background: var(--sd-border); }
 .sd-command-icon { display: block; width: 17px; height: 17px; flex: none; }
 .sd-command-icon-btn {
   position: relative;
@@ -291,20 +292,21 @@
   justify-content: center;
   padding: 0;
   border-radius: 8px;
-  color: #1e293b;
+  color: var(--sd-text-2);
   background: transparent;
-  transition: background-color .14s ease, box-shadow .14s ease;
+  transition: color .14s ease, background-color .14s ease, box-shadow .14s ease;
 }
 .sd-command-icon-btn:hover:not(:disabled),
 .sd-command-icon-btn:focus-visible {
-  color: #1e293b;
-  background: #f1f5f9;
+  color: var(--sd-text);
+  background: var(--sd-soft);
 }
 .sd-command-icon-btn.is-active,
 .sd-command-icon-btn.is-open {
-  background: #e2e8f0;
+  color: var(--sd-text);
+  background: var(--sd-soft);
 }
-.sd-command-icon-btn:disabled { opacity: .42; }
+.sd-root .sd-command-icon-btn:disabled { opacity: .58; }
 .sd-command-icon-btn[data-tooltip]::after {
   position: absolute;
   z-index: 10020;
@@ -314,16 +316,16 @@
   width: max-content;
   max-width: 220px;
   padding: 6px 9px;
-  border: 1px solid #334155;
+  border: 1px solid var(--sd-border);
   border-radius: 7px;
-  background: #0f172a;
-  color: #ffffff;
+  background: var(--sd-card);
+  color: var(--sd-text);
   content: attr(data-tooltip);
   font-size: 11px;
   font-weight: 600;
   line-height: 1.25;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(15,23,42,.2);
+  box-shadow: var(--sd-shadow);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -339,30 +341,35 @@
   gap: 2px;
   padding: 3px;
   border-radius: 10px;
-  background: #f1f5f9;
+  background: var(--sd-soft);
 }
 .sd-command-modes button {
   min-width: 52px;
   height: 28px;
   padding: 0 10px;
   border-radius: 8px;
-  color: #475569;
+  color: var(--sd-text-2);
   font-size: 12px;
   font-weight: 500;
   line-height: 28px;
+  transition: color .14s ease, background-color .14s ease, box-shadow .14s ease;
 }
-.sd-command-modes button:hover:not(.is-active) { color: #0f172a; }
+.sd-command-modes button:hover:not(.is-active) {
+  color: var(--sd-text);
+  background: color-mix(in srgb, var(--sd-card) 55%, transparent);
+}
 .sd-command-modes button.is-active {
-  color: #0f172a;
-  background: #ffffff;
+  color: var(--sd-text);
+  background: var(--sd-card);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(15,23,42,.14);
 }
 .sd-command-sim { gap: 0; }
 .sd-command-sim-main, .sd-command-sim-caret {
   height: 32px;
-  color: #065f46;
-  background: #ecfdf5;
+  color: var(--sd-text-2);
+  background: var(--sd-soft);
+  transition: color .14s ease, background-color .14s ease;
 }
 .sd-command-sim-main {
   gap: 6px;
@@ -373,35 +380,35 @@
 }
 .sd-command-sim-caret {
   gap: 4px;
-  border-left: 1px solid rgba(6,95,70,.18);
+  border-left: 1px solid var(--sd-border);
   padding: 0 8px 0 4px;
   border-radius: 0 9px 9px 0;
 }
 .sd-command-load {
-  color: inherit;
+  color: var(--sd-text-2);
   font-family: "JetBrains Mono", Consolas, monospace;
   font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .sd-command-sim-main:hover, .sd-command-sim-caret:hover {
-  color: #064e3b;
-  background: #d1fae5;
+  color: var(--sd-text);
+  background: var(--sd-card);
 }
 .sd-command-sim-main.is-on, .sd-command-sim-caret.is-on {
   color: #ffffff;
-  background: #059669;
+  background: var(--sd-emerald);
 }
 .sd-command-sim-main.is-on:hover, .sd-command-sim-caret.is-on:hover {
   color: #ffffff;
   background: #047857;
 }
 .sd-command-sim-main.is-on .sd-command-icon,
-.sd-command-sim-caret.is-on .sd-command-icon { stroke: #ffffff; }
+.sd-command-sim-caret.is-on .sd-command-icon { color: #ffffff; }
 .sd-command-sim-caret.is-on { border-left-color: rgba(255,255,255,.32); }
 .sd-command-exit:hover:not(:disabled) {
-  color: #991b1b;
-  background: #fee2e2;
+  color: var(--sd-red);
+  background: color-mix(in srgb, var(--sd-red) 12%, transparent);
 }
 @media (max-width: 760px) {
   .sd-topbar-pill {
