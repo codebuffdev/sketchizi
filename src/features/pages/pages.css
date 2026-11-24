@@ -634,7 +634,10 @@
 
 /* Widescreen editorial spread: retain the tactile paper treatment while
    moving the chapter identity and controls into one compact header row. */
-.pages-book-sheet { min-height: calc(100vh - 124px); }
+.pages-book-sheet {
+  width: min(1360px, calc(100vw - 56px));
+  min-height: calc(100vh - 124px);
+}
 .pages-editorial-header {
   display: flex;
   align-items: center;
