@@ -123,10 +123,15 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
             return { ...element, isDeleted: true, version: (element.version || 0) + 1,
               versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
           }
-          const changed = [...new Set([...Object.keys(before), ...Object.keys(element)])]
+          const changedKeys = [...new Set([...Object.keys(before), ...Object.keys(element)])]
             .filter(key => !['version','versionNonce','updated','index'].includes(key))
-            .some(key => JSON.stringify(before[key]) !== JSON.stringify(element[key]));
-          if (!changed) return element;
+            .filter(key => JSON.stringify(before[key]) !== JSON.stringify(element[key]));
+          if (!changedKeys.length) return element;
+          // Moving an inactive chapter to its parking coordinate is a layout
+          // operation, not an edit to that chapter's isolated scene.
+          if (before.frameId && next.some(page => page.id === before.frameId) &&
+              before.frameId === element.frameId &&
+              changedKeys.every(key => key === 'x' || key === 'y')) return element;
           if (before.frameId !== selected.id && element.frameId !== selected.id) {
             rejected = true;
             return before;
@@ -238,57 +243,70 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   const fit = page => {
     if (!page || !api) return;
     const previousChapterId = activeIdRef.current;
-    const isInitialFit = !initialFitRef.current;
-    const sceneElements = api.getSceneElementsIncludingDeleted();
-    const sceneAppState = api.getAppState?.() || {};
-    const chapterFrames = getPages(sceneElements);
-    const firstChapter = chapterFrames[0];
-    const targetChapter = chapterFrames.find(frame => frame.id === page.id);
-    const savedViewport = targetChapter?.customData?.chapterAppState;
-    const shouldRestoreViewport = Boolean(savedViewport && (isInitialFit || previousChapterId !== page.id));
-    const nextElements = sceneElements.map(element => {
-      const savePreviousViewport = element.id === previousChapterId && previousChapterId !== page.id;
-      const saveActiveId = Boolean(firstChapter && element.id === firstChapter.id && element.customData?.activeChapterId !== page.id);
-      if (!savePreviousViewport && !saveActiveId) return element;
-      const customData = { ...element.customData };
-      if (savePreviousViewport) customData.chapterAppState = {
-        zoom: sceneAppState.zoom, scrollX: sceneAppState.scrollX, scrollY: sceneAppState.scrollY,
-      };
-      if (saveActiveId) customData.activeChapterId = page.id;
-      return { ...element, customData, version: (element.version || 0) + 1,
-        versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
+    let elements = api.getSceneElementsIncludingDeleted();
+    const currentPage = getPages(elements).find(item => item.id === previousChapterId);
+    const moveChapter = (sourcePage, targetX, targetY) => {
+      const dx = targetX - sourcePage.x;
+      const dy = targetY - sourcePage.y;
+      if (!dx && !dy) return;
+      elements = elements.map(element => {
+        const belongsToChapter = element.id === sourcePage.id ||
+          element.customData?.sketchiziPagePaper === sourcePage.id ||
+          element.frameId === sourcePage.id;
+        if (!belongsToChapter || element.isDeleted) return element;
+        return {
+          ...element, x: element.x + dx, y: element.y + dy,
+          version: (element.version || 0) + 1,
+          versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now(),
+        };
+      });
+    };
+
+    // Pages mode uses a fixed (0, 0) camera. Park the outgoing chapter to the
+    // right of the document and move the incoming chapter to the viewport
+    // origin, preserving every element's relative geometry and frame binding.
+    if (currentPage && currentPage.id !== page.id &&
+        Math.abs(currentPage.x) < 0.5 && Math.abs(currentPage.y) < 0.5) {
+      const right = elements.filter(element => !element.isDeleted).reduce(
+        (maximum, element) => Math.max(maximum, Number(element.x || 0) + Math.abs(Number(element.width || 0))),
+        0,
+      );
+      moveChapter(currentPage, right + 10000, 0);
+    }
+    const targetPage = getPages(elements).find(item => item.id === page.id) || page;
+    moveChapter(targetPage, 0, 0);
+    const nextPages = getPages(elements);
+    const firstChapter = nextPages[0];
+    elements = elements.map(element => {
+      if (element.id !== firstChapter?.id || element.customData?.activeChapterId === page.id) return element;
+      return { ...element, customData: { ...element.customData, activeChapterId: page.id },
+        version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() };
     });
+
+    const activePage = getPages(elements).find(item => item.id === page.id) || { ...page, x: 0, y: 0 };
     activeIdRef.current = page.id;
     initialFitRef.current = true;
     setActiveId(page.id);
-    // Chapter identity and its viewport travel with the page-frame metadata
-    // inside the canvas tab's IndexedDB snapshot.
     api.updateScene({
-      elements: nextElements,
-      appState: { selectedElementIds: {}, selectedGroupIds: {} },
+      elements,
+      appState: { scrollX: 0, scrollY: 0, zoom: { value: 1 }, selectedElementIds: {}, selectedGroupIds: {} },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
-    if (shouldRestoreViewport) {
-      api.updateScene({ appState: savedViewport, captureUpdate: CaptureUpdateAction.NEVER });
-      setPageMask(getPageViewportMask(page, { ...api.getAppState(), ...savedViewport }));
-      return;
-    }
-    api.scrollToContent?.([page], { fitToContent: true, animate: false });
     window.requestAnimationFrame(() => {
       if (activeIdRef.current !== page.id) return;
-      const fittedState = api.getAppState();
-      const pageViewport = getPageFitViewport(page, fittedState, 1);
-      if (pageViewport) api.updateScene({ appState: pageViewport, captureUpdate: CaptureUpdateAction.NEVER });
+      const lockedState = { ...api.getAppState(), scrollX: 0, scrollY: 0, zoom: { value: 1 } };
+      setPageMask(getPageViewportMask(activePage, lockedState));
     });
   };
   const fitViewportToPage = page => {
     if (!page || !api) return;
-    api.scrollToContent?.([page], { fitToContent: true, animate: false });
-    window.requestAnimationFrame(() => {
-      const fittedState = api.getAppState();
-      const pageViewport = getPageFitViewport(page, fittedState, 1);
-      if (pageViewport) api.updateScene({ appState: pageViewport, captureUpdate: CaptureUpdateAction.NEVER });
+    api.updateScene({
+      appState: { scrollX: 0, scrollY: 0, zoom: { value: 1 } },
+      captureUpdate: CaptureUpdateAction.NEVER,
     });
+    setPageMask(getPageViewportMask({ ...page, x: 0, y: 0 }, {
+      ...api.getAppState(), scrollX: 0, scrollY: 0, zoom: { value: 1 },
+    }));
   };
 
   useEffect(() => {
