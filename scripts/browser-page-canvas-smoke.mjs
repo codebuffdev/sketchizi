@@ -206,6 +206,8 @@ try {
  await page.getByRole('button',{name:'Dark',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-dark'));
  assert.equal(await page.locator('.pages-book-sheet').evaluate(el=>getComputedStyle(el).backgroundColor), 'rgb(15, 20, 29)', 'Full-bleed paper must switch to the dark theme');
+ await page.keyboard.press('Escape');
+ await page.getByRole('dialog', { name: 'Appearance and canvas background' }).waitFor({ state: 'detached' });
  await page.locator('.canvas-pages-chapter-trigger').click();
  const darkTriggerBounds = await page.locator('.canvas-pages-chapter-trigger').boundingBox();
  const darkPopoverBounds = await page.getByRole('dialog', { name: 'Chapters Index' }).boundingBox();
