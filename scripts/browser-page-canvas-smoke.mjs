@@ -122,19 +122,33 @@ try {
  assert.equal(layerOrder.texture, '0');
  assert.equal(layerOrder.drawing, '1');
  assert.equal(layerOrder.header, '10040');
+ assert.equal(await page.locator('.pages-chapter-eyebrow').innerText(), '01', 'Chapter badge must show only the zero-padded number');
+ const actions = page.locator('.pages-bottom-actions');
+ const navigatorBounds = await actions.locator('.canvas-pages-navigation').boundingBox();
+ const zenBounds = await actions.locator('.sk-zen-pill').boundingBox();
+ assert(navigatorBounds && zenBounds && Math.abs(zenBounds.x - navigatorBounds.x - navigatorBounds.width - 10) <= 2,
+  'Chapter navigator and Zen pill must sit in one row with a 10px gap');
+ const dotsStyle = await page.locator('.pages-book-canvas-zone').evaluate(el => ({
+  image: getComputedStyle(el).backgroundImage,
+  size: getComputedStyle(el).backgroundSize,
+ }));
+ assert(dotsStyle.image.includes('radial-gradient') && dotsStyle.size === '22px 22px',
+  'Dots paper must render its 22px radial grid');
  // The editable editorial heading is also the canonical chapter name.
  await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover');
  es = await waitScene(elements => pages(elements)[0]?.name === 'Cover');
  // Exercise inline editorial metadata and per-chapter paper texture persistence.
  await page.getByRole('textbox', { name: 'Chapter title' }).fill('Cover chapter');
  es = await waitScene(es => pages(es)[0]?.customData?.chapterTitle === 'Cover chapter');
- await page.getByRole('textbox', { name: 'Key formula or rule of thumb' }).fill('100M DAU × 20 req/day ≈ 23,150 QPS');
- es = await waitScene(es => pages(es)[0]?.customData?.keyNote?.includes('23,150 QPS'));
+ await page.getByRole('textbox', { name: 'Chapter subtitle' }).fill('Capacity planning and traffic assumptions');
+ es = await waitScene(es => pages(es)[0]?.customData?.tagline === 'Capacity planning and traffic assumptions');
  await page.getByRole('button', { name: 'Ruled', exact: true }).click();
  es = await waitScene(es => pages(es)[0]?.customData?.paperTexture === 'Ruled');
+ assert(await page.locator('.pages-book-canvas-zone').evaluate(el=>getComputedStyle(el).backgroundImage.includes('repeating-linear-gradient')), 'Ruled paper must render repeating horizontal lines');
  await page.getByRole('button', { name: 'Dots', exact: true }).click();
  es = await waitScene(es => pages(es)[0]?.customData?.paperTexture === 'Dots');
- await page.getByRole('button', { name: /Mark Read/ }).click();
+ assert(await page.locator('.pages-book-canvas-zone').evaluate(el=>getComputedStyle(el).backgroundImage.includes('radial-gradient')), 'Dots paper must render its radial pattern');
+ await page.locator('.pages-mark-read').click();
  es = await waitScene(es => pages(es)[0]?.customData?.completed === true);
  assert(await page.locator('.pages-book-canvas-zone.texture-dots').evaluate(el=>getComputedStyle(el).backgroundImage!=='none'),'Editorial dot texture must be visible');
  const dock = await page.getByRole('navigation',{name:'Drawing tools'}).boundingBox();
@@ -161,7 +175,7 @@ try {
  assert.equal(await page.locator('.pages-book-sheet').evaluate(el=>getComputedStyle(el).backgroundColor), 'rgb(255, 255, 255)', 'Full-bleed paper must switch to the light theme');
  await page.getByRole('button',{name:'Dark',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.app')?.classList.contains('theme-dark'));
- assert.equal(await page.locator('.pages-book-sheet').evaluate(el=>getComputedStyle(el).backgroundColor), 'rgb(17, 24, 39)', 'Full-bleed paper must switch to the dark theme');
+ assert.equal(await page.locator('.pages-book-sheet').evaluate(el=>getComputedStyle(el).backgroundColor), 'rgb(15, 20, 29)', 'Full-bleed paper must switch to the dark theme');
  await ensureHeaderVisible();
  await page.getByRole('button',{name:'Appearance and canvas background'}).click();
  // Draw through the actual canvas, then ensure the new shape belongs to this page.
