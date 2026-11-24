@@ -17,16 +17,22 @@ export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = 
   const [statusMessage, setStatusMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const workspace = apiRef?.current?.systemDesignWorkspace;
+  const activeTabId = workspace?.activeTabId;
+  const activeTabState = workspace?.workspaceByTabId?.[activeTabId] || null;
+  const activeTabEnabled = activeTabState?.active ?? workspace?.enabled;
+  const activeTabMode = activeTabState?.studioMode || workspace?.mode || "canvas";
+  const activeTabSimRunning = activeTabState?.simRunning ?? workspace?.simulate;
+  const activeTabBaseRps = activeTabState?.baseRps ?? workspace?.loadRps ?? 0;
   const subscribe = workspace?.store?.subscribe || noopSubscribe;
   const getSnapshot = workspace?.store?.getSnapshot || getEmptySnapshot;
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const sceneElements = apiRef?.current?.getSceneElements?.() || [];
-  const systemGraph = useMemo(() => workspace ? (workspace.enabled ? readGraph(snapshot.elements) : { nodes: [], edges: [] }) : readGraph(sceneElements), [workspace?.enabled, snapshot.elements, sceneElements]);
+  const systemGraph = useMemo(() => workspace ? (activeTabEnabled ? readGraph(snapshot.elements) : { nodes: [], edges: [] }) : readGraph(sceneElements), [workspace, activeTabEnabled, snapshot.elements, sceneElements]);
   const simulation = useMemo(() => systemGraph.nodes.length ? simulateTraffic({
     nodes: systemGraph.nodes, edges: systemGraph.edges,
-    totalRps: workspace?.simulate ? workspace.loadRps : 0,
-  }) : null, [systemGraph, workspace?.simulate, workspace?.loadRps]);
-  const mode = workspace?.mode || "canvas";
+    totalRps: activeTabSimRunning ? activeTabBaseRps : 0,
+  }) : null, [systemGraph, activeTabSimRunning, activeTabBaseRps]);
+  const mode = activeTabMode;
   const systemSvg = useMemo(() => systemGraph.nodes.length ? buildSystemDesignSvg({
     ...systemGraph, simulation, mode, background: bgMode, darkMode, padding: 24,
   }) : "", [systemGraph, simulation, mode, bgMode, darkMode]);
