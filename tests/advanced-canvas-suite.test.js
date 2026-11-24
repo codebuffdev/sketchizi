@@ -26,12 +26,16 @@ test("Capability 1: Canvas Mini-Map Navigator is integrated with header toggle a
   assert.ok(advancedCss.includes(".app.theme-dark .minimap-viewport"), "Has dark theme viewport background");
 });
 
-test("Capability 2: Generic image export is disabled across app surfaces", () => {
+test("Capability 2: Export Studio is available in document dropdown while native image export and find stay disabled", () => {
   const nativeMenu = readFileSync(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
   const commands = readFileSync(new URL("../src/features/commands/commandRegistry.js", import.meta.url), "utf8");
   const stackExport = readFileSync(new URL("../src/features/system-design/ExportStackModal.jsx", import.meta.url), "utf8");
-  assert.doesNotMatch(appHeader, /onOpenExport|Export studio/);
-  assert.doesNotMatch(appSource, /ExportStudioModal|exportStudioOpen|imageExport/);
+  assert.match(appHeader, /<h3>Download &amp; export<\\/h3>/);
+  assert.match(appHeader, /Export studio\\.\\.\\./);
+  assert.match(appHeader, /Choose PNG, SVG, clipboard and export settings/);
+  assert.match(appSource, /ExportStudioModal/);
+  assert.match(appSource, /exportStudioOpen/);
+  assert.match(appSource, /systemDesignWorkspace = systemDesign/);
   assert.match(nativeMenu, /blockedMenuLabels = new Set/);
   assert.match(nativeMenu, /key === "f"/);
   assert.doesNotMatch(commands, /export\.image|export\.studio|export\.diagram-yaml-png/);
