@@ -2,7 +2,7 @@ import React, { useMemo, useState, useSyncExternalStore } from "react";
 import { exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
 import { readGraph } from "../../features/system-design/sceneModel.js";
 import { simulateTraffic } from "../../features/system-design/trafficSimulator.js";
-import { buildSystemDesignSvg, exportSystemDesignImage } from "../../features/system-design/exportSystemDesignImage.js";
+import { buildSystemDesignSvg, exportSystemDesignImage, svgToCanvas } from "../../features/system-design/exportSystemDesignImage.js";
 
 const EMPTY_SNAPSHOT = Object.freeze({ elements: [] });
 const noopSubscribe = () => () => {};
@@ -48,8 +48,30 @@ export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = 
     };
   };
 
+  const getCombinedSystemSvg = async () => {
+    const data = getExportData();
+    if (!data?.elements.length) throw new Error("No elements to export");
+    const nativeSvg = await exportToSvg({ elements: data.elements, appState: data.appState, files: data.files });
+    const nativeMarkup = new XMLSerializer().serializeToString(nativeSvg);
+    const overlayGraph = exportOnlySelected && data.elements.length
+      ? { nodes: systemGraph.nodes.filter((node) => data.elements.some((element) => element.id === node.id)),
+          edges: systemGraph.edges.filter((edge) => data.elements.some((element) => element.id === edge.from) && data.elements.some((element) => element.id === edge.to)) }
+      : systemGraph;
+    const overlay = buildSystemDesignSvg({ ...overlayGraph, simulation, mode, background: "transparent", darkMode, padding: 24 });
+    const inner = overlay.replace(/^<svg[^>]*>/, "").replace(/<\\/svg>\\s*$/, "");
+    const sceneElements = data.elements;
+    const minX = Math.min(0, ...sceneElements.map((element) => Number(element.x) || 0));
+    const minY = Math.min(0, ...sceneElements.map((element) => Number(element.y) || 0));
+    const positionedOverlay = `<g transform="translate(${24 - minX} ${24 - minY})">${inner}</g>`;
+    return nativeMarkup.replace(/<\\/svg>\\s*$/, `${positionedOverlay}</svg>`);
+  };
+
   const makePng = async () => {
-    if (systemSvg) return exportSystemDesignImage({ ...systemGraph, simulation, mode, background: bgMode, darkMode, scale, format: "png" });
+    if (systemSvg) {
+      const combinedSvg = await getCombinedSystemSvg();
+      const canvas = await svgToCanvas(combinedSvg, scale);
+      return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Unable to encode PNG")), "image/png"));
+    }
     const data = getExportData();
     if (!data?.elements.length) throw new Error("No elements to export");
     return exportToBlob({ elements: data.elements, appState: data.appState, files: data.files, mimeType: "image/png" });
