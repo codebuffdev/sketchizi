@@ -947,10 +947,15 @@ export default function DesktopAppHeader({
             <div className="canvas-tabs-active-menu-content">
               <div className="canvas-tabs-active-menu-heading">
                 <strong title={activeCanvasTabName}>{activeCanvasTabName}</strong>
-                <span className={"canvas-tabs-save-status " + (currentDocumentDirty || ["pending", "saving", "error"].includes(saveState) || (isCloudDocument && ["pending", "saving", "error", "conflict"].includes(cloudSaveState)) ? "is-unsaved" : "is-saved")}
+                <span className={"canvas-tabs-save-status " + (
+                  ((isCloudDocument && ["pending", "saving", "error", "conflict"].includes(cloudSaveState))
+                    || (currentDocumentFileBacked && currentDocumentDirty)
+                    || (!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "error"].includes(saveState))) ? "is-unsaved" : "is-saved")}
                   title={!isCloudDocument && !currentDocumentFileBacked ? "This draft is automatically saved in this browser. Save to a file or Cloud Workspace for a portable copy." : "Changes are saved."}>
                   <i aria-hidden="true" />
-                  {currentDocumentDirty || ["pending", "saving", "error"].includes(saveState) || (isCloudDocument && ["pending", "saving", "error", "conflict"].includes(cloudSaveState)) ? "Local Draft" : "Saved"}
+                  {((isCloudDocument && ["pending", "saving", "error", "conflict"].includes(cloudSaveState))
+                    || (currentDocumentFileBacked && currentDocumentDirty)
+                    || (!isCloudDocument && !currentDocumentFileBacked && ["pending", "saving", "error"].includes(saveState))) ? "Local Draft" : "Saved"}
                 </span>
               </div>
               <section className="canvas-tabs-menu-section" aria-label="Save and sync">
