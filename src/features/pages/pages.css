@@ -708,6 +708,11 @@
 
 /* The Pages overlay stays non-stacking; the app header outranks edge resize grips. */
 .app.canvas-first-header:has(.pages-book-workspace) .desktop-app-header { z-index: 10060 !important; }
+.app:has(.pages-book-workspace) [role="dialog"],
+.app:has(.pages-book-workspace) [role="menu"],
+.app:has(.pages-book-workspace) [role="listbox"] {
+  z-index: 10080 !important;
+}
 .pages-book-workspace {
   position: static;
   inset: auto;
