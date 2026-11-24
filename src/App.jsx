@@ -394,6 +394,7 @@ function App() {
     persistActiveCanvasSnapshot,
     switchCanvasTab,
     selectWorkspaceTab,
+    setActiveCanvasTabType,
     createCanvasTab,
     reopenClosedTab,
     deleteClosedTab,
@@ -762,7 +763,8 @@ function App() {
     startupChoiceMadeRef.current = true;
     // Closing the final tab leaves the workspace empty. Create a fresh canvas
     // when the user makes their next startup-canvas choice.
-    if (canvasTabsRef.current.length === 0) createCanvasTab();
+    if (canvasTabsRef.current.length === 0) createCanvasTab({ type: mode === "pages" ? "pages" : "canvas" });
+    else if (mode === "pages" || mode === "infinite") setActiveCanvasTabType(mode === "pages" ? "pages" : "canvas");
     setStartupChooserOpen(false);
     if (mode === "todo") {
       openTodoTab();
@@ -773,7 +775,7 @@ function App() {
       return;
     }
     window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode } }));
-  }, [createCanvasTab, openTodoTab, systemDesign.open]);
+  }, [createCanvasTab, openTodoTab, setActiveCanvasTabType, systemDesign.open]);
 
   // "Open Local File" from the welcome screen: make sure a canvas exists, then
   // hand off to the normal file-open flow once its editor is mounted.
