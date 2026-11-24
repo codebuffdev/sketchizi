@@ -55,6 +55,7 @@ test("node slot and contextual controls open the library in assignment mode, and
   const studio = read("features/system-design/SystemDesignStudio.jsx");
   const app = read("App.jsx");
   const panel = read("IconLibraryPanel.jsx");
+  const assignment = read("features/system-design/useSystemDesignIconAssignment.js");
 
   assert.match(overlay, /title="Insert or change tech icon"/);
   assert.match(overlay, /onOpenIconLibrary\?\.\(node\)/);
