@@ -745,6 +745,7 @@
    cover the actual canvas elements as well as any wrapper variants. */
 /* Excalidraw's drawing layer is the canvas element itself, not a wrapper;
    keep both the element and any future nested canvas fully opaque. */
+.app:has(.pages-book-workspace) .desktop-canvas-region canvas,
 .app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw canvas,
 .app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .layer-canvas,
 .app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .layer-canvas canvas {
