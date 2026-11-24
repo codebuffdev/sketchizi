@@ -80,11 +80,27 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
   const spacePanHeldRef = useRef(false);
   const signature = useRef('');
   const sceneSnapshot = useRef(null);
-  const active = pages.find(p => p.id === activeId) || pages[0];
+  const fallbackPage = mode === "pages" && pages.length === 0 ? {
+    id: "pages-loading-placeholder",
+    type: "frame",
+    name: "Untitled Page",
+    x: 0,
+    y: 0,
+    width: Math.max(320, Math.round(window.innerWidth || DEFAULT_PAGE_SIZE.width)),
+    height: Math.max(320, Math.round(window.innerHeight || DEFAULT_PAGE_SIZE.height)),
+    customData: { [PAGE_MARKER]: true, pageOrder: 1, chapterTitle: "Untitled Page", paperTexture: "dots" },
+  } : null;
+  const displayPages = pages.length ? pages : (fallbackPage ? [fallbackPage] : []);
+  const active = pages.find(p => p.id === activeId) || pages[0] || fallbackPage;
   const activePageRef = useRef(active);
   activePageRef.current = active;
-  const index = pages.findIndex(p => p.id === active?.id);
+  const index = Math.max(0, pages.findIndex(p => p.id === active?.id));
   const host = document.querySelector('.app');
+  const pageMaskForRender = pageMask || (fallbackPage ? {
+    backgroundColor: canvasTheme === "dark" ? "#111820" : "#f7f9fc",
+    pageRect: { left: 0, top: 0, width: fallbackPage.width, height: fallbackPage.height },
+    panels: [],
+  } : null);
 
   useEffect(() => {
     if (!api) return;
@@ -616,9 +632,9 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
     }));
   };
   return <>
-    {mode === 'pages' && pageMask && host && createPortal(
-      <PagesBookWorkspace pages={pages} active={active} index={index}
-        canEdit={canEdit} onToggleRead={toggleChapterRead} onPatch={patchChapter}
+    {mode === 'pages' && pageMaskForRender && host && createPortal(
+      <PagesBookWorkspace pages={displayPages} active={active} index={index}
+        canEdit={canEdit && pages.length > 0} onToggleRead={toggleChapterRead} onPatch={patchChapter}
         bookTitle={bookTitle} onRenameBookTitle={onRenameBookTitle}
         chapterIndexOpen={chapterIndexOpen} chapterIndexRef={chapterIndexRef}
         onToggleChapterIndex={() => setChapterIndexOpen(value => !value)}
@@ -626,13 +642,13 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
         onDeleteChapter={page => { deletePage(page); setChapterIndexOpen(false); }}
         onDeleteOnlyPage={onDeleteOnlyPage}
         onAddChapter={() => { add(); setChapterIndexOpen(false); }} />, host)}
-    {mode === 'pages' && pageMask && host && createPortal(
+    {mode === 'pages' && pageMaskForRender && host && createPortal(
       <div className="canvas-pages-mask">
-        {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
-        <div className="canvas-pages-page-surface" style={pageMask.pageRect} aria-hidden="true" />
-        <div className="canvas-pages-page-outline" style={pageMask.pageRect} aria-hidden="true" />
+        {pageMaskForRender.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
+        <div className="canvas-pages-page-surface" style={pageMaskForRender.pageRect} aria-hidden="true" />
+        <div className="canvas-pages-page-outline" style={pageMaskForRender.pageRect} aria-hidden="true" />
       </div>, host)}
-    {mode === 'pages' && pageMask && host && createPortal(
+    {mode === 'pages' && pageMaskForRender && host && createPortal(
       inlineName && inlineName.pageId === active?.id ? <input
         ref={inlineNameInputRef}
         className="canvas-pages-page-name-input"
