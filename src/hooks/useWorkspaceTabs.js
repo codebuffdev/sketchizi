@@ -738,10 +738,15 @@ export function useWorkspaceTabs({
       if (cancelled) return;
       if (Array.isArray(stored) && stored.length) {
         const today = getLocalDateString();
-        const restoredTabs = (refreshedTabs.length ? refreshedTabs : stored).map((tab) => ({
-          ...tab,
-          ...normalizeTabDates(tab, today),
-        }));
+        const restoredTabs = (refreshedTabs.length ? refreshedTabs : stored).map((tab) => {
+          const normalized = { ...tab, ...normalizeTabDates(tab, today) };
+          const hasPageChapters = (Array.isArray(normalized.chapters) && normalized.chapters.length > 0) ||
+            (Array.isArray(normalized.snapshot?.chapters) && normalized.snapshot.chapters.length > 0) ||
+            getPages(normalized.snapshot?.elements || []).length > 0;
+          return hasPageChapters || normalized.type === "pages" || normalized.type === "page"
+            ? { ...normalized, type: "pages" }
+            : normalized;
+        });
         const activeId = restoredTabs.find((tab) => tab.active)?.id || restoredTabs[0].id;
         const activeTab = restoredTabs.find((tab) => tab.id === activeId) || restoredTabs[0];
         setActiveWorkspaceTabId(activeTab.todoTabOpen && activeTab.todoTabActive ? `todo:${activeId}` : activeId);
