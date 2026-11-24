@@ -62,7 +62,7 @@ test("the chapter index, completion, delete, and add actions live in the editori
   assert.match(workspace, /className="canvas-pages-chapter-popover"/);
   assert.match(workspace, /onMouseDown=\{event => event\.stopPropagation\(\)\}/);
   assert.match(workspace, /onClick=\{\(\) => onToggleRead\(page\)\}/);
-  assert.match(workspace, /onClick=\{\(\) => onDeleteChapter\(page\)\}/);
+  assert.match(workspace, /onClick=\{\(\) => requestDeleteChapter\(page\)\}/);
   assert.match(workspace, /＋ New Chapter/);
   assert.match(workspace, /aria-label="Previous chapter"/);
   assert.match(workspace, /aria-label="Next chapter"/);
@@ -187,4 +187,25 @@ test("chapter eyebrow and chapter controller share the editorial masthead withou
   assert.match(styles, /clip-path: inset\(156px 0 0 0\)/);
   assert.match(styles, /clip-path: inset\(200px 0 0 0\)/);
 
+});
+
+test("deleting the only Pages chapter requires accessible confirmation and closes the notebook tab", () => {
+  assert.match(workspace, /pages\.length === 1/);
+  assert.match(workspace, /setDeleteOnlyPageOpen\(true\)/);
+  assert.match(workspace, /role="dialog" aria-modal="true"/);
+  assert.match(workspace, /Delete &quot;\{bookTitle \|\| 'Untitled drawing'\}\&quot;\?/);
+  assert.match(workspace, /This is the only page remaining\. Deleting it will permanently remove this notebook and close its tab\./);
+  assert.match(workspace, />Cancel<\/button>/);
+  assert.match(workspace, /Delete &amp; Close/);
+  assert.match(workspace, /event\.key === 'Escape'/);
+  assert.match(workspace, /event\.key === 'Enter'/);
+  assert.match(pages, /onDeleteOnlyPage=\{onDeleteOnlyPage\}/);
+  assert.match(app, /await deleteDocument\(activeTab\.id\)/);
+  assert.match(app, /performCloseCanvasTab\(activeTab\.id, \{ keepDraft: false \}\)/);
+  assert.match(app, /createCanvasTab\(\{ name: "Canvas 1" \}\)/);
+  assert.match(tabs, /\(\{ name: requestedName \} = \{\}\)/);
+  assert.match(persistence, /export async function deleteDocument\(id\)/);
+  assert.match(styles, /pages-delete-confirm-submit/);
+  assert.match(styles, /#e11d48/);
+  assert.match(styles, /\.app\.theme-dark \.pages-delete-confirm-dialog/);
 });
