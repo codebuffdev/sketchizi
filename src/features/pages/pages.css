@@ -853,6 +853,14 @@ body:has(.pages-book-workspace) .sketchizi-appearance {
 .pages-editorial-header button {
   pointer-events: auto !important;
 }
+.pages-editorial-copy,
+.pages-editorial-actions {
+  pointer-events: none !important;
+}
+.pages-editorial-header input,
+.pages-editorial-header button {
+  pointer-events: auto !important;
+}
 .pages-paper-switcher { flex: 0 0 auto; white-space: nowrap; }
 .pages-mark-read { flex: 0 0 auto; white-space: nowrap; }
 .pages-book-folio {
