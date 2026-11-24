@@ -137,10 +137,11 @@ test("legacy accessibility, test and file-workflow contracts remain", () => {
   assert.match(menu, /aria-expanded="true"/);
   assert.match(menuCss, /prefers-reduced-motion: reduce/);
 });
-test("image export and canvas find are blocked from menu surfaces and global shortcuts", () => {
+test("native image export and canvas find stay removed while Export Studio owns its shortcut", () => {
+  const shortcut = read("../src/features/navigation/exportStudioShortcut.js");
   assert.match(menu, /blockedMenuLabels = new Set/);
-  assert.match(menu, /key === "f" \|\| \(key === "e" && event\.shiftKey\)/);
-  assert.match(menu, /window\.addEventListener\("keydown", onKeyDown, true\)/);
-  assert.doesNotMatch(menu, /label: "Export Image"/);
-  assert.doesNotMatch(menu, /label: "Find on Canvas"/);
+  assert.match(menu, /if \\(key === "f"\\)/);
+  assert.doesNotMatch(menu, /key === "e" && event\\.shiftKey/);
+  assert.match(shortcut, /target\\.addEventListener\\("keydown", onKeyDown, true\\)/);
+  assert.match(app, /registerExportStudioShortcut/);
 });
