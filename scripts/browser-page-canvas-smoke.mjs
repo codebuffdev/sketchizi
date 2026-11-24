@@ -137,11 +137,13 @@ try {
   'Dots paper must render its 22px radial grid');
  // The eyebrow book title is the active top-tab name and renames that tab on commit.
  const bookTitleInput = page.getByRole('textbox', { name: 'Book / notebook title' });
+ assert.equal(await bookTitleInput.inputValue(), 'Canvas 1', 'Eyebrow book title must initialize from the active canvas tab');
  await bookTitleInput.fill('System Design Notes');
  await bookTitleInput.press('Enter');
  await page.waitForFunction(() => document.querySelector('.canvas-tab.is-active .canvas-tab-name')?.textContent.trim() === 'System Design Notes');
  // Typing in the page heading must remain native input text, not an Excalidraw shortcut.
  const chapterTitleInput = page.getByRole('textbox', { name: 'Chapter title' });
+ assert.equal(await chapterTitleInput.inputValue(), 'Untitled Page', 'New page heading must default to Untitled Page');
  await chapterTitleInput.fill('Untitled Page');
  await chapterTitleInput.press('s');
  assert.equal(await chapterTitleInput.inputValue(), 'Untitled Pages', 'Page title input must receive shortcut-like characters without Excalidraw interception');
