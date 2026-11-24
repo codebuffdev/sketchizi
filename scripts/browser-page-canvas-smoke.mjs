@@ -141,6 +141,12 @@ try {
  await bookTitleInput.fill('System Design Notes');
  await bookTitleInput.press('Enter');
  await page.waitForFunction(() => document.querySelector('.canvas-tab.is-active .canvas-tab-name')?.textContent.trim() === 'System Design Notes');
+ // Renaming from the top tab must flow back into the eyebrow input as well.
+ await page.getByRole('button', { name: 'Rename canvas' }).click();
+ const topTabNameInput = page.getByRole('textbox', { name: 'Canvas name' });
+ await topTabNameInput.fill('Page 1');
+ await topTabNameInput.press('Enter');
+ await page.waitForFunction(() => document.querySelector('.pages-book-title-input')?.value === 'Page 1');
  // Typing in the page heading must remain native input text, not an Excalidraw shortcut.
  const chapterTitleInput = page.getByRole('textbox', { name: 'Chapter title' });
  assert.equal(await chapterTitleInput.inputValue(), 'Untitled Page', 'New page heading must default to Untitled Page');
