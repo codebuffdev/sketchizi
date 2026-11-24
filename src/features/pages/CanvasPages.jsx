@@ -516,7 +516,8 @@ export default function CanvasPages({ api, workspaceMode = "infinite", canEdit =
       : element));
   };
   const changeMode = value => {
-    if (value === 'pages' && !pages.length) { add(); return; }
+    const livePages = api?.getSceneElementsIncludingDeleted?.() || [];
+    if (value === 'pages' && getPages(livePages).length === 0) { add(); return; }
     if (value === 'pages' && mode !== 'pages') {
       const currentView = api?.getAppState?.();
       previousViewportRef.current = currentView ? { scrollX: currentView.scrollX, scrollY: currentView.scrollY, zoom: currentView.zoom } : null;
