@@ -168,3 +168,21 @@ export function arrangeElements(elements, selectedIds, layout, gap = 24) {
     };
   });
 }
+
+
+/**
+ * Apply a layout using the current Excalidraw selection and scene at click time.
+ * This intentionally avoids React selection props, which may be one render stale.
+ */
+export function applyAlignmentToSelection(api, layout) {
+  if (!api?.getAppState || !api?.getSceneElements || !api?.updateScene) return false;
+  const selectedIds = Object.entries(api.getAppState()?.selectedElementIds || {})
+    .filter(([, selected]) => selected)
+    .map(([id]) => id);
+  if (selectedIds.length < 2) return false;
+  const scene = api.getSceneElements() || [];
+  const updatedElements = arrangeElements(scene, selectedIds, layout, 24);
+  if (updatedElements === scene) return false;
+  api.updateScene({ elements: updatedElements, commitToHistory: true });
+  return true;
+}
