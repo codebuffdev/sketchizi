@@ -122,7 +122,8 @@ try {
  assert.equal(layerOrder.texture, '0');
  assert.equal(layerOrder.drawing, '1');
  assert.equal(layerOrder.header, '10040');
- assert.equal(await page.locator('.pages-chapter-eyebrow').innerText(), '01', 'Chapter badge must show only the zero-padded number');
+ assert.match(await page.locator('.pages-chapter-eyebrow').innerText(), /^01\\s*·\\s*.+$/s, 'Eyebrow must show the page number, separator, and editable book title');
+ assert.equal(await page.getByRole('textbox', { name: 'Book / notebook title' }).count(), 1, 'Book title must be inline editable in the eyebrow');
  const actions = page.locator('.pages-bottom-actions');
  const navigatorBounds = await actions.locator('.canvas-pages-navigation').boundingBox();
  const zenBounds = await actions.locator('.sk-zen-pill').boundingBox();
