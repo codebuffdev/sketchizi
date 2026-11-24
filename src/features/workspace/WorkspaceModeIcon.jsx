@@ -55,8 +55,12 @@ export default function WorkspaceModeIcon({ mode = 'canvas', className = '' }) {
   );
 }
 
-export function getWorkspaceTabMode(tab, activeTabId, pageMode = "infinite") {
+export function getWorkspaceTabMode(tab) {
   if (tab?.snapshot?.systemDesign?.active === true) return "system-design";
-  if (tab?.id === activeTabId && (tab?.type === "pages" || tab?.type === "page" || pageMode === "pages")) return "pages";
+  if (tab?.type === "pages" || tab?.type === "page" ||
+      (Array.isArray(tab?.chapters) && tab.chapters.length > 0) ||
+      (Array.isArray(tab?.snapshot?.chapters) && tab.snapshot.chapters.length > 0) ||
+      (Array.isArray(tab?.snapshot?.elements) && tab.snapshot.elements.some(element =>
+        element?.type === "frame" && element.customData?.sketchiziPage && !element.isDeleted))) return "pages";
   return "canvas";
 }
