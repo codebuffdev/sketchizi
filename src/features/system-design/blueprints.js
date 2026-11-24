@@ -118,7 +118,7 @@ const ALEX_XU_BLUEPRINTS = [
       alexNode("service","microservice",600,140,"Notification Service",{replicas:8}),
       alexNode("queue","queue",900,140,"Push & SMS Topics"),
       alexNode("push","worker",1200,0,"APNs/FCM Worker",{replicas:8,capacityPerReplica:1000}),alexNode("email","worker",1200,280,"Twilio/Email Worker",{replicas:8,capacityPerReplica:1000}),
-      alexNode("provider","external-api",1500,0,"APNs / Twilio",{capacityPerReplica:12000}),alexNode("log","nosql",1500,280,"Notification Log"),
+      alexNode("provider","external-api",1500,0,"APNs / Twilio",{capacityPerReplica:20000}),alexNode("log","nosql",1500,280,"Notification Log"),
     ],[alexEdge("client","gateway"),alexEdge("gateway","service","gRPC"),alexEdge("service","queue","Kafka"),alexEdge("queue","push","Kafka"),alexEdge("queue","email","Kafka"),alexEdge("push","provider"),alexEdge("email","provider"),alexEdge("push","log","HTTPS"),alexEdge("email","log","HTTPS")]),
   alexBlueprint("realtime-chat-whatsapp", "Real-Time Chat (WhatsApp)", "Vol. 1 · Ch. 12",
     "WebSocket ingress separates chat delivery from presence and online-state tracking.",
