@@ -30,9 +30,9 @@ test("Capability 2: Export Studio is available in document dropdown while native
   const nativeMenu = readFileSync(new URL("../src/features/navigation/useNativeSketchiziMenu.js", import.meta.url), "utf8");
   const commands = readFileSync(new URL("../src/features/commands/commandRegistry.js", import.meta.url), "utf8");
   const stackExport = readFileSync(new URL("../src/features/system-design/ExportStackModal.jsx", import.meta.url), "utf8");
-  assert.match(appHeader, /<h3>Download &amp; export<\\/h3>/);
-  assert.match(appHeader, /Export studio\\.\\.\\./);
-  assert.match(appHeader, /Choose PNG, SVG, clipboard and export settings/);
+  assert.ok(appHeader.includes("<h3>Download &amp; export</h3>"));
+  assert.ok(appHeader.includes("Export studio..."));
+  assert.ok(appHeader.includes("Choose PNG, SVG, clipboard and export settings"));
   assert.match(appSource, /ExportStudioModal/);
   assert.match(appSource, /exportStudioOpen/);
   assert.match(appSource, /systemDesignWorkspace = systemDesign/);
