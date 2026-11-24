@@ -267,8 +267,8 @@ export function useWorkspaceTabs({
     const storedSnapshot = tab?.snapshot || {};
     const storedElements = Array.isArray(storedSnapshot.elements) ? storedSnapshot.elements : [];
     const isPagesTab = tab?.type === "pages" || tab?.type === "page" ||
-      (Array.isArray(tab?.chapters) && tab.chapters.length > 0) ||
-      (Array.isArray(storedSnapshot.chapters) && storedSnapshot.chapters.length > 0);
+      (!tab?.type && ((Array.isArray(tab?.chapters) && tab.chapters.length > 0) ||
+        (Array.isArray(storedSnapshot.chapters) && storedSnapshot.chapters.length > 0)));
     let snapshot = storedSnapshot;
     if (isPagesTab && getPages(storedElements).length === 0) {
       const seeded = createDefaultPagesSnapshot(api, storedSnapshot.chapters?.[0] || tab?.chapters?.[0]);
@@ -772,9 +772,9 @@ export function useWorkspaceTabs({
           const hasPageChapters = (Array.isArray(normalized.chapters) && normalized.chapters.length > 0) ||
             (Array.isArray(normalized.snapshot?.chapters) && normalized.snapshot.chapters.length > 0) ||
             getPages(normalized.snapshot?.elements || []).length > 0;
-          return hasPageChapters || normalized.type === "pages" || normalized.type === "page"
-            ? { ...normalized, type: "pages" }
-            : normalized;
+          if (normalized.type === "pages" || normalized.type === "page") return { ...normalized, type: "pages" };
+          if (normalized.type) return normalized;
+          return hasPageChapters ? { ...normalized, type: "pages" } : normalized;
         });
         const activeId = restoredTabs.find((tab) => tab.active)?.id || restoredTabs[0].id;
         const activeTab = restoredTabs.find((tab) => tab.id === activeId) || restoredTabs[0];
