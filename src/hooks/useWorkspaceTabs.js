@@ -346,7 +346,7 @@ export function useWorkspaceTabs({
     persistCanvasTabs(canvasTabsRef.current.map((tab) => tab.id === tabId ? { ...tab, todoTabActive: false } : tab));
   }, [persistCanvasTabs, switchCanvasTab]);
 
-  const createCanvasTab = useCallback(() => {
+  const createCanvasTab = useCallback(({ name: requestedName } = {}) => {
     const currentSnapshot = apiRef.current
       ? captureCanvasTabSnapshot()
       : (canvasTabsRef.current.find((tab) => tab.id === activeCanvasIdRef.current)?.snapshot || null);
@@ -356,7 +356,7 @@ export function useWorkspaceTabs({
     const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
     const id = createCanvasTabId(currentTabs.map((tab) => tab.id));
     const nextTab = {
-      id, name: `Canvas ${nextNumber}`, ...createTabDates(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
+      id, name: requestedName || `Canvas ${nextNumber}`, ...createTabDates(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
       snapshot: {
         elements: [], appState: { viewBackgroundColor: apiRef.current?.getAppState?.().viewBackgroundColor || "#ffffff" },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
