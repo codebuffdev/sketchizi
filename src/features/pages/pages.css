@@ -1203,3 +1203,57 @@ body:has(.app[data-canvas-view="pages"]),
     max-width: calc(100vw - 84px);
   }
 }
+
+
+/* Accessible, borderless editorial fields. Keep all keyboard and focus
+   affordances emerald/slate; never inherit Excalidraw's purple focus ring. */
+.pages-editorial-header {
+  background: var(--book-paper, #fff) !important;
+  isolation: isolate;
+}
+.pages-editorial-copy {
+  position: relative;
+  z-index: 1;
+}
+.pages-editorial-copy .pages-chapter-heading,
+.pages-editorial-copy .pages-chapter-tagline {
+  border: 1.5px solid transparent !important;
+  border-bottom-color: transparent !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  transition: border-bottom-color 140ms ease !important;
+}
+.pages-editorial-copy .pages-chapter-heading:hover:not(:disabled),
+.pages-editorial-copy .pages-chapter-tagline:hover:not(:disabled) {
+  border-bottom-color: #cbd5e1 !important;
+}
+.app.theme-dark .pages-editorial-copy .pages-chapter-heading:hover:not(:disabled),
+.app.theme-dark .pages-editorial-copy .pages-chapter-tagline:hover:not(:disabled) {
+  border-bottom-color: #334155 !important;
+}
+.pages-editorial-copy .pages-chapter-heading:focus,
+.pages-editorial-copy .pages-chapter-tagline:focus {
+  border-bottom-color: #059669 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.app.theme-dark .pages-editorial-copy .pages-chapter-heading:focus,
+.app.theme-dark .pages-editorial-copy .pages-chapter-tagline:focus {
+  border-bottom-color: #34d399 !important;
+}
+.pages-book-workspace .pages-editorial-header {
+  background: var(--book-paper) !important;
+}
+.pages-book-workspace .pages-book-canvas-zone {
+  top: 0 !important;
+}
+.pages-book-workspace .pages-editorial-header {
+  position: relative;
+  z-index: 4;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pages-editorial-copy .pages-chapter-heading,
+  .pages-editorial-copy .pages-chapter-tagline { transition: none !important; }
+}
