@@ -145,6 +145,14 @@ try {
  assert.deepEqual({ width: Math.round(sheetBounds.width), height: Math.round(sheetBounds.height) }, { width: 1440, height: 1000 });
  assert.deepEqual({ width: Math.round(canvasBounds.width), height: Math.round(canvasBounds.height) }, { width: 1440, height: 1000 });
  assert.equal(await page.locator('.canvas-pages-resize-hit').count(), 0, 'Full-bleed chapters must not expose page resize grips');
+ assert.equal(await page.getByRole('button', { name: 'Fit', exact: true }).count(), 0, 'A permanently fitted chapter must not expose a Fit action');
+ const fixedSheetBeforeScroll = await page.locator('.pages-book-sheet').boundingBox();
+ await page.mouse.move(900, 760);
+ await page.mouse.wheel(0, 900);
+ await page.waitForTimeout(250);
+ assert.equal(await page.evaluate(() => window.scrollY), 0, 'Wheel input must not scroll the document in Pages mode');
+ assert.deepEqual(await page.locator('.pages-book-sheet').boundingBox(), fixedSheetBeforeScroll, 'Wheel input must not move the full-bleed chapter sheet');
+ assert.equal(await page.getByRole('button', { name: 'Scroll back to content', exact: true }).count(), 0, 'Pages mode must not show Excalidraw scroll-back affordance');
  // Verify both themes update the Pages workspace without leaving the mode.
  await ensureHeaderVisible();
  await page.getByRole('button',{name:'Appearance and canvas background'}).click();
@@ -166,6 +174,15 @@ try {
  es = await waitScene(es=>pages(es).length===2);
  await renameActivePage('Details');
  es = await waitScene(es=>pages(es).length===2 && pages(es).some(p=>p.name==='Details'));
+ const activeDetails = pages(es).find(p => p.name === 'Details');
+ const parkedCover = pages(es).find(p => p.name === 'Cover chapter');
+ assert.deepEqual({ x: activeDetails.x, y: activeDetails.y }, { x: 0, y: 0 }, 'New chapter must occupy the locked viewport origin');
+ assert(parkedCover.x > 0, 'Inactive chapter must be parked outside the active viewport');
+ await page.mouse.move(1100, 820);
+ await page.mouse.wheel(0, -700);
+ await page.waitForTimeout(200);
+ assert.equal(await page.evaluate(() => window.scrollY), 0);
+ assert.equal(await page.getByRole('button', { name: 'Scroll back to content', exact: true }).count(), 0);
  const navigation=page.getByRole('navigation',{name:'Chapter navigation'});
  await navigation.getByRole('button',{name:'Previous chapter'}).click();
  await page.waitForFunction(()=>document.querySelector('.canvas-pages-navigation')?.textContent.includes('01 / 02'));
@@ -201,7 +218,7 @@ try {
  await page.setViewportSize({width:1440,height:1000});
  await ensureHeaderVisible();
  await chooseCanvasMode('pages');
- await page.getByRole('button',{name:'Fit',exact:true}).click();
+ assert.equal(await page.getByRole('button', { name: 'Fit', exact: true }).count(), 0);
  await page.screenshot({path:'/tmp/sketchizi-page-desktop.png'});
 
  // Exercise the restored document-tab Export Studio against a real System Design graph.
