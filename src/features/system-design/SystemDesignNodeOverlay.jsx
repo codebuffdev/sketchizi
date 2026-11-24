@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PORTS, choosePorts, getPortPoint, nearestPort, pointAlong, roundedPath, routeOrthogonal } from "./orthogonalRouter.js";
 import { nodeFacets, serviceNames } from "./yamlPreview.js";
-import { formatRps, packetCountForRps } from "./trafficSimulator.js";
+import { formatRps, packetCountForRps, nodeCapacity } from "./trafficSimulator.js";
 import { PrimitiveIcon } from "./PrimitiveIcon.jsx";
-import { nodeCapacity } from "./trafficSimulator.js";
 
 const STATUS_LABEL = { healthy: "Healthy", elevated: "Elevated", overloaded: "Overloaded", lagging: "Lagging", down: "Down" };
 const stop = (event) => event.stopPropagation();
