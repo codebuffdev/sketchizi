@@ -122,8 +122,8 @@ test('Pages keeps the paper texture behind the transparent HiDPI Excalidraw canv
  assert.match(styles, /\.pages-book-workspace \{ z-index: auto; \}/);
  assert.match(styles, /\.pages-book-ui \{[\s\S]*?z-index: 10040/);
  assert.match(styles, /\.app\.canvas-first-header:has\(\.pages-book-workspace\) \.desktop-app-header \{ z-index: 10060 !important; \}/);
- assert.match(styles, /\[role="dialog"\][\s\S]*?z-index: 10080 !important/);
- assert.match(styles, /:has\(\.desktop-app-header \[aria-expanded="true"\]\) \.pages-book-ui \{\s*z-index: 500/);
+ assert.match(styles, /body:has\(\.pages-book-workspace\) \.sketchizi-appearance \{?\s*[\s\S]*?z-index: 10080 !important/);
+ assert.match(styles, /:has\(\.appearance-trigger\[aria-expanded="true"\]\) \.pages-book-ui \{\s*z-index: 500/);
  assert.match(styles, /\.pages-book-sheet \{ z-index: 0; \}/);
  assert.match(styles, /\.pages-book-workspace \{\s*position: static;/);
  assert.match(styles, /\.pages-book-edge \{ z-index: 0; background: var\(--book-paper\); \}/);
