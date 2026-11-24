@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { sanitizeTabAppState, createCanvasTabId } from "../features/workspace/tabSnapshot.js";
 import { saveCanvasTabs, saveClosedTabs, loadClosedTabs, loadCanvasTabs, saveCanvasTabsPagehideBackup } from "../persistence.js";
+import { getPages } from "../features/pages/pageModel.js";
 import { logger } from "../logging/logger";
 import { isValidCanvasStartDate, createTabDates, getLocalDateString, normalizeTabDates } from "../features/canvas/canvasStartDate.js";
 import { restoreElements, CaptureUpdateAction } from "@excalidraw/excalidraw";
