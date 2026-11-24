@@ -557,8 +557,11 @@ try {
   console.log("PASS: native Excalidraw clipboard notification clears the drawing toolbar.");
 
   // Advanced work remains accessible without crowding the main drawing UI.
-  await blank.page.getByRole("button", { name: "Canvas options" }).click();
-  await blank.page.getByRole("button", { name: /Export studio/ }).click();
+  const tabActions = blank.page.locator(".canvas-tab-item.is-active .canvas-tab-menu-trigger");
+  await tabActions.click();
+  const tabActionsMenu = blank.page.locator(".canvas-tabs-tab-menu-portal");
+  await tabActionsMenu.waitFor({ state: "visible" });
+  await tabActionsMenu.getByRole("button", { name: /Export studio/ }).click();
   await blank.page.getByRole("dialog", { name: "Export Studio" }).waitFor({ timeout: 10000 });
   await blank.page.getByRole("button", { name: "Close export studio" }).click();
   console.log("PASS: Export Studio remains reachable from the save menu.");
