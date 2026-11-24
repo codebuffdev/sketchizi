@@ -118,7 +118,7 @@ try {
   await blank.page.getByRole("button", { name: "Open icon library" }).click();
   const systemLibrary = blank.page.getByRole("dialog", { name: "Icon Library" });
   await systemLibrary.waitFor({ state: "visible" });
-  await systemLibrary.getByRole("button", { name: "System Design (16)", exact: true }).click();
+  await systemLibrary.getByRole("button", { name: "System Design (22)", exact: true }).click();
   for (const label of ["Web/Mobile Client", "Microservice", "SQL Database", "Redis Cache"]) {
     await systemLibrary.getByRole("button", { name: `Add ${label} to canvas` }).click();
   }
