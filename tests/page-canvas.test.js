@@ -158,6 +158,8 @@ test('Pages locks the Excalidraw camera and blocks viewport navigation gestures'
  assert.match(styles, /overscroll-behavior: none !important/);
  assert.match(styles, /touch-action: none !important/);
  assert.match(styles, /toolbar-hand/);
+ assert.match(styles, /\.app\[data-canvas-view="pages"\] \.sketchizi-grid-spotlight/);
+ assert.match(canvas, /const showGrid = !!gridEnabled && pageContext\?\.mode !== "pages"/);
  assert.match(styles, /Scroll back to content/);
  assert.doesNotMatch(pages, /<button[^>]*>Fit<\/button>/);
  assert.match(pages, /moveChapter\(targetPage, 0, 0\)/);
