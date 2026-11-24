@@ -5,6 +5,7 @@ import { getPages, pageSkeleton, validSize, duplicatePage, getPageViewportMask, 
 import { canvasColorForDisplay, canvasColorForScene } from '../navigation/canvasColors.js';
 import { getCanvasBackground } from '../navigation/canvasTheme.js';
 import './pages.css';
+import PagesBookWorkspace from './PagesBookWorkspace.jsx';
 
 const PAGE_WORKSPACE_TINT = 0.25;
 
@@ -418,8 +419,19 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     previousViewportRef.current = currentView ? { scrollX: currentView.scrollX, scrollY: currentView.scrollY, zoom: currentView.zoom } : null;
     setError(''); setMode('pages'); fit(frame);
   };
-  const add = () => {
-    createPage();
+  const add = () => { createPage(); };
+  const patchChapter = patch => {
+    if (!active || !canEdit || !api) return;
+    update(api.getSceneElementsIncludingDeleted().map(element => element.id === active.id
+      ? { ...element, customData: { ...element.customData, ...patch }, version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
+      : element));
+  };
+  const toggleChapterRead = page => {
+    if (!page || !canEdit || !api) return;
+    const completed = !Boolean(page.customData?.completed);
+    update(api.getSceneElementsIncludingDeleted().map(element => element.id === page.id
+      ? { ...element, customData: { ...element.customData, completed }, version: (element.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
+      : element));
   };
   const changeMode = value => {
     if (value === 'pages' && !pages.length) { add(); return; }
@@ -522,6 +534,10 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
   };
   return <>
     {mode === 'pages' && pageMask && host && createPortal(
+      <PagesBookWorkspace pages={pages} active={active} index={index} pageRect={pageMask.pageRect}
+        canEdit={canEdit} onSelect={fit} onAdd={add} onDelete={deletePage}
+        onToggleRead={toggleChapterRead} onPatch={patchChapter} />, host)}
+    {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask">
         {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
         <div className="canvas-pages-page-surface" style={pageMask.pageRect} aria-hidden="true" />
@@ -574,7 +590,7 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
       })}
     </>,host)}
     {mode === 'pages' && host && createPortal(<>
-      <nav className="canvas-pages-navigation" aria-label="Page navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{index+1} / {pages.length}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit page</button><button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add page" disabled={!canEdit} onClick={add}><svg className="canvas-pages-add-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="12" x2="12" y2="18" /><line x1="9" y1="15" x2="15" y2="15" /></svg></button></nav>
+      <nav className="canvas-pages-navigation" aria-label="Chapter navigation"><button type="button" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button><span>{String(index + 1).padStart(2, "0")} / {String(pages.length).padStart(2, "0")} · {active?.customData?.chapterTitle || active?.name || "Chapter"}</span><button type="button" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button><button type="button" disabled={!active} onClick={() => fit(active)}>Fit</button><button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button><button type="button" className="canvas-pages-add" aria-label="Add page" title="Add Chapter" disabled={!canEdit} onClick={add}><svg className="canvas-pages-add-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="12" x2="12" y2="18" /><line x1="9" y1="15" x2="15" y2="15" /></svg></button></nav>
     </>,host)}
   </>;
 }
