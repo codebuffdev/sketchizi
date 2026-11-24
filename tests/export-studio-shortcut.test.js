@@ -58,7 +58,11 @@ test("App wires the global shortcut to the same Export Studio modal and active t
   const modal = read("src/components/app/ExportStudioModal.jsx");
   const workspace = read("src/features/system-design/useSystemDesignWorkspace.js");
   assert.ok(app.includes("registerExportStudioShortcut({ openExportStudio: () => setExportStudioOpen(true) })"));
-  assert.ok(app.includes("window.addEventListener(\"keydown\", onKeyDown, true)"));
+  const shortcut = read("src/features/navigation/exportStudioShortcut.js");
+  const nativeMenu = read("src/features/navigation/useNativeSketchiziMenu.js");
+  assert.ok(shortcut.includes('target.addEventListener("keydown", onKeyDown, true)'));
+  assert.ok(nativeMenu.includes('if (key === "f")'));
+  assert.ok(!nativeMenu.includes('key === "e" && event.shiftKey'));
   assert.ok(workspace.includes("activeTabId: activeCanvasId, workspaceByTabId"));
   assert.ok(modal.includes("workspace?.workspaceByTabId?.[activeTabId]"));
   assert.ok(modal.includes("readGraph(snapshot.elements)"));
