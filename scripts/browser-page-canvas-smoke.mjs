@@ -63,7 +63,11 @@ try {
  await chooseStartupPages();
  await ensureHeaderVisible();
  // The canvas document menu must make every save/download/export action obvious.
- assert.equal(await page.getByRole('button',{name:'Rename canvas'}).count(),1,'Rename must sit beside the active canvas title');
+ const activeTabTitle = page.locator('.canvas-tab-item.is-active .canvas-tab-name');
+ assert.equal(await activeTabTitle.count(),1,'The active tab must expose its title');
+ await activeTabTitle.dblclick();
+ await page.locator('.canvas-tab-rename-input').waitFor({state:'visible'});
+ await page.locator('.canvas-tab-rename-input').press('Escape');
  await page.getByRole('button',{name:'Canvas options'}).click();
  const documentMenu = page.getByRole('dialog',{name:'Canvas options'});
  await documentMenu.waitFor({state:'visible'});
