@@ -140,3 +140,25 @@ test('Pages keeps the paper texture behind the transparent HiDPI Excalidraw canv
  assert.match(styles, /\.excalidraw-textEditorContainer textarea \{[\s\S]*?background: transparent !important/);
  assert.doesNotMatch(styles, /transform:\s*scale\(/);
 });
+
+
+test('Pages locks the Excalidraw camera and blocks viewport navigation gestures', async () => {
+ const { readFile } = await import('node:fs/promises');
+ const canvas = await readFile(new URL('../src/components/app/SketchiziCanvas.jsx', import.meta.url), 'utf8');
+ const pages = await readFile(new URL('../src/features/pages/CanvasPages.jsx', import.meta.url), 'utf8');
+ const styles = await readFile(new URL('../src/features/pages/pages.css', import.meta.url), 'utf8');
+ assert.match(canvas, /root\.addEventListener\("wheel", stopViewportGesture, \{ capture: true, passive: false \}\)/);
+ assert.match(canvas, /root\.addEventListener\("touchmove", stopViewportGesture, \{ capture: true, passive: false \}\)/);
+ assert.match(canvas, /event\.button === 1/);
+ assert.match(canvas, /event\.code !== "Space"/);
+ assert.match(canvas, /scrollX: 0,[\s\S]*?scrollY: 0,[\s\S]*?zoom: \{ value: 1 \}/);
+ assert.match(canvas, /activeTool: \{ type: "selection" \}/);
+ assert.match(styles, /\.app\[data-canvas-view="pages"\] \.desktop-canvas-region[\s\S]*?overflow: hidden !important/);
+ assert.match(styles, /overscroll-behavior: none !important/);
+ assert.match(styles, /touch-action: none !important/);
+ assert.match(styles, /toolbar-hand/);
+ assert.match(styles, /Scroll back to content/);
+ assert.doesNotMatch(pages, /<button[^>]*>Fit<\/button>/);
+ assert.match(pages, /moveChapter\(targetPage, 0, 0\)/);
+ assert.match(pages, /scrollX: 0, scrollY: 0, zoom: \{ value: 1 \}/);
+});
