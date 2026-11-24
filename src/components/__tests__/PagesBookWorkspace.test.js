@@ -26,7 +26,9 @@ test("chapter title, subtitle, and key formula are editable and persisted on the
   assert.match(workspace, /onPatch\(\{ tagline: e\.target\.value \}\)/);
   assert.match(workspace, /aria-label="Key formula or rule of thumb"/);
   assert.match(workspace, /onPatch\(\{ keyNote: e\.target\.value \}\)/);
-  assert.match(pages, /customData: \{ \.\.\.element\.customData, \.\.\.patch \}/);\n  assert.match(pages, /activeChapterId: page\.id/);\n  assert.match(pages, /p\.id === persistedActiveId/);
+  assert.match(pages, /customData: \{ \.\.\.element\.customData, \.\.\.patch \}/);
+  assert.match(pages, /activeChapterId: page\.id/);
+  assert.match(pages, /p\.id === persistedActiveId/);
 });
 
 test("Dots, Ruled, and Clean paper textures are selectable per chapter", () => {
