@@ -613,7 +613,12 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
     {mode === 'pages' && pageMask && host && createPortal(
       <PagesBookWorkspace pages={pages} active={active} index={index}
         canEdit={canEdit} onToggleRead={toggleChapterRead} onPatch={patchChapter}
-        bookTitle={bookTitle} onRenameBookTitle={onRenameBookTitle} />, host)}
+        bookTitle={bookTitle} onRenameBookTitle={onRenameBookTitle}
+        chapterIndexOpen={chapterIndexOpen} chapterIndexRef={chapterIndexRef}
+        onToggleChapterIndex={() => setChapterIndexOpen(value => !value)}
+        onSelectChapter={page => { if (page) fit(page); setChapterIndexOpen(false); }}
+        onDeleteChapter={page => { deletePage(page); setChapterIndexOpen(false); }}
+        onAddChapter={() => { add(); setChapterIndexOpen(false); }} />, host)}
     {mode === 'pages' && pageMask && host && createPortal(
       <div className="canvas-pages-mask">
         {pageMask.panels.map((panel, i) => <div className="canvas-pages-mask-panel" key={i} style={panel} onPointerDown={blockOutsidePage} onMouseDown={blockOutsidePage} onTouchStart={blockOutsidePage} onWheel={blockOutsidePage} onDragOver={blockOutsidePage} onDrop={blockOutsidePage} onContextMenu={blockOutsidePage} onDoubleClick={blockOutsidePage} />)}
@@ -635,32 +640,6 @@ export default function CanvasPages({ api, canEdit = true, aiPanelOpen = false, 
       /> : <button type="button" className="canvas-pages-page-name" style={{ left: pageMask.pageRect.left, top: Math.max(8, pageMask.pageRect.top - 25) }} disabled={!active || !canEdit} onClick={() => active && rename(active)} title={canEdit ? 'Click to rename page' : active?.name}>{active?.name || `Page ${index + 1}`}</button>,
       host,
     )}
-    {mode === 'pages' && host && createPortal(<div className="pages-bottom-actions">
-      <nav className="canvas-pages-navigation" aria-label="Chapter navigation">
-        <button type="button" aria-label="Previous chapter" disabled={index <= 0} onClick={() => fit(pages[index-1])}>‹</button>
-        <div className="canvas-pages-chapter-index" ref={chapterIndexRef}>
-          <button type="button" className="canvas-pages-chapter-trigger" aria-expanded={chapterIndexOpen} aria-haspopup="true" onClick={() => setChapterIndexOpen(value => !value)}>
-            {String(index + 1).padStart(2, "0")} / {String(pages.length).padStart(2, "0")} · {active?.customData?.chapterTitle || active?.name || "Chapter"} <span aria-hidden="true">▾</span>
-          </button>
-          {chapterIndexOpen && <div className="canvas-pages-chapter-popover" role="dialog" aria-label="Chapters Index" onMouseDown={event => event.stopPropagation()}>
-            <strong className="canvas-pages-chapter-popover-title">Chapters</strong>
-            <div className="canvas-pages-chapter-popover-list">
-              {pages.map((page, pageIndex) => <div className={'canvas-pages-chapter-option' + (page.id === active?.id ? ' is-active' : '')} key={page.id}>
-                <button type="button" className="canvas-pages-chapter-jump" aria-current={page.id === active?.id ? 'page' : undefined} onClick={() => { fit(page); setChapterIndexOpen(false); }}>
-                  <span className="canvas-pages-chapter-option-number">{String(pageIndex + 1).padStart(2, '0')}</span>
-                  <span className="canvas-pages-chapter-option-name">{page.customData?.chapterTitle || page.name || ('Chapter ' + (pageIndex + 1))}</span>
-                </button>
-                <button type="button" className="canvas-pages-chapter-complete" aria-label={'Toggle completion for ' + (page.customData?.chapterTitle || page.name || 'chapter')} aria-pressed={Boolean(page.customData?.completed)} disabled={!canEdit} onClick={() => toggleChapterRead(page)}>{page.customData?.completed ? '✓' : '○'}</button>
-                <button type="button" className="canvas-pages-chapter-remove" aria-label={'Delete ' + (page.customData?.chapterTitle || page.name || 'chapter')} disabled={!canEdit} onClick={() => deletePage(page)}>×</button>
-              </div>)}
-            </div>
-            <button type="button" className="canvas-pages-chapter-new" disabled={!canEdit} onClick={() => { add(); setChapterIndexOpen(false); }}>＋ New Chapter</button>
-          </div>}
-        </div>
-        <button type="button" aria-label="Next chapter" disabled={index < 0 || index >= pages.length-1} onClick={() => fit(pages[index+1])}>›</button>
-        <button type="button" className="canvas-pages-delete" disabled={!active || !canEdit} onClick={() => deletePage(active)}>Delete</button>
-        <button type="button" className="canvas-pages-add" aria-label="Add Chapter" title="Add Chapter" disabled={!canEdit} onClick={add}><svg className="canvas-pages-add-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="12" x2="12" y2="18" /><line x1="9" y1="15" x2="15" y2="15" /></svg><span>+ Chapter</span></button>
-      </nav>
-    </div>,host)}
+
   </>;
 }
