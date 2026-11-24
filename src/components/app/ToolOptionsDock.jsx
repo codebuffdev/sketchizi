@@ -867,15 +867,22 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
 
   const arrangeSelection = (layout) => {
     const api = apiRef?.current;
-    if (!api || selected.length < 2) return;
+    if (!api) return;
     const liveState = api.getAppState?.() || {};
-    const selectedIds = new Set(selected.map((element) => element.id));
-    Object.entries(liveState.selectedElementIds || {}).forEach(([id, active]) => { if (active) selectedIds.add(id); });
-    if (liveState.editingTextElement?.id) selectedIds.add(liveState.editingTextElement.id);
-    const scene = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
-    const next = arrangeElements(scene, selectedIds, layout, 24);
-    if (next !== scene && !next.every((element, index) => element === scene[index])) {
-      api.updateScene({ elements: next, commitToHistory: true, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+    const selectedIds = Object.entries(liveState.selectedElementIds || {})
+      .filter(([, isSelected]) => isSelected)
+      .map(([id]) => id);
+    // Never merge the dock's React props into this set: they can describe the
+    // previous selection for a render after Excalidraw has already changed it.
+    const scene = api.getSceneElements?.() || [];
+    if (selectedIds.length < 2 || scene.length === 0) return;
+    const updatedElements = arrangeElements(scene, selectedIds, layout, 24);
+    if (updatedElements !== scene) {
+      api.updateScene({
+        elements: updatedElements,
+        commitToHistory: true,
+        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      });
     }
     setAlignPopoverOpen(false);
   };
@@ -885,8 +892,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     const rect = alignTriggerRef.current?.getBoundingClientRect();
     if (!rect) return;
     setAlignPopoverPosition({
-      left: Math.max(8, Math.min(rect.left + rect.width / 2 - 160, window.innerWidth - 328)),
-      bottom: Math.max(8, window.innerHeight - rect.top + 9),
+      left: rect.left + rect.width / 2,
+      bottom: window.innerHeight - rect.top + 10,
     });
     setAlignPopoverOpen(true);
   };
@@ -958,7 +965,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
                   <kbd><span>Ctrl</span><i>+</i><span>Shift</span><i>+</i><span>[</span></kbd>
                 </button>
               </div>,
-              document.querySelector(".app") || document.body,
+              document.body,
             )}
           </div>
   );
@@ -1141,13 +1148,13 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
           <div className="sk-tool-align-control">
             <button ref={alignTriggerRef} type="button" className={`sk-tool-align-trigger${alignPopoverOpen ? " is-active" : ""}`}
               aria-label="Align & Arrange" title="Align & Arrange" aria-haspopup="dialog" aria-expanded={alignPopoverOpen} onClick={openAlignPopover}>
-              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 4v16M8 7h11M8 12h8M8 17h11" />
               </svg>
             </button>
             {alignPresence.mounted && alignPopoverPosition && createPortal(
               <div ref={alignMenuRef} className={`sk-tool-align-popover${alignPresence.closing ? " is-closing" : ""}`}
-                role="dialog" aria-label="Align & Arrange" style={{ position: "fixed", left: alignPopoverPosition.left, bottom: alignPopoverPosition.bottom }}>
+                role="dialog" aria-label="Align & Arrange" onMouseDown={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} style={{ position: "fixed", left: alignPopoverPosition.left, bottom: alignPopoverPosition.bottom }}>
                 <section className="sk-tool-align-section" aria-label="Smart layouts">
                   <div className="sk-tool-align-heading">Smart layouts</div>
                   <div className="sk-tool-align-layout-grid">
