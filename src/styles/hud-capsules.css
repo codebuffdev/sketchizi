@@ -62,7 +62,7 @@
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active > svg:first-child { flex:0 0 19px; width:19px; height:19px; color:#1e293b; }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-chevron { flex:0 0 10px; width:10px; height:10px; color:#94a3b8; transform:translateY(3px); transition:color 150ms ease,transform 150ms ease; }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:hover .sketchizi-tool-sidebar-chevron,
-.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:focus-visible .sketchizi-tool-sidebar-chevron { color:#334155; transform:translateY(2px); }
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:focus-visible .sketchizi-tool-sidebar-chevron { color:#334155; transform:translateY(3px); }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-expand { display:none !important; }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list {
  position:absolute !important; left:0 !important; right:auto !important; bottom:calc(100% + 8px) !important;
