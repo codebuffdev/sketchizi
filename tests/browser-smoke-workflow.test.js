@@ -43,7 +43,7 @@ test("browser smoke covers blank canvas and narrow viewport overflow", () => {
 test("browser smoke follows the current canvas and DevOps entry points", () => {
   assert.match(script, /getByRole\("button", \{ name: "Canvas style" \}\)/);
   assert.match(script, /getByRole\("button", \{ name: "Browse templates" \}\)/);
-  assert.match(script, /getByRole\("button", \{ name: "Create new canvas" \}\)/);
+  assert.match(script, /getByRole\("button", \{ name: "Create new tab" \}\)/);
   assert.match(script, /getByRole\("button", \{ name: "DevOps" \}\)/);
   assert.match(script, /getByRole\("menu", \{ name: "DevOps tools" \}\)/);
 });

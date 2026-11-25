@@ -98,15 +98,15 @@ try {
   console.log("PASS: lazy Kubernetes Studio opens and closes from the command palette.");
 
   // A populated canvas stays intact while the plus action opens a new canvas tab.
-  await page.getByRole("button", { name: "Create new canvas" }).click();
+  await page.getByRole("button", { name: "Create new tab" }).click();
   await page.locator(".excalidraw").waitFor({ timeout: 30000 });
-  console.log("PASS: Create new canvas opens a separate editable canvas.");
+  console.log("PASS: Create new tab opens a separate editable canvas.");
 
   // A fresh browser context validates the blank-canvas startup flow.
   const blank = await makePage({ width: 1280, height: 800 });
   await blank.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await dismissStartupChooser(blank.page);
-  await blank.page.getByRole("button", { name: "Create new canvas" }).click();
+  await blank.page.getByRole("button", { name: "Create new tab" }).click();
   await blank.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   console.log("PASS: the canvas-tab add action opens an editable canvas.");
 
@@ -358,7 +358,7 @@ try {
   const gridSession = await makePage({ width: 1280, height: 800 });
   await gridSession.page.goto(`${baseURL}/?editor=1`, { waitUntil: "networkidle", timeout: 60000 });
   await dismissStartupChooser(gridSession.page);
-  await gridSession.page.getByRole("button", { name: "Create new canvas" }).click();
+  await gridSession.page.getByRole("button", { name: "Create new tab" }).click();
   await gridSession.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   const drawingTools = gridSession.page.getByRole("navigation", { name: "Drawing tools" });
   // The redesigned dock intentionally keeps its full tool list collapsed.

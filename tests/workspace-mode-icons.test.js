@@ -24,13 +24,25 @@ test("workspace icons have slate light/dark colors and emerald System Design col
   assert.doesNotMatch(styles, /--ct-accent:\s*#[67][0-9a-f]{5}/i);
 });
 
-test("tabs, hamburger workspace tiles, and page creation share the mode glyphs", () => {
+test("page tabs keep the notebook glyph while add controls use distinct plus glyphs", () => {
   const tabs = read("../src/components/app/CanvasTabs.jsx");
   const menu = read("../src/features/navigation/useNativeSketchiziMenu.js");
   const pages = read("../src/features/pages/CanvasPages.jsx");
+  const pageWorkspace = read("../src/features/pages/PagesBookWorkspace.jsx");
+  const pageStyles = read("../src/features/pages/pages.css");
   assert.match(tabs, /WorkspaceModeIcon/);
-  assert.match(tabs, /tab\.type/);
-  assert.match(menu, /getWorkspaceModeIconMarkup\("canvas"\)/);
-  assert.match(menu, /getWorkspaceModeIconMarkup\("pages"\)/);
-  assert.match(pages, /WorkspaceModeIcon mode="pages"/);
+  assert.ok(tabs.includes("tab.type"));
+  assert.ok(tabs.includes("Create new tab"));
+  assert.ok(tabs.includes('<rect x="3" y="3" width="18" height="18" rx="3" />'));
+  assert.ok(tabs.includes('<path d="M12 8v8M8 12h8" />'));
+  assert.ok(menu.includes('getWorkspaceModeIconMarkup("canvas")'));
+  assert.ok(menu.includes('getWorkspaceModeIconMarkup("pages")'));
+  assert.doesNotMatch(pages, /WorkspaceModeIcon/);
+  assert.ok(pageWorkspace.includes('className="canvas-pages-add-icon" width="15" height="15" viewBox="0 0 24 24"'));
+  assert.ok(pageWorkspace.includes('strokeWidth="1.85"'));
+  assert.ok(pageWorkspace.includes('<polyline points="14 2 14 8 20 8" />'));
+  assert.ok(pageWorkspace.includes('<line x1="12" y1="12" x2="12" y2="18" />'));
+  assert.ok(pageStyles.includes(".app.theme-dark .pages-book-workspace .pages-header-chapter-controller .canvas-pages-add"));
+  assert.ok(pageStyles.includes("color: #047857"));
+  assert.ok(pageStyles.includes("color: #6ee7b7"));
 });

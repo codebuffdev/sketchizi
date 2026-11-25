@@ -378,6 +378,50 @@ export async function deleteRecentSketch(id) {
   } catch { return false; }
 }
 
+export async function deleteDocument(id) {
+  if (!id) return false;
+  let db;
+  try {
+    db = await openDatabase();
+    return await new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (fn, value) => {
+        if (settled) return;
+        settled = true;
+        try { db.close(); } catch {}
+        fn(value);
+      };
+      try {
+        const transaction = db.transaction([STORE_NAME, RECENT_STORE_NAME], "readwrite");
+        const store = transaction.objectStore(STORE_NAME);
+        const recentStore = transaction.objectStore(RECENT_STORE_NAME);
+        const manifestRequest = store.get("canvas-tabs-manifest");
+        manifestRequest.onsuccess = () => {
+          const storedTabs = manifestRequest.result?.tabs;
+          if (Array.isArray(storedTabs)) {
+            const remainingTabs = storedTabs.filter(tab => tab?.id !== id);
+            store.put({
+              tabs: prepareTabsForPersistence(remainingTabs),
+              savedAt: Date.now(),
+            }, "canvas-tabs-manifest");
+            saveCanvasTabsPagehideBackup(remainingTabs);
+          }
+        };
+        manifestRequest.onerror = () => finish(reject, toPersistenceError(manifestRequest.error, "Unable to delete this notebook.", "write"));
+        store.delete(id);
+        recentStore.delete(id);
+        transaction.onerror = () => finish(reject, toPersistenceError(transaction.error, "Unable to delete this notebook.", "write"));
+        transaction.onabort = () => finish(reject, toPersistenceError(transaction.error, "Unable to delete this notebook.", "write"));
+        transaction.oncomplete = () => finish(resolve, true);
+      } catch (error) {
+        finish(reject, toPersistenceError(error, "Unable to delete this notebook.", "write"));
+      }
+    });
+  } catch (error) {
+    throw toPersistenceError(error, "Unable to delete this notebook.", "write");
+  }
+}
+
 export async function clearSketch() {
   try {
     const db = await openDatabase();

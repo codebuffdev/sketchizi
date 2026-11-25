@@ -983,7 +983,7 @@ html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .
   transform: translateY(-1px);
 }
 html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-ws-tile:focus-visible {
-  outline: 2px solid var(--sk-accent);
+  outline: 2px solid #059669;
   outline-offset: 2px;
 }
 html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-ws-tile-icon {
@@ -1004,17 +1004,6 @@ html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-ws-tile[data-active="true"],
-html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-ws-tile[data-active="true"]:hover:not(:disabled) {
-  border-color: var(--sk-active-border) !important;
-  background: var(--sk-active-bg) !important;
-  color: var(--sk-text) !important;
-}
-html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-ws-tile[data-active="true"] .sketchizi-ws-tile-icon {
-  background: var(--sk-accent);
-  color: #fff;
-}
-
 /* Recent files / Local drafts */
 html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-file-menu-recents {
   margin: 0;
@@ -1280,7 +1269,7 @@ html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .
 }
 html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-card-badge svg { display: block; }
 html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-card-badge[data-tone="amber"] { background: var(--sk-amber-bg); color: var(--sk-amber-fg); }
-html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-card-badge[data-tone="indigo"] { background: var(--sk-indigo-bg); color: var(--sk-indigo-fg); }
+html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-card-badge[data-tone="slate"] { background: var(--sk-icon-bg); color: var(--sk-muted-strong); }
 html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-card-label { flex: 1 1 auto; min-width: 0; white-space: nowrap; }
 html body .dropdown-menu.dropdown-menu:has([data-sketchizi-custom-menu-block]) .sketchizi-community-card > .sketchizi-card-trail {
   flex: 0 0 auto;

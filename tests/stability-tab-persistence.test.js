@@ -2,10 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { prepareTabsForPersistence, sanitizeTabAppState } from "../src/features/workspace/tabSnapshot.js";
-import { readAppSourceSync } from "./helpers/app-source.js";
 
-const app = readAppSourceSync();
 const persistence = readFileSync(new URL("../src/persistence.js", import.meta.url), "utf8");
+const tabs = readFileSync(new URL("../src/hooks/useWorkspaceTabs.js", import.meta.url), "utf8");
 
 const todoItems = [{ id: "t1", text: "Ship it", completed: false, section: "todo" }];
 
@@ -46,6 +45,6 @@ test("issue 4: a tab whose snapshot cannot be cloned falls back, keeping Todo it
 
 test("issue 4: saveCanvasTabs and tab capture/apply go through the sanitizer", () => {
   assert.match(persistence, /structuredClone\(prepareTabsForPersistence\(tabs\)\)/);
-  assert.match(app, /appState: sanitizeTabAppState\(appState \|\| api\?\.getAppState\?\.\(\) \|\| \{\}\)/);
-  assert.match(app, /\.\.\.sanitizeTabAppState\(snapshot\.appState\), theme: globalThemeRef\.current/);
+  assert.match(tabs, /appState: sanitizeTabAppState\(sceneAppState\)/);
+  assert.match(tabs, /\.\.\.sanitizeTabAppState\(snapshot\.appState\), theme: globalThemeRef\.current/);
 });

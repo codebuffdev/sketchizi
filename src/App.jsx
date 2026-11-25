@@ -73,6 +73,7 @@ import "./features/design/design.css";
 import "./features/workspace/workspace.css";
 import "./styles/startup-canvas-chooser.css";
 import { getLocalDateString } from "./features/canvas/canvasStartDate.js";
+import { deleteDocument } from "./persistence.js";
 import "./styles/canvas-tabs.css";
 import "./styles/canvas-tabs-dock.css";
 import "./styles/contextual-dock-polish.css";
@@ -90,7 +91,12 @@ function App() {
   const [isZenMode, setIsZenMode] = useState(false);
   const isZenModeRef = useRef(false);
   const exitZenMode = useCallback(() => setIsZenMode(false), []);
-  const [canvasPageContext, setCanvasPageContext] = useState({ mode: "infinite", page: null, pageCount: 0 });
+  const [canvasPageContext, setCanvasPageContext] = useState(() => {
+    try {
+      const restoredMode = localStorage.getItem("sketchizi.active-workspace-tab-mode") || localStorage.getItem("sketchizi.canvasView");
+      return { mode: restoredMode === "pages" ? "pages" : "infinite", page: null, pageCount: 0 };
+    } catch { return { mode: "infinite", page: null, pageCount: 0 }; }
+  });
   const [startupChooserOpen, setStartupChooserOpen] = useState(false);
   const startupChoiceMadeRef = useRef(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
@@ -393,6 +399,7 @@ function App() {
     persistActiveCanvasSnapshot,
     switchCanvasTab,
     selectWorkspaceTab,
+    setActiveCanvasTabType,
     createCanvasTab,
     reopenClosedTab,
     deleteClosedTab,
@@ -463,6 +470,41 @@ function App() {
     toolStyles,
     systemDesignRef,
   });
+
+  const handlePageContextChange = useCallback((context) => {
+    setCanvasPageContext(context);
+  }, []);
+
+  const handleWorkspaceModeChange = useCallback((mode) => {
+    const activeTab = canvasTabsRef.current.find(tab => tab.id === activeCanvasIdRef.current);
+    if (mode === "pages" && activeTab?.type !== "pages") setActiveCanvasTabType("pages");
+    else if (mode === "infinite" && (activeTab?.type === "pages" || activeTab?.type === "page")) setActiveCanvasTabType("canvas");
+  }, [setActiveCanvasTabType]);
+
+  const handleDeleteOnlyPagesNotebook = useCallback(async () => {
+    const tabId = activeCanvasIdRef.current;
+    const activeTab = canvasTabsRef.current.find(tab => tab.id === tabId);
+    if (!tabId || !activeTab) return false;
+    try {
+      const tabsBeforeClose = canvasTabsRef.current;
+      const tabIndex = tabsBeforeClose.findIndex(tab => tab.id === activeTab.id);
+      const nextTab = tabsBeforeClose[tabIndex - 1] || tabsBeforeClose.find(tab => tab.id !== activeTab.id);
+      const nextTabHasPages = Array.isArray(nextTab?.snapshot?.elements) &&
+        nextTab.snapshot.elements.some(element => element?.type === "frame" && element.customData?.sketchiziPage && !element.isDeleted);
+      const needsFreshCanvas = tabsBeforeClose.length <= 1;
+      await deleteDocument(activeTab.id);
+      if (needsFreshCanvas) createCanvasTab({ name: "Canvas 1" });
+      performCloseCanvasTab(activeTab.id, { keepDraft: false });
+      if (needsFreshCanvas || !nextTabHasPages) {
+        window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode: "infinite" } }));
+      }
+      await commitCanvasTabs();
+      return true;
+    } catch (error) {
+      showToast(error?.message || "Unable to delete this notebook.", "error");
+      return false;
+    }
+  }, [commitCanvasTabs, createCanvasTab, performCloseCanvasTab, showToast]);
 
   const renameActiveDocument = useCallback(async (name) => {
     const normalizedName = String(name || "").trim();
@@ -681,7 +723,7 @@ function App() {
     openArchitectureTemplates: () => setTemplatesModalOpen(true),
     openDesignTemplates: () => setDesignStudioOpen(true),
   });
-  useNativeSketchiziMenu({ apiRef, fileActionsRef, openCloudWorkspace, canvasMode: canvasPageContext.mode, closedTabs, reopenClosedTab, deleteClosedTab, clearClosedTabs, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
+  useNativeSketchiziMenu({ apiRef, fileActionsRef, openCloudWorkspace, closedTabs, reopenClosedTab, deleteClosedTab, clearClosedTabs, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
   const handleExcalidrawChange = useExcalidrawScene({
     apiRef, nativeMenuOpenRef, setNativeMenuOpen, onNativeMenuOpen: closeLeftPanel, lastSelectionSignature,
     setSelectedCount, setSelectedElements, setSelectedConnector, updateMinimap, queueSketchSave,
@@ -736,7 +778,8 @@ function App() {
     startupChoiceMadeRef.current = true;
     // Closing the final tab leaves the workspace empty. Create a fresh canvas
     // when the user makes their next startup-canvas choice.
-    if (canvasTabsRef.current.length === 0) createCanvasTab();
+    if (canvasTabsRef.current.length === 0) createCanvasTab({ type: mode === "pages" ? "pages" : "canvas" });
+    else if (mode === "pages" || mode === "infinite") setActiveCanvasTabType(mode === "pages" ? "pages" : "canvas");
     setStartupChooserOpen(false);
     if (mode === "todo") {
       openTodoTab();
@@ -747,7 +790,7 @@ function App() {
       return;
     }
     window.dispatchEvent(new CustomEvent("sketchizi:choose-canvas-mode", { detail: { mode } }));
-  }, [createCanvasTab, openTodoTab, systemDesign.open]);
+  }, [createCanvasTab, openTodoTab, setActiveCanvasTabType, systemDesign.open]);
 
   // "Open Local File" from the welcome screen: make sure a canvas exists, then
   // hand off to the normal file-open flow once its editor is mounted.
@@ -761,7 +804,7 @@ function App() {
       if (Date.now() - startedAt < 3000) window.requestAnimationFrame(attempt);
     };
     window.requestAnimationFrame(attempt);
-  }, [createCanvasTab, fileActionsRef]);
+  }, [createCanvasTab, fileActionsRef, activeCanvasIdRef, canvasTabsRef, persistCanvasTabs, currentFileRef]);
 
   useEffect(() => {
     const handleWorkspaceCanvasChoice = (event) => {
@@ -771,6 +814,44 @@ function App() {
     window.addEventListener("sketchizi:workspace-canvas-choice", handleWorkspaceCanvasChoice);
     return () => window.removeEventListener("sketchizi:workspace-canvas-choice", handleWorkspaceCanvasChoice);
   }, [chooseStartupCanvas]);
+
+  // Hamburger Workspace tiles create a fresh editor tab rather than changing
+  // the mode or contents of the currently active tab. Cloud Files deliberately
+  // keeps its existing navigation flow.
+  useEffect(() => {
+    const createWorkspaceTab = (event) => {
+      const mode = event.detail?.mode;
+      if (mode !== "infinite" && mode !== "pages") return;
+      startupChoiceMadeRef.current = true;
+      setStartupChooserOpen(false);
+      const existingTabs = canvasTabsRef.current;
+      const nextName = mode === "pages"
+        ? `Page ${existingTabs.reduce((max, tab) => Math.max(max, Number(String(tab.name || "").match(/^Page (\\d+)$/)?.[1] || 0)), 0) + 1}`
+        : null;
+      createCanvasTab({ ...(nextName ? { name: nextName } : {}), type: mode === "pages" ? "pages" : "canvas" });
+    };
+    const openLocalFileInNewTab = () => {
+      startupChoiceMadeRef.current = true;
+      setStartupChooserOpen(false);
+      createCanvasTab();
+      const createdId = activeCanvasIdRef.current;
+      persistCanvasTabs(canvasTabsRef.current.map((tab) => tab.id === createdId ? { ...tab, type: "canvas" } : tab));
+      window.requestAnimationFrame(() => {
+        Promise.resolve(fileActionsRef.current.openDrawingFromDisk?.()).then(() => {
+          const openedName = currentFileRef.current?.name;
+          if (!openedName) return;
+          const cleanName = openedName.replace(/\.(sketchizi|excalidraw|json)$/i, "");
+          persistCanvasTabs(canvasTabsRef.current.map((tab) => tab.id === createdId ? { ...tab, name: cleanName } : tab));
+        });
+      });
+    };
+    window.addEventListener("sketchizi:workspace-create-tab", createWorkspaceTab);
+    window.addEventListener("sketchizi:workspace-open-local-file", openLocalFileInNewTab);
+    return () => {
+      window.removeEventListener("sketchizi:workspace-create-tab", createWorkspaceTab);
+      window.removeEventListener("sketchizi:workspace-open-local-file", openLocalFileInNewTab);
+    };
+  }, [createCanvasTab, fileActionsRef, activeCanvasIdRef, canvasTabsRef, persistCanvasTabs, currentFileRef]);
 
   const applyKubernetesResourceYaml = useCallback((resource) => {
     const api = apiRef.current;
@@ -1805,6 +1886,7 @@ function App() {
         canvasAppearance={canvasAppearance}
         onCanvasAppearanceChange={handleCanvasAppearanceChange}
         onToggleGrid={toggleGrid}
+        workspaceMode={canvasTabsReady ? getWorkspaceTabMode(canvasTabs.find(tab => tab.id === activeCanvasId)) : canvasPageContext.mode}
         canvasMode={canvasPageContext.mode}
         spellcheckEnabled={spellcheckEnabled}
         onToggleSpellcheck={toggleSpellcheck}
@@ -1828,7 +1910,9 @@ function App() {
         themeMode={themeMode}
         canvasApi={apiRef.current}
         aiAskOpen={aiAskOpen}
-        onPageContextChange={setCanvasPageContext}
+        onPageContextChange={handlePageContextChange}
+        onWorkspaceModeChange={handleWorkspaceModeChange}
+        onDeleteOnlyPage={handleDeleteOnlyPagesNotebook}
         canEditCanvas={collaborationCanEdit}
         isDarkTheme={isDarkTheme}
         saveStatus={saveStatus}
@@ -1951,7 +2035,7 @@ function App() {
             nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
-            pageContext={canvasPageContext}
+            pageContext={{ ...canvasPageContext, mode: (canvasTabsReady ? getWorkspaceTabMode(canvasTabs.find(tab => tab.id === activeCanvasId)) : canvasPageContext.mode) === "pages" ? "pages" : "infinite" }}
             key={activeCanvasId}
             canvasId={activeCanvasId}
             onToolStyleChange={toolStyles.recordToolStyle}
@@ -2182,7 +2266,7 @@ function App() {
         sendChatMessage={sendChatMessage}
       />
 
-      {!isWelcomeOrDashboardOpen && (
+      {!isWelcomeOrDashboardOpen && canvasPageContext.mode !== "pages" && (
         <ZenHud
           isZenMode={isZenMode}
           onToggleZen={toggleZenMode}

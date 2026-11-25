@@ -5,6 +5,7 @@ import { useChapterNavigation, buildChapterEditorUrl } from "../features/workspa
 import { workspaceClient } from "../features/workspace/workspaceClient.js";
 import { createCloudDocument, sanitizeCloudAppState } from "../features/workspace/cloudDocument.js";
 import { saveCanvasTabs } from "../persistence.js";
+import { getPages } from "../features/pages/pageModel.js";
 import { hasCloudSceneChange, allowsEmptyCloudSave, isActiveCloudSession, resolveCloudLoadTarget } from "../features/workspace/cloudSavePolicy.js";
 import { normalizeCloudDiagramResponse } from "../features/workspace/cloudDiagramPayload.js";
 import { restoreElements, CaptureUpdateAction } from "@excalidraw/excalidraw";
@@ -132,9 +133,26 @@ export function useDocumentPersistence({
     nextUrl.searchParams.set("cloudProjectId", projectId);
     window.history.replaceState(window.history.state, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
     const activeApi = apiRef.current;
+    const sceneElements = activeApi?.getSceneElementsIncludingDeleted?.() || activeApi?.getSceneElements?.() || [];
+    const sceneAppState = activeApi?.getAppState?.() || {};
+    const chapterFrames = getPages(sceneElements);
+    const chapters = chapterFrames.map((frame, index) => ({
+      id: frame.id,
+      num: frame.customData?.pageOrder ?? index + 1,
+      title: frame.customData?.chapterTitle || frame.name || `Chapter ${index + 1}`,
+      tagline: frame.customData?.tagline || "",
+      badge: frame.customData?.badge || "RULE OF THUMB",
+      keyNote: frame.customData?.keyNote || "",
+      completed: Boolean(frame.customData?.completed),
+      paperTexture: frame.customData?.paperTexture || "Dots",
+      elements: sceneElements.filter(element => element.id === frame.id || element.frameId === frame.id || element.customData?.sketchiziPagePaper === frame.id),
+      appState: frame.customData?.chapterAppState || { zoom: sceneAppState.zoom, scrollX: sceneAppState.scrollX, scrollY: sceneAppState.scrollY },
+    }));
+    const activeChapterId = chapterFrames.find(frame => frame.customData?.activeChapterId)?.customData?.activeChapterId || null;
     const activeSnapshot = {
-      elements: activeApi?.getSceneElementsIncludingDeleted?.() || activeApi?.getSceneElements?.() || [],
-      appState: activeApi?.getAppState?.() || {}, files: activeApi?.getFiles?.() || {},
+      elements: sceneElements,
+      appState: sceneAppState, files: activeApi?.getFiles?.() || {},
+      chapters, activeChapterId,
       metadata: documentMetadataRef.current?.metadata || {}, extensions: documentMetadataRef.current?.extensions || {},
       format: documentMetadataRef.current?.format || "excalidraw", file: fileManagerBridgeRef.current.currentFileRef.current || null,
       fileSceneSignature: fileManagerBridgeRef.current.getCurrentFileSceneSignature?.() || null,

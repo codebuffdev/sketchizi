@@ -1,11 +1,11 @@
 .canvas-pages-control { position: relative; display: flex; }
 .canvas-pages-trigger { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--ui-text-strong); cursor: pointer; }
-.canvas-pages-trigger:hover, .canvas-pages-trigger[aria-expanded=true] { background: var(--ui-hover, #7061a833); }
+.canvas-pages-trigger:hover, .canvas-pages-trigger[aria-expanded=true] { background: var(--ui-hover, #05966918); }
 .app .canvas-pages-menu { position: absolute; right: 48px; top: 0; width: min(280px, calc(100vw - 84px)); max-height: calc(100dvh - 100px); overflow-y: auto; padding: 14px; border-radius: 14px; border: 1px solid var(--ui-border); background: var(--ui-surface-solid); color: var(--ui-text-strong); box-shadow: 0 16px 48px #0004; z-index: 1000; box-sizing: border-box; }
 .canvas-pages-menu > strong { display:block; margin-bottom:10px; }
 .canvas-pages-menu button, .canvas-pages-panel button, .canvas-pages-navigation button { font: inherit; color: inherit; cursor: pointer; border: 1px solid transparent; border-radius: 8px; background: transparent; padding: 8px; }
 .canvas-pages-menu > button { display:block; width:100%; text-align:left; margin: 4px 0; }
-.canvas-pages-menu button[aria-pressed=true], .canvas-page-card[aria-current=page] { background: #9e88ed25; border-color: #a68af0; }
+.canvas-pages-menu button[aria-pressed=true], .canvas-page-card[aria-current=page] { background: #05966912; border-color: #059669; }
 .canvas-pages-menu small { display:block; font-size:11px; color:var(--ui-text-muted); line-height:1.5; }
 .canvas-pages-menu label { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; margin-top:12px; }
 .canvas-pages-menu input, .canvas-pages-menu select { box-sizing:border-box; width:120px; padding:7px; border:1px solid var(--ui-border); border-radius:7px; color:var(--ui-text-strong); background:var(--ui-surface-solid); }
@@ -21,7 +21,7 @@
 .canvas-page-rename { font-size:10px !important; color:var(--ui-text-muted) !important; }
 .canvas-pages-navigation { right:88px; bottom:20px; display:flex; align-items:center; gap:8px; padding:5px; }
 .canvas-pages-menu button:disabled, .canvas-pages-panel button:disabled, .canvas-pages-navigation button:disabled { opacity:.4; cursor:not-allowed; }
-.canvas-pages-menu button:focus-visible, .canvas-pages-panel button:focus-visible, .canvas-pages-navigation button:focus-visible, .canvas-pages-trigger:focus-visible { outline:2px solid #a68af0; outline-offset:2px; }
+.canvas-pages-menu button:focus-visible, .canvas-pages-panel button:focus-visible, .canvas-pages-navigation button:focus-visible, .canvas-pages-trigger:focus-visible { outline:2px solid #059669; outline-offset:2px; }
 @media (max-width: 767px) {
   .canvas-pages-control { position:fixed; right:58px; top:calc(10px + var(--safe-top, 0px)); z-index:96; }
   .app .canvas-pages-menu { top:44px; right:0; }
@@ -133,7 +133,7 @@
 }
 
 .app[data-canvas-view] .excalidraw .zoom-actions button:focus-visible {
-  outline: 2px solid var(--ui-accent, #7968ee) !important;
+  outline: 2px solid var(--ui-accent, #059669) !important;
   outline-offset: 2px !important;
 }
 
@@ -198,8 +198,8 @@
   position: fixed;
   z-index: 1;
   box-sizing: border-box;
-  border: 1px solid rgba(151, 143, 207, .92);
-  box-shadow: 0 0 0 1px rgba(151, 143, 207, .12);
+  border: 1px solid rgba(5, 150, 105, .55);
+  box-shadow: 0 0 0 1px rgba(5, 150, 105, .10);
   pointer-events: none;
 }
 .canvas-pages-page-outline i {
@@ -207,7 +207,7 @@
   width: 7px;
   height: 7px;
   box-sizing: border-box;
-  border: 1px solid #a79de0;
+  border: 1px solid #059669;
   border-radius: 2px;
   background: var(--canvas-pages-gutter, #111820);
 }
@@ -280,7 +280,7 @@
    resizing discoverable without a persistent Resize mode or visible handles. */
 .canvas-pages-resize-hit {
   position: fixed;
-  z-index: 10031 !important;
+  z-index: 10027 !important;
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -300,8 +300,8 @@
   width: 30px;
   height: 4px;
   border-radius: 999px;
-  background: #a79de0;
-  box-shadow: 0 0 0 4px rgb(167 157 224 / 12%);
+  background: #059669;
+  box-shadow: 0 0 0 4px rgb(5 150 105 / 12%);
   content: "";
   opacity: 0;
   pointer-events: none;
@@ -341,10 +341,10 @@
 .canvas-pages-resize-hit.is-sw::after {
   width: 8px;
   height: 8px;
-  border: 1px solid #a79de0;
+  border: 1px solid #059669;
   border-radius: 3px;
   background: var(--ui-surface-solid, #fff);
-  box-shadow: 0 0 0 4px rgb(167 157 224 / 12%);
+  box-shadow: 0 0 0 4px rgb(5 150 105 / 12%);
 }
 
 .canvas-pages-resize-hit.is-nw::after { top: 100%; left: 100%; transform: translate(-50%, -50%); }
@@ -396,3 +396,1280 @@
 
 /* Keep the add-page affordance on the same compact notebook glyph system. */
 .canvas-pages-add .canvas-pages-add-icon { display:block; width:15px; height:15px; }
+
+/* Distinguish adding a page within the document from creating a workspace tab. */
+.canvas-pages-navigation .canvas-pages-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 30px;
+  height: 30px;
+  gap: 5px;
+  padding: 0 9px;
+  color: var(--ui-text-muted, #64748b);
+  font-size: 11px;
+  font-weight: 650;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.canvas-pages-navigation .canvas-pages-add:hover:not(:disabled) {
+  color: #047857;
+  border-color: rgb(5 150 105 / 22%);
+  background: rgb(16 185 129 / 9%);
+}
+.app.theme-dark .canvas-pages-navigation .canvas-pages-add {
+  color: #aeb9c8;
+}
+.app.theme-dark .canvas-pages-navigation .canvas-pages-add:hover:not(:disabled) {
+  color: #6ee7b7;
+  border-color: rgb(110 231 183 / 24%);
+  background: rgb(16 185 129 / 14%);
+}
+.canvas-pages-navigation button:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+.canvas-pages-add .canvas-pages-add-icon { flex: 0 0 15px; }
+
+
+/* Editorial handbook treatment for the bounded Pages workspace. */
+.app:has(.pages-book-workspace) .canvas-pages-mask-panel {
+  background: #eef2f6 !important;
+  background-image: none !important;
+}
+.app.theme-dark:has(.pages-book-workspace) .canvas-pages-mask-panel {
+  background: #0b0f17 !important;
+}
+.pages-book-workspace {
+  position: fixed;
+  inset: 0;
+  z-index: 10028;
+  pointer-events: none;
+  color: #0f172a;
+  --book-paper: #fff;
+  --book-ink: #0f172a;
+  --book-muted: #64748b;
+  --book-border: #dbe3ec;
+  --book-panel: #f8fafc;
+  --book-dot: #cbd5e1;
+}
+.app.theme-dark .pages-book-workspace {
+  color: #f8fafc;
+  --book-paper: #111827;
+  --book-ink: #f8fafc;
+  --book-muted: #94a3b8;
+  --book-border: #1f2937;
+  --book-panel: #161f30;
+  --book-dot: #283548;
+}
+.pages-editorial-header { position: relative; z-index: 4; padding: 36px 48px 20px; pointer-events: none; }
+.pages-editorial-header input, .pages-editorial-header button { pointer-events: auto; }
+.pages-editorial-topline, .pages-editorial-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pages-chapter-eyebrow { color: #059669; font-size: 11px; font-weight: 700; letter-spacing: .1em; }
+.app.theme-dark .pages-chapter-eyebrow { color: #34d399; }
+.pages-editorial-actions { justify-content: flex-end; }
+.pages-paper-switcher { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--book-border); border-radius: 8px; background: var(--book-panel); }
+.pages-paper-switcher button, .pages-mark-read { padding: 5px 8px; border: 0; border-radius: 6px; background: transparent; color: var(--book-muted); font-size: 10px; cursor: pointer; }
+.pages-paper-switcher button[aria-pressed=true] { background: #05966916; color: #047857; font-weight: 700; }
+.app.theme-dark .pages-paper-switcher button[aria-pressed=true] { color: #6ee7b7; }
+.pages-mark-read { border: 1px solid var(--book-border); color: var(--book-muted); }
+.pages-chapter-heading, .pages-chapter-tagline { display: block; width: 100%; box-sizing: border-box; border: 0; outline: 0; background: transparent; color: var(--book-ink); }
+.pages-chapter-heading { margin-top: 18px; padding: 0; font-size: 26px; font-weight: 750; letter-spacing: -.035em; }
+.pages-chapter-tagline { margin-top: 5px; padding: 0; color: var(--book-muted); font-size: 13.5px; }
+.pages-key-note { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 10px 12px; border: 1px solid var(--book-border); border-radius: 9px; background: var(--book-panel); }
+.pages-key-badge { flex: 0 0 auto; padding: 5px 7px; border-radius: 5px; background: #05966916; color: #047857; font-size: 9px; font-weight: 800; letter-spacing: .06em; }
+.app.theme-dark .pages-key-badge { color: #6ee7b7; }
+.pages-key-note input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--book-ink); font: 11px/1.5 ui-monospace, SFMono-Regular, monospace; }
+.pages-book-canvas-zone { position: absolute; z-index: 1; inset: 210px 0 42px; pointer-events: none; }
+.pages-book-canvas-zone.texture-dots { background-image: radial-gradient(circle, var(--book-dot) .8px, transparent 1px); background-size: 20px 20px; }
+.pages-book-canvas-zone.texture-ruled { background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, var(--book-dot) 28px); }
+
+.canvas-pages-navigation { max-width: min(620px, calc(100vw - 24px)); gap: 4px; }
+.canvas-pages-navigation > span { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.app:has(.pages-book-workspace) .canvas-pages-page-surface { background-image: none !important; }
+
+/* The editorial title field replaces the legacy floating page-name overlay. */
+.app:has(.pages-book-workspace) .canvas-pages-page-name,
+.app:has(.pages-book-workspace) .canvas-pages-page-name-input { display: none !important; }
+
+
+/* A single chapter index lives above the compact bottom-right navigator. */
+.canvas-pages-navigation { overflow: visible; }
+.canvas-pages-chapter-index { position: relative; min-width: 0; }
+.canvas-pages-navigation .canvas-pages-chapter-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: min(310px, 42vw);
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ui-text-strong, #1f2937);
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.canvas-pages-chapter-trigger:hover,
+.canvas-pages-chapter-trigger[aria-expanded="true"] {
+  border-color: rgb(5 150 105 / 24%);
+  background: rgb(5 150 105 / 9%);
+  color: #047857;
+}
+.app.theme-dark .canvas-pages-navigation .canvas-pages-chapter-trigger { color: #e2e8f0; }
+.app.theme-dark .canvas-pages-navigation .canvas-pages-chapter-trigger:hover,
+.app.theme-dark .canvas-pages-navigation .canvas-pages-chapter-trigger[aria-expanded="true"] {
+  color: #6ee7b7;
+  background: rgb(16 185 129 / 14%);
+}
+.canvas-pages-chapter-popover {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  z-index: 1000;
+  box-sizing: border-box;
+  width: min(300px, calc(100vw - 24px));
+  max-height: min(420px, calc(100dvh - 150px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid var(--ui-border, #dbe3ec);
+  border-radius: 12px;
+  background: var(--ui-surface-solid, #fff);
+  color: var(--ui-text-strong, #1f2937);
+  box-shadow: 0 14px 38px rgb(15 23 42 / 20%);
+}
+.app.theme-dark .canvas-pages-chapter-popover {
+  border-color: #334155;
+  background: #111827;
+  color: #f8fafc;
+  box-shadow: 0 16px 42px rgb(0 0 0 / 42%);
+}
+.canvas-pages-chapter-popover-title {
+  padding: 2px 5px 5px;
+  color: var(--ui-text-muted, #64748b);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.canvas-pages-chapter-popover-list { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; }
+.canvas-pages-chapter-option {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 3px;
+  padding: 2px 4px 2px 7px;
+  border-left: 3px solid transparent;
+  border-radius: 7px;
+}
+.canvas-pages-chapter-option.is-active {
+  border-left-color: #059669;
+  background: rgb(5 150 105 / 10%);
+}
+.canvas-pages-chapter-jump {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 10px;
+  padding: 7px 3px !important;
+  text-align: left;
+}
+.canvas-pages-chapter-option-number {
+  flex: 0 0 auto;
+  color: #059669;
+  font: 750 10px/1 ui-monospace, SFMono-Regular, monospace;
+}
+.canvas-pages-chapter-option-name {
+  overflow: hidden;
+  color: var(--ui-text-strong, #1f2937);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app.theme-dark .canvas-pages-chapter-option-name { color: #e2e8f0; }
+.canvas-pages-chapter-complete,
+.canvas-pages-chapter-remove { flex: 0 0 27px; padding: 5px !important; color: #059669 !important; }
+.canvas-pages-chapter-remove { opacity: 0; color: var(--ui-text-muted, #64748b) !important; }
+.canvas-pages-chapter-option:hover .canvas-pages-chapter-remove,
+.canvas-pages-chapter-remove:focus-visible { opacity: 1; }
+.canvas-pages-chapter-new {
+  width: 100%;
+  padding: 9px !important;
+  border: 1px solid var(--ui-border, #dbe3ec) !important;
+  color: #047857 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-align: left;
+}
+.app.theme-dark .canvas-pages-chapter-new { color: #6ee7b7 !important; border-color: #334155 !important; }
+.canvas-pages-chapter-popover button:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }
+@media (max-width: 767px) {
+  .canvas-pages-chapter-popover { width: min(280px, calc(100vw - 24px)); }
+  .canvas-pages-chapter-trigger { max-width: 40vw; }
+}
+
+
+/* Widescreen editorial spread: retain the tactile paper treatment while
+   moving the chapter identity and controls into one compact header row. */
+.pages-editorial-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 20px 32px 16px;
+}
+.pages-editorial-copy { flex: 1 1 34%; min-width: 220px; }
+.pages-editorial-copy .pages-chapter-heading { margin-top: 5px; font-size: 25px; }
+.pages-editorial-copy .pages-chapter-tagline { margin-top: 3px; }
+.pages-editorial-actions {
+  flex: 1 1 66%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+.pages-editorial-actions .pages-key-note {
+  flex: 1 1 240px;
+  min-width: 150px;
+  max-width: 420px;
+  margin: 0;
+  padding: 6px 8px;
+  gap: 8px;
+}
+.pages-editorial-actions .pages-key-badge { padding: 4px 6px; white-space: nowrap; }
+.pages-paper-switcher {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--book-border);
+  border-radius: 8px;
+  background: var(--book-panel);
+}
+
+@media (max-width: 1100px) {
+  .pages-editorial-header { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .pages-editorial-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
+  .pages-editorial-actions .pages-key-note { flex: 1 1 100%; max-width: none; }
+}
+@media (max-width: 767px) {
+  .pages-editorial-header { padding: 18px 20px 14px; }
+  .pages-editorial-actions { gap: 6px; }
+
+}
+
+
+/* The Pages overlay stays non-stacking; global app controls outrank page resize grips. */
+.app.canvas-first-header:has(.pages-book-workspace) .desktop-app-header { z-index: 10060 !important; }
+.app:has(.pages-book-workspace) .desktop-app-menu-trigger-floating { z-index: 10070 !important; }
+.app:has(.pages-book-workspace):has(.appearance-trigger[aria-expanded="true"]) .pages-book-ui {
+  z-index: 500;
+}
+.app:has(.pages-book-workspace) [role="dialog"],
+body:has(.pages-book-workspace) [role="dialog"],
+body:has(.pages-book-workspace) [role="menu"],
+body:has(.pages-book-workspace) [role="listbox"],
+body:has(.pages-book-workspace) .sketchizi-appearance {
+  z-index: 10080 !important;
+}
+.pages-book-workspace {
+  position: static;
+  inset: auto;
+  z-index: auto;
+}
+.pages-book-sheet {
+  position: fixed;
+  z-index: 0;
+}
+.pages-book-ui {
+  position: fixed;
+  z-index: 10040;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+/* Keep all book decoration behind Excalidraw's native HiDPI canvas. The paper
+   itself is CSS-painted; the matching Excalidraw paper element is transparent. */
+.pages-book-workspace { z-index: auto; }
+.pages-book-sheet { z-index: 0; }
+.pages-book-canvas-zone { z-index: 0; }
+.pages-editorial-header,
+
+.app:has(.pages-book-workspace) .desktop-canvas-region canvas {
+  z-index: 2 !important;
+}
+/* Apply transparency to the full desktop canvas region, including direct sibling layers.
+   Excalidraw's rendering may expose the drawing canvas as a direct sibling layer;
+   cover the actual canvas elements as well as any wrapper variants. */
+/* Stack the native canvas element itself above the paper; wrapper class names vary by build.
+   Resize notifications are emitted only by user actions, never by resize handlers. */
+/* Excalidraw's drawing layer is the canvas element itself, not a wrapper;
+   keep both the element and any future nested canvas fully opaque. */
+.app:has(.pages-book-workspace) .desktop-canvas-region canvas,
+.app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw canvas,
+.app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .layer-canvas,
+.app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .layer-canvas canvas {
+  background: transparent !important;
+  opacity: 1 !important;
+}
+.app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .layer-ui__wrapper {
+  z-index: 10020 !important;
+}
+.app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .excalidraw-textEditorContainer {
+  z-index: 10030 !important;
+  opacity: 1 !important;
+}
+.app:has(.pages-book-workspace) .desktop-canvas-region .excalidraw .excalidraw-textEditorContainer textarea {
+  background: transparent !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: currentColor;
+}
+.app:has(.pages-book-workspace) .canvas-pages-page-surface {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+
+/* Full-bleed chapter workspace: no desk, card, paper edge, or width presets. */
+.app:has(.pages-book-workspace) .desktop-canvas-region {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-width: 100vw !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 1 !important;
+  background: transparent !important;
+}
+.app:has(.pages-book-workspace) .desktop-canvas-region > .canvas,
+.app:has(.pages-book-workspace) .desktop-canvas-region > .canvas > .excalidraw {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.pages-book-workspace {
+  position: static !important;
+  inset: auto !important;
+  z-index: auto !important;
+  pointer-events: none;
+}
+.pages-book-sheet {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-width: 100vw !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--book-paper) !important;
+  box-shadow: none !important;
+  pointer-events: none;
+  z-index: 0 !important;
+}
+.pages-book-canvas-zone {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  background-color: var(--book-paper) !important;
+  pointer-events: none !important;
+}
+.pages-book-canvas-zone.texture-clean { background-image: none !important; }
+.pages-book-canvas-zone.texture-dots {
+  background-image: radial-gradient(circle, var(--book-dot) .8px, transparent 1px) !important;
+  background-size: 20px 20px !important;
+}
+.pages-book-canvas-zone.texture-ruled {
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, var(--book-dot) 28px) !important;
+  background-size: auto !important;
+}
+.pages-book-ui {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  box-sizing: border-box !important;
+  z-index: 10040 !important;
+  pointer-events: none !important;
+}
+.pages-editorial-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 28px !important;
+  width: 100% !important;
+  max-width: 1180px !important;
+  box-sizing: border-box !important;
+  margin: 68px auto 0 !important;
+  padding: 0 32px 18px !important;
+  border-bottom: 1px solid var(--book-border) !important;
+  pointer-events: auto !important;
+}
+.pages-editorial-copy { flex: 0 1 40% !important; min-width: 250px; }
+.pages-editorial-copy .pages-chapter-heading {
+  margin-top: 5px !important;
+  font-size: 26px !important;
+  line-height: 1.15 !important;
+}
+.pages-editorial-copy .pages-chapter-tagline {
+  margin-top: 4px !important;
+  white-space: nowrap;
+}
+.pages-editorial-actions {
+  flex: 1 1 60% !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+}
+.pages-editorial-actions .pages-key-note {
+  flex: 1 1 280px !important;
+  min-width: 190px !important;
+  max-width: 390px !important;
+  margin: 0 !important;
+}
+.pages-editorial-header input,
+.pages-editorial-header button {
+  pointer-events: auto !important;
+}
+.pages-editorial-copy,
+.pages-editorial-actions {
+  pointer-events: none !important;
+}
+.pages-editorial-header input,
+.pages-editorial-header button {
+  pointer-events: auto !important;
+}
+.pages-paper-switcher { flex: 0 0 auto; white-space: nowrap; }
+.pages-mark-read { flex: 0 0 auto; white-space: nowrap; }
+
+.app:has(.pages-book-workspace) .desktop-canvas-region canvas {
+  z-index: 1 !important;
+}
+.app:has(.pages-book-workspace) .canvas-pages-page-outline,
+.app:has(.pages-book-workspace) .canvas-pages-page-name,
+.app:has(.pages-book-workspace) .canvas-pages-page-name-input,
+.app:has(.pages-book-workspace) .canvas-pages-resize-hit {
+  display: none !important;
+}
+.app:has(.pages-book-workspace) .canvas-pages-mask-panel {
+  display: none !important;
+}
+.app:has(.pages-book-workspace) .canvas-pages-page-surface {
+  display: none !important;
+}
+.app:has(.pages-book-workspace) .canvas-pages-navigation {
+  right: 20px !important;
+  bottom: 18px !important;
+  z-index: 10050 !important;
+}
+@media (max-width: 1100px) {
+  .pages-editorial-header {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-top: 56px !important;
+    padding: 0 24px 16px !important;
+  }
+  .pages-editorial-copy { min-width: 0 !important; width: 100%; }
+  .pages-editorial-actions {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+  .pages-editorial-actions .pages-key-note {
+    flex: 1 1 100% !important;
+    max-width: none !important;
+  }
+}
+@media (max-width: 767px) {
+  .pages-editorial-header {
+    margin-top: 64px !important;
+    padding: 0 18px 14px !important;
+  }
+  .pages-editorial-copy .pages-chapter-tagline { white-space: normal; }
+  .pages-editorial-actions { gap: 6px !important; }
+
+  .app:has(.pages-book-workspace) .canvas-pages-navigation {
+    right: 10px !important;
+    bottom: 64px !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+}
+
+/* Let the drawing workspace receive clicks in the header's empty areas while
+   keeping the inline editors and chapter controls directly interactive. */
+.pages-editorial-header {
+  pointer-events: none !important;
+}
+.pages-editorial-header input,
+.pages-editorial-header button {
+  pointer-events: auto !important;
+}
+
+/* Pages is a viewport-bounded workspace: no document or canvas scrolling. */
+.app[data-canvas-view="pages"] .desktop-canvas-region,
+.app[data-canvas-view="pages"] .desktop-canvas-view,
+.app[data-canvas-view="pages"] .canvas {
+  box-sizing: border-box !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-width: 100vw !important;
+  min-height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+}
+.app[data-canvas-view="pages"] .desktop-canvas-region {
+  position: fixed !important;
+  inset: 0 !important;
+}
+.app[data-canvas-view="pages"] .canvas {
+  position: absolute !important;
+  inset: 0 !important;
+}
+
+/* The hand tool and Excalidraw's escape-to-content affordance have no role
+   when the active chapter is permanently fitted to the viewport. */
+.app[data-canvas-view="pages"] .excalidraw [data-testid="toolbar-hand"],
+.app[data-canvas-view="pages"] .excalidraw button[aria-label="Hand"],
+.app[data-canvas-view="pages"] .excalidraw button[title="Hand"],
+.app[data-canvas-view="pages"] .excalidraw .ToolIcon_type_hand,
+.app[data-canvas-view="pages"] .excalidraw .sketchizi-scroll-back-control,
+.app[data-canvas-view="pages"] .excalidraw button[aria-label="Scroll back to content"] {
+  display: none !important;
+}
+
+html:has(.app[data-canvas-view="pages"]),
+body:has(.app[data-canvas-view="pages"]),
+.app[data-canvas-view="pages"] {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+.app[data-canvas-view="pages"] .sketchizi-grid-spotlight {
+  display: none !important;
+}
+
+
+/* Minimal editorial chapter strip: chapter identity left, paper and reading
+   controls right. No folio/footer occupies the lower canvas. */
+.pages-editorial-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 28px !important;
+  width: 100% !important;
+  max-width: 1160px !important;
+  box-sizing: border-box !important;
+  margin: 64px auto 0 !important;
+  padding: 0 32px 16px !important;
+  border-bottom: 1px solid var(--book-border) !important;
+  pointer-events: none !important;
+}
+.pages-editorial-copy {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  pointer-events: none !important;
+}
+.pages-editorial-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.pages-chapter-eyebrow {
+  flex: 0 0 auto;
+  color: #059669 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .08em !important;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.app.theme-dark .pages-chapter-eyebrow { color: #34d399 !important; }
+.pages-editorial-copy .pages-chapter-heading {
+  flex: 0 1 auto;
+  width: min(100%, 620px);
+  min-width: 160px;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #0f172a !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -.025em !important;
+}
+.app.theme-dark .pages-editorial-copy .pages-chapter-heading { color: #f8fafc !important; }
+.pages-editorial-copy .pages-chapter-tagline {
+  display: block;
+  width: min(100%, 650px);
+  min-width: 0;
+  margin: 6px 0 0 !important;
+  padding: 0 !important;
+  color: #64748b !important;
+  font-size: 13.5px !important;
+  line-height: 1.45;
+}
+.pages-editorial-copy .pages-chapter-tagline::placeholder { color: #94a3b8; opacity: 1; }
+.pages-editorial-actions {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  pointer-events: none !important;
+}
+.pages-editorial-actions .pages-paper-switcher,
+.pages-editorial-actions .pages-mark-read { pointer-events: auto !important; }
+.pages-paper-switcher {
+  padding: 3px !important;
+  border-radius: 9px !important;
+  background: var(--book-panel) !important;
+}
+.pages-paper-switcher button {
+  min-height: 27px;
+  padding: 5px 9px !important;
+  font-size: 10px !important;
+  font-weight: 600;
+}
+.pages-paper-switcher button[aria-pressed="true"] {
+  background: #05966916 !important;
+  color: #047857 !important;
+}
+.app.theme-dark .pages-paper-switcher button[aria-pressed="true"] { color: #6ee7b7 !important; }
+.pages-mark-read {
+  min-height: 29px;
+  padding: 5px 10px !important;
+  border: 1px solid var(--book-border) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--book-muted) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  white-space: nowrap;
+}
+.pages-mark-read[aria-pressed="true"] {
+  border-color: rgb(5 150 105 / 24%) !important;
+  background: rgb(5 150 105 / 9%) !important;
+  color: #047857 !important;
+}
+.app.theme-dark .pages-mark-read[aria-pressed="true"] { color: #6ee7b7 !important; }
+.pages-editorial-header input,
+.pages-editorial-header button { pointer-events: auto !important; }
+@media (max-width: 900px) {
+  .pages-editorial-header {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-top: 58px !important;
+    padding: 0 24px 14px !important;
+  }
+  .pages-editorial-copy { width: 100%; }
+  .pages-editorial-actions { justify-content: flex-start !important; }
+}
+@media (max-width: 767px) {
+  .pages-editorial-header { margin-top: 64px !important; padding: 0 18px 12px !important; }
+  .pages-editorial-title-row { gap: 9px; }
+  .pages-editorial-copy .pages-chapter-heading { min-width: 0; font-size: 21px !important; }
+  .pages-editorial-actions { gap: 7px !important; }
+}
+
+
+/* Keep Excalidraw transparent so the CSS-painted chapter paper remains visible. */
+.pages-canvas-wrapper .excalidraw,
+.pages-canvas-wrapper .excalidraw .layer-ui__wrapper {
+  background: transparent !important;
+  --default-bg-color: transparent !important;
+}
+.pages-book-workspace .pages-book-sheet {
+  background: var(--book-paper) !important;
+}
+.pages-book-workspace .pages-book-canvas-zone {
+  z-index: 0 !important;
+  pointer-events: none !important;
+  background-color: var(--book-paper) !important;
+}
+.pages-book-workspace .pages-book-canvas-zone.texture-dots {
+  background-image: radial-gradient(circle, var(--book-dot) 1.25px, transparent 1.25px) !important;
+  background-size: 22px 22px !important;
+}
+.pages-book-workspace .pages-book-canvas-zone.texture-ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 27px,
+    var(--book-rule) 27px,
+    var(--book-rule) 28px
+  ) !important;
+  background-position: 0 136px !important;
+  background-size: auto !important;
+}
+.pages-book-workspace .pages-book-canvas-zone.texture-clean {
+  background-image: none !important;
+}
+.pages-book-workspace {
+  --book-paper: #ffffff;
+  --book-dot: #cbd5e1;
+  --book-rule: #e2e8f0;
+}
+.app.theme-dark .pages-book-workspace {
+  --book-paper: #0f141d;
+  --book-dot: #2b3648;
+  --book-rule: #1e293b;
+}
+.pages-chapter-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 23px;
+  box-sizing: border-box;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: rgb(5 150 105 / 10%);
+  color: #059669 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em !important;
+}
+.app.theme-dark .pages-chapter-eyebrow {
+  background: rgb(52 211 153 / 12%);
+  color: #34d399 !important;
+}
+
+/* Accessible, borderless editorial fields. Keep all keyboard and focus
+   affordances emerald/slate; never inherit Excalidraw's purple focus ring. */
+.pages-editorial-header {
+  background: var(--book-paper, #fff) !important;
+  isolation: isolate;
+}
+.pages-editorial-copy {
+  position: relative;
+  z-index: 1;
+}
+.pages-editorial-copy .pages-chapter-heading,
+.pages-editorial-copy .pages-chapter-tagline {
+  border: 1.5px solid transparent !important;
+  border-bottom-color: transparent !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  transition: border-bottom-color 140ms ease !important;
+}
+.pages-editorial-copy .pages-chapter-heading:hover:not(:disabled),
+.pages-editorial-copy .pages-chapter-tagline:hover:not(:disabled) {
+  border-bottom-color: #cbd5e1 !important;
+}
+.app.theme-dark .pages-editorial-copy .pages-chapter-heading:hover:not(:disabled),
+.app.theme-dark .pages-editorial-copy .pages-chapter-tagline:hover:not(:disabled) {
+  border-bottom-color: #334155 !important;
+}
+.pages-editorial-copy .pages-chapter-heading:focus,
+.pages-editorial-copy .pages-chapter-tagline:focus {
+  border-bottom-color: #059669 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.app.theme-dark .pages-editorial-copy .pages-chapter-heading:focus,
+.app.theme-dark .pages-editorial-copy .pages-chapter-tagline:focus {
+  border-bottom-color: #34d399 !important;
+}
+.pages-book-workspace .pages-editorial-header {
+  background: var(--book-paper) !important;
+}
+.pages-book-workspace .pages-book-canvas-zone {
+  top: 0 !important;
+}
+.pages-book-workspace .pages-editorial-header {
+  position: relative;
+  z-index: 4;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pages-editorial-copy .pages-chapter-heading,
+  .pages-editorial-copy .pages-chapter-tagline { transition: none !important; }
+}
+
+
+/* Editorial masthead refinement: flat page-native header, no floating card. */
+.pages-book-workspace .pages-editorial-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 28px !important;
+  width: 100% !important;
+  max-width: 1180px !important;
+  margin: 62px auto 0 !important;
+  padding: 0 36px 18px !important;
+  box-sizing: border-box !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: var(--book-paper, #fff) !important;
+  isolation: isolate;
+}
+.app.theme-dark .pages-book-workspace .pages-editorial-header {
+  border-bottom-color: #1e293b !important;
+}
+.pages-book-workspace .pages-editorial-copy {
+  position: relative;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding-left: 17px;
+}
+.pages-book-workspace .pages-editorial-copy::before {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  width: 3px;
+  border-radius: 2px;
+  background: #059669;
+  content: "";
+}
+.app.theme-dark .pages-book-workspace .pages-editorial-copy::before {
+  background: #34d399;
+}
+.pages-book-workspace .pages-editorial-title-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.pages-book-workspace .pages-chapter-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  line-height: 1.4;
+  letter-spacing: .08em !important;
+  font-variant-numeric: tabular-nums;
+}
+.pages-book-workspace .pages-chapter-eyebrow > span:first-child {
+  color: #059669 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-chapter-eyebrow > span:first-child {
+  color: #34d399 !important;
+}
+.pages-book-workspace .pages-eyebrow-separator { color: #94a3b8 !important; }
+.pages-book-workspace .pages-chapter-heading {
+  width: 280px !important;
+  max-width: min(100%, 420px) !important;
+  field-sizing: content;
+  min-width: 160px !important;
+  margin: 0 !important;
+  padding: 0 0 2px !important;
+  border: 0 !important;
+  border-bottom: 1.5px solid transparent !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: #0f172a !important;
+  font-size: 26px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -.02em !important;
+  transition: border-bottom-color 140ms ease !important;
+}
+.app.theme-dark .pages-book-workspace .pages-chapter-heading { color: #f8fafc !important; }
+.pages-book-workspace .pages-chapter-heading:focus {
+  border-bottom-color: #059669 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.app.theme-dark .pages-book-workspace .pages-chapter-heading:focus {
+  border-bottom-color: #34d399 !important;
+}
+.pages-book-workspace .pages-chapter-heading:hover:not(:focus) {
+  border-bottom-color: #cbd5e1 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-chapter-heading:hover:not(:focus) {
+  border-bottom-color: #334155 !important;
+}
+.pages-book-workspace .pages-chapter-tagline {
+  display: block !important;
+  width: min(100%, 650px) !important;
+  min-width: 0 !important;
+  margin: 4px 0 0 !important;
+  padding: 0 0 2px !important;
+  border: 0 !important;
+  border-bottom: 1.5px solid transparent !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: #64748b !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  transition: border-bottom-color 140ms ease !important;
+}
+.pages-book-workspace .pages-chapter-tagline:focus {
+  border-bottom-color: #059669 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.app.theme-dark .pages-book-workspace .pages-chapter-tagline:focus {
+  border-bottom-color: #34d399 !important;
+}
+.pages-book-workspace .pages-chapter-tagline:hover:not(:focus) {
+  border-bottom-color: #cbd5e1 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-chapter-tagline:hover:not(:focus) {
+  border-bottom-color: #334155 !important;
+}
+.pages-book-workspace .pages-editorial-actions {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.pages-book-workspace .pages-paper-switcher {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding: 2px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+}
+.app.theme-dark .pages-book-workspace .pages-paper-switcher {
+  border-color: #1e293b !important;
+}
+.pages-book-workspace .pages-paper-switcher .pages-paper-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: #64748b !important;
+  cursor: pointer;
+}
+.pages-book-workspace .pages-paper-switcher .pages-paper-icon[aria-pressed="true"] {
+  background: rgb(5 150 105 / 10%) !important;
+  color: #047857 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-paper-switcher .pages-paper-icon[aria-pressed="true"] {
+  background: rgb(52 211 153 / 13%) !important;
+  color: #34d399 !important;
+}
+.pages-book-workspace .pages-paper-switcher .pages-paper-icon:hover:not(:disabled) {
+  background: rgb(100 116 139 / 10%) !important;
+}
+.pages-book-workspace .pages-paper-switcher .pages-paper-icon:focus-visible,
+.pages-book-workspace .pages-mark-read:focus-visible {
+  outline: 2px solid #059669 !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+.app.theme-dark .pages-book-workspace .pages-paper-switcher .pages-paper-icon:focus-visible,
+.app.theme-dark .pages-book-workspace .pages-mark-read:focus-visible {
+  outline-color: #34d399 !important;
+}
+.pages-book-workspace .pages-mark-read {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 10px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  white-space: nowrap;
+}
+.app.theme-dark .pages-book-workspace .pages-mark-read {
+  border-color: #1e293b !important;
+  color: #94a3b8 !important;
+}
+.pages-book-workspace .pages-mark-read[aria-pressed="true"] {
+  border-color: rgb(5 150 105 / 22%) !important;
+  background: rgb(5 150 105 / 9%) !important;
+  color: #047857 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-mark-read[aria-pressed="true"] {
+  border-color: rgb(52 211 153 / 24%) !important;
+  background: rgb(52 211 153 / 12%) !important;
+  color: #34d399 !important;
+}
+.pages-book-workspace .pages-book-canvas-zone {
+  top: 0 !important;
+}
+@media (max-width: 900px) {
+  .pages-book-workspace .pages-editorial-header {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    margin-top: 62px !important;
+    padding: 0 24px 16px !important;
+  }
+  .pages-book-workspace .pages-editorial-actions { justify-content: flex-start !important; }
+}
+@media (max-width: 767px) {
+  .pages-book-workspace .pages-editorial-header {
+    margin-top: 64px !important;
+    padding: 0 18px 14px !important;
+  }
+  .pages-book-workspace .pages-chapter-heading { min-width: 0 !important; font-size: 23px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pages-book-workspace .pages-chapter-heading,
+  .pages-book-workspace .pages-chapter-tagline { transition: none !important; }
+}
+
+
+/* Clip the decorative paper texture at the masthead divider. The sheet stays
+   full-bleed; only its non-interactive dot/rule paint starts below the header. */
+.pages-book-workspace .pages-book-canvas-zone {
+  clip-path: inset(156px 0 0 0);
+}
+@media (max-width: 900px) {
+  .pages-book-workspace .pages-book-canvas-zone {
+    clip-path: inset(200px 0 0 0);
+  }
+}
+@media (max-width: 767px) {
+  .pages-book-workspace .pages-book-canvas-zone {
+    clip-path: inset(202px 0 0 0);
+  }
+}
+
+/* Editable notebook title in the chapter eyebrow. */
+.pages-book-workspace .pages-book-title-input {
+  display: inline-block !important;
+  width: 230px !important;
+  max-width: 42vw !important;
+  min-width: 72px !important;
+  margin: 0 !important;
+  padding: 0 0 1px !important;
+  border: 0 !important;
+  border-bottom: 1px solid transparent !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: #64748b !important;
+  font: inherit !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  line-height: 1.4 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+  font-variant-numeric: tabular-nums;
+  transition: border-bottom-color 140ms ease !important;
+}
+.pages-book-workspace .pages-book-title-input:hover:not(:focus) { border-bottom-color: #cbd5e1 !important; }
+.pages-book-workspace .pages-book-title-input:focus { border-bottom-color: #059669 !important; outline: none !important; box-shadow: none !important; }
+.app.theme-dark .pages-book-workspace .pages-book-title-input { color: #94a3b8 !important; }
+.app.theme-dark .pages-book-workspace .pages-book-title-input:hover:not(:focus) { border-bottom-color: #334155 !important; }
+.app.theme-dark .pages-book-workspace .pages-book-title-input:focus { border-bottom-color: #34d399 !important; }
+
+
+/* All Pages controls live in the editorial masthead; keep the canvas perimeter clear. */
+.pages-book-workspace .pages-editorial-header {
+  max-width: 1220px !important;
+  margin: 62px auto 0 !important;
+  padding: 0 32px 16px !important;
+  gap: 22px !important;
+}
+.pages-book-workspace .pages-editorial-copy {
+  flex: 1 1 420px !important;
+}
+.pages-book-workspace .pages-editorial-actions {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  flex-wrap: nowrap !important;
+  gap: 10px !important;
+}
+.pages-book-workspace .pages-editorial-actions .canvas-pages-navigation {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 1000 !important;
+  display: flex !important;
+  align-items: center !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  max-width: min(560px, 48vw) !important;
+  gap: 3px !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--ui-text-strong, #1f2937) !important;
+  box-shadow: none !important;
+}
+.pages-book-workspace .pages-header-chapter-controller > button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+  min-width: 27px !important;
+  height: 30px !important;
+  padding: 0 7px !important;
+  border: 1px solid transparent !important;
+  border-radius: 7px !important;
+  background: transparent !important;
+  color: #64748b !important;
+  font-size: 12px !important;
+}
+.pages-book-workspace .pages-header-chapter-controller > button:hover:not(:disabled) {
+  border-color: #d1fae5 !important;
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-header-chapter-controller > button {
+  color: #94a3b8 !important;
+}
+.app.theme-dark .pages-book-workspace .pages-header-chapter-controller > button:hover:not(:disabled) {
+  border-color: #14532d !important;
+  background: #052e24 !important;
+  color: #6ee7b7 !important;
+}
+.pages-book-workspace .pages-header-chapter-controller .canvas-pages-chapter-index {
+  position: relative !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+}
+.pages-book-workspace .pages-header-chapter-controller .canvas-pages-chapter-trigger {
+  max-width: min(290px, 24vw) !important;
+  min-width: 120px !important;
+  height: 30px !important;
+  padding: 0 8px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+.pages-book-workspace .pages-header-chapter-controller .canvas-pages-chapter-popover {
+  top: calc(100% + 8px) !important;
+  right: 0 !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 1000 !important;
+}
+.pages-book-workspace .pages-header-chapter-controller .canvas-pages-delete {
+  min-width: auto !important;
+  padding: 0 8px !important;
+  font-size: 11px !important;
+  white-space: nowrap !important;
+}
+.pages-book-workspace .pages-header-chapter-controller .canvas-pages-add {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  min-width: auto !important;
+  height: 30px !important;
+  padding: 0 9px !important;
+  border: 1px solid rgb(5 150 105 / 24%) !important;
+  border-radius: 8px !important;
+  background: rgb(5 150 105 / 8%) !important;
+  color: #047857 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+.app.theme-dark .pages-book-workspace .pages-header-chapter-controller .canvas-pages-add {
+  border-color: rgb(52 211 153 / 25%) !important;
+  background: rgb(52 211 153 / 10%) !important;
+  color: #6ee7b7 !important;
+}
+.pages-book-workspace .pages-header-chapter-controller .canvas-pages-add:hover:not(:disabled) {
+  background: rgb(5 150 105 / 15%) !important;
+}
+.pages-book-workspace .pages-header-chapter-controller button:focus-visible {
+  outline: 2px solid #059669 !important;
+  outline-offset: 2px !important;
+}
+@media (max-width: 1100px) {
+  .pages-book-workspace .pages-editorial-header {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+  .pages-book-workspace .pages-editorial-actions {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+  .pages-book-workspace .pages-editorial-actions .canvas-pages-navigation {
+    max-width: 100% !important;
+  }
+}
+@media (max-width: 767px) {
+  .pages-book-workspace .pages-editorial-header {
+    margin-top: 64px !important;
+    padding: 0 18px 14px !important;
+  }
+  .pages-book-workspace .pages-header-chapter-controller .canvas-pages-chapter-trigger {
+    max-width: 42vw !important;
+  }
+}
+
+/* Destructive confirmation for deleting the final Pages chapter. */
+.pages-delete-confirm-backdrop { position:fixed; inset:0; z-index:2147483000; display:grid; place-items:center; padding:24px; background:rgb(15 23 42 / 42%); backdrop-filter:blur(5px); }
+.pages-delete-confirm-dialog { width:min(100%,420px); padding:26px; border:1px solid #e2e8f0; border-radius:16px; background:#fff; color:#0f172a; box-shadow:0 24px 70px rgb(15 23 42 / 24%); }
+.pages-delete-confirm-icon { display:grid; width:34px; height:34px; margin-bottom:16px; place-items:center; border:1px solid rgb(225 29 72 / 22%); border-radius:10px; background:rgb(225 29 72 / 8%); color:#be123c; font-size:18px; font-weight:800; }
+.pages-delete-confirm-dialog h2 { margin:0; color:#0f172a; font-size:18px; font-weight:750; letter-spacing:-.035em; }
+.pages-delete-confirm-dialog p { margin:10px 0 22px; color:#64748b; font-size:13px; line-height:1.65; }
+.pages-delete-confirm-actions { display:flex; justify-content:flex-end; gap:9px; }
+.pages-delete-confirm-actions button { min-height:36px; padding:0 14px; border-radius:8px; font-size:12px; font-weight:700; transition:background 120ms ease,border-color 120ms ease; }
+.pages-delete-confirm-cancel { border:1px solid #cbd5e1; background:#f8fafc; color:#334155; }
+.pages-delete-confirm-cancel:hover:not(:disabled) { background:#f1f5f9; border-color:#94a3b8; }
+.pages-delete-confirm-submit { border:1px solid #be123c; background:#e11d48; color:#fff; }
+.pages-delete-confirm-submit:hover:not(:disabled) { background:#be123c; }
+.pages-delete-confirm-actions button:focus-visible { outline:2px solid #64748b; outline-offset:3px; }
+.pages-delete-confirm-actions button:disabled { cursor:wait; opacity:.65; }
+:root:has(.app.theme-dark) .pages-delete-confirm-dialog { border-color:#334155; background:#111827; color:#e2e8f0; box-shadow:0 24px 70px rgb(0 0 0 / 48%); }
+:root:has(.app.theme-dark) .pages-delete-confirm-dialog h2 { color:#f8fafc; }
+:root:has(.app.theme-dark) .pages-delete-confirm-dialog p { color:#94a3b8; }
+:root:has(.app.theme-dark) .pages-delete-confirm-cancel { border-color:#475569; background:#1e293b; color:#cbd5e1; }
+:root:has(.app.theme-dark) .pages-delete-confirm-cancel:hover:not(:disabled) { background:#334155; }
+@media (max-width:520px) { .pages-delete-confirm-dialog { padding:22px; } .pages-delete-confirm-actions { flex-direction:column-reverse; } .pages-delete-confirm-actions button { width:100%; } }

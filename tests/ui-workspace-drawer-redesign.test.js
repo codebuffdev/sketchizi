@@ -42,14 +42,11 @@ test("workspace renders Canvas, Pages, Cloud Files and Open File as a 2x2 tile g
   assert.match(rule(menuCss, ".sketchizi-ws-tile-icon"), /width: 28px;[\s\S]*height: 28px;[\s\S]*border-radius: 8px/);
 });
 
-test("active tile uses the accent treatment and follows the canvas mode", () => {
-  assert.match(shellCss, /--sk-active-bg: rgba\(99, 102, 241, 0\.15\)/);
-  assert.match(shellCss, /--sk-active-bg: #eef2ff/);
-  assert.match(shellCss, /--sk-active-border: rgba\(129, 140, 248, 0\.4\)/);
-  assert.match(menuCss, /\.sketchizi-ws-tile\[data-active="true"\] \.sketchizi-ws-tile-icon \{[^}]*background: var\(--sk-accent\);[^}]*color: #fff/);
-  assert.match(menu, /canvasMode = "infinite"/);
-  assert.match(menu, /tile\.dataset\.sketchiziCanvasMode === canvasMode/);
-  assert.match(app, /useNativeSketchiziMenu\(\{[^}]*canvasMode: canvasPageContext\.mode/);
+test("workspace tiles are creation actions without an active mode accent", () => {
+  assert.match(menu, /sketchizi:workspace-create-tab/);
+  assert.match(menu, /setAttr\(tile, "data-active", "false"\)/);
+  assert.doesNotMatch(menuCss, /\.sketchizi-ws-tile\[data-active="true"\]/);
+  assert.match(menuCss, /outline: 2px solid #059669/);
 });
 
 test("Recent files and Local drafts have single-line headers and no boxed clear buttons", () => {
@@ -93,7 +90,8 @@ test("community links are compact cards with tinted badges and trailing glyphs",
   assert.match(community, /Drop a Review/);
   assert.match(community, /Connect with Coder/);
   assert.match(community, /data-tone="amber"/);
-  assert.match(community, /data-tone="indigo"/);
+  assert.match(community, /data-tone="slate"/);
+  assert.match(menuCss, /\.sketchizi-card-badge\[data-tone="slate"\].*var\(--sk-icon-bg\)/);
   assert.match(community, /›/);
   assert.match(community, /↗/);
   const card = rule(menuCss, ".sketchizi-community-card");

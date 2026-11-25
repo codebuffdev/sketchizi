@@ -1267,3 +1267,48 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
 .sketchizi-ws-tile-icon.is-system-design { color:#059669; }
 .app.theme-dark .sketchizi-ws-tile-icon.is-canvas,.app.theme-dark .sketchizi-ws-tile-icon.is-pages { color:#cbd5e1; }
 .app.theme-dark .sketchizi-ws-tile-icon.is-system-design { color:#34d399; }
+
+
+/* Pages stacking contract: keep the tab chrome above the bounded workspace.
+   The workspace itself stays at z-index: 1; its internal editorial layers
+   must not be allowed to paint over the global tab controls. */
+.canvas-tabs-bar {
+  position: relative;
+  z-index: 50;
+  overflow: visible;
+}
+.canvas-tabs-bar .canvas-tabs-list,
+.canvas-tabs-bar .canvas-tab-controls-group,
+.canvas-tabs-bar .canvas-tabs-overflow,
+.canvas-tabs-bar .canvas-tabs-closed {
+  overflow: visible;
+}
+.canvas-tabs-overflow-menu,
+.canvas-tabs-active-menu,
+.canvas-tabs-closed-menu {
+  z-index: 60;
+}
+
+/* Header wrappers must not clip the tab menus when Pages is active. */
+.desktop-app-document-identity,
+.desktop-app-document-identity .canvas-tabs-bar,
+.desktop-app-document-title-float,
+.desktop-app-document-title-float .canvas-tabs-bar {
+  overflow: visible;
+}
+
+/* The +N menu is portaled to body so it escapes header/workspace stacking contexts. */
+.canvas-tabs-overflow-menu-portal {
+  position: fixed;
+  z-index: 10065;
+  min-width: 190px;
+  background: var(--ct-active, #fff);
+  color: var(--ct-strong, #172033);
+  border: 1px solid var(--ct-active-border, #d7dee8);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgb(15 23 42 / 17%);
+  top: auto;
+  left: auto;
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+}
