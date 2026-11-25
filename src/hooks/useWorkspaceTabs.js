@@ -244,8 +244,19 @@ export function useWorkspaceTabs({
   const persistActiveCanvasSnapshot = useCallback((elements, appState) => {
     if (!canvasTabsRestoredRef.current) return;
     const snapshot = captureCanvasTabSnapshot(elements, appState);
+    const activeTab = canvasTabsRef.current.find((tab) => tab.id === activeCanvasIdRef.current);
+    const hasPersistenceChanges = Boolean(snapshot.fileDirty || snapshot.documentDirty
+      || ["pending", "saving", "error", "conflict"].includes(snapshot.cloudSaveState?.state));
+    // Excalidraw can emit onChange while restoring the generated Pages frame
+    // and paper. Do not mark that empty scaffold as an authored/dirty draft.
+    const pristine = isPristineCanvas({
+      tab: activeTab ? { ...activeTab, dirty: false } : null,
+      snapshot,
+      elements: snapshot.elements,
+      dirty: hasPersistenceChanges,
+    });
     const next = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
-      ? { ...tab, snapshot, dirty: true }
+      ? { ...tab, snapshot, dirty: !pristine }
       : tab);
 
     // Scene changes arrive from Excalidraw's onChange callback. Persist the
@@ -656,11 +667,20 @@ export function useWorkspaceTabs({
     const sceneElements = isActive
       ? (apiRef.current?.getSceneElements?.() || snapshot?.elements || [])
       : (Array.isArray(snapshot?.elements) ? snapshot.elements : []);
-    const hasUnsavedChanges = Boolean(tab.dirty || snapshot?.fileDirty || snapshot?.documentDirty || (isActive && (
+    const hasDocumentUnsavedChanges = Boolean(snapshot?.fileDirty || snapshot?.documentDirty || (isActive && (
       canvasSnapshotStateRef.current?.documentDirty ||
       ["pending", "saving", "error", "conflict"].includes(canvasSnapshotStateRef.current?.cloudSaveState?.state)
     )));
-    const pristine = isPristineCanvas({ tab, snapshot, elements: sceneElements, dirty: hasUnsavedChanges });
+    // A persisted dirty bit can be left behind by Excalidraw's initial page
+    // scaffold hydration. Re-evaluate the actual scene before treating it as
+    // an unsaved edit; authored content/metadata still retains the warning.
+    const pristine = isPristineCanvas({
+      tab: { ...tab, dirty: false },
+      snapshot,
+      elements: sceneElements,
+      dirty: hasDocumentUnsavedChanges,
+    });
+    const hasUnsavedChanges = hasDocumentUnsavedChanges || (Boolean(tab.dirty) && !pristine);
     const cloudBacked = Boolean(snapshot?.cloudSession?.active && snapshot?.cloudSession?.diagramId && snapshot?.cloudDetached !== true);
     const fileBacked = !cloudBacked && isTabBackedByFileOrCloud(snapshot);
     // A clean file/cloud-backed canvas can close directly. Unbacked content
