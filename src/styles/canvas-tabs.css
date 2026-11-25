@@ -1345,3 +1345,13 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
 .app.theme-dark .canvas-tab-item.is-active .canvas-tab-icon { color:#cbd5e1; }
 .app.theme-dark .canvas-tab-item .workspace-mode-icon--system-design,
 .app.theme-dark .canvas-tab-item.is-active .workspace-mode-icon--system-design { color:#34d399; }
+
+/* The New Canvas picker is portaled to body so Page headers and other
+   workspace stacking contexts cannot clip or cover it. */
+.canvas-tabs-create-menu-portal {
+  position: fixed !important;
+  top: auto;
+  right: auto;
+  left: auto;
+  z-index: 1200 !important;
+}
