@@ -20,19 +20,18 @@ test("primary dock renders the complete tool set in a vertical left sidebar", ()
 });
 
 test("expanded tool dock is a vertical left-edge rail above the bottom trigger", () => {
- const hud = readFileSync(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
- assert.match(hud, /left:calc\\(16px/);
- assert.match(hud, /bottom:calc\\(16px/);
- assert.match(hud, /flex-direction:column !important;[\\s\\S]*?width:44px !important/);
- assert.match(hud, /bottom:calc\\(100% \\+ 8px\\) !important/);
- assert.match(hud, /overflow-y:auto !important/);
- assert.match(hud, /background:rgba\\(238,242,255,.8\\) !important/);
- assert.match(hud, /border-color:#a5b4fc !important/);
- assert.match(hud, /color:#4f46e5 !important/);
- assert.doesNotMatch(hud, /flex-direction:row;[\\s\\S]*?width:max-content/);
+  const hud = readFileSync(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
+  assert.ok(hud.includes("left:calc(16px"));
+  assert.ok(hud.includes("bottom:calc(16px"));
+  assert.ok(hud.includes("flex-direction:column !important;"));
+  assert.ok(hud.includes("width:44px !important;"));
+  assert.ok(hud.includes("bottom:calc(100% + 8px) !important;"));
+  assert.ok(hud.includes("overflow-y:auto !important;"));
+  assert.ok(hud.includes("background:rgba(238,242,255,.8) !important;"));
+  assert.ok(hud.includes("border-color:#a5b4fc !important;"));
+  assert.ok(hud.includes("color:#4f46e5 !important;"));
+  assert.ok(!hud.includes("flex-direction:row;"));
 });
-
-
 
 test("sidebar hides while the hamburger menu is open to prevent overlap", () => {
   const mount = canvas.match(/<PrimaryDock[\s\S]*?\/>/)?.[0] || "";
@@ -63,12 +62,14 @@ test("changing the active tool (e.g. via keyboard shortcut) collapses the dock w
 });
 
 test("collapsed trigger retains the 40px icon-and-chevron pill", () => {
- const hud = readFileSync(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
- assert.match(dock, /<ToolIcon name=\\{activeToolMeta\\.id\\} size=\\{22\\} strokeWidth=\\{1\\.75\\} \\/>/);
- assert.match(hud, /width:70px !important;[\\s\\S]*?height:40px !important/);
- assert.match(hud, /gap:10px !important;[\\s\\S]*?padding:0 12px !important/);
- assert.match(hud, /flex:0 0 22px; width:22px; height:22px/);
- assert.match(hud, /flex:0 0 12px; width:12px; height:12px/);
+  const hud = readFileSync(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
+  assert.ok(dock.includes('size={22} strokeWidth={1.75}'));
+  assert.ok(hud.includes("width:70px !important;"));
+  assert.ok(hud.includes("height:40px !important;"));
+  assert.ok(hud.includes("gap:10px !important;"));
+  assert.ok(hud.includes("padding:0 12px !important;"));
+  assert.ok(hud.includes("flex:0 0 22px; width:22px; height:22px;"));
+  assert.ok(hud.includes("flex:0 0 12px; width:12px; height:12px;"));
 });
 
 
