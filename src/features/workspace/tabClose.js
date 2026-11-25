@@ -32,7 +32,7 @@ export function hasMountableCanvas({ tabs = [], activeCanvasId = "" } = {}) {
 }
 
 
-const DEFAULT_UNTITLED_NAMES = /^(?:untitled(?: page| canvas| drawing)?|page 1|canvas \\d+)$/i;
+const DEFAULT_UNTITLED_NAMES = /^(?:untitled(?: page| canvas| drawing)?|page 1|canvas [0-9]+)$/i;
 const PAGE_CONTENT_FIELDS = ["tagline", "subtitle", "summary", "focus", "focusText", "focus_text", "keyNote", "description"];
 
 function hasPageEditorialContent(value) {
