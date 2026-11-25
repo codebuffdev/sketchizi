@@ -274,7 +274,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
         {showAddButton && (
           <div className="canvas-tabs-create-wrap">
             <button ref={createTriggerRef} type="button" className={`canvas-tabs-add${createMenuOpen ? " is-open" : ""}`}
-              aria-label="Create new canvas" title="Create new canvas" aria-haspopup="menu" aria-expanded={createMenuOpen}
+              aria-label="Create new tab" title="Create new canvas" aria-haspopup="menu" aria-expanded={createMenuOpen}
               aria-controls="canvas-tabs-create-menu"
               onClick={() => { setOverflowOpen(false); setActiveMenuOpen(false); setClosedMenuOpen(false); setCreateMenuOpen((open) => !open); }}
               disabled={disabled}>
