@@ -280,8 +280,8 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
           onMouseEnter={expandDock}
           onClick={handleExpandClick}
         >
-          <ToolIcon name={activeToolMeta.id} size={19} strokeWidth={1.85} />
-          <svg className="sketchizi-tool-sidebar-chevron" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
+          <ToolIcon name={activeToolMeta.id} size={26} strokeWidth={2} />
+          <svg className="sketchizi-tool-sidebar-chevron" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
         </button>
         <button
           type="button"
