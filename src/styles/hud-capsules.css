@@ -40,7 +40,7 @@
 /* ---------- Bottom-left trigger + vertical tool rail ---------- */
 .app .sketchizi-tool-sidebar.sketchizi-tool-sidebar {
  position:fixed !important; left:calc(16px + var(--safe-left, 0px)) !important; right:auto !important;
- bottom:calc(16px + var(--safe-bottom, 0px)) !important; width:70px !important; height:40px !important;
+ bottom:calc(16px + var(--safe-bottom, 0px)) !important; width:52px !important; height:32px !important;
  max-height:none !important; padding:0 !important; gap:0 !important; overflow:visible !important;
  border:0 !important; border-radius:12px !important; background:transparent !important;
  box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
@@ -48,21 +48,21 @@
 }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-collapsed {
  position:relative !important; display:block !important; width:70px !important; height:40px !important;
- max-height:40px !important; opacity:1 !important; pointer-events:auto !important; overflow:visible;
- border:1px solid #e2e8f0 !important; border-radius:12px !important; background:#fff !important;
+ max-height:32px !important; opacity:1 !important; pointer-events:auto !important; overflow:visible;
+ border:1px solid #e2e8f0 !important; border-radius:10px !important; background:#fff !important;
  box-shadow:0 4px 12px -2px rgba(15,23,42,.08) !important; transition:border-color 150ms ease,box-shadow 150ms ease;
 }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-collapsed:hover { border-color:#cbd5e1 !important; box-shadow:0 5px 14px -2px rgba(15,23,42,.12) !important; }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active {
  position:absolute !important; inset:0 !important; display:inline-flex !important; align-items:center !important;
- justify-content:flex-start !important; gap:10px !important; width:100% !important; height:100% !important;
- padding:0 12px !important; box-sizing:border-box !important; border:0 !important; border-radius:12px !important;
+ justify-content:flex-start !important; gap:4px !important; width:100% !important; height:100% !important;
+ padding:0 8px !important; box-sizing:border-box !important; border:0 !important; border-radius:12px !important;
  background:#fff !important; color:#1e293b !important; box-shadow:none !important; cursor:pointer;
 }
-.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active > svg:first-child { flex:0 0 22px; width:22px; height:22px; color:#1e293b; }
-.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-chevron { flex:0 0 12px; width:12px; height:12px; color:#94a3b8; transform:translateY(0); transition:color 150ms ease,transform 150ms ease; }
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active > svg:first-child { flex:0 0 19px; width:19px; height:19px; color:#1e293b; }
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-chevron { flex:0 0 10px; width:10px; height:10px; color:#94a3b8; transform:translateY(3px); transition:color 150ms ease,transform 150ms ease; }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:hover .sketchizi-tool-sidebar-chevron,
-.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:focus-visible .sketchizi-tool-sidebar-chevron { color:#334155; transform:translateY(-1px); }
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:focus-visible .sketchizi-tool-sidebar-chevron { color:#334155; transform:translateY(2px); }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-expand { display:none !important; }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list {
  position:absolute !important; left:0 !important; right:auto !important; bottom:calc(100% + 8px) !important;
