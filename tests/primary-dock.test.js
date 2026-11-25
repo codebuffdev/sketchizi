@@ -61,18 +61,28 @@ test("changing the active tool (e.g. via keyboard shortcut) collapses the dock w
   assert.match(dock, /useEffect\(\(\) => \{\s*if \(previousActiveIdRef\.current === activeId\) return;[\s\S]*?setExpanded\(false\);\s*\}, \[activeId\]\)/);
 });
 
-test("collapsed trigger is a compact 32px icon-and-chevron pill", () => {
+test("collapsed trigger is a containerless floating active-tool icon", () => {
   const hud = readFileSync(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
-  assert.ok(dock.includes('size={19} strokeWidth={1.85}'));
-  assert.ok(dock.includes('width="10" height="10"') && dock.includes('strokeWidth="2.25"'));
-  assert.ok(hud.includes("width:52px !important; height:32px !important;"));
-  assert.ok(hud.includes("max-height:32px !important;"));
-  assert.ok(hud.includes("gap:4px !important;"));
-  assert.ok(hud.includes("padding:0 8px !important;"));
-  assert.ok(hud.includes("border-radius:10px !important;"));
-  assert.ok(hud.includes("flex:0 0 19px; width:19px; height:19px; color:#1e293b;"));
-  assert.ok(hud.includes("flex:0 0 10px; width:10px; height:10px; color:#94a3b8; transform:translateY(3px);"));
-  assert.ok(hud.includes("transform:translateY(3px);"));
+  assert.ok(dock.includes('size={26} strokeWidth={2}'));
+  assert.ok(dock.includes('width="10" height="10"') && dock.includes('strokeWidth="2.5"'));
+  assert.ok(hud.includes("left:calc(20px"));
+  assert.ok(hud.includes("bottom:calc(20px"));
+  assert.ok(hud.includes("display:contents !important;"));
+  assert.ok(hud.includes("align-items:flex-end !important;"));
+  assert.ok(hud.includes("gap:3px !important;"));
+  assert.ok(hud.includes("padding:0 !important;"));
+  assert.ok(hud.includes("border:0 !important; border-radius:0 !important;"));
+  assert.ok(hud.includes("background:transparent !important;"));
+  assert.ok(hud.includes("flex:0 0 26px; width:26px; height:26px; color:#0f172a;"));
+  assert.ok(hud.includes("drop-shadow(0 4px 10px rgba(15,23,42,.22))"));
+  assert.ok(hud.includes("drop-shadow(0 6px 14px rgba(15,23,42,.28))"));
+  assert.ok(hud.includes("margin-bottom:1px; color:#64748b;"));
+  assert.ok(hud.includes("color:#0f172a; transform:translateY(-2px);"));
+  assert.ok(hud.includes(".sketchizi-tool-sidebar .sketchizi-tool-sidebar-list::after"));
+  assert.ok(hud.includes("height:12px;"));
+  assert.ok(hud.includes("flex-direction:column !important;"));
+  assert.ok(hud.includes("width:44px !important;"));
+  assert.ok(hud.includes("bottom:calc(100% + 8px) !important;"));
 });
 
 
