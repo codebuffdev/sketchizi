@@ -19,17 +19,20 @@ test("primary dock renders the complete tool set in a vertical left sidebar", ()
   assert.doesNotMatch(dock, /sketchizi-radial-wheel|Move tool wheel|onPointerMove|setPointerCapture|tuckedOffset/);
 });
 
-test("sidebar stays a left-edge, vertically centred, scrollable floating rail", () => {
-  const rail = sidebarCss.match(/\.sketchizi-tool-sidebar\s*\{([^}]*)\}/)?.[1] || "";
-  assert.match(rail, /position:\s*fixed/);
-  assert.match(rail, /left:\s*16px/);
-  assert.match(rail, /bottom:\s*58px/);
-  assert.match(rail, /max-height:\s*calc\(100dvh - 112px\)/);
-  assert.match(sidebarCss, /\.sketchizi-tool-sidebar\.is-expanded \.sketchizi-tool-sidebar-list/);
-  assert.match(sidebarCss, /overflow-y:\s*auto/);
-  assert.match(sidebarCss, /backdrop-filter:\s*blur/);
-  assert.match(sidebarCss, /\.sketchizi-tool-sidebar-button\.is-active/);
+test("expanded tool dock is a vertical left-edge rail above the bottom trigger", () => {
+ const hud = readFileSync(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
+ assert.match(hud, /left:calc\\(16px/);
+ assert.match(hud, /bottom:calc\\(16px/);
+ assert.match(hud, /flex-direction:column !important;[\\s\\S]*?width:44px !important/);
+ assert.match(hud, /bottom:calc\\(100% \\+ 8px\\) !important/);
+ assert.match(hud, /overflow-y:auto !important/);
+ assert.match(hud, /background:rgba\\(238,242,255,.8\\) !important/);
+ assert.match(hud, /border-color:#a5b4fc !important/);
+ assert.match(hud, /color:#4f46e5 !important/);
+ assert.doesNotMatch(hud, /flex-direction:row;[\\s\\S]*?width:max-content/);
 });
+
+
 
 test("sidebar hides while the hamburger menu is open to prevent overlap", () => {
   const mount = canvas.match(/<PrimaryDock[\s\S]*?\/>/)?.[0] || "";
@@ -59,18 +62,13 @@ test("changing the active tool (e.g. via keyboard shortcut) collapses the dock w
   assert.match(dock, /useEffect\(\(\) => \{\s*if \(previousActiveIdRef\.current === activeId\) return;[\s\S]*?setExpanded\(false\);\s*\}, \[activeId\]\)/);
 });
 
-test("collapsed trigger uses a compact 36px icon-and-chevron pill", () => {
-  const hud = readFileSync(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
-  assert.match(dock, /<ToolIcon name=\{activeToolMeta\.id\} size=\{22\} strokeWidth=\{1\.75\} \/>/);
-  assert.match(dock, /className="sketchizi-tool-sidebar-chevron"[\s\S]*?width="10" height="10"[\s\S]*?strokeWidth="2"[\s\S]*?<path d="m6 15 6-6 6 6"/);
-  assert.match(hud, /width: 56px !important;[\s\S]*?height: 36px !important;/);
-  assert.match(hud, /gap: 4px !important;[\s\S]*?padding: 6px 8px 6px 10px !important;/);
-  assert.match(hud, /border-radius: 12px;[\s\S]*?background: #ffffff !important;[\s\S]*?0 4px 12px -2px rgba\(15, 23, 42, 0\.06\)/);
-  assert.match(hud, /border-color: #cbd5e1 !important/);
-  assert.match(hud, /flex-direction: row;[\s\S]*?width: max-content;[\s\S]*?max-width: calc\(100vw - 40px\)/);
-  assert.match(hud, /position: absolute !important;[\s\S]*?bottom: calc\(100% \+ 10px\)/);
-  assert.match(hud, /flex: 0 0 22px; width: 22px; height: 22px; color: #1e293b;/);
-  assert.match(hud, /align-items: center !important;[\s\S]*?justify-content: flex-start !important;[\s\S]*?gap: 4px !important;/);
-  assert.match(hud, /flex: 0 0 10px;[\s\S]*?width: 10px;[\s\S]*?height: 10px;/);
-  assert.match(hud, /color: #94a3b8;[\s\S]*?color: #334155;[\s\S]*?translateY\(-1px\)/);
+test("collapsed trigger retains the 40px icon-and-chevron pill", () => {
+ const hud = readFileSync(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
+ assert.match(dock, /<ToolIcon name=\\{activeToolMeta\\.id\\} size=\\{22\\} strokeWidth=\\{1\\.75\\} \\/>/);
+ assert.match(hud, /width:70px !important;[\\s\\S]*?height:40px !important/);
+ assert.match(hud, /gap:10px !important;[\\s\\S]*?padding:0 12px !important/);
+ assert.match(hud, /flex:0 0 22px; width:22px; height:22px/);
+ assert.match(hud, /flex:0 0 12px; width:12px; height:12px/);
 });
+
+
