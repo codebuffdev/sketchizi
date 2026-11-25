@@ -2303,9 +2303,9 @@ function App() {
         </div>
       )}
       <Suspense fallback={<div className="sketchizi-toast" role="status" aria-live="polite">Opening tool…</div>}>
-      {closeTabPrompt && (
+      {closeTabPrompt && createPortal(
         <div
-          className="canvas-tab-close-backdrop"
+          className={`canvas-tab-close-backdrop${isDarkTheme ? " theme-dark" : ""}`}
           role="presentation"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setCloseTabPrompt(null);
@@ -2370,7 +2370,8 @@ function App() {
               <button type="button" className="canvas-tab-close-keep" onClick={() => setCloseTabPrompt(null)}>Keep editing</button>
             </div>
           </section>
-        </div>
+        </div>,
+        document.body
       )}
       {replacementPrompt && <div className="canvas-replacement-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) resolveReplacementPrompt(false); }}>
         <section className="canvas-replacement-dialog" role="alertdialog" aria-modal="true" aria-labelledby="canvas-replacement-title" aria-describedby="canvas-replacement-description">
