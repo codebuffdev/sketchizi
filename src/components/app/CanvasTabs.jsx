@@ -5,6 +5,12 @@ import { describeTabSync, getTabStatusClass } from "../../features/workspace/tab
 import { countLiveElements, describeClosedAt } from "../../features/workspace/closedTabs.js";
 import WorkspaceModeIcon from "../../features/workspace/WorkspaceModeIcon.jsx";
 
+const NEW_CANVAS_OPTIONS = [
+  { mode: "infinity", type: "canvas", title: "Infinity", subtitle: "Unbounded freeform whiteboard" },
+  { mode: "pages", type: "pages", title: "Pages", subtitle: "Structured chapter-based document" },
+  { mode: "system-design", type: "system-design", title: "System Design", subtitle: "Architecture diagrams and simulation" },
+];
+
 function TodoGlyph() {
   return (
     <svg className="canvas-tab-icon canvas-tab-todo-icon" viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -47,7 +53,10 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [activeMenuOpen, setActiveMenuOpen] = useState(false);
   const [closedMenuOpen, setClosedMenuOpen] = useState(false);
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const rootRef = useRef(null);
+  const createMenuRef = useRef(null);
+  const createTriggerRef = useRef(null);
   const overflowTriggerRef = useRef(null);
   const overflowMenuRef = useRef(null);
   const [overflowPosition, setOverflowPosition] = useState(null);
@@ -66,7 +75,30 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
     setOverflowOpen(false);
     setActiveMenuOpen(false);
     setClosedMenuOpen(false);
+    setCreateMenuOpen(false);
   }, [activeId]);
+
+
+  useEffect(() => {
+    if (!createMenuOpen) return undefined;
+    createMenuRef.current?.querySelector("[role='menuitem']")?.focus();
+    const closeOnOutsideInteraction = (event) => {
+      if (!rootRef.current?.contains(event.target)) setCreateMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setCreateMenuOpen(false);
+      createTriggerRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", closeOnOutsideInteraction, true);
+    document.addEventListener("keydown", closeOnEscape, true);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideInteraction, true);
+      document.removeEventListener("keydown", closeOnEscape, true);
+    };
+  }, [createMenuOpen]);
 
   useEffect(() => {
     if (!closedMenuOpen) return undefined;
@@ -240,33 +272,44 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
           </div>
         )}
         {showAddButton && (
-          <button
-            type="button"
-            className="canvas-tabs-add"
-            aria-label="Create new tab"
-            title="Create new tab"
-            onClick={() => {
-              setOverflowOpen(false);
-              onCreate?.();
-            }}
-            disabled={disabled}
-          >
-            <svg
-              className="canvas-tabs-add-icon"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="3" />
-              <path d="M12 8v8M8 12h8" />
-            </svg>
-          </button>
+          <div className="canvas-tabs-create-wrap">
+            <button ref={createTriggerRef} type="button" className={`canvas-tabs-add${createMenuOpen ? " is-open" : ""}`}
+              aria-label="Create new canvas" title="Create new canvas" aria-haspopup="menu" aria-expanded={createMenuOpen}
+              aria-controls="canvas-tabs-create-menu"
+              onClick={() => { setOverflowOpen(false); setActiveMenuOpen(false); setClosedMenuOpen(false); setCreateMenuOpen((open) => !open); }}
+              disabled={disabled}>
+              <svg className="canvas-tabs-add-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+            {createMenuOpen && (
+              <div ref={createMenuRef} id="canvas-tabs-create-menu" className="canvas-tabs-create-menu" role="menu" aria-label="New canvas type">
+                <div className="canvas-tabs-create-eyebrow">NEW CANVAS</div>
+                {NEW_CANVAS_OPTIONS.map((option, index) => (
+                  <button key={option.mode} type="button" role="menuitem" tabIndex={index === 0 ? 0 : -1}
+                    className={`canvas-tabs-create-option canvas-tabs-create-option--${option.mode}`}
+                    onClick={() => { setCreateMenuOpen(false); onCreate?.({ type: option.type, mode: option.mode }); }}
+                    onKeyDown={(event) => {
+                      const items = Array.from(createMenuRef.current?.querySelectorAll("[role='menuitem']") || []);
+                      const currentIndex = items.indexOf(event.currentTarget);
+                      let nextIndex = null;
+                      if (event.key === "ArrowDown") nextIndex = (currentIndex + 1) % items.length;
+                      else if (event.key === "ArrowUp") nextIndex = (currentIndex - 1 + items.length) % items.length;
+                      else if (event.key === "Home") nextIndex = 0;
+                      else if (event.key === "End") nextIndex = items.length - 1;
+                      if (nextIndex !== null) {
+                        event.preventDefault();
+                        items.forEach((item, itemIndex) => { item.tabIndex = itemIndex === nextIndex ? 0 : -1; });
+                        items[nextIndex]?.focus();
+                      }
+                    }}>
+                    <WorkspaceModeIcon mode={option.mode === "infinity" ? "canvas" : option.mode} className="canvas-tabs-create-option-icon" />
+                    <span className="canvas-tabs-create-option-copy"><strong>{option.title}</strong><small>{option.subtitle}</small></span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
         </div>
       </div>
