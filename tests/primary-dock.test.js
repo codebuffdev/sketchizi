@@ -58,3 +58,14 @@ test("selecting a tool collapses the dock immediately and clears the pending hov
 test("changing the active tool (e.g. via keyboard shortcut) collapses the dock without stealing focus", () => {
   assert.match(dock, /useEffect\(\(\) => \{\s*if \(previousActiveIdRef\.current === activeId\) return;[\s\S]*?setExpanded\(false\);\s*\}, \[activeId\]\)/);
 });
+
+test("collapsed trigger uses the 36px Option A icon-and-chevron pill", () => {
+  const hud = readFileSync(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
+  assert.match(dock, /<ToolIcon name=\{activeToolMeta\.id\} size=\{20\} strokeWidth=\{1\.75\} \/>/);
+  assert.match(dock, /className="sketchizi-tool-sidebar-chevron"[\s\S]*?width="12" height="12"[\s\S]*?strokeWidth="2"[\s\S]*?<path d="m6 15 6-6 6 6"/);
+  assert.match(hud, /width: 58px !important;[\s\S]*?height: 36px !important;/);
+  assert.match(hud, /padding: 0 10px !important;[\s\S]*?gap: 6px !important;/);
+  assert.match(hud, /border-radius: 12px;[\s\S]*?background: #ffffff !important;[\s\S]*?0 4px 12px -2px rgba\(15, 23, 42, 0\.06\)/);
+  assert.match(hud, /border-color: #cbd5e1 !important/);
+  assert.match(hud, /color: #94a3b8;[\s\S]*?color: #334155;[\s\S]*?translateY\(-1px\)/);
+});
