@@ -450,15 +450,20 @@ export function useWorkspaceTabs({
       : tab);
     const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
     const id = createCanvasTabId(currentTabs.map((tab) => tab.id));
-    const isPagesTab = requestedType === "pages";
+    const requestedMode = requestedType === "canvas" ? "infinity" : requestedType;
+    const isPagesTab = requestedMode === "pages";
+    const isSystemDesignTab = requestedMode === "system-design";
+    const tabType = isPagesTab ? "pages" : isSystemDesignTab ? "system-design" : "canvas";
     const nextTab = {
-      id, name: requestedName || (isPagesTab ? `Page ${nextNumber}` : `Canvas ${nextNumber}`),
-      type: isPagesTab ? "pages" : requestedType,
+      id,
+      name: requestedName || (isPagesTab ? `Page ${nextNumber}` : isSystemDesignTab ? `System Design ${nextNumber}` : `Canvas ${nextNumber}`),
+      type: tabType,
+      mode: requestedMode,
       ...createTabDates(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
       snapshot: isPagesTab ? createDefaultPagesSnapshot(apiRef.current) : {
         elements: [], appState: { viewBackgroundColor: apiRef.current?.getAppState?.().viewBackgroundColor || "#ffffff" },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
-        systemDesign: { ...DEFAULT_SYSTEM_DESIGN_TAB_STATE },
+        systemDesign: { ...DEFAULT_SYSTEM_DESIGN_TAB_STATE, ...(isSystemDesignTab ? { active: true } : {}) },
         file: null, cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" },
         cloudDetached: true, cloudSaveState: { state: "inactive", error: "" }, cloudDocumentName: "Cloud diagram",
       },
