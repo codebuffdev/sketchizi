@@ -37,32 +37,51 @@
   color: var(--hud-ink);
 }
 
-/* ---------- Bottom-left trigger + vertical tool rail ---------- */
+/* ---------- Containerless bottom-left trigger + vertical tool rail ---------- */
 .app .sketchizi-tool-sidebar.sketchizi-tool-sidebar {
- position:fixed !important; left:calc(16px + var(--safe-left, 0px)) !important; right:auto !important;
- bottom:calc(16px + var(--safe-bottom, 0px)) !important; width:52px !important; height:32px !important;
+ position:fixed !important; left:calc(20px + var(--safe-left, 0px)) !important; right:auto !important;
+ bottom:calc(20px + var(--safe-bottom, 0px)) !important; width:max-content !important; height:26px !important;
  max-height:none !important; padding:0 !important; gap:0 !important; overflow:visible !important;
- border:0 !important; border-radius:12px !important; background:transparent !important;
+ border:0 !important; border-radius:0 !important; background:transparent !important;
  box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
  z-index:80; transition:none !important;
 }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-collapsed {
- position:relative !important; display:block !important; width:70px !important; height:40px !important;
- max-height:32px !important; opacity:1 !important; pointer-events:auto !important; overflow:visible;
- border:1px solid #e2e8f0 !important; border-radius:10px !important; background:#fff !important;
- box-shadow:0 4px 12px -2px rgba(15,23,42,.08) !important; transition:border-color 150ms ease,box-shadow 150ms ease;
+ position:static !important; display:contents !important; width:auto !important; height:auto !important;
+ max-height:none !important; opacity:1 !important; pointer-events:auto !important; overflow:visible;
+ border:0 !important; border-radius:0 !important; background:transparent !important; box-shadow:none !important;
 }
-.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-collapsed:hover { border-color:#cbd5e1 !important; box-shadow:0 5px 14px -2px rgba(15,23,42,.12) !important; }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active {
- position:absolute !important; inset:0 !important; display:inline-flex !important; align-items:center !important;
- justify-content:flex-start !important; gap:4px !important; width:100% !important; height:100% !important;
- padding:0 8px !important; box-sizing:border-box !important; border:0 !important; border-radius:12px !important;
- background:#fff !important; color:#1e293b !important; box-shadow:none !important; cursor:pointer;
+ position:relative !important; inset:auto !important; display:inline-flex !important;
+ align-items:flex-end !important; justify-content:flex-start !important; gap:3px !important;
+ width:auto !important; height:26px !important; min-height:26px !important; padding:0 !important;
+ box-sizing:border-box !important; border:0 !important; border-radius:0 !important;
+ background:transparent !important; color:#0f172a !important; box-shadow:none !important;
+ cursor:pointer; transform:translateY(0);
+ transition:transform 150ms ease,filter 150ms ease,color 150ms ease !important;
 }
-.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active > svg:first-child { flex:0 0 19px; width:19px; height:19px; color:#1e293b; }
-.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-chevron { flex:0 0 10px; width:10px; height:10px; color:#94a3b8; transform:translateY(3px); transition:color 150ms ease,transform 150ms ease; }
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:hover,
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:focus-visible {
+ background:transparent !important; color:#0f172a !important;
+ transform:translateY(-1px);
+}
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active > svg:first-child {
+ flex:0 0 26px; width:26px; height:26px; color:#0f172a;
+ filter:drop-shadow(0 4px 10px rgba(15,23,42,.22)) drop-shadow(0 1px 2px rgba(15,23,42,.14));
+ transition:filter 150ms ease;
+}
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:hover > svg:first-child,
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:focus-visible > svg:first-child {
+ filter:drop-shadow(0 6px 14px rgba(15,23,42,.28));
+}
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-chevron {
+ flex:0 0 10px; width:10px; height:10px; margin-bottom:1px; color:#64748b;
+ transform:translateY(0); transition:color 150ms ease,transform 150ms ease;
+}
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:hover .sketchizi-tool-sidebar-chevron,
-.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:focus-visible .sketchizi-tool-sidebar-chevron { color:#334155; transform:translateY(3px); }
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-active:focus-visible .sketchizi-tool-sidebar-chevron {
+ color:#0f172a; transform:translateY(-2px);
+}
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-expand { display:none !important; }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list {
  position:absolute !important; left:0 !important; right:auto !important; bottom:calc(100% + 8px) !important;
@@ -74,6 +93,9 @@
  transform-origin:bottom left; opacity:0 !important; transform:translateY(8px) scale(.97) !important;
  filter:blur(2px); pointer-events:none !important; visibility:hidden;
  transition:opacity 150ms var(--hud-ease-out),transform 150ms var(--hud-ease-out),filter 150ms var(--hud-ease-out),visibility 0s linear 150ms !important;
+}
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list::after {
+ content:""; position:absolute; left:0; right:0; top:100%; height:12px;
 }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list::-webkit-scrollbar { display:none; }
 .app .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list {
