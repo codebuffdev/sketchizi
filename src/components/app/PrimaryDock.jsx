@@ -47,8 +47,8 @@ const TOOLS = [
   { id: "todo", label: "Todo List", separated: true },
 ];
 
-function ToolIcon({ name }) {
-  return <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[name]}</svg>;
+function ToolIcon({ name, size = 19, strokeWidth = 1.7 }) {
+  return <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[name]}</svg>;
 }
 
 function activateTool({ id, root, apiRef, onOpenTodoTab }) {
@@ -280,8 +280,8 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
           onMouseEnter={expandDock}
           onClick={handleExpandClick}
         >
-          <ToolIcon name={activeToolMeta.id} />
-          {activeToolMeta.keyHint && <span className="sketchizi-tool-sidebar-key">{activeToolMeta.keyHint}</span>}
+          <ToolIcon name={activeToolMeta.id} size={20} strokeWidth={1.75} />
+          <svg className="sketchizi-tool-sidebar-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
         </button>
         <button
           type="button"
