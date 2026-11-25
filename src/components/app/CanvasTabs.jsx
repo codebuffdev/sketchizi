@@ -279,7 +279,8 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
               onClick={() => { setOverflowOpen(false); setActiveMenuOpen(false); setClosedMenuOpen(false); setCreateMenuOpen((open) => !open); }}
               disabled={disabled}>
               <svg className="canvas-tabs-add-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 5v14M5 12h14" />
+                <rect x="3" y="3" width="18" height="18" rx="3" />
+                <path d="M12 8v8M8 12h8" />
               </svg>
             </button>
             {createMenuOpen && (
