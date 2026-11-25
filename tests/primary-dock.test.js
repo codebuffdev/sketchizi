@@ -59,9 +59,9 @@ test("changing the active tool (e.g. via keyboard shortcut) collapses the dock w
   assert.match(dock, /useEffect\(\(\) => \{\s*if \(previousActiveIdRef\.current === activeId\) return;[\s\S]*?setExpanded\(false\);\s*\}, \[activeId\]\)/);
 });
 
-test("collapsed trigger uses the 36px Option A icon-and-chevron pill", () => {
+test("collapsed trigger uses the 40px spaced icon-and-chevron pill", () => {
   const hud = readFileSync(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
-  assert.match(dock, /<ToolIcon name=\{activeToolMeta\.id\} size=\{20\} strokeWidth=\{1\.75\} \/>/);
+  assert.match(dock, /<ToolIcon name=\{activeToolMeta\.id\} size=\{22\} strokeWidth=\{1\.75\} \/>/);
   assert.match(dock, /className="sketchizi-tool-sidebar-chevron"[\s\S]*?width="12" height="12"[\s\S]*?strokeWidth="2"[\s\S]*?<path d="m6 15 6-6 6 6"/);
   assert.match(hud, /width: 58px !important;[\s\S]*?height: 36px !important;/);
   assert.match(hud, /gap: 6px !important;[\s\S]*?padding: 0 10px !important;/);
