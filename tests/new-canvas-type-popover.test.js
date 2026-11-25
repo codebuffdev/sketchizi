@@ -13,7 +13,7 @@ test("new canvas modes persist independently and System Design starts enabled", 
  assert.match(hook,/mode: requestedMode/);
  assert.match(hook,/const tabType = isPagesTab \? "pages" : isSystemDesignTab \? "system-design" : "canvas"/);
  assert.match(hook,/isSystemDesignTab \? \{ active: true \} : \{\}/);
- assert.match(hook,/isPagesTab \? createDefaultPagesSnapshot\(apiRef\.current\)/);
+ assert.match(hook,/isPagesTab \? createDefaultPagesSnapshot\(apiRef\.current\)/);\n const systemDesign=read("../src/features/system-design/useSystemDesignWorkspace.js");\n assert.match(systemDesign,/Hydrate it from its persisted snapshot/);\n assert.match(systemDesign,/readSystemDesignTabState\(canvasTabsRef\?\.current \|\| \[\], activeCanvasId\)/);
 });
 test("new canvas picker uses compact tab-bar styling and sits below the plus control", () => {
  const styles=read("../src/styles/canvas-tabs.css");
