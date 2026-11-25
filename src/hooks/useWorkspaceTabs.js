@@ -354,7 +354,7 @@ export function useWorkspaceTabs({
       snapshot = { ...snapshot, ...createDefaultPagesSnapshot(apiRef.current, snapshot?.chapters?.[0]) };
     }
     const nextTabs = canvasTabsRef.current.map(tab => tab.id === tabId
-      ? { ...tab, type: type === "pages" ? "pages" : "canvas", snapshot }
+      ? { ...tab, type: type === "pages" ? "pages" : "canvas", mode: type === "pages" ? "pages" : "infinity", snapshot }
       : tab);
     persistCanvasTabs(nextTabs);
     if (type === "pages") applyCanvasTabSnapshot(nextTabs.find(tab => tab.id === tabId));
