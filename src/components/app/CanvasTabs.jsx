@@ -335,7 +335,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
                 ))}
               </div>,
               document.body
-            )}}
+            )}
           </div>
         )}
         </div>
