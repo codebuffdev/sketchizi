@@ -115,15 +115,19 @@
   left: 0;
   bottom: calc(100% + 10px);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  width: 46px;
-  max-height: calc(100dvh - 120px) !important;
+  gap: 2px;
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  height: 46px;
+  max-height: 46px !important;
   margin: 0 !important;
   padding: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
   box-sizing: border-box;
-  overflow-x: hidden;
-  overflow-y: auto;
   border-radius: 16px;
   transform-origin: bottom left;
   /* collapsed / exit */
@@ -149,6 +153,13 @@
   visibility: visible;
   transition: opacity 240ms var(--hud-ease-in), transform 240ms var(--hud-ease-in), filter 240ms var(--hud-ease-in), visibility 0s !important;
 }
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-divider {
+  flex: 0 0 1px;
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+}
+.app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list::-webkit-scrollbar { display: none; }
 .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button {
   opacity: 0;
   transform: translateY(6px);
