@@ -10,7 +10,7 @@ test("canvas plus button opens a three-mode picker with accessible keyboard navi
 test("new canvas modes persist independently and System Design starts enabled", () => {
  const hook=read("../src/hooks/useWorkspaceTabs.js");
  assert.match(hook,/const requestedMode = requestedType === "canvas" \? "infinity" : requestedType/);
- assert.match(hook,/mode: requestedMode/);
+ assert.match(hook,/mode: requestedMode/);\n assert.match(hook,/mode: type === "pages" \? "pages" : "infinity"/);
  assert.match(hook,/const tabType = isPagesTab \? "pages" : isSystemDesignTab \? "system-design" : "canvas"/);
  assert.match(hook,/isSystemDesignTab \? \{ active: true \} : \{\}/);
  assert.match(hook,/isPagesTab \? createDefaultPagesSnapshot\(apiRef\.current\)/);\n const systemDesign=read("../src/features/system-design/useSystemDesignWorkspace.js");\n assert.match(systemDesign,/Hydrate it from its persisted snapshot/);\n assert.match(systemDesign,/readSystemDesignTabState\(canvasTabsRef\?\.current \|\| \[\], activeCanvasId\)/);
