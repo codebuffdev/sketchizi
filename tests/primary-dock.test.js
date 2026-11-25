@@ -63,11 +63,13 @@ test("collapsed trigger uses the 40px spaced icon-and-chevron pill", () => {
   const hud = readFileSync(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
   assert.match(dock, /<ToolIcon name=\{activeToolMeta\.id\} size=\{22\} strokeWidth=\{1\.75\} \/>/);
   assert.match(dock, /className="sketchizi-tool-sidebar-chevron"[\s\S]*?width="12" height="12"[\s\S]*?strokeWidth="2"[\s\S]*?<path d="m6 15 6-6 6 6"/);
-  assert.match(hud, /width: 58px !important;[\s\S]*?height: 36px !important;/);
-  assert.match(hud, /gap: 6px !important;[\s\S]*?padding: 0 10px !important;/);
+  assert.match(hud, /width: 68px !important;[\s\S]*?height: 40px !important;/);
+  assert.match(hud, /gap: 10px !important;[\s\S]*?padding: 0 12px !important;/);
   assert.match(hud, /border-radius: 12px;[\s\S]*?background: #ffffff !important;[\s\S]*?0 4px 12px -2px rgba\(15, 23, 42, 0\.06\)/);
   assert.match(hud, /border-color: #cbd5e1 !important/);
   assert.match(hud, /flex-direction: row;[\s\S]*?width: max-content;[\s\S]*?max-width: calc\(100vw - 40px\)/);
   assert.match(hud, /position: absolute !important;[\s\S]*?bottom: calc\(100% \+ 10px\)/);
+  assert.match(hud, /flex: 0 0 22px; width: 22px; height: 22px; color: #1e293b;/);
+  assert.match(hud, /align-items: center !important;[\s\S]*?gap: 10px !important;/);
   assert.match(hud, /color: #94a3b8;[\s\S]*?color: #334155;[\s\S]*?translateY\(-1px\)/);
 });
