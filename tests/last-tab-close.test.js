@@ -38,6 +38,7 @@ test("authored elements, renamed pages, editorial text, and dirty state are not 
 test("close modal is portaled to the document body above workspace stacking contexts", () => {
   assert.match(app, /closeTabPrompt && createPortal\([\s\S]*?document\.body\s*\)\}/);
   assert.match(app, /canvas-tab-close-backdrop\$\{isDarkTheme \? " theme-dark" : ""\}/);
+  assert.match(closeDialogCss, /z-index:\s*2147483647/);
 });
 
 test("closing the only tab returns to the welcome screen with no active tab", () => {
