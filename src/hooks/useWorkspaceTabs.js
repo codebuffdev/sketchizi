@@ -354,7 +354,7 @@ export function useWorkspaceTabs({
       snapshot = { ...snapshot, ...createDefaultPagesSnapshot(apiRef.current, snapshot?.chapters?.[0]) };
     }
     const nextTabs = canvasTabsRef.current.map(tab => tab.id === tabId
-      ? { ...tab, type: type === "pages" ? "pages" : "canvas", snapshot }
+      ? { ...tab, type: type === "pages" ? "pages" : "canvas", mode: type === "pages" ? "pages" : "infinity", snapshot }
       : tab);
     persistCanvasTabs(nextTabs);
     if (type === "pages") applyCanvasTabSnapshot(nextTabs.find(tab => tab.id === tabId));
@@ -451,14 +451,18 @@ export function useWorkspaceTabs({
     const nextNumber = currentTabs.reduce((max, tab) => Math.max(max, Number(tab.name.match(/Canvas (\d+)/)?.[1] || 0)), 0) + 1;
     const id = createCanvasTabId(currentTabs.map((tab) => tab.id));
     const isPagesTab = requestedType === "pages";
+    const requestedMode = requestedType === "canvas" ? "infinity" : requestedType;
+    const isSystemDesignTab = requestedMode === "system-design";
     const nextTab = {
-      id, name: requestedName || (isPagesTab ? `Page ${nextNumber}` : `Canvas ${nextNumber}`),
+      id,
+      name: requestedName || (isPagesTab ? `Page ${nextNumber}` : isSystemDesignTab ? `System Design ${nextNumber}` : `Canvas ${nextNumber}`),
       type: isPagesTab ? "pages" : requestedType,
+      mode: requestedMode,
       ...createTabDates(), todoItems: [], todoTabOpen: false, todoTabActive: false, dirty: false,
       snapshot: isPagesTab ? createDefaultPagesSnapshot(apiRef.current) : {
         elements: [], appState: { viewBackgroundColor: apiRef.current?.getAppState?.().viewBackgroundColor || "#ffffff" },
         files: {}, metadata: {}, extensions: {}, format: "excalidraw",
-        systemDesign: { ...DEFAULT_SYSTEM_DESIGN_TAB_STATE },
+        systemDesign: { ...DEFAULT_SYSTEM_DESIGN_TAB_STATE, ...(isSystemDesignTab ? { active: true } : {}) },
         file: null, cloudSession: { active: false, diagramId: "", projectId: "", revision: null, name: "" },
         cloudDetached: true, cloudSaveState: { state: "inactive", error: "" }, cloudDocumentName: "Cloud diagram",
       },

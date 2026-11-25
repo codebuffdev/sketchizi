@@ -1312,3 +1312,36 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
   max-height: min(60vh, 420px);
   overflow-y: auto;
 }
+
+
+/* Compact canvas-type picker anchored to the + control. */
+.canvas-tabs-create-wrap { position:relative; display:inline-flex; align-items:center; }
+.canvas-tabs-add.is-open { background:var(--ct-control-hover,#edf1f6); color:var(--ct-strong,#202a3a); }
+.canvas-tabs-create-menu {
+  position:absolute; top:calc(100% + 8px); right:0; z-index:50;
+  width:258px; padding:8px; border:1px solid var(--ct-active-border,#d5dce7);
+  border-radius:11px; background:var(--ct-active,#fff); color:var(--ct-strong,#202a3a);
+  box-shadow:0 12px 28px rgb(15 23 42 / 16%);
+  animation:canvas-tabs-create-in .12s ease-out;
+}
+@keyframes canvas-tabs-create-in { from { opacity:0; transform:translateY(-4px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+.canvas-tabs-create-eyebrow { padding:4px 8px 7px; color:var(--ct-muted,#7d8798); font-size:9px; font-weight:750; letter-spacing:.12em; line-height:1; }
+.canvas-tabs-create-option { display:flex; align-items:center; gap:10px; width:100%; min-height:54px; padding:8px; border:0; border-radius:7px; background:transparent; color:inherit; text-align:left; cursor:pointer; transition:background-color .12s ease,color .12s ease; }
+.canvas-tabs-create-option:hover,.canvas-tabs-create-option:focus-visible { outline:none; background:var(--ct-hover,#e9edf3); }
+.canvas-tabs-create-option:focus-visible { box-shadow:inset 0 0 0 1px var(--ct-active-border,#d5dce7); }
+.canvas-tabs-create-option-icon { flex:0 0 18px; width:18px; height:18px; color:var(--ct-text,#647084); }
+.canvas-tabs-create-option--pages .canvas-tabs-create-option-icon { color:#64748b; }
+.canvas-tabs-create-option--system-design .canvas-tabs-create-option-icon { color:#059669; }
+.canvas-tabs-create-option-copy { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.canvas-tabs-create-option-copy strong { font-size:12px; font-weight:650; line-height:1.2; }
+.canvas-tabs-create-option-copy small { color:var(--ct-muted,#7d8798); font-size:10px; line-height:1.3; }
+.app.theme-dark .canvas-tabs-create-menu { --ct-active:#202936; --ct-active-border:#3b475a; --ct-hover:#2d394a; --ct-strong:#eef2f8; --ct-muted:#9eabbf; box-shadow:0 14px 30px rgb(0 0 0 / 34%); }
+.app.theme-dark .canvas-tabs-add.is-open { color:#f1f5f9; border-color:#536176; background:#2a3545; }
+.app.theme-dark .canvas-tabs-create-option-icon { color:#cbd5e1; }
+.app.theme-dark .canvas-tabs-create-option--system-design .canvas-tabs-create-option-icon { color:#34d399; }
+
+/* Keep tab mode glyphs monochrome slate, with emerald reserved for System Design. */
+.app.theme-dark .canvas-tab-item .canvas-tab-icon { color:#94a3b8; }
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab-icon { color:#cbd5e1; }
+.app.theme-dark .canvas-tab-item .workspace-mode-icon--system-design,
+.app.theme-dark .canvas-tab-item.is-active .workspace-mode-icon--system-design { color:#34d399; }
