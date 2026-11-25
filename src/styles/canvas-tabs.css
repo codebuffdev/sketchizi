@@ -1339,3 +1339,9 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
 .app.theme-dark .canvas-tabs-add.is-open { color:#f1f5f9; border-color:#536176; background:#2a3545; }
 .app.theme-dark .canvas-tabs-create-option-icon { color:#cbd5e1; }
 .app.theme-dark .canvas-tabs-create-option--system-design .canvas-tabs-create-option-icon { color:#34d399; }
+
+/* Keep tab mode glyphs monochrome slate, with emerald reserved for System Design. */
+.app.theme-dark .canvas-tab-item .canvas-tab-icon { color:#94a3b8; }
+.app.theme-dark .canvas-tab-item.is-active .canvas-tab-icon { color:#cbd5e1; }
+.app.theme-dark .canvas-tab-item .workspace-mode-icon--system-design,
+.app.theme-dark .canvas-tab-item.is-active .workspace-mode-icon--system-design { color:#34d399; }
