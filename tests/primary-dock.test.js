@@ -72,7 +72,7 @@ test("collapsed trigger is a compact 32px icon-and-chevron pill", () => {
   assert.ok(hud.includes("border-radius:10px !important;"));
   assert.ok(hud.includes("flex:0 0 19px; width:19px; height:19px; color:#1e293b;"));
   assert.ok(hud.includes("flex:0 0 10px; width:10px; height:10px; color:#94a3b8; transform:translateY(3px);"));
-  assert.ok(hud.includes("transform:translateY(2px);"));
+  assert.ok(hud.includes("transform:translateY(3px);"));
 });
 
 
