@@ -1,0 +1,391 @@
+/* Sketchizi — fluid responsive layer (loaded LAST).
+ *
+ * Breakpoints (single source of truth, mirrored in features/device/responsiveShell.js):
+ *   desktop / ultra-wide   >= 1024px
+ *   tablet / iPad          768px – 1023px
+ *   phone                  <  768px
+ *
+ * The legacy layers still use 520/760/1024 breakpoints. This file is scoped with
+ * `:root` (+1 class of specificity) so it wins without touching those files.
+ * Application state, handlers and Excalidraw integration are not changed here.
+ */
+
+:root {
+  --rf-edge: 12px;
+  --rf-hit: 44px;
+  --rf-sheet-max: 65dvh;
+  --rf-drawer-width: min(380px, 88dvw);
+  --rf-safe-top: env(safe-area-inset-top, 0px);
+  --rf-safe-right: env(safe-area-inset-right, 0px);
+  --rf-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --rf-safe-left: env(safe-area-inset-left, 0px);
+  --rf-sheet-radius: 20px;
+  --rf-shadow-float: 0 10px 30px rgb(15 23 42 / 18%), 0 2px 6px rgb(15 23 42 / 10%);
+}
+
+/* ------------------------------------------------------------------ *
+ * 1. Dynamic viewport units + full-bleed canvas (all sizes)
+ * ------------------------------------------------------------------ */
+html, body {
+  width: 100%;
+  height: 100dvh;
+  max-width: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+:root #root,
+:root .app {
+  width: 100%;
+  height: 100dvh;
+  max-width: 100%;
+  overflow: hidden;
+}
+/* base.css pinned the canvas to 100vh, which is taller than the visible area
+   while a mobile browser's address bar is showing. */
+:root .canvas {
+  width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+}
+@supports (width: 100dvw) {
+  :root .desktop-canvas-region,
+  :root .canvas { max-width: 100dvw; }
+}
+
+/* Canvas owns every touch gesture: no pull-to-refresh, no edge-swipe back,
+   no double-tap zoom. Excalidraw handles pinch/pan/wheel itself. */
+:root .canvas,
+:root .canvas .excalidraw,
+:root .canvas .excalidraw .excalidraw-container,
+:root .canvas canvas {
+  touch-action: none;
+  overscroll-behavior: none;
+}
+:root .canvas { -webkit-touch-callout: none; }
+/* Text editing and scrollable panels inside the canvas keep native behaviour. */
+:root .canvas textarea,
+:root .canvas input,
+:root .canvas [contenteditable="true"] {
+  touch-action: auto;
+  -webkit-touch-callout: default;
+}
+/* UI chrome: allow tap without double-tap-zoom delay. */
+:root button,
+:root [role="button"],
+:root [role="menuitem"],
+:root summary { touch-action: manipulation; }
+
+/* Nothing in the shell may create a horizontal scrollbar. */
+:root .app,
+:root .desktop-workspace,
+:root .desktop-canvas-region { overflow-x: clip; }
+
+/* ------------------------------------------------------------------ *
+ * 2. Safe-area insets for floating UI (all sizes)
+ * ------------------------------------------------------------------ */
+:root .minimap {
+  right: max(18px, var(--rf-safe-right));
+  bottom: max(66px, calc(var(--rf-safe-bottom) + 54px));
+  max-width: calc(100dvw - var(--rf-safe-left) - var(--rf-safe-right) - 2 * var(--rf-edge));
+}
+:root .cloud-editor-save-status {
+  max-width: calc(100dvw - var(--rf-safe-left) - var(--rf-safe-right) - 2 * var(--rf-edge));
+  margin-left: var(--rf-safe-left);
+  margin-right: var(--rf-safe-right);
+}
+
+/* ------------------------------------------------------------------ *
+ * 3. Ultra-wide: keep chrome proportionate, never stretch it
+ * ------------------------------------------------------------------ */
+@media (min-width: 1024px) {
+  /* The desktop header is already a fixed-width right rail; cap the page-level
+     surfaces that otherwise grow with the monitor. */
+  :root .cw-content,
+  :root .design-studio-intro,
+  :root .design-studio-blank-card,
+  :root .design-studio-catalog {
+    max-width: 1680px;
+    margin-inline: auto;
+  }
+  :root [role="dialog"][aria-modal="true"] {
+    max-width: min(90vw, 960px);
+  }
+}
+@media (min-width: 1920px) {
+  :root .library-panel,
+  :root .properties-panel { max-width: 420px; }
+}
+
+/* ------------------------------------------------------------------ *
+ * 4. Dock: tap-to-toggle trigger + tray (hud-capsules.css owns the
+ *    animation; we only reshape the tray into a scrollable row)
+ * ------------------------------------------------------------------ */
+@media (max-width: 1023.98px), (hover: none) {
+  /* The trigger keeps its bottom-left anchor (the bottom centre belongs to the
+     tool-options dock) and its 46px square, which already exceeds 44px. */
+  :root .app .sketchizi-tool-sidebar.sketchizi-tool-sidebar {
+    left: max(var(--rf-edge), var(--rf-safe-left)) !important;
+    bottom: max(var(--rf-edge), var(--rf-safe-bottom)) !important;
+  }
+  /* The tray becomes ONE horizontally scrollable row of 44px tools. */
+  :root .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list {
+    flex-direction: row;
+    justify-content: flex-start;
+    width: max-content;
+    max-width: calc(100dvw - max(var(--rf-edge), var(--rf-safe-left)) - max(var(--rf-edge), var(--rf-safe-right)));
+    max-height: none !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+  }
+  :root .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list::-webkit-scrollbar { display: none; }
+  :root .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button {
+    flex: 0 0 var(--rf-hit);
+    width: var(--rf-hit);
+    height: var(--rf-hit);
+    min-height: var(--rf-hit);
+    scroll-snap-align: center;
+  }
+  :root .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button.is-active {
+    flex-basis: var(--rf-hit);
+    width: var(--rf-hit);
+    height: var(--rf-hit);
+  }
+  :root .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-divider {
+    flex: 0 0 1px;
+    width: 1px;
+    height: 24px;
+    margin: 0 2px;
+  }
+}
+
+/* An open tool tray owns the bottom edge; tuck the minimap away meanwhile. */
+@media (max-width: 1023.98px) {
+  :root .app:has(.sketchizi-tool-sidebar.is-expanded) .minimap { opacity: 0; pointer-events: none; }
+}
+
+/* Dim floating chrome while a finger or pen is drawing. */
+@media (max-width: 1023.98px), (pointer: coarse) {
+  :root[data-canvas-active="true"] .sketchizi-tool-sidebar,
+  :root[data-canvas-active="true"] .desktop-app-header,
+  :root[data-canvas-active="true"] .minimap,
+  :root[data-canvas-active="true"] .desktop-app-zoom-wrap {
+    opacity: .28;
+    pointer-events: none;
+    transition: opacity .12s ease;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * 5. Top header: truncation + single row, secondary clutter removed
+ * ------------------------------------------------------------------ */
+:root .desktop-app-document-location,
+:root .desktop-app-document-rename,
+:root .canvas-tab-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 767.98px) {
+  :root .app.canvas-first-header .desktop-app-header {
+    flex-wrap: nowrap;
+    left: max(var(--rf-edge), var(--rf-safe-left));
+    right: max(var(--rf-edge), var(--rf-safe-right));
+    top: max(var(--rf-edge), var(--rf-safe-top));
+  }
+  /* Keyboard hints and dividers are noise on touch; the commands stay in the
+     application menu (hamburger) and the command palette. */
+  :root .desktop-app-search-shortcut,
+  :root .desktop-app-header-action-divider,
+  :root .desktop-app-spellcheck-state { display: none; }
+  :root .desktop-app-header button,
+  :root .desktop-app-header [role="button"] { min-height: var(--rf-hit); min-width: var(--rf-hit); }
+}
+
+/* ------------------------------------------------------------------ *
+ * 6. Side panels: slide-over drawers (tablet) / bottom sheets (phone)
+ * ------------------------------------------------------------------ */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  :root body .library-panel.library-panel,
+  :root body .properties-panel.properties-panel,
+  :root body .architecture-validation-panel.architecture-validation-panel,
+  :root body .ai-ask-panel.ai-ask-panel,
+  :root body .sd-drawer.sd-drawer {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    width: var(--rf-drawer-width) !important;
+    max-width: var(--rf-drawer-width) !important;
+    margin: 0;
+    padding-top: max(12px, var(--rf-safe-top));
+    padding-bottom: max(12px, var(--rf-safe-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: var(--rf-shadow-float);
+    z-index: 700;
+  }
+  :root body .library-panel.library-panel { left: 0 !important; right: auto !important; padding-left: max(10px, var(--rf-safe-left)); border-radius: 0 16px 16px 0; }
+  :root body .properties-panel.properties-panel,
+  :root body .architecture-validation-panel.architecture-validation-panel,
+  :root body .ai-ask-panel.ai-ask-panel,
+  :root body .sd-drawer.sd-drawer { right: 0 !important; left: auto !important; padding-right: max(10px, var(--rf-safe-right)); border-radius: 16px 0 0 16px; }
+}
+
+@media (max-width: 767.98px) {
+  :root body .library-panel.library-panel,
+  :root body .properties-panel.properties-panel,
+  :root body .architecture-validation-panel.architecture-validation-panel,
+  :root body .ai-ask-panel.ai-ask-panel,
+  :root body .sd-drawer.sd-drawer,
+  :root body [data-rf-sheet][data-rf-sheet] {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: var(--rf-sheet-max) !important;
+    margin: 0;
+    padding-top: 26px; /* room for the grabber */
+    padding-bottom: max(12px, var(--rf-safe-bottom));
+    padding-left: max(10px, var(--rf-safe-left));
+    padding-right: max(10px, var(--rf-safe-right));
+    border-radius: var(--rf-sheet-radius) var(--rf-sheet-radius) 0 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: var(--rf-shadow-float);
+    z-index: 700;
+    /* Lift above the on-screen keyboard (set by responsiveShell.js). */
+    bottom: var(--keyboard-inset, 0px) !important;
+  }
+  /* Grabber: the top 44px of every sheet is the drag zone (see responsiveShell.js). */
+  :root body .library-panel.library-panel::before,
+  :root body .properties-panel.properties-panel::before,
+  :root body .architecture-validation-panel.architecture-validation-panel::before,
+  :root body .ai-ask-panel.ai-ask-panel::before,
+  :root body .sd-drawer.sd-drawer::before,
+  :root body [data-rf-sheet][data-rf-sheet]::before {
+    content: "";
+    position: sticky;
+    top: -22px;
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: -16px auto 12px;
+    border-radius: 99px;
+    background: currentColor;
+    opacity: .28;
+  }
+  :root body .library-panel.library-panel .mobile-panel-close,
+  :root .properties-close,
+  :root .architecture-validation-close,
+  :root .more-tools-menu-close { min-width: var(--rf-hit); min-height: var(--rf-hit); }
+  /* Reserve the sheet's footprint so the dock sits above an open sheet. */
+  :root .app:has(.library-panel, .properties-panel, .ai-ask-panel) .sketchizi-tool-sidebar { opacity: 0; pointer-events: none; }
+}
+
+/* ------------------------------------------------------------------ *
+ * 7. Modals / dialogs
+ * ------------------------------------------------------------------ */
+:root [role="dialog"][aria-modal="true"] {
+  box-sizing: border-box;
+  max-width: min(90vw, 960px);
+  max-height: calc(100dvh - 2 * var(--rf-edge) - var(--rf-safe-top) - var(--rf-safe-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+:root .sketchizi-export-body,
+:root .cloud-save-dialog-fields,
+:root .sketchizi-command-results { overscroll-behavior: contain; }
+:root [role="dialog"] button[aria-label^="Close"],
+:root .sketchizi-modal-close,
+:root .cloud-save-dialog-close,
+:root .sketchizi-command-close { min-width: var(--rf-hit); min-height: var(--rf-hit); }
+
+@media (max-width: 767.98px) {
+  /* Backdrops anchor their dialog to the bottom edge. */
+  :root .sketchizi-export-backdrop,
+  :root .cloud-save-dialog-backdrop,
+  :root .sketchizi-command-palette-overlay,
+  :root .auth-dialog-backdrop,
+  :root .design-dialog-backdrop,
+  :root .design-confirm-backdrop,
+  :root .shortcut-overlay {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 0 var(--keyboard-inset, 0px);
+  }
+  :root [role="dialog"][aria-modal="true"] {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - var(--rf-safe-top) - 8px);
+    margin: 0;
+    border-radius: var(--rf-sheet-radius) var(--rf-sheet-radius) 0 0;
+    padding-bottom: var(--rf-safe-bottom);
+  }
+  /* Sticky header and footer actions inside any dialog. */
+  :root [role="dialog"][aria-modal="true"] > :is(header, [class*="-header"]):first-child {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: inherit;
+  }
+  :root [role="dialog"][aria-modal="true"] > [class*="-actions"]:last-child,
+  :root [role="dialog"][aria-modal="true"] > :is(footer, [class*="-footer"]):last-child {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    padding-bottom: max(8px, var(--rf-safe-bottom));
+    background: inherit;
+  }
+  :root [role="dialog"][aria-modal="true"] :is(input, select, textarea) { font-size: 16px; } /* no iOS focus-zoom */
+}
+
+/* ------------------------------------------------------------------ *
+ * 8. Popovers: never wider/taller than the visible viewport
+ *    (responsiveShell.js adds a final translate() clamp near the edges)
+ * ------------------------------------------------------------------ */
+:root .sk-tool-choice-menu,
+:root .sketchizi-more-tools-menu,
+:root .desktop-app-dropdown,
+:root .workspace-popover-menu,
+:root .smart-studio-popover,
+:root .canvas-pages-chapter-popover,
+:root .collaboration-share-panel,
+:root .sketchizi-todo-popover:not(.is-full-page) {
+  max-width: calc(100dvw - 16px - var(--rf-safe-left) - var(--rf-safe-right));
+  max-height: calc(100dvh - 16px - var(--rf-safe-top) - var(--rf-safe-bottom));
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+:root .sk-tool-choice-menu[data-kind="line-geometry"] {
+  width: min(204px, calc(100dvw - 16px));
+}
+
+/* ------------------------------------------------------------------ *
+ * 9. Landscape phones / short viewports and reduced motion
+ * ------------------------------------------------------------------ */
+@media (max-height: 520px) and (orientation: landscape) {
+  :root { --rf-sheet-max: 80dvh; }
+  :root .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button {
+    flex-basis: 40px; width: 40px; height: 40px; min-height: 40px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root .sketchizi-tool-sidebar,
+  :root .library-panel,
+  :root .properties-panel,
+  :root .ai-ask-panel,
+  :root [role="dialog"] { transition: none !important; animation: none !important; }
+}

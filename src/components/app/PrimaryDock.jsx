@@ -192,7 +192,13 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
     cancelCollapseTimer();
     setExpanded(true);
   };
+  // Touch / hover-less devices emit a synthetic mouseenter right before click.
+  // Ignore it so the pill is a true tap-to-toggle instead of expand-then-collapse.
+  const canHover = () => typeof window === "undefined" || !window.matchMedia?.("(hover: none)").matches;
+  const hoverExpand = () => { if (canHover()) expandDock(); };
+  const hoverCollapse = () => { if (canHover()) scheduleCollapse(); };
   const handleExpandClick = () => {
+    if (!canHover() && expanded) { collapseDock(); return; }
     expandDock();
     window.requestAnimationFrame(() => firstToolButtonRef.current?.focus());
   };
@@ -236,8 +242,8 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
       aria-hidden={nativeMenuOpen}
       inert={nativeMenuOpen}
       data-canvas-revision={canvasRevision}
-      onMouseEnter={expandDock}
-      onMouseLeave={scheduleCollapse}
+      onMouseEnter={hoverExpand}
+      onMouseLeave={hoverCollapse}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) scheduleCollapse();
       }}
@@ -277,7 +283,7 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
           aria-controls="sketchizi-tool-sidebar-list"
           title={` ${activeToolMeta.label} — hover or focus to expand tools`}
           disabled={!canEdit && activeToolMeta.id !== "todo"}
-          onMouseEnter={expandDock}
+          onMouseEnter={hoverExpand}
           onClick={handleExpandClick}
         >
           <ToolIcon name={activeToolMeta.id} />
@@ -289,7 +295,7 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
           aria-label={expanded ? "Collapse drawing tools" : "Expand drawing tools"}
           aria-expanded={expanded}
           tabIndex={-1}
-          onMouseEnter={expandDock}
+          onMouseEnter={hoverExpand}
           onClick={handleExpandClick}
         >
           <span className="sketchizi-tool-sidebar-indicator" aria-hidden="true" />

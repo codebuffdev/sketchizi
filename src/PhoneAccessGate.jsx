@@ -30,7 +30,12 @@ function PhoneAccessBlocked() {
   );
 }
 
+// Phones are supported by the responsive shell (bottom docks, bottom sheets).
+// Set VITE_BLOCK_PHONES=1 at build time to restore the old "not available on
+// phones" screen.
+const BLOCK_PHONES = import.meta.env?.VITE_BLOCK_PHONES === "1";
+
 export default function PhoneAccessGate({ children }) {
-  if (isCurrentDevicePhone()) return <PhoneAccessBlocked />;
+  if (BLOCK_PHONES && isCurrentDevicePhone()) return <PhoneAccessBlocked />;
   return children;
 }

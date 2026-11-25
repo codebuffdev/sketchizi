@@ -82,6 +82,7 @@ import "./styles/canvas-top-controls.css";
 import "./styles/hud-capsules.css";
 import "./styles/edge-drawer-motion.css";
 import "./styles/smart-studio.css";
+import "./styles/responsive-fluid.css"; // must stay the LAST stylesheet import
 
 function App() {
   const iconCatalog = useIconCatalog();

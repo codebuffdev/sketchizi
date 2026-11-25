@@ -31,10 +31,12 @@ import CommunityApp from "./features/community/CommunityApp.jsx";
 import ErrorBoundary from "./ErrorBoundary.jsx";
 import PhoneAccessGate from "./PhoneAccessGate.jsx";
 import { installGlobalErrorHandlers } from "./logging/logger";
+import { installResponsiveShell } from "./features/device/responsiveShell.js";
 import { fetchCurrentUser, signOut } from "./features/auth/authClient.js";
 import WorkspaceDashboard from "./features/workspace/WorkspaceDashboard.jsx";
 
 installGlobalErrorHandlers();
+installResponsiveShell();
 
 function RootApp() {
   const [auth, setAuth] = useState({ status: "checking", user: null });

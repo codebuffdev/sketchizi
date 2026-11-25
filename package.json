@@ -25,6 +25,7 @@
     "test:ai": "node --test tests/ai-api-client.test.js tests/ai-diagram-context.test.js tests/ai-gateway.test.js tests/ai-request-lifecycle.test.js",
     "test:collaboration-host-auth": "node --test tests/collaboration-host-auth.test.js",
     "test:device": "node --test tests/device-support.test.js",
+    "test:responsive-fluid": "node --test tests/ui-responsive-fluid.test.js",
     "test:backend-warmup": "node --test tests/backend-warmup.test.js",
     "test:recovery": "node --test tests/recovered-drafts.test.js",
     "test:community-gateway": "node --test tests/community-gateway.test.js",
