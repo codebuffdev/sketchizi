@@ -1,7 +1,8 @@
 .canvas-tab-close-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1400;
+  z-index: 2147483647;
+  isolation: isolate;
   display: grid;
   place-items: center;
   padding: 24px;
@@ -132,22 +133,33 @@
   outline-offset: 3px;
 }
 
-.app.theme-dark .canvas-tab-close-dialog-icon {
+.canvas-tab-close-backdrop.theme-dark {
+  --ui-border: #3b4656;
+  --ui-border-soft: #3b4656;
+  --ui-surface-solid: #202a38;
+  --ui-surface-soft: #293648;
+  --ui-text: #e5eaf1;
+  --ui-text-strong: #f4f7fb;
+  --ui-text-muted: #a7b2c2;
+  --ui-hover: #303d4f;
+}
+
+.canvas-tab-close-backdrop.theme-dark .canvas-tab-close-dialog-icon {
   border-color: rgba(224, 169, 91, .2);
   background: rgba(224, 169, 91, .12);
   color: #e0a95b;
 }
 
-.app.theme-dark .canvas-tab-close-eyebrow {
+.canvas-tab-close-backdrop.theme-dark .canvas-tab-close-eyebrow {
   color: #e0a95b;
 }
 
-.app.theme-dark .canvas-tab-close-dialog-actions .canvas-tab-close-confirm {
+.canvas-tab-close-backdrop.theme-dark .canvas-tab-close-dialog-actions .canvas-tab-close-confirm {
   border-color: #a96b3e;
   background: #a96b3e;
 }
 
-.app.theme-dark .canvas-tab-close-dialog-actions .canvas-tab-close-confirm:hover {
+.canvas-tab-close-backdrop.theme-dark .canvas-tab-close-dialog-actions .canvas-tab-close-confirm:hover {
   border-color: #bf7d4d;
   background: #bf7d4d;
 }
