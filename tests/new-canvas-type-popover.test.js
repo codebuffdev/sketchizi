@@ -46,3 +46,9 @@ test("New Canvas picker is portaled above Page headers and anchored to the plus 
   assert.ok(styles.includes("position: fixed !important"));
   assert.ok(styles.includes("z-index: 1200 !important"));
 });
+
+test("New Canvas portal closes its JSX expression without rendering a stray brace", () => {
+  const tabs = read("../src/components/app/CanvasTabs.jsx");
+  assert.ok(tabs.includes("              document.body\\n            )}\\n          </div>"));
+  assert.ok(!tabs.includes("              document.body\\n            )}}"));
+});
