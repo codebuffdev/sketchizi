@@ -54,6 +54,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
   const [activeMenuOpen, setActiveMenuOpen] = useState(false);
   const [closedMenuOpen, setClosedMenuOpen] = useState(false);
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
+  const [createMenuPosition, setCreateMenuPosition] = useState(null);
   const rootRef = useRef(null);
   const createMenuRef = useRef(null);
   const createTriggerRef = useRef(null);
@@ -83,7 +84,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
     if (!createMenuOpen) return undefined;
     createMenuRef.current?.querySelector("[role='menuitem']")?.focus();
     const closeOnOutsideInteraction = (event) => {
-      if (!rootRef.current?.contains(event.target)) setCreateMenuOpen(false);
+      if (!rootRef.current?.contains(event.target) && !createMenuRef.current?.contains(event.target)) setCreateMenuOpen(false);
     };
     const closeOnEscape = (event) => {
       if (event.key !== "Escape") return;
@@ -119,6 +120,29 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
   useEffect(() => {
     if (closedMenuOpen && closedTabs.length === 0) setClosedMenuOpen(false);
   }, [closedMenuOpen, closedTabs.length]);
+
+  useEffect(() => {
+    if (!createMenuOpen) {
+      setCreateMenuPosition(null);
+      return undefined;
+    }
+    const updatePosition = () => {
+      const trigger = createTriggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const menuWidth = createMenuRef.current?.offsetWidth || 258;
+      const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+      const left = Math.max(8, Math.min(rect.left, viewportWidth - menuWidth - 8));
+      setCreateMenuPosition({ top: rect.bottom + 7, left });
+    };
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [createMenuOpen, tabs.length]);
 
   useEffect(() => {
     if (!activeMenuOpen) return undefined;
@@ -283,8 +307,9 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
                 <path d="M12 8v8M8 12h8" />
               </svg>
             </button>
-            {createMenuOpen && (
-              <div ref={createMenuRef} id="canvas-tabs-create-menu" className="canvas-tabs-create-menu" role="menu" aria-label="New canvas type">
+            {createMenuOpen && typeof document !== "undefined" && createPortal(
+              <div ref={createMenuRef} id="canvas-tabs-create-menu" className="canvas-tabs-create-menu canvas-tabs-create-menu-portal" role="menu" aria-label="New canvas type"
+                style={createMenuPosition ? { top: createMenuPosition.top, left: createMenuPosition.left } : { visibility: "hidden", top: 0, left: 0 }}>
                 <div className="canvas-tabs-create-eyebrow">NEW CANVAS</div>
                 {NEW_CANVAS_OPTIONS.map((option, index) => (
                   <button key={option.mode} type="button" role="menuitem" tabIndex={index === 0 ? 0 : -1}
@@ -308,8 +333,9 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
                     <span className="canvas-tabs-create-option-copy"><strong>{option.title}</strong><small>{option.subtitle}</small></span>
                   </button>
                 ))}
-              </div>
-            )}
+              </div>,
+              document.body
+            )}}
           </div>
         )}
         </div>
