@@ -5,6 +5,7 @@ import { resolveTabClose, hasMountableCanvas, isPristineCanvas } from "../src/fe
 import { readAppSourceSync } from "./helpers/app-source.js";
 
 const app = readAppSourceSync();
+const closeDialogCss = readFileSync(new URL("../src/styles/canvas-tab-close-dialog.css", import.meta.url), "utf8");
 const tab = (id) => ({ id, name: id });
 
 
