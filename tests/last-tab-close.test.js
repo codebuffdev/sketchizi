@@ -1,11 +1,45 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { resolveTabClose, hasMountableCanvas } from "../src/features/workspace/tabClose.js";
+import { resolveTabClose, hasMountableCanvas, isPristineCanvas } from "../src/features/workspace/tabClose.js";
 import { readAppSourceSync } from "./helpers/app-source.js";
 
 const app = readAppSourceSync();
+const closeDialogCss = readFileSync(new URL("../src/styles/canvas-tab-close-dialog.css", import.meta.url), "utf8");
 const tab = (id) => ({ id, name: id });
+
+
+test("pristine empty infinite canvases close without draft confirmation", () => {
+  assert.equal(isPristineCanvas({ tab: { name: "Canvas 1", dirty: false }, elements: [] }), true);
+  assert.equal(isPristineCanvas({ tab: { name: "Untitled drawing", dirty: false }, elements: [{ id: "deleted", isDeleted: true }] }), true);
+});
+
+test("generated Pages frame and paper do not count as authored content", () => {
+  const elements = [
+    { id: "page-1-paper", type: "rectangle", customData: { sketchiziPagePaper: "page-1" } },
+    { id: "page-1", type: "frame", name: "Untitled Page", customData: { sketchiziPage: true, chapterTitle: "Untitled Page", tagline: "" } },
+  ];
+  const snapshot = { elements, chapters: [{ title: "Untitled Page", subtitle: "", tagline: "", keyNote: "" }] };
+  assert.equal(isPristineCanvas({ tab: { name: "Page 1", dirty: false }, snapshot, elements }), true);
+});
+
+test("authored elements, renamed pages, editorial text, and dirty state are not pristine", () => {
+  const scaffold = [
+    { id: "paper", type: "rectangle", customData: { sketchiziPagePaper: "page" } },
+    { id: "page", type: "frame", name: "Untitled Page", customData: { sketchiziPage: true, chapterTitle: "Untitled Page" } },
+  ];
+  const tab = { name: "Page 1", dirty: false };
+  assert.equal(isPristineCanvas({ tab, elements: [...scaffold, { id: "shape", type: "rectangle" }] }), false);
+  assert.equal(isPristineCanvas({ tab, elements: scaffold.map((element) => element.id === "page" ? { ...element, customData: { ...element.customData, chapterTitle: "Architecture" } } : element) }), false);
+  assert.equal(isPristineCanvas({ tab, snapshot: { elements: scaffold, chapters: [{ title: "Untitled Page", focusText: "Scale deliberately" }] }, elements: scaffold }), false);
+  assert.equal(isPristineCanvas({ tab, elements: scaffold, dirty: true }), false);
+});
+
+test("close modal is portaled to the document body above workspace stacking contexts", () => {
+  assert.match(app, /closeTabPrompt && createPortal\([\s\S]*?document\.body\s*\)\}/);
+  assert.match(app, /canvas-tab-close-backdrop\$\{isDarkTheme \? " theme-dark" : ""\}/);
+  assert.match(closeDialogCss, /z-index:\s*2147483647/);
+});
 
 test("closing the only tab returns to the welcome screen with no active tab", () => {
   const result = resolveTabClose({ tabs: [tab("a")], closingId: "a", activeId: "a" });

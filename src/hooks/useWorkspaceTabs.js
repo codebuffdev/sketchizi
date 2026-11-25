@@ -8,6 +8,7 @@ import { restoreElements, CaptureUpdateAction, convertToExcalidrawElements } fro
 import { hydrateFilesSync, hydrateMissingFromCache } from "../features/workspace/binaryFileCache.js";
 import { sceneFingerprint } from "../features/workspace/cloudSaveGuard.js";
 import { hasCloudSceneChange, allowsEmptyCloudSave } from "../features/workspace/cloudSavePolicy.js";
+import { isPristineCanvas } from "../features/workspace/tabClose.js";
 import { createCloudDocument } from "../features/workspace/cloudDocument.js";
 import { workspaceClient } from "../features/workspace/workspaceClient.js";
 import { normalizeClosedTabs, buildClosedTabRecord, pushClosedTab, restoreClosedTab, removeClosedTab, isTabBackedByFileOrCloud } from "../features/workspace/closedTabs.js";
@@ -243,8 +244,19 @@ export function useWorkspaceTabs({
   const persistActiveCanvasSnapshot = useCallback((elements, appState) => {
     if (!canvasTabsRestoredRef.current) return;
     const snapshot = captureCanvasTabSnapshot(elements, appState);
+    const activeTab = canvasTabsRef.current.find((tab) => tab.id === activeCanvasIdRef.current);
+    const hasPersistenceChanges = Boolean(snapshot.fileDirty || snapshot.documentDirty
+      || ["pending", "saving", "error", "conflict"].includes(snapshot.cloudSaveState?.state));
+    // Excalidraw can emit onChange while restoring the generated Pages frame
+    // and paper. Do not mark that empty scaffold as an authored/dirty draft.
+    const pristine = isPristineCanvas({
+      tab: activeTab ? { ...activeTab, dirty: false } : null,
+      snapshot,
+      elements: snapshot.elements,
+      dirty: hasPersistenceChanges,
+    });
     const next = canvasTabsRef.current.map((tab) => tab.id === activeCanvasIdRef.current
-      ? { ...tab, snapshot, dirty: true }
+      ? { ...tab, snapshot, dirty: !pristine }
       : tab);
 
     // Scene changes arrive from Excalidraw's onChange callback. Persist the
@@ -648,22 +660,35 @@ export function useWorkspaceTabs({
     const tab = currentTabs.find((item) => item.id === tabId);
     if (!tab) return;
     const isActive = tabId === activeCanvasIdRef.current;
-    // An untouched/cleared canvas has nothing to protect. Check the live
-    // Excalidraw scene for the active tab and the persisted snapshot for
-    // inactive tabs, ignoring deleted elements in either case.
+    // Capture the live active scene (or use the persisted background-tab
+    // snapshot) so generated Pages frame/paper elements can be distinguished
+    // from authored content and editorial metadata.
+    const snapshot = isActive && apiRef.current ? captureCanvasTabSnapshot() : tab.snapshot;
     const sceneElements = isActive
-      ? (apiRef.current?.getSceneElements?.() || [])
-      : (Array.isArray(tab.snapshot?.elements) ? tab.snapshot.elements.filter((element) => element && !element.isDeleted) : []);
-    const isEmptyCanvas = sceneElements.length === 0;
-    const hasUnsavedChanges = !isEmptyCanvas && Boolean(tab.dirty || (isActive && (
+      ? (apiRef.current?.getSceneElements?.() || snapshot?.elements || [])
+      : (Array.isArray(snapshot?.elements) ? snapshot.elements : []);
+    const hasDocumentUnsavedChanges = Boolean(snapshot?.fileDirty || snapshot?.documentDirty || (isActive && (
       canvasSnapshotStateRef.current?.documentDirty ||
       ["pending", "saving", "error", "conflict"].includes(canvasSnapshotStateRef.current?.cloudSaveState?.state)
     )));
-    if (hasUnsavedChanges && !skipDraftPromptRef.current) {
-      const snapshot = isActive && apiRef.current ? captureCanvasTabSnapshot() : tab.snapshot;
-      const cloudBacked = Boolean(snapshot?.cloudSession?.active && snapshot?.cloudSession?.diagramId && snapshot?.cloudDetached !== true);
+    // A persisted dirty bit can be left behind by Excalidraw's initial page
+    // scaffold hydration. Re-evaluate the actual scene before treating it as
+    // an unsaved edit; authored content/metadata still retains the warning.
+    const pristine = isPristineCanvas({
+      tab: { ...tab, dirty: false },
+      snapshot,
+      elements: sceneElements,
+      dirty: hasDocumentUnsavedChanges,
+    });
+    const hasUnsavedChanges = hasDocumentUnsavedChanges || (Boolean(tab.dirty) && !pristine);
+    const cloudBacked = Boolean(snapshot?.cloudSession?.active && snapshot?.cloudSession?.diagramId && snapshot?.cloudDetached !== true);
+    const fileBacked = !cloudBacked && isTabBackedByFileOrCloud(snapshot);
+    // A clean file/cloud-backed canvas can close directly. Unbacked content
+    // still needs the recovery choice even if its dirty bit has not propagated.
+    const needsCloseConfirmation = !pristine && (!fileBacked && !cloudBacked || hasUnsavedChanges);
+    if (needsCloseConfirmation && !skipDraftPromptRef.current) {
       setDontAskDraftChecked(false);
-      setCloseTabPrompt({ tabId, name: tab.name, isActive, cloudBacked, fileBacked: !cloudBacked && isTabBackedByFileOrCloud(snapshot) });
+      setCloseTabPrompt({ tabId, name: tab.name, isActive, cloudBacked, fileBacked });
       return;
     }
     performCloseCanvasTab(tabId);
