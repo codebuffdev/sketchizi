@@ -67,5 +67,7 @@ test("collapsed trigger uses the 36px Option A icon-and-chevron pill", () => {
   assert.match(hud, /gap: 6px !important;[\s\S]*?padding: 0 10px !important;/);
   assert.match(hud, /border-radius: 12px;[\s\S]*?background: #ffffff !important;[\s\S]*?0 4px 12px -2px rgba\(15, 23, 42, 0\.06\)/);
   assert.match(hud, /border-color: #cbd5e1 !important/);
+  assert.match(hud, /flex-direction: row;[\s\S]*?width: max-content;[\s\S]*?max-width: calc\(100vw - 40px\)/);
+  assert.match(hud, /position: absolute !important;[\s\S]*?bottom: calc\(100% \+ 10px\)/);
   assert.match(hud, /color: #94a3b8;[\s\S]*?color: #334155;[\s\S]*?translateY\(-1px\)/);
 });
