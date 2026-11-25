@@ -79,6 +79,17 @@ export function useSystemDesignWorkspace({ apiRef, apiReady, activeCanvasId, gri
     workspaceByTabIdRef.current = nextMap;
     setWorkspaceByTabId(nextMap);
   }, []);
+
+  // A newly created tab is not present in the initial per-tab workspace map.
+  // Hydrate it from its persisted snapshot before the next interaction can write
+  // over that state (notably the active=true flag on a System Design tab).
+  useEffect(() => {
+    if (!activeCanvasId || workspaceByTabIdRef.current[activeCanvasId]) return;
+    const restored = readSystemDesignTabState(canvasTabsRef?.current || [], activeCanvasId);
+    const nextMap = { ...workspaceByTabIdRef.current, [activeCanvasId]: restored };
+    workspaceByTabIdRef.current = nextMap;
+    setWorkspaceByTabId(nextMap);
+  }, [activeCanvasId, canvasTabsRef]);
   const reroutingRef = useRef(false);
   const lastRectsRef = useRef(new Map());
   const pushRef = useRef(null);
