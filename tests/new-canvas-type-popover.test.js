@@ -32,3 +32,17 @@ test("new canvas picker uses compact tab-bar styling and sits below the plus con
   assert.ok(styles.includes(".canvas-tabs-create-option:focus-visible"));
   assert.ok(styles.includes(".app.theme-dark .canvas-tabs-create-menu"));
 });
+
+test("New Canvas picker is portaled above Page headers and anchored to the plus trigger", () => {
+  const tabs = read("../src/components/app/CanvasTabs.jsx");
+  const styles = read("../src/styles/canvas-tabs.css");
+  assert.ok(tabs.includes("createPortal("));
+  assert.ok(tabs.includes("document.body"));
+  assert.ok(tabs.includes("trigger.getBoundingClientRect()"));
+  assert.ok(tabs.includes("rect.bottom + 7"));
+  assert.ok(tabs.includes("viewportWidth - menuWidth - 8"));
+  assert.ok(tabs.includes("createMenuRef.current?.contains(event.target)"));
+  assert.ok(styles.includes(".canvas-tabs-create-menu-portal"));
+  assert.ok(styles.includes("position: fixed !important"));
+  assert.ok(styles.includes("z-index: 1200 !important"));
+});
