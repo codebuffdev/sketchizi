@@ -219,6 +219,7 @@ try {
     console.log("PASS: a rectangle survives immediate reload and remains selectable.");
 
     await page.getByRole("button", { name: "Create new tab" }).click();
+    await page.getByRole("menuitem", { name: /Infinity/ }).click();
     const secondTab = page.locator('.canvas-tab[title="Canvas 2"]');
     await secondTab.waitFor();
     const secondX = Math.round(bounds.x + bounds.width * 0.42);
