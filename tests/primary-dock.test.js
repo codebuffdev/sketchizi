@@ -61,15 +61,18 @@ test("changing the active tool (e.g. via keyboard shortcut) collapses the dock w
   assert.match(dock, /useEffect\(\(\) => \{\s*if \(previousActiveIdRef\.current === activeId\) return;[\s\S]*?setExpanded\(false\);\s*\}, \[activeId\]\)/);
 });
 
-test("collapsed trigger retains the 40px icon-and-chevron pill", () => {
+test("collapsed trigger is a compact 32px icon-and-chevron pill", () => {
   const hud = readFileSync(new URL("../src/styles/hud-capsules.css", import.meta.url), "utf8");
-  assert.ok(dock.includes('size={22} strokeWidth={1.75}'));
-  assert.ok(hud.includes("width:70px !important;"));
-  assert.ok(hud.includes("height:40px !important;"));
-  assert.ok(hud.includes("gap:10px !important;"));
-  assert.ok(hud.includes("padding:0 12px !important;"));
-  assert.ok(hud.includes("flex:0 0 22px; width:22px; height:22px;"));
-  assert.ok(hud.includes("flex:0 0 12px; width:12px; height:12px;"));
+  assert.ok(dock.includes('size={19} strokeWidth={1.85}'));
+  assert.ok(dock.includes('width="10" height="10"') && dock.includes('strokeWidth="2.25"'));
+  assert.ok(hud.includes("width:52px !important; height:32px !important;"));
+  assert.ok(hud.includes("max-height:32px !important;"));
+  assert.ok(hud.includes("gap:4px !important;"));
+  assert.ok(hud.includes("padding:0 8px !important;"));
+  assert.ok(hud.includes("border-radius:10px !important;"));
+  assert.ok(hud.includes("flex:0 0 19px; width:19px; height:19px; color:#1e293b;"));
+  assert.ok(hud.includes("flex:0 0 10px; width:10px; height:10px; color:#94a3b8; transform:translateY(3px);"));
+  assert.ok(hud.includes("transform:translateY(2px);"));
 });
 
 
