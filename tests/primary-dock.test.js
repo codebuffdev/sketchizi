@@ -14,7 +14,8 @@ test("primary dock renders the 9-slot tool set with Bucket Fill and Todo List", 
     assert.ok(ids.includes(id), "missing sidebar tool: " + id);
   }
   for (const removed of ["ai-assist", "embed", "library"]) assert.ok(!ids.includes(removed));
-  assert.match(dock, /detail: \{ tool: "bucketfill" \}/);
+  assert.match(dock, /tool: child\.tool/);
+  assert.ok(ids.includes("bucketfill"));
   assert.match(dock, /child\.action === "todo"/);
   assert.match(canvas, /onOpenTodoTab=\{onOpenTodoTab\}/);
   assert.match(dock, /sketchizi-tool-sidebar/);
