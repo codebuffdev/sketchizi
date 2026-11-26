@@ -8,6 +8,7 @@ import { normalizeArrowheadPatch, swapArrowheadsPatch, toUiArrowhead } from "../
 import { getRoutingMode, getRoutingPatch } from "../../features/canvas/arrowRouting.js";
 import { isHexColor } from "../../features/navigation/recentCustomColors.js";
 import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
+import { applyRichTextColor } from "../../features/canvas/richTextColorBridge.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -199,10 +200,18 @@ function Swatch({ color, label, selected, onClick, fill = false }) {
       aria-label={label}
       aria-pressed={selected}
       title={label}
+      onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
     >{color === "transparent" ? "×" : null}</button>
   );
 }
+
+// Keep focus (and the active text highlight) in the rich text box while the
+// user clicks toolbar buttons. Native inputs keep default behavior.
+const keepTextSelection = (event) => {
+  if (event.target instanceof Element && event.target.closest("input, select, textarea, label")) return;
+  event.preventDefault();
+};
 
 const sameColor = (a, b) => String(a || "").toLowerCase() === String(b || "").toLowerCase();
 
@@ -402,6 +411,10 @@ export default function ContextualFormattingToolbar({
   const applyFormatting = (rawPatch) => {
     const api = apiRef?.current;
     if (!api) return;
+    const rawKeys = Object.keys(rawPatch);
+    // Selected rich text box: color picks go to the box (whole box, or only the
+    // highlighted portion) instead of the generic element patch.
+    if (!toolMode && rawKeys.length === 1 && rawKeys[0] === "strokeColor" && applyRichTextColor(rawPatch.strokeColor)) return;
     const patch = normalizeArrowheadPatch(rawPatch);
     if (!toolMode) {
       // Use the same live selection snapshot that rendered this toolbar. The
@@ -868,6 +881,7 @@ export default function ContextualFormattingToolbar({
       role="toolbar"
       aria-label={toolMode ? "Drawing tool formatting" : "Selected object formatting"}
       style={position}
+      onMouseDown={keepTextSelection}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
     >

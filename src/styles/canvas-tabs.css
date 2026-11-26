@@ -674,11 +674,18 @@
 /* Keep the workspace tab controls and their overflow menu above the Todo surface. */
 .app .desktop-app-document-title-float {
   position: relative;
-  z-index: 10040;
+  z-index: 40; /* top navigation (z-40) */
   overflow: visible;
 }
 .app .desktop-app-document-title-float .canvas-tabs-overflow-menu {
-  z-index: 10050;
+  z-index: 50; /* tab/mode popovers (z-50) */
+}
+/* While any tab/mode popover is open, lift the whole top bar above every
+   canvas-side layer (page resize grips, page navigator, Excalidraw UI, which
+   sit in the 10020-10050 band) so the popover is never painted over. The
+   in-canvas Page Header stays at z-index: 10 and cannot compete. */
+.app .desktop-app-document-title-float:has(.canvas-tabs-create-menu, .canvas-tabs-active-menu, .canvas-tabs-closed-menu) {
+  z-index: 10065;
 }
 
 
@@ -771,7 +778,7 @@
 .canvas-tab-menu-trigger svg { transition: transform .16s ease; }
 .canvas-tab-menu-trigger.is-open svg { transform: rotate(180deg); }
 .canvas-tabs-active-menu {
-  position: absolute; z-index: 10060; top: calc(100% + 8px); left: 0;
+  position: absolute; z-index: 50; top: calc(100% + 8px); left: 0;
   width: min(310px, calc(100vw - 24px)); padding: 12px;
   border: 1px solid var(--ct-active-border, #d5dce7); border-radius: 13px;
   background: var(--ct-active, #fff); color: var(--ct-strong, #202a3a);
@@ -1220,7 +1227,7 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
 .canvas-tabs-closed-trigger:hover, .canvas-tabs-closed-trigger.is-open { background: rgb(128 128 128 / 16%); opacity: 1; }
 .canvas-tabs-closed-trigger:focus-visible { outline: 2px solid #d69a32; outline-offset: 1px; }
 .canvas-tabs-closed-count { font-size: 11px; font-weight: 650; }
-.canvas-tabs-closed-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 1300; width: 280px; max-height: 340px; overflow-y: auto; padding: 6px; border: 1px solid var(--ui-border, #dedede); border-radius: 12px; background: var(--ui-surface-solid, #fff); color: var(--ui-text, #333); box-shadow: 0 14px 40px rgba(0,0,0,.18); }
+.canvas-tabs-closed-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 50; width: 280px; max-height: 340px; overflow-y: auto; padding: 6px; border: 1px solid var(--ui-border, #dedede); border-radius: 12px; background: var(--ui-surface-solid, #fff); color: var(--ui-text, #333); box-shadow: 0 14px 40px rgba(0,0,0,.18); }
 .canvas-tabs-closed-heading { display: grid; gap: 1px; padding: 6px 8px 8px; font-size: 12px; }
 .canvas-tabs-closed-heading span { opacity: .65; font-size: 11px; }
 .canvas-tabs-closed-item { display: flex; align-items: center; gap: 2px; }
@@ -1274,7 +1281,7 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
    must not be allowed to paint over the global tab controls. */
 .canvas-tabs-bar {
   position: relative;
-  z-index: 50;
+  z-index: 40;
   overflow: visible;
 }
 .canvas-tabs-bar .canvas-tabs-list,
@@ -1286,7 +1293,7 @@ html[data-sketchizi-theme="dark"] .app .canvas-tab-rename-input::selection,
 .canvas-tabs-overflow-menu,
 .canvas-tabs-active-menu,
 .canvas-tabs-closed-menu {
-  z-index: 60;
+  z-index: 50;
 }
 
 /* Header wrappers must not clip the tab menus when Pages is active. */

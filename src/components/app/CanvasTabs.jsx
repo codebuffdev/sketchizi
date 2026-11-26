@@ -5,6 +5,17 @@ import { describeTabSync, getTabStatusClass } from "../../features/workspace/tab
 import { countLiveElements, describeClosedAt } from "../../features/workspace/closedTabs.js";
 import WorkspaceModeIcon from "../../features/workspace/WorkspaceModeIcon.jsx";
 
+// Anything that counts as "the canvas" for dismissal purposes: the drawing
+// surface itself plus the in-canvas Pages header, page mask and navigator.
+const CANVAS_SURFACE_SELECTOR = [
+  ".desktop-canvas-region",
+  ".pages-book-workspace",
+  ".pages-book-ui",
+  ".pages-editorial-header",
+  ".canvas-pages-mask",
+  ".canvas-pages-navigation",
+].join(",");
+
 const NEW_CANVAS_OPTIONS = [
   { mode: "infinity", type: "canvas", title: "Infinity", subtitle: "Unbounded freeform whiteboard" },
   { mode: "pages", type: "pages", title: "Pages", subtitle: "Structured chapter-based document" },
@@ -77,6 +88,29 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
     setClosedMenuOpen(false);
     setCreateMenuOpen(false);
   }, [activeId]);
+
+  // Close every top-bar tab/mode popover as soon as the canvas or the in-canvas
+  // Page Header is clicked, touched or focused (capture phase, so surfaces that
+  // stop propagation, such as the Page Header inputs, still dismiss the menus).
+  const anyMenuOpen = overflowOpen || activeMenuOpen || closedMenuOpen || createMenuOpen;
+  useEffect(() => {
+    if (!anyMenuOpen) return undefined;
+    const dismissOnCanvasInteraction = (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (rootRef.current?.contains(target) || overflowMenuRef.current?.contains(target)) return;
+      if (!target.closest(CANVAS_SURFACE_SELECTOR)) return;
+      setOverflowOpen(false);
+      setActiveMenuOpen(false);
+      setClosedMenuOpen(false);
+      setCreateMenuOpen(false);
+    };
+    const events = ["pointerdown", "mousedown", "touchstart", "focusin"];
+    events.forEach((name) => document.addEventListener(name, dismissOnCanvasInteraction, true));
+    return () => {
+      events.forEach((name) => document.removeEventListener(name, dismissOnCanvasInteraction, true));
+    };
+  }, [anyMenuOpen]);
 
 
   useEffect(() => {

@@ -672,7 +672,7 @@
 .app.canvas-first-header:has(.pages-book-workspace) .desktop-app-header { z-index: 10060 !important; }
 .app:has(.pages-book-workspace) .desktop-app-menu-trigger-floating { z-index: 10070 !important; }
 .app:has(.pages-book-workspace):has(.appearance-trigger[aria-expanded="true"]) .pages-book-ui {
-  z-index: 500;
+  z-index: 10;
 }
 .app:has(.pages-book-workspace) [role="dialog"],
 body:has(.pages-book-workspace) [role="dialog"],
@@ -692,7 +692,9 @@ body:has(.pages-book-workspace) .sketchizi-appearance {
 }
 .pages-book-ui {
   position: fixed;
-  z-index: 10040;
+  /* In-canvas Page Header ("01 · PAGE 1 / Untitled Page"): lives in the lower
+     canvas layer so it can never paint over the top tab bar or its popovers. */
+  z-index: 10;
   box-sizing: border-box;
   pointer-events: none;
 }
@@ -808,7 +810,7 @@ body:has(.pages-book-workspace) .sketchizi-appearance {
   width: 100vw !important;
   height: 100vh !important;
   box-sizing: border-box !important;
-  z-index: 10040 !important;
+  z-index: 10 !important; /* canvas layer; top nav is z-40, its popovers z-50 */
   pointer-events: none !important;
 }
 .pages-editorial-header {
