@@ -275,6 +275,15 @@ export default function PrimaryDock({
       window.dispatchEvent(new CustomEvent("sketchizi:clear-custom-tool"));
     }
     const api = apiRef.current;
+    if (child.kind === "action") {
+      if (child.action === "todo") onOpenTodoTab?.();
+      return;
+    }
+    if (child.kind === "custom" && child.tool === "bucketfill") {
+      window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: "bucketfill" } }));
+      setCustomTool("bucketfill");
+      return;
+    }
     if (child.kind === "preset") {
       insertPresetShape(api, child.preset);
       setActiveTool("selection");
