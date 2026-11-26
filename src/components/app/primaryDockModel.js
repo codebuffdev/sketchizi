@@ -45,7 +45,7 @@ export const DOCK_SLOTS = Object.freeze([
     { id: "curved-arrow", label: "Curved Arrow", kind: "tool", tool: "arrow", record: { targets: ["arrow"], patch: { ...ARROW_BASE, lineGeometry: "curved" } } },
     { id: "elbow-arrow", label: "Elbow Arrow", kind: "tool", tool: "arrow", record: { targets: ["arrow"], patch: { ...ARROW_BASE, lineGeometry: "elbow" } } },
     { id: "dashed-arrow", label: "Dashed Arrow", kind: "tool", tool: "arrow", record: { targets: ["arrow"], patch: { ...ARROW_BASE, strokeStyle: "dashed" } } },
-    { id: "line", label: "Line", kind: "tool", tool: "line", keyHint: "L" },
+    { id: "line", label: "Line", kind: "tool", tool: "line" },
   ] },
   { id: "freehand", label: "Freehand", section: "B", tools: [
     { id: "pen", label: "Pen", kind: "tool", tool: "freedraw" },
@@ -68,7 +68,7 @@ export const DOCK_SLOTS = Object.freeze([
     { id: "draw-to-shape", label: "Draw to Shape", kind: "custom", tool: "autoshape" },
   ] },
   { id: "todo", label: "Todo List", section: "C", tools: [
-    { id: "todo", label: "Todo List", kind: "action", action: "todo" },
+    { id: "todo", label: "Todo List", kind: "action", action: "todo", keyHint: "L" },
   ] },
 ]);
 
