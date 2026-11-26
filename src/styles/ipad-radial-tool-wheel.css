@@ -326,18 +326,6 @@
   -webkit-backdrop-filter: blur(14px);
 }
 .sketchizi-tool-sidebar-hover-bridge { left: 38px; width: 18px; }
-.sketchizi-tool-sidebar-child-rail::before {
-  content: "";
-  position: absolute;
-  left: -5px;
-  top: calc(50% + var(--arrow-offset, 0px));
-  width: 10px;
-  height: 10px;
-  border-left: 1px solid var(--sk-dock-line);
-  border-bottom: 1px solid var(--sk-dock-line);
-  background: var(--sk-dock-bg);
-  transform: translateY(-50%) rotate(45deg);
-}
 @media (max-width: 600px) {
   .sketchizi-tool-sidebar { left: 12px !important; }
 }
@@ -423,9 +411,3 @@
 }
 
 
-/* Remove the decorative diagonal notch beside child rails. */
-.sketchizi-tool-sidebar-child-rail::before,
-.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock::after {
-  display: none !important;
-  content: none !important;
-}

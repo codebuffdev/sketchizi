@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sketchizi canvas toolbar and scroll</title>
+<style>
+:root,[data-theme="light"]{
+  --canvas:#F8FAFC; --grid-minor:rgba(15,23,42,.045); --grid-major:rgba(15,23,42,.09);
+  --surface:rgba(255,255,255,.94); --border:rgba(15,23,42,.1);
+  --ink:#334155; --ink-soft:#64748B; --hover:rgba(15,23,42,.06);
+  --active-bg:#EFE8FF; --accent:#6D28D9; --shadow:0 10px 30px rgba(15,23,42,.12),0 1px 3px rgba(15,23,42,.08);
+  --note:#fff; --color-scheme:light;
+}
+[data-theme="dark"]{
+  --canvas:#121417; --grid-minor:rgba(255,255,255,.035); --grid-major:rgba(255,255,255,.07);
+  --surface:rgba(24,27,32,.92); --border:rgba(255,255,255,.1);
+  --ink:#CBD5E1; --ink-soft:#8B95A5; --hover:rgba(255,255,255,.07);
+  --active-bg:rgba(139,92,246,.22); --accent:#C4B5FD; --shadow:0 10px 30px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.4);
+  --note:#1B1F25; --color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{color-scheme:var(--color-scheme);scrollbar-width:none;-ms-overflow-style:none;scroll-behavior:auto}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}
+body{margin:0;background:var(--canvas);color:var(--ink);font:500 13px/1.4 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;transition:background .25s,color .25s}
+
+/* Canvas world */
+#world{position:relative;width:100%;height:6000px;background-color:var(--canvas);
+  background-image:
+    linear-gradient(var(--grid-major) 1px,transparent 1px),linear-gradient(90deg,var(--grid-major) 1px,transparent 1px),
+    linear-gradient(var(--grid-minor) 1px,transparent 1px),linear-gradient(90deg,var(--grid-minor) 1px,transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;transition:background-color .25s}
+.note{position:absolute;padding:14px 18px;border:1px solid var(--border);border-radius:14px;background:var(--note);box-shadow:var(--shadow);max-width:260px}
+.note b{display:block;color:var(--accent);margin-bottom:2px}
+.zone{position:absolute;left:50%;transform:translateX(-50%);color:var(--ink-soft);font-size:15px}
+
+/* Parent dock */
+.dock{position:fixed;left:24px;top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;gap:6px;
+  padding:8px;border-radius:9999px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.tool-slot{position:relative}
+.tool{all:unset;box-sizing:border-box;position:relative;display:grid;place-items:center;width:44px;height:44px;border-radius:9999px;
+  color:var(--ink);cursor:pointer;transition:background .15s,color .15s}
+.tool:hover{background:var(--hover)}
+.tool:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tool[aria-pressed="true"]{background:var(--active-bg);color:var(--accent)}
+.tool svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.has-sub>.tool::after{content:"▾";position:absolute;right:6px;bottom:3px;font-size:8px;line-height:1;opacity:.55;transform:rotate(-45deg)}
+.sep{height:1px;margin:2px 10px;background:var(--border)}
+
+/* Child sub-dock */
+.sub-dock{--clamp-y:0px;--arrow-offset:0px;position:absolute;left:calc(100% + 12px);top:50%;
+  transform:translateY(calc(-50% + var(--clamp-y))) translateX(-6px);display:flex;gap:4px;padding:6px;border-radius:9999px;
+  background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .14s,transform .14s,visibility 0s .14s}
+.sub-dock.open{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(calc(-50% + var(--clamp-y))) translateX(0);transition:opacity .14s,transform .14s}
+.sub-dock::before{content:"";position:absolute;top:0;bottom:0;left:-14px;width:14px}  /* hover bridge over the 12px gap */
+.sub-dock::after{content:"";position:absolute;left:-5px;top:calc(50% + var(--arrow-offset));width:10px;height:10px;
+  background:var(--surface);border-left:1px solid var(--border);border-bottom:1px solid var(--border);
+  transform:translateY(-50%) rotate(45deg);border-bottom-left-radius:2px}
+.sub-dock .tool{width:38px;height:38px;position:relative;z-index:1}
+.sub-dock .tool::after{display:none}
+
+/* Theme toggle */
+.theme{position:fixed;left:24px;bottom:24px;z-index:20;width:44px;height:44px;border-radius:9999px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+
+/* Scrollbar capsule */
+.vscroll{position:fixed;right:12px;top:50%;height:280px;width:36px;z-index:30;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;
+  border-radius:9999px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  opacity:0;transform:translate(12px,-50%);pointer-events:none;transition:opacity .2s,transform .2s}
+.vscroll.show{opacity:1;transform:translate(0,-50%);pointer-events:auto}
+.vscroll button{all:unset;width:24px;height:22px;flex:none;display:grid;place-items:center;border-radius:9999px;color:var(--ink-soft);cursor:pointer;font-size:10px}
+.vscroll button:hover{background:var(--hover);color:var(--accent)}
+.vscroll button:focus-visible{outline:2px solid var(--accent)}
+.track{position:relative;flex:1;width:100%;cursor:pointer;touch-action:none}
+.track::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:4px;margin-left:-2px;border-radius:4px;background:var(--hover)}
+.thumb{position:absolute;left:50%;top:0;width:8px;margin-left:-4px;min-height:32px;border-radius:8px;background:var(--accent);opacity:.75;cursor:grab;will-change:transform;transition:opacity .15s,width .15s,margin .15s}
+.thumb:hover,.dragging .thumb{opacity:1;width:10px;margin-left:-5px}
+.dragging .thumb{cursor:grabbing}
+.pct{flex:none;font-size:10px;font-variant-numeric:tabular-nums;color:var(--ink-soft);min-width:30px;text-align:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="world">
+  <div class="zone" style="top:80px">Top of the canvas</div>
+  <div class="note" style="left:22%;top:220px"><b>Hover a tool</b>Tools with a corner mark open a sub-dock centered on that button.</div>
+  <div class="note" style="left:52%;top:640px"><b>Scroll anywhere</b>Wheel, step buttons and track clicks glide with an eased loop.</div>
+  <div class="note" style="left:30%;top:1500px"><b>Edge reveal</b>Move the cursor to the right edge to bring the scrollbar back.</div>
+  <div class="note" style="left:60%;top:3000px"><b>Halfway</b>The readout tracks your position from 0% to 100%.</div>
+  <div class="note" style="left:35%;top:5200px"><b>Bottom</b>Nothing further down.</div>
+</div>
+
+<nav class="dock" id="dock" aria-label="Tools"></nav>
+<button class="tool theme" id="theme" aria-label="Switch to dark mode"></button>
+
+<div class="vscroll" id="vscroll" aria-label="Canvas scroll">
+  <button id="up" aria-label="Scroll up">▲</button>
+  <div class="track" id="track"><div class="thumb" id="thumb"></div></div>
+  <div class="pct" id="pct">0%</div>
+  <button id="down" aria-label="Scroll down">▼</button>
+</div>
+
+<script>
+/* ---------- Icons ---------- */
+const I = {
+  select:'<path d="M5 3l14 7-6 2-2 6z"/>',
+  hand:'<path d="M8 12V6a1.5 1.5 0 013 0v5m0-6a1.5 1.5 0 013 0v6m0-4a1.5 1.5 0 013 0v7a6 6 0 01-6 6h-1a6 6 0 01-5-3l-2-4a1.5 1.5 0 012.5-1.5L8 14"/>',
+  rect:'<rect x="4" y="5" width="16" height="14" rx="2"/>',
+  ellipse:'<ellipse cx="12" cy="12" rx="8" ry="6"/>',
+  triangle:'<path d="M12 4l9 15H3z"/>',
+  diamond:'<path d="M12 3l9 9-9 9-9-9z"/>',
+  pen:'<path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/>',
+  marker:'<path d="M4 20h6M14 4l6 6-8 8-6-6z"/>',
+  eraser:'<path d="M8 20h12M5 15l9-9 5 5-6 6H8z"/>',
+  line:'<path d="M5 19L19 5"/>',
+  arrow:'<path d="M5 19L19 5M10 5h9v9"/>',
+  text:'<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',
+  note:'<path d="M5 4h14v10l-6 6H5z"/><path d="M13 20v-6h6"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>',
+  moon:'<path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/>'
+};
+const svg = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${I[k]}</svg>`;
+
+const TOOLS = [
+  {id:'select', label:'Select', subs:['select','hand']},
+  {id:'rect', label:'Shapes', subs:['rect','ellipse','triangle','diamond']},
+  {id:'pen', label:'Draw', subs:['pen','marker','eraser']},
+  {id:'arrow', label:'Connectors', subs:['arrow','line']},
+  {id:'text', label:'Text'},
+  {id:'note', label:'Sticky note'}
+];
+const NAMES = {select:'Select',hand:'Pan',rect:'Rectangle',ellipse:'Ellipse',triangle:'Triangle',diamond:'Diamond',pen:'Pen',marker:'Highlighter',eraser:'Eraser',arrow:'Arrow',line:'Line',text:'Text',note:'Sticky note'};
+
+/* ---------- Dock ---------- */
+const dock = document.getElementById('dock');
+const slots = [];
+let activeParent = TOOLS[0].id;
+
+TOOLS.forEach((t, i) => {
+  if (i === 4) { const s = document.createElement('div'); s.className = 'sep'; dock.appendChild(s); }
+  const slot = document.createElement('div');
+  slot.className = 'tool-slot' + (t.subs ? ' has-sub' : '');
+  const btn = document.createElement('button');
+  btn.className = 'tool'; btn.dataset.tool = t.id; btn.innerHTML = svg(t.id);
+  btn.setAttribute('aria-label', NAMES[t.id]); btn.title = NAMES[t.id];
+  btn.setAttribute('aria-pressed', t.id === activeParent);
+  slot.appendChild(btn);
+  const rec = {t, slot, btn, sub:null, timer:null};
+  if (t.subs) {
+    const sub = document.createElement('div');
+    sub.className = 'sub-dock'; sub.setAttribute('role', 'toolbar'); sub.setAttribute('aria-label', t.label);
+    t.subs.forEach(s => {
+      const b = document.createElement('button');
+      b.className = 'tool'; b.innerHTML = svg(s); b.title = NAMES[s]; b.setAttribute('aria-label', NAMES[s]);
+      b.addEventListener('click', () => { btn.innerHTML = svg(s); btn.dataset.tool = s; btn.title = NAMES[s]; pick(rec); });
+      sub.appendChild(b);
+    });
+    slot.appendChild(sub); rec.sub = sub;
+    slot.addEventListener('mouseenter', () => openSub(rec));
+    slot.addEventListener('mouseleave', () => { clearTimeout(rec.timer); rec.timer = setTimeout(() => closeSub(rec), 160); });
+    sub.addEventListener('mouseenter', () => clearTimeout(rec.timer));
+    slot.addEventListener('focusin', () => openSub(rec));
+    slot.addEventListener('focusout', e => { if (!slot.contains(e.relatedTarget)) closeSub(rec); });
+  }
+  btn.addEventListener('click', () => pick(rec));
+  dock.appendChild(slot); slots.push(rec);
+});
+
+function pick(rec){
+  activeParent = rec.t.id;
+  slots.forEach(r => r.btn.setAttribute('aria-pressed', r === rec));
+}
+
+let openRec = null;
+function openSub(rec){
+  clearTimeout(rec.timer);
+  if (openRec && openRec !== rec) closeSub(openRec, true);
+  openRec = rec; rec.sub.classList.add('open'); clamp(rec);
+}
+function closeSub(rec){ rec.sub.classList.remove('open'); if (openRec === rec) openRec = null; }
+
+/* Keep sub-dock inside viewport; notch counter-shifts to stay aimed at the parent's midpoint */
+function clamp(rec){
+  const s = rec.sub;
+  s.style.setProperty('--clamp-y', '0px'); s.style.setProperty('--arrow-offset', '0px');
+  const r = s.getBoundingClientRect(), m = 16;
+  let dy = 0;
+  if (r.top < m) dy = m - r.top;
+  else if (r.bottom > innerHeight - m) dy = (innerHeight - m) - r.bottom;
+  s.style.setProperty('--clamp-y', dy + 'px');
+  s.style.setProperty('--arrow-offset', (-dy) + 'px');
+}
+addEventListener('resize', () => { if (openRec) clamp(openRec); });
+
+/* ---------- Theme ---------- */
+const themeBtn = document.getElementById('theme');
+function setTheme(t){
+  document.documentElement.dataset.theme = t;
+  themeBtn.innerHTML = svg(t === 'dark' ? 'sun' : 'moon');
+  themeBtn.setAttribute('aria-label', t === 'dark' ? 'Switch to day mode' : 'Switch to dark mode');
+  try { localStorage.setItem('sk-theme', t); } catch(e) {}
+}
+let saved = null; try { saved = localStorage.getItem('sk-theme'); } catch(e) {}
+setTheme(saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+themeBtn.addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
+
+/* ---------- Lerp scroll engine ---------- */
+const bar = document.getElementById('vscroll'), track = document.getElementById('track'),
+      thumb = document.getElementById('thumb'), pct = document.getElementById('pct');
+let current = scrollY, target = scrollY, raf = 0, dragging = false, hovering = false;
+const maxScroll = () => Math.max(0, document.documentElement.scrollHeight - innerHeight);
+const clampS = v => Math.min(maxScroll(), Math.max(0, v));
+
+function render(){
+  const max = maxScroll(), th = track.clientHeight;
+  const h = Math.max(32, th * innerHeight / document.documentElement.scrollHeight);
+  const ratio = max ? current / max : 0;
+  thumb.style.height = h + 'px';
+  thumb.style.transform = `translate3d(0,${ratio * (th - h)}px,0)`;
+  pct.textContent = Math.round(ratio * 100) + '%';
+}
+function tick(){
+  current += (target - current) * 0.14;
+  if (Math.abs(target - current) < 0.1) current = target;
+  scrollTo(0, current); render();
+  raf = current === target ? 0 : requestAnimationFrame(tick);
+}
+function kick(){ if (!raf) raf = requestAnimationFrame(tick); }
+function scrollByAmount(d){ target = clampS(target + d); kick(); }
+
+addEventListener('wheel', e => {
+  if (e.ctrlKey) return;
+  e.preventDefault();
+  const unit = e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? innerHeight : 1;
+  scrollByAmount(e.deltaY * unit);
+}, {passive:false});
+
+document.getElementById('up').onclick = () => scrollByAmount(-innerHeight * 0.5);
+document.getElementById('down').onclick = () => scrollByAmount(innerHeight * 0.5);
+
+/* Thumb drag: target and current stay 1:1 */
+function fromPointer(clientY, grab){
+  const r = track.getBoundingClientRect(), h = thumb.offsetHeight;
+  const ratio = Math.min(1, Math.max(0, (clientY - r.top - grab) / (r.height - h)));
+  return ratio * maxScroll();
+}
+let grab = 0;
+thumb.addEventListener('pointerdown', e => {
+  e.preventDefault(); e.stopPropagation();
+  dragging = true; bar.classList.add('dragging', 'show');
+  grab = e.clientY - thumb.getBoundingClientRect().top;
+  thumb.setPointerCapture(e.pointerId);
+  cancelAnimationFrame(raf); raf = 0; target = current;
+});
+thumb.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  current = target = fromPointer(e.clientY, grab);
+  scrollTo(0, current); render();
+});
+const endDrag = () => { dragging = false; bar.classList.remove('dragging'); updateReveal(lastX); };
+thumb.addEventListener('pointerup', endDrag);
+thumb.addEventListener('pointercancel', endDrag);
+
+/* Track click jumps (eased) */
+track.addEventListener('pointerdown', e => {
+  if (e.target === thumb) return;
+  target = fromPointer(e.clientY, thumb.offsetHeight / 2); kick();
+});
+
+/* Edge-proximity reveal */
+let lastX = -1;
+function updateReveal(x){
+  const near = x >= 0 && innerWidth - x <= 48;
+  bar.classList.toggle('show', near || hovering || dragging);
+}
+addEventListener('mousemove', e => { lastX = e.clientX; updateReveal(lastX); });
+document.documentElement.addEventListener('mouseleave', () => { lastX = -1; updateReveal(-1); });
+bar.addEventListener('mouseenter', () => { hovering = true; updateReveal(lastX); });
+bar.addEventListener('mouseleave', () => { hovering = false; updateReveal(lastX); });
+addEventListener('resize', () => { current = target = clampS(current); render(); });
+addEventListener('scroll', () => { if (!raf && !dragging) { current = target = scrollY; render(); } }, {passive:true});
+addEventListener('keydown', e => {
+  if (e.key === 'PageDown') { e.preventDefault(); scrollByAmount(innerHeight * 0.8); }
+  if (e.key === 'PageUp') { e.preventDefault(); scrollByAmount(-innerHeight * 0.8); }
+});
+render();
+</script>
+</body>
+</html>

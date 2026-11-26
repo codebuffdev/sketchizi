@@ -105,13 +105,21 @@ export default function CanvasVerticalScrollbar({ apiRef, canvasRootRef, canvasR
     };
     const onLeave = () => { if (!draggingRef.current) setVisible(false); };
     const onWheel = (event) => {
-      if (window.innerWidth - event.clientX > 48 || event.ctrlKey || event.metaKey) return;
+      // Plain vertical wheel over the canvas surface glides through the lerp engine.
+      // Modified wheels (zoom/pan chords), horizontal gestures and UI panels keep native behaviour.
+      if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+      const nearEdge = window.innerWidth - event.clientX <= 48;
+      if (!nearEdge && !(event.target instanceof HTMLCanvasElement)) return;
       event.preventDefault();
       event.stopPropagation();
       const camera = readCamera();
       if (!camera) return;
-      animateTo(targetRef.current + event.deltaY / Math.max(0.01, Number(apiRef.current?.getAppState?.()?.zoom?.value) || 1));
-      setVisible(true);
+      if (!frameRef.current && !draggingRef.current) { currentRef.current = camera.top; targetRef.current = camera.top; }
+      const zoom = Math.max(0.01, Number(apiRef.current?.getAppState?.()?.zoom?.value) || 1);
+      const unit = event.deltaMode === 1 ? 32 : event.deltaMode === 2 ? boundsRef.current.viewport : 1;
+      animateTo(targetRef.current + (event.deltaY * unit) / zoom);
+      if (nearEdge) setVisible(true);
     };
     window.addEventListener("pointermove", reveal, { passive: true });
     root.addEventListener("pointerleave", onLeave);
