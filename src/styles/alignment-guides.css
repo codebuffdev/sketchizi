@@ -122,3 +122,6 @@
   position: absolute; left: 50%; top: -24px; width: 10px; height: 10px; box-sizing: border-box; border-radius: 50%;
   background: #fff; border: 1.5px solid #6366F1; transform: translateX(-50%);
 }
+
+/* Grid fill layer: painted over the Excalidraw canvas, never interactive. */
+.sketchizi-grid-fill-layer { position: absolute; pointer-events: none; z-index: 5; }

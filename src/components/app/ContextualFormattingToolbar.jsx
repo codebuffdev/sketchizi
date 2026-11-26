@@ -1,3 +1,4 @@
+import { applyStylePatch, getFillStyle, getGridFill, stripGridKeys, GRID_GAP_MIN, GRID_GAP_MAX, GRID_WEIGHT_MIN, GRID_WEIGHT_MAX } from "../../features/canvas/gridFill.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { DEFAULT_FONT_FAMILY_ID } from "../../features/canvas/fontFamilyDefaults.js";
@@ -47,7 +48,7 @@ const FILL_COLORS = [
 ];
 const SHAPE_TYPES = new Set(["rectangle", "diamond", "ellipse"]);
 const LINE_TYPES = new Set(["line", "arrow", "rectangle", "diamond", "ellipse"]);
-const FILL_STYLES = [["hachure", "Hachure", "///"], ["cross-hatch", "Cross hatch", "###"], ["solid", "Solid", "■"]];
+const FILL_STYLES = [["hachure", "Hachure", "///"], ["cross-hatch", "Cross hatch", "###"], ["grid", "Grid", "#"], ["solid", "Solid", "■"]];
 const STROKE_STYLES = [["solid", "Solid", "━━"], ["dashed", "Dashed", "— —"], ["dotted", "Dotted", "· · ·"]];
 const ROUGHNESS = [[0, "Architect"], [1, "Artist"], [2, "Cartoonist"]];
 const FONT_FAMILIES = [[1, "Hand-drawn", "✎"], [2, "Sans", "A"], [3, "Code", "</>"], [5, "Excalifont", "E"], [6, "Nunito", "N"], [7, "Lilita", "L"], [8, "Comic", "C"], [9, "Liberation", "L"]];
@@ -438,8 +439,7 @@ export default function ContextualFormattingToolbar({
         if (hasSeparateNoteText && containerOnlyPatch && element.type === "text") return element;
         if (hasSeparateNoteText && backgroundOnlyPatch && element.type === "text") return element;
         return {
-          ...element,
-          ...patch,
+          ...applyStylePatch(element, patch),
           version: (Number(element.version) || 0) + 1,
           versionNonce: Math.floor(Math.random() * 2147483647),
           updated: now,
@@ -460,7 +460,7 @@ export default function ContextualFormattingToolbar({
       // palette and never write into the standard tool presets.
       if (typeof onToolStyleChange === "function" && !noteSelection) {
         const targets = [...new Set(liveSelection.map((element) => normalizeToolKey(element.type)).filter(Boolean))];
-        if (targets.length) onToolStyleChange(targets, patch);
+        if (targets.length) onToolStyleChange(targets, stripGridKeys(patch));
       }
       return;
     }
@@ -468,7 +468,7 @@ export default function ContextualFormattingToolbar({
     if ("strokeColor" in patch) appStatePatch.currentItemStrokeColor = patch.strokeColor;
     if ("backgroundColor" in patch) appStatePatch.currentItemBackgroundColor = patch.backgroundColor === "transparent" ? "transparent" : patch.backgroundColor;
     if ("strokeWidth" in patch) Object.assign(appStatePatch, strokeWidthAppStatePatch(patch.strokeWidth));
-    if ("fillStyle" in patch) appStatePatch.currentItemFillStyle = patch.fillStyle;
+    if ("fillStyle" in patch && patch.fillStyle !== "grid") appStatePatch.currentItemFillStyle = patch.fillStyle;
     if ("strokeStyle" in patch) appStatePatch.currentItemStrokeStyle = patch.strokeStyle;
     if ("roughness" in patch) appStatePatch.currentItemRoughness = patch.roughness;
     if ("opacity" in patch) appStatePatch.currentItemOpacity = patch.opacity;
@@ -689,7 +689,11 @@ export default function ContextualFormattingToolbar({
             </div>
             {(toolMode ? activeToolMode === "shape" : hasShape) && <>
               <div className="format-option-label format-sub-label">Fill style</div>
-              <div className="format-option-row">{FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${first?.fillStyle === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={first?.fillStyle === value} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}</div>
+              <div className="format-option-row">{FILL_STYLES.filter(([value]) => !(toolMode && value === "grid")).map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${getFillStyle(first) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={getFillStyle(first) === value} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}</div>
+            {!toolMode && getGridFill(first) && <div className="format-option-row format-grid-controls">
+              <label>Grid gap <input type="range" min={GRID_GAP_MIN} max={GRID_GAP_MAX} step="2" value={getGridFill(first).gap} aria-label="Grid gap" onChange={(event) => applyFormatting({ gridGap: Number(event.target.value) })} /> <output>{getGridFill(first).gap}px</output></label>
+              <label>Line weight <input type="range" min={GRID_WEIGHT_MIN} max={GRID_WEIGHT_MAX} step="0.5" value={getGridFill(first).weight} aria-label="Grid line weight" onChange={(event) => applyFormatting({ gridWeight: Number(event.target.value) })} /> <output>{getGridFill(first).weight}px</output></label>
+            </div>}
             </>}
             {drawToShapeTool && <>
               <div className="format-option-label format-sub-label">Sloppiness</div>
@@ -932,7 +936,7 @@ export default function ContextualFormattingToolbar({
                 <div className="format-option-section">
                   <div className="format-option-label">Fill style</div>
                   <div className="format-option-row">
-                    {FILL_STYLES.map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${(toolMode ? appState.currentItemFillStyle : first?.fillStyle) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={(toolMode ? appState.currentItemFillStyle : first?.fillStyle) === value} title={label} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}
+                    {FILL_STYLES.filter(([value]) => !(toolMode && value === "grid")).map(([value, label, glyph]) => <button key={value} type="button" className={`format-option-button${(toolMode ? appState.currentItemFillStyle : getFillStyle(first)) === value ? " is-selected" : ""}`} aria-label={label} aria-pressed={(toolMode ? appState.currentItemFillStyle : getFillStyle(first)) === value} title={label} onClick={() => applyFormatting({ fillStyle: value })}>{glyph}</button>)}
                   </div>
                 </div>
                 <div className="format-option-section">

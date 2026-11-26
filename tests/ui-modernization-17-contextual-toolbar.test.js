@@ -130,7 +130,7 @@ test('contextual toolbar exposes fill, line, roughness and opacity controls on c
   const dockCss = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.css', import.meta.url), 'utf8');
   assert.ok(toolbar.includes('<div className="format-option-label format-sub-label">Fill style</div>'));
   assert.ok(toolbar.includes('<div className="format-option-label format-sub-label">Line style</div>'));
-  assert.ok(toolbar.includes('[["hachure", "Hachure", "///"], ["cross-hatch", "Cross hatch", "###"], ["solid", "Solid", "■"]]'));
+  assert.ok(toolbar.includes('[["hachure", "Hachure", "///"], ["cross-hatch", "Cross hatch", "###"], ["grid", "Grid", "#"], ["solid", "Solid", "■"]]'));
   assert.ok(toolbar.includes('["dashed", "Dashed", "— —"]') && toolbar.includes('["dotted", "Dotted", "· · ·"]'));
   assert.ok(toolbar.includes("Roughness"));
   assert.match(toolbar, /applyFormatting\(\{ strokeStyle: value \}\)/);

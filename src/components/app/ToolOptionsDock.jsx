@@ -1,3 +1,4 @@
+import { applyStylePatch, getGridFill, stripGridKeys } from "../../features/canvas/gridFill.js";
 import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import usePresence from "../../features/hud/usePresence.js";
@@ -24,7 +25,7 @@ const displayColorForTheme = (color, theme) => {
 const COLORS = ["#1e1e1e", "#7c828d", "#e05252", "#d9820b", "#3a9663", "#2b79c2", "#ffffff"];
 const WIDTHS = [1, 2, 4, 6];
 const LINE_STYLES = [["solid", "Solid"], ["dashed", "Dashed"], ["dotted", "Dotted"]];
-const FILL_STYLES = [["solid", "Solid"], ["hachure", "Hachure"], ["cross-hatch", "Cross hatch"]];
+const FILL_STYLES = [["solid", "Solid"], ["hachure", "Hachure"], ["cross-hatch", "Cross hatch"], ["grid", "Grid"]];
 const FONT_FAMILIES = [[3, "Cascadia"], [4, "Kalam"], [5, "Excalifont"], [7, "Lilita One"], [8, "Comic Shanns"]];
 const LINE_GEOMETRIES = [
   ["straight", "Straight"],
@@ -203,6 +204,7 @@ function DockOptionGlyph({ label, value, optionLabel }) {
   if (name.includes("fill style")) {
     if (value === "solid") return svg(<><rect x="7" y="3" width="18" height="18" rx="2" fill="currentColor" /></>);
     if (value === "hachure") return svg(<><rect x="7" y="3" width="18" height="18" rx="2" /><path d="m8 17 12-12M12 21 25 8M7 11l8-8" /></>);
+    if (value === "grid") return svg(<><rect x="7" y="3" width="18" height="18" rx="2" /><path d="M13 3v18M19 3v18M7 9h18M7 15h18" /></>);
     return svg(<><rect x="7" y="3" width="18" height="18" rx="2" /><path d="m8 4 16 16M24 4 8 20M16 3v18M7 12h18" /></>);
   }
   if (name.includes("corner")) {
@@ -590,10 +592,11 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     return toUiArrowhead(value === undefined ? fallback : value);
   };
   const strokeColor = String(current("strokeColor", "currentItemStrokeColor", "#1e1e1e")).toLowerCase();
-  const fillColor = String(current("backgroundColor", "currentItemBackgroundColor", "transparent")).toLowerCase();
+  const gridFill = isSelection ? getGridFill(first) : null;
+  const fillColor = gridFill ? gridFill.color.toLowerCase() : String(current("backgroundColor", "currentItemBackgroundColor", "transparent")).toLowerCase();
   const strokeWidth = Number(current("strokeWidth", "currentItemStrokeWidth", 2)) || 1;
   const strokeStyle = current("strokeStyle", "currentItemStrokeStyle", "solid");
-  const fillStyle = current("fillStyle", "currentItemFillStyle", "solid");
+  const fillStyle = gridFill ? "grid" : current("fillStyle", "currentItemFillStyle", "solid");
   const opacity = Number(current("opacity", "currentItemOpacity", 100));
   const fontSize = Number(current("fontSize", "currentItemFontSize", 20));
   const rawFontFamily = Number(current("fontFamily", "currentItemFontFamily", 5));
@@ -681,7 +684,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     }
     const elements = api.getSceneElements?.() || [];
     const next = elements.map((element) => ids.has(element.id)
-      ? { ...element, ...effectivePatch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
+      ? { ...applyStylePatch(element, effectivePatch), version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
       : element);
     const arrowheadAppState = {};
     if ("startArrowhead" in effectivePatch) arrowheadAppState.currentItemStartArrowhead = effectivePatch.startArrowhead;
@@ -691,7 +694,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       ...(Object.keys(arrowheadAppState).length ? { appState: arrowheadAppState } : {}),
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
-    rememberStyle(effectivePatch);
+    rememberStyle(stripGridKeys(effectivePatch));
   };
 
 
@@ -1037,8 +1040,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
             <ColorPicker label="Custom fill color" value={fillColor === "transparent" ? "#ffffff" : fillColor} onChange={(value) => update({ backgroundColor: value })} transparent={false} {...colorPickerProps} />
           </>}
           <div role="group" aria-label="Fill style" className="sk-tool-fill-style-options" style={{ display:"inline-flex", alignItems:"center", gap:3, marginLeft:3 }}>
-            {FILL_STYLES.map(([value, label]) => <ToolButton key={value} active={fillStyle === value} title={label} onClick={() => update({ fillStyle: value })}>
-              {value === "solid" ? <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2" /></svg> : value === "hachure" ? <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 17 12-12M9 20 20 9M4 11 11 4" /></svg> : <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 5 14 14M12 4l8 8M4 12l8 8M19 5 5 19M20 12l-8 8M12 4 4 12" /></svg>}
+            {FILL_STYLES.filter(([value]) => isSelection || value !== "grid").map(([value, label]) => <ToolButton key={value} active={fillStyle === value} title={label} onClick={() => update({ fillStyle: value })}>
+              {value === "solid" ? <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2" /></svg> : value === "hachure" ? <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 17 12-12M9 20 20 9M4 11 11 4" /></svg> : value === "grid" ? <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M9.5 4v16M14.5 4v16M4 9.5h16M4 14.5h16" /></svg> : <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="m5 5 14 14M12 4l8 8M4 12l8 8M19 5 5 19M20 12l-8 8M12 4 4 12" /></svg>}
             </ToolButton>)}
           </div>
         </> : <>

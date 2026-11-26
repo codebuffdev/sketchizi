@@ -8,6 +8,7 @@ import CanvasVerticalScrollbar from "./CanvasVerticalScrollbar";
 import AlignmentGuides from "./AlignmentGuides";
 import TextSizeIndicator from "./TextSizeIndicator";
 import SelectionFrame from "./SelectionFrame";
+import GridFillLayer from "./GridFillLayer";
 import ShapeMeasurements from "./ShapeMeasurements";
 import RectangleTitles from "./RectangleTitles";
 import ArrowVertexEditor from "./ArrowVertexEditor";
@@ -942,6 +943,7 @@ export default function SketchiziCanvas({
         onScrollChange={handleViewportChange}
       />
       {!hudSuppressed && <ToolOptionsDock apiRef={apiRef} selectedElements={selectedElements} onClearSelection={onClearSelection} canvasRevision={canvasRevision} canEdit={canEdit && !viewModeEnabled} onToolStyleChange={onToolStyleChange} />}
+      <GridFillLayer apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} />
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
       <ArrowVertexEditor apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} canEdit={canEdit} viewModeEnabled={viewModeEnabled || hudSuppressed} />
       <ShapeMeasurements apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled} isDarkTheme={isDarkTheme} />
