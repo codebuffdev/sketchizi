@@ -1,4 +1,5 @@
 import test from "node:test";
+import { DOCK_SLOTS, ALL_CHILDREN, HIGHLIGHTER_DEFAULTS } from "../src/components/app/primaryDockModel.js";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
@@ -59,7 +60,8 @@ test("stroke width choices use visual line-weight icons instead of numeric label
 test("the primary dock is a React-owned left-edge dock anchored bottom-left on desktop", () => {
   assert.match(canvas, /\{!hudSuppressed && <PrimaryDock/);
   assert.match(primary, /aria-label="Drawing tools"/);
-  assert.match(dockPositionCss, /\.sketchizi-tool-sidebar\.sketchizi-tool-sidebar \{[\s\S]*?left: calc\(12px \+ var\(--safe-left, 0px\)\);[\s\S]*?bottom: calc\(12px \+ var\(--safe-bottom, 0px\)\)/);
+  const dockCss = readFileSyncLocal("../src/styles/ipad-radial-tool-wheel.css");
+  assert.match(dockCss, /\.sketchizi-tool-sidebar \{\s*position: fixed !important;\s*left: 20px !important;[\s\S]*?bottom: 20px !important/);
   assert.doesNotMatch(canvas, /sketchiziDockPositioned|sketchiziOrientation/);
 });
 
@@ -111,33 +113,37 @@ test("vertical Primary Dock grip has no reserved 24px space above Hand", () => {
 });
 
 
-test("the Primary Dock lists its own tools (no native overflow control) and keeps Eraser beside Bucket Fill", () => {
-  // The dock renders an explicit tool list, so there is no native three-dot overflow to hide.
+test("the Primary Dock lists its own tools (no native overflow control) in 10 slots; removed tools are gone", () => {
   assert.doesNotMatch(canvas, /sketchiziHideOverflowTools/);
-  const ids = [...primary.matchAll(/\{ id: "([a-z]+)", label:/g)].map((m) => m[1]);
-  assert.ok(ids.indexOf("eraser") >= 0 && ids.indexOf("bucketfill") === ids.indexOf("laser") + 1);
-  assert.ok(ids.indexOf("bucketfill") - ids.indexOf("eraser") <= 2, "Bucket Fill stays next to Eraser");
+  assert.deepEqual(DOCK_SLOTS.map((slot) => slot.id), ["selection", "hand", "shapes", "connectors", "freehand", "text", "media", "eraser", "magic", "library"]);
+  const ids = ALL_CHILDREN.map((child) => child.id);
+  for (const removed of ["bucketfill", "autoshape", "todo"]) assert.ok(!ids.includes(removed), `${removed} must not be in the dock`);
+  assert.ok(ids.includes("laser") && ids.includes("eraser"));
   assert.match(css, /\.App-toolbar > \.dropdown-menu-button[\s\S]*?display: none !important/);
 });
 
 
-test("Primary Dock buttons show compact shortcut hints and a label tooltip with the key", () => {
-  assert.match(primary, /\{tool\.keyHint && <span className="sketchizi-tool-sidebar-key">\{tool\.keyHint\}<\/span>\}/);
-  assert.match(primary, /title=\{tool\.keyHint \? `\$\{tool\.label\} \(\$\{tool\.keyHint\}\)` : tool\.label\}/);
-  assert.match(primary, /Hints are only shown for shortcuts already handled by Excalidraw/);
-  const keyCss = readFileSyncLocal('../src/styles/ipad-radial-tool-wheel.css');
-  assert.match(keyCss, /\.sketchizi-tool-sidebar-key \{[\s\S]*?position: absolute;[\s\S]*?font-size: 8px/);
+test("Primary Dock hides key letters at rest and shows them only in tooltips", () => {
+  assert.doesNotMatch(primary, /sketchizi-tool-sidebar-key/);
+  assert.match(primary, /data-tip=\{tooltipLabel\(child\)\}/);
+  assert.doesNotMatch(primary, /\stitle=\{/);
+  const model = readFileSyncLocal("../src/components/app/primaryDockModel.js");
+  assert.match(model, /keyHint is ONLY set where the key really triggers the tool/);
+  const keyCss = readFileSyncLocal("../src/styles/ipad-radial-tool-wheel.css");
+  assert.match(keyCss, /\.sketchizi-tool-sidebar-child::after \{[\s\S]*?content: attr\(data-tip\)/);
 });
 
 
 test("Primary Dock keeps the active tool visible and reveals the full dock on hover or keyboard focus", () => {
-  assert.match(primary, /onMouseEnter=\{expandDock\}/);
-  assert.match(primary, /onMouseLeave=\{scheduleCollapse\}/);
+  assert.match(primary, /onMouseEnter=\{hoverExpand\}/);
+  assert.match(primary, /onMouseLeave=\{hoverCollapse\}/);
   assert.match(primary, /inert=\{!expanded\}/);
-  assert.match(primary, /aria-label=\{`Active tool: \$\{activeToolMeta\.label\}\. Expand drawing tools`\}/);
+  assert.match(primary, /aria-label=\{`Active tool: \$\{pillChild\.label\}\. Expand drawing tools`\}/);
   assert.match(primary, /aria-expanded=\{expanded\}/);
   assert.match(primary, /handleExpandClick/);
-  assert.match(primary, /firstToolButtonRef\.current\?\.focus\(\)/);
+  assert.match(primary, /firstSlotButtonRef\.current\?\.focus\(\)/);
   assert.doesNotMatch(canvas, /sketchizi-dock-collapse-toggle|sketchizi-primary-dock-collapsed/);
-  assert.match(dockPositionCss, /\.sketchizi-tool-sidebar\.sketchizi-tool-sidebar:not\(\.is-expanded\) \{[\s\S]*?width: 48px/);
+  const dockCss = readFileSyncLocal("../src/styles/ipad-radial-tool-wheel.css");
+  assert.match(dockCss, /\.sketchizi-tool-sidebar:not\(\.is-expanded\) \{ border-radius: 22px; \}/);
+  assert.match(dockCss, /width: 44px;/);
 });

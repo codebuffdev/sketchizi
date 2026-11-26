@@ -1,4 +1,5 @@
 import test from "node:test";
+import { DOCK_SLOTS, ALL_CHILDREN } from "../src/components/app/primaryDockModel.js";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
@@ -6,17 +7,19 @@ const dock = readFileSync(new URL("../src/components/app/PrimaryDock.jsx", impor
 const canvas = readFileSync(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
 const sidebarCss = readFileSync(new URL("../src/styles/ipad-radial-tool-wheel.css", import.meta.url), "utf8");
 
-test("primary dock renders the complete tool set in a vertical left sidebar", () => {
-  for (const tool of ["selection", "hand", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "image", "frame", "eraser", "laser", "bucketfill", "autoshape", "todo"]) {
-    assert.ok(dock.includes('id: "' + tool + '"'), "missing sidebar tool: " + tool);
+test("primary dock renders the 10-slot tool set in a vertical left sidebar", () => {
+  assert.equal(DOCK_SLOTS.length, 10);
+  const ids = ALL_CHILDREN.map((child) => child.id);
+  for (const id of ["select", "lasso", "hand", "rectangle", "rounded-rectangle", "ellipse", "diamond", "triangle", "hexagon", "cylinder", "funnel", "arrow", "double-arrow", "curved-arrow", "elbow-arrow", "dashed-arrow", "line", "pen", "highlighter", "text", "sticky-note", "image", "frame", "eraser", "laser", "ai-assist", "embed", "library"]) {
+    assert.ok(ids.includes(id), "missing sidebar tool: " + id);
   }
+  for (const removed of ["bucketfill", "autoshape", "todo"]) assert.ok(!ids.includes(removed));
   assert.match(dock, /sketchizi-tool-sidebar/);
-  assert.match(dock, /separated: true/);
   assert.match(dock, /setActiveTool/);
-  assert.match(dock, /onMouseEnter=\{expandDock\}/);
-  assert.match(dock, /className="sketchizi-tool-sidebar-active"[\s\S]*?onMouseEnter=\{expandDock\}/);
-  assert.match(dock, /onMouseLeave=\{scheduleCollapse\}/);
-  assert.doesNotMatch(dock, /sketchizi-radial-wheel|Move tool wheel|onPointerMove|setPointerCapture|tuckedOffset/);
+  assert.match(dock, /onMouseEnter=\{hoverExpand\}/);
+  assert.match(dock, /className="sketchizi-tool-sidebar-active"[\s\S]*?onMouseEnter=\{hoverExpand\}/);
+  assert.match(dock, /onMouseLeave=\{hoverCollapse\}/);
+  assert.doesNotMatch(dock, /sketchizi-radial-wheel|Move tool wheel|setPointerCapture|tuckedOffset/);
 });
 
 test("sidebar stays a left-edge, vertically centred, scrollable floating rail", () => {
@@ -50,11 +53,10 @@ test("dock waits three seconds after pointer leaves and cancels collapse on re-e
 
 
 test("selecting a tool collapses the dock immediately and clears the pending hover timer", () => {
-  assert.match(dock, /const collapseDock = \(\) => \{[\s\S]*?cancelCollapseTimer\(\)[\s\S]*?setExpanded\(false\)/);
-  assert.match(dock, /const chooseTool = \(tool\) => \{[\s\S]*?collapseDock\(\);/);
-  assert.doesNotMatch(dock, /if \(window\.matchMedia\?\.\("\(hover: none\)"\)\.matches\) collapseDock\(\)/);
+  assert.match(dock, /const collapseDock = useCallback\(\(returnFocus = true\) => \{\s*cancelCollapseTimer\(\);[\s\S]*?setExpanded\(false\)/);
+  assert.match(dock, /const chooseChild = \(child, \{ keepOpen = false \} = \{\}\) => \{[\s\S]*?if \(!keepOpen\) collapseDock\(\);/);
 });
 
-test("changing the active tool (e.g. via keyboard shortcut) collapses the dock without stealing focus", () => {
-  assert.match(dock, /useEffect\(\(\) => \{\s*if \(previousActiveIdRef\.current === activeId\) return;[\s\S]*?setExpanded\(false\);\s*\}, \[activeId\]\)/);
+test("changing the active tool (e.g. via keyboard shortcut) collapses the dock without stealing focus, except while a touch-pinned rail is open", () => {
+  assert.match(dock, /if \(previousActiveIdRef\.current === activeId\) return;\s*previousActiveIdRef\.current = activeId;\s*if \(pinnedRef\.current\) return;[\s\S]*?setExpanded\(false\);\s*\}, \[activeId, closeRail\]\)/);
 });

@@ -1,11 +1,23 @@
-/* Bottom-left hover dock: compact active-tool pill, expanding upward. */
+/* Primary dock: left-anchored vertical floating dock (10 slots, 3 sections).
+ *
+ * Single source of truth for .sketchizi-tool-sidebar*. The older tray/popover
+ * overrides in hud-capsules.css, canvas-top-controls.css and responsive-fluid.css
+ * (which turned the list into a horizontally scrolling row) were removed.
+ *
+ * Structure: nav > list (clipped, scrollable) + child-rail + hover-bridge +
+ * tooltip + collapsed pill + chevron cap. The rail/bridge/tooltip are siblings of
+ * the list, never inside it, so nothing clips them and `inert` on the collapsed
+ * list cannot disable them. Dock, rail and bridge are overflow: visible at every
+ * breakpoint (see the !important block below). */
 .sketchizi-tool-sidebar {
-  --sk-dock-btn-w: 32px;
-  --sk-dock-btn-h: 32px;
-  --sk-dock-icon: 19px;
-  --sk-dock-gap: 2px;
-  --sk-dock-pad-x: 6px;
-  --sk-dock-pad-y: 6px;
+  --sk-dock-ease: cubic-bezier(.16, 1, .3, 1);
+  --sk-dock-fg: #18181B;
+  --sk-dock-bg: rgb(255 255 255 / 92%);
+  --sk-dock-line: #E4E4E7;
+  --sk-dock-hover: #F4F4F5;
+  --sk-dock-active-bg: #F3E8FF;
+  --sk-dock-active-fg: #6D28D9;
+  --sk-dock-muted: #71717A;
   position: fixed;
   z-index: 10040;
   left: 16px;
@@ -14,202 +26,257 @@
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
-  width: calc(var(--sk-dock-btn-w) + 2 * var(--sk-dock-pad-x) + 2px);
+  width: 44px;
   max-height: calc(100dvh - 112px);
-  padding: var(--sk-dock-pad-y) var(--sk-dock-pad-x);
-  gap: var(--sk-dock-gap);
-  overflow: hidden;
-  border: 1px solid rgb(205 210 219 / 82%);
-  border-radius: 15px;
-  background: rgb(255 255 255 / 95%);
-  color: #626873;
-  box-shadow: 0 6px 24px rgb(15 23 42 / 10%), inset 0 1px 2px rgb(255 255 255 / 96%);
-  backdrop-filter: blur(15px) saturate(125%);
-  -webkit-backdrop-filter: blur(15px) saturate(125%);
+  padding: 6px;
+  gap: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 12px;
+  background: var(--sk-dock-bg);
+  color: var(--sk-dock-fg);
+  /* The 1px border is an inset shadow so the dock is exactly 44px wide with 6px padding. */
+  box-shadow: inset 0 0 0 1px var(--sk-dock-line), 0 4px 16px rgb(0 0 0 / 6%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   user-select: none;
-  transition: border-radius .2s ease, box-shadow .2s ease, background-color .2s ease;
+  transition: border-radius 160ms var(--sk-dock-ease), box-shadow 160ms ease, background-color 160ms ease;
 }
+/* Collapsed: 44 x 44 pill showing only the active tool. */
+.sketchizi-tool-sidebar:not(.is-expanded) { border-radius: 22px; }
+
 .sketchizi-tool-sidebar-list {
   display: flex;
   flex: 0 1 auto;
   flex-direction: column;
   align-items: center;
-  gap: var(--sk-dock-gap);
+  gap: 4px;
   width: 100%;
   max-height: 0;
   margin: 0;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   opacity: 0;
   pointer-events: none;
   scrollbar-width: none;
-  transition: max-height .28s cubic-bezier(.22,1,.36,1), opacity .16s ease, margin .2s ease;
+  transition: max-height 160ms var(--sk-dock-ease), opacity 120ms ease, margin 160ms var(--sk-dock-ease);
 }
 .sketchizi-tool-sidebar-list::-webkit-scrollbar { display: none; }
 .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list {
-  max-height: calc(100dvh - 132px);
-  margin-bottom: 4px;
+  max-height: calc(100dvh - 112px - 60px);
+  overflow-y: auto;
   opacity: 1;
   pointer-events: auto;
 }
+
 .sketchizi-tool-sidebar-button,
+.sketchizi-tool-sidebar-child,
 .sketchizi-tool-sidebar-active {
   position: relative;
   display: grid;
-  flex: 0 0 var(--sk-dock-btn-h);
+  flex: 0 0 32px;
   place-items: center;
   box-sizing: border-box;
-  width: var(--sk-dock-btn-w);
-  height: var(--sk-dock-btn-h);
-  min-height: var(--sk-dock-btn-h);
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
   padding: 0;
-  border: 1px solid transparent;
-  border-radius: 10px;
+  border: 0;
+  border-radius: 8px;
   background: transparent;
-  color: inherit;
+  color: var(--sk-dock-fg);
   cursor: pointer;
-  transition: color .14s ease, background .14s ease, box-shadow .14s ease, transform .14s ease;
+  transition: color 120ms ease, background-color 120ms ease, transform 120ms ease;
 }
 .sketchizi-tool-sidebar-button svg,
-.sketchizi-tool-sidebar-active svg {
-  display: block;
-  width: var(--sk-dock-icon);
-  height: var(--sk-dock-icon);
-}
-.sketchizi-tool-sidebar-button:hover:not(:disabled) {
-  background: rgb(226 229 234 / 72%);
-  color: #30343b;
-}
-.sketchizi-tool-sidebar-button.is-active {
-  border-color: #292c31;
-  background: linear-gradient(145deg, #30343a, #17191d);
-  color: #fff;
-  box-shadow: 0 2px 6px rgb(15 18 24 / 26%);
-}
-.sketchizi-tool-sidebar-active {
-  border-color: #292c31;
-  background: linear-gradient(145deg, #30343a, #17191d);
-  color: #fff;
-  box-shadow: 0 2px 6px rgb(15 18 24 / 26%);
-}
+.sketchizi-tool-sidebar-child svg,
+.sketchizi-tool-sidebar-active svg { display: block; width: 20px; height: 20px; }
+.sketchizi-tool-sidebar-button:hover:not(:disabled),
+.sketchizi-tool-sidebar-child:hover:not(:disabled),
+.sketchizi-tool-sidebar-active:hover:not(:disabled),
+.sketchizi-tool-sidebar-button.is-open { background: var(--sk-dock-hover); }
 .sketchizi-tool-sidebar-button:active:not(:disabled),
+.sketchizi-tool-sidebar-child:active:not(:disabled),
 .sketchizi-tool-sidebar-active:active:not(:disabled) { transform: scale(.96); }
 .sketchizi-tool-sidebar-button:disabled,
+.sketchizi-tool-sidebar-child:disabled,
 .sketchizi-tool-sidebar-active:disabled { opacity: .38; cursor: not-allowed; }
+
+/* Active: purple tint, no outline or box-shadow. */
+.sketchizi-tool-sidebar-button.is-active,
+.sketchizi-tool-sidebar-child.is-active {
+  background: var(--sk-dock-active-bg);
+  color: var(--sk-dock-active-fg);
+  box-shadow: none;
+  outline: none;
+}
+.sketchizi-tool-sidebar-active { color: var(--sk-dock-active-fg); }
+
+/* Keyboard focus stays visible; inset so the clipped list does not cut it off. */
 .sketchizi-tool-sidebar-button:focus-visible,
+.sketchizi-tool-sidebar-child:focus-visible,
 .sketchizi-tool-sidebar-active:focus-visible,
 .sketchizi-tool-sidebar-expand:focus-visible {
-  outline: 2px solid #777f8b;
-  outline-offset: 2px;
+  outline: 2px solid var(--sk-dock-active-fg);
+  outline-offset: -2px;
 }
-.sketchizi-tool-sidebar-key {
+
+/* 4 x 4 triangle, bottom-right, on slots that own a child rail. */
+.sketchizi-tool-sidebar-button.has-children::after {
+  content: "";
   position: absolute;
   right: 3px;
-  bottom: 2px;
-  color: rgb(255 255 255 / 62%);
-  font-size: 8px;
-  font-weight: 700;
-  line-height: 1;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  opacity: .55;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
   pointer-events: none;
 }
-.sketchizi-tool-sidebar-button:not(.is-active) .sketchizi-tool-sidebar-key { color: #9aa0aa; }
+
 .sketchizi-tool-sidebar-divider {
   flex: 0 0 1px;
   width: 20px;
   height: 1px;
-  margin: 3px 0 4px;
-  background: rgb(119 125 136 / 25%);
+  margin: 3px 0;
+  background: var(--sk-dock-line);
 }
-.sketchizi-tool-sidebar-collapsed {
+
+/* Child rail: 44px wide, radius 12, padding 6, 32px buttons, 4px gap, flush right of the dock. */
+.sketchizi-tool-sidebar-child-rail {
+  position: absolute;
+  left: 44px;
+  z-index: 2;
   display: flex;
-  max-height: 48px;
-  flex: 0 0 auto;
   flex-direction: column;
-  align-items: center;
-  width: 100%;
-  overflow: hidden;
-  opacity: 1;
-  transition: max-height .2s ease, opacity .14s ease;
+  gap: 4px;
+  box-sizing: border-box;
+  width: 44px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--sk-dock-bg);
+  box-shadow: inset 0 0 0 1px var(--sk-dock-line), 0 4px 16px rgb(0 0 0 / 6%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: auto;
 }
-.sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-collapsed {
-  max-height: 0;
-  opacity: 0;
+/* Invisible 12px bridge so the pointer can cross from slot to rail without leaving. */
+.sketchizi-tool-sidebar-hover-bridge {
+  position: absolute;
+  left: 38px;
+  z-index: 1;
+  width: 12px;
+  background: transparent;
+  pointer-events: auto;
+}
+
+/* Tooltips: dark #18181B, strictly to the right, 8px gap. Never on grouped parents. */
+.sketchizi-tool-sidebar-tooltip,
+.sketchizi-tool-sidebar-child::after {
+  position: absolute;
+  z-index: 3;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: #18181B;
+  color: #fff;
+  font: 500 12px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  white-space: nowrap;
   pointer-events: none;
 }
-.sketchizi-tool-sidebar-active { flex: 0 0 var(--sk-dock-btn-h); }
+.sketchizi-tool-sidebar-tooltip { left: calc(100% + 8px); transform: translateY(-50%); }
+/* Child button sits 6px inside the rail, so +6px keeps the 8px gap from the rail edge. */
+.sketchizi-tool-sidebar-child::after {
+  content: attr(data-tip);
+  left: calc(100% + 6px + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 100ms ease;
+}
+.sketchizi-tool-sidebar-child:focus-visible::after { opacity: 1; }
+@media (hover: hover) {
+  .sketchizi-tool-sidebar-child:hover::after { opacity: 1; transition-delay: 180ms; }
+}
+
+/* Collapsed pill (active tool) and bottom chevron cap (32 x 28, inside the dock). */
+.sketchizi-tool-sidebar-collapsed {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  overflow: visible;
+  opacity: 1;
+  transition: opacity 120ms ease;
+}
+.sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-collapsed {
+  display: none;
+}
 .sketchizi-tool-sidebar-expand {
-  display: grid;
+  display: none;
+  flex: 0 0 28px;
   place-items: center;
-  flex: 0 0 12px;
-  width: 100%;
-  height: 12px;
+  width: 32px;
+  height: 28px;
+  margin-top: 4px;
   padding: 0;
   border: 0;
-  border-radius: 5px;
+  border-radius: 8px;
   background: transparent;
+  color: var(--sk-dock-muted);
   cursor: pointer;
 }
-.sketchizi-tool-sidebar-expand span {
-  width: 10px;
-  height: 2px;
-  border-radius: 99px;
-  background: #c5cad2;
-  transition: background .14s ease, width .14s ease;
-}
-.sketchizi-tool-sidebar-expand:hover span { width: 15px; background: #858c98; }
+.sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-expand { display: grid; }
+.sketchizi-tool-sidebar-expand:hover { background: var(--sk-dock-hover); color: var(--sk-dock-fg); }
+
+/* Dark theme parity. */
 .sketchizi-tool-sidebar.is-dark {
-  border-color: rgb(255 255 255 / 13%);
-  background: rgb(31 35 43 / 96%);
-  color: #c6cbd3;
-  box-shadow: 0 6px 24px rgb(0 0 0 / 38%), inset 0 1px 2px rgb(255 255 255 / 7%);
+  --sk-dock-fg: #E4E4E7;
+  --sk-dock-bg: rgb(24 24 27 / 92%);
+  --sk-dock-line: #3F3F46;
+  --sk-dock-hover: rgb(255 255 255 / 8%);
+  --sk-dock-active-bg: rgb(139 92 246 / 28%);
+  --sk-dock-active-fg: #C4B5FD;
+  --sk-dock-muted: #A1A1AA;
+  box-shadow: inset 0 0 0 1px var(--sk-dock-line), 0 4px 16px rgb(0 0 0 / 38%);
 }
-.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-button:hover:not(:disabled) {
-  background: rgb(255 255 255 / 9%);
-  color: #fff;
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-child-rail {
+  box-shadow: inset 0 0 0 1px var(--sk-dock-line), 0 4px 16px rgb(0 0 0 / 38%);
 }
-.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-button.is-active,
-.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-active {
-  border-color: #0b0d10;
-  background: linear-gradient(145deg, #30343a, #111316);
-  color: #fff;
-}
-.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-divider { background: rgb(255 255 255 / 17%); }
-.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-expand span { background: #687180; }
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-tooltip,
+.sketchizi-tool-sidebar.is-dark .sketchizi-tool-sidebar-child::after { box-shadow: 0 0 0 1px #3F3F46; }
+
 .sketchizi-tool-sidebar.is-menu-open {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transform: translateY(8px);
 }
-@media (max-width: 600px) {
-  .sketchizi-tool-sidebar {
-    --sk-dock-btn-w: 30px;
-    --sk-dock-btn-h: 30px;
-    --sk-dock-icon: 18px;
-    --sk-dock-pad-x: 4px;
-    --sk-dock-pad-y: 5px;
-    left: 8px;
-    bottom: 58px;
-    border-radius: 13px;
-  }
-  .sketchizi-tool-sidebar-list { gap: 2px; }
+
+/* Fingers get a larger hit area without changing the 32px visuals. */
+@media (pointer: coarse) {
+  .sketchizi-tool-sidebar-button::before,
+  .sketchizi-tool-sidebar-child::before,
+  .sketchizi-tool-sidebar-active::before { content: ""; position: absolute; inset: -2px; }
 }
-@media (pointer: coarse) and (min-width: 601px) {
-  .sketchizi-tool-sidebar {
-    --sk-dock-btn-w: 36px;
-    --sk-dock-btn-h: 36px;
-    --sk-dock-icon: 20px;
-    --sk-dock-pad-x: 4px;
-    --sk-dock-pad-y: 6px;
-  }
+
+/* No breakpoint may turn the dock, rail or bridge into a scroll container: this is
+ * what produced the "< 0 >" horizontal scroll widget inside the child dock. */
+.sketchizi-tool-sidebar,
+.sketchizi-tool-sidebar-child-rail,
+.sketchizi-tool-sidebar-hover-bridge {
+  overflow: visible !important;
 }
+.sketchizi-tool-sidebar-child-rail { overflow-x: visible !important; overflow-y: visible !important; }
+
 @media (prefers-reduced-motion: reduce) {
   .sketchizi-tool-sidebar,
   .sketchizi-tool-sidebar * { transition: none !important; }
 }
 
-
-/* Keep the active-tool trigger independent from the centered properties pill. */
+/* Keep the dock independent from the centered properties pill. */
 .sketchizi-tool-sidebar {
   position: fixed !important;
   left: 20px !important;
@@ -221,24 +288,4 @@
     left: 20px !important;
     bottom: 20px !important;
   }
-}
-
-
-/* Smooth expansion of the primary tool palette; the active trigger remains visible. */
-.app .sketchizi-tool-sidebar-list {
-  transition: opacity 180ms ease, transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
-  transform-origin: bottom left;
-}
-.app .sketchizi-tool-sidebar:not(.is-expanded) .sketchizi-tool-sidebar-list {
-  opacity: 0;
-  transform: translateY(8px);
-  pointer-events: none;
-}
-.app .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-@media (prefers-reduced-motion: reduce) {
-  .app .sketchizi-tool-sidebar-list { transition: none; }
 }

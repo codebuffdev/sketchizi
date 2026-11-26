@@ -31,9 +31,10 @@ test("Suggestion 3: Auth status indicator is styled as a refined, non-intrusive 
   assert.match(authCss, /rgba\(245,\s*158,\s*11/);
 });
 
-test("Suggestion 4: Dock shortcuts render as compact key badges, with physical-key styling retained", async () => {
+test("Suggestion 4: Dock shortcuts appear only in tooltips; physical-key styling is retained elsewhere", async () => {
   const primaryDock = await readFile(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
-  assert.match(primaryDock, /<span className="sketchizi-tool-sidebar-key">\{tool\.keyHint\}<\/span>/);
+  assert.doesNotMatch(primaryDock, /sketchizi-tool-sidebar-key/);
+  assert.match(primaryDock, /data-tip=\{tooltipLabel\(child\)\}/);
   assert.match(dockCss, /\.sketchizi-dock-kbd/);
   assert.match(dockCss, /border-bottom:\s*2px solid/);
 });

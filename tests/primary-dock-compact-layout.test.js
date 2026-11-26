@@ -1,60 +1,68 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+
 const css = readFileSync(new URL("../src/styles/ipad-radial-tool-wheel.css", import.meta.url), "utf8");
 function declarations(block) {
   const out = {};
   for (const m of block.matchAll(/([-\w]+)\s*:\s*([^;]+);/g)) out[m[1]] = m[2].trim();
   return out;
 }
-function rulesFor(selector, source = css) {
-  const re = /([^{}]+)\{([^}]*)\}/g;
-  return [...source.matchAll(re)]
+function rulesFor(selector) {
+  return [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)]
     .filter((m) => m[1].replace(/\/\*[\s\S]*?\*\//g, "").split(",").some((part) => part.trim() === selector))
     .map((m) => declarations(m[2]));
 }
-function mediaBlock(query) {
-  const start = css.indexOf("@media " + query);
-  assert.ok(start >= 0, "missing media query: " + query);
-  const open = css.indexOf("{", start);
-  let depth = 0;
-  for (let i = open; i < css.length; i++) {
-    if (css[i] === "{") depth++;
-    if (css[i] === "}" && --depth === 0) return css.slice(open + 1, i);
-  }
-  throw new Error("unterminated media block");
-}
-const px = (v) => { const n = parseFloat(v); assert.ok(Number.isFinite(n), "expected px value: " + v); return n; };
-function metrics(overrides = {}) {
-  const rail = Object.assign({}, ...rulesFor(".sketchizi-tool-sidebar").slice(0, 1), overrides);
-  const button = Object.assign({}, ...rulesFor(".sketchizi-tool-sidebar-button").slice(0, 1));
-  const divider = Object.assign({}, ...rulesFor(".sketchizi-tool-sidebar-divider"));
-  const w = px(rail["--sk-dock-btn-w"]), h = px(rail["--sk-dock-btn-h"]), icon = px(rail["--sk-dock-icon"]);
-  const gap = px(rail["--sk-dock-gap"]), padX = px(rail["--sk-dock-pad-x"]), padY = px(rail["--sk-dock-pad-y"]);
-  const margins = divider.margin.split(/\s+/).map(px);
-  const dividerBox = px(divider.height) + margins[0] + margins[2];
-  return { w, h, icon, gap, button, width: w + 2 * padX + 2, height: 16 * h + dividerBox + 16 * gap + 2 * padY + 2 };
-}
-test("rail width is derived from the button size and is much narrower than before", () => {
-  const m = metrics(); assert.equal(m.width, m.w + 14); assert.ok(m.width <= 46);
+const merged = (selector) => Object.assign({}, ...rulesFor(selector));
+
+test("dock is exactly 44px wide: 32px slots inside 6px padding, border drawn as an inset shadow", () => {
+  const dock = merged(".sketchizi-tool-sidebar");
+  assert.equal(dock.width, "44px");
+  assert.equal(dock.padding, "6px");
+  assert.equal(dock["box-sizing"], "border-box");
+  assert.equal(dock["border-radius"], "12px");
+  assert.match(dock["box-shadow"], /inset 0 0 0 1px var\(--sk-dock-line\)/);
+  assert.equal(32 + 2 * 6, 44);
 });
-test("rail height for the full tool set is reduced without shrinking below usable sizes", () => {
-  const m = metrics(); assert.ok(m.height <= 570); assert.ok(m.h >= 30 && m.w >= 32); assert.ok(m.icon >= 18 && m.icon <= m.h - 8); assert.ok(m.gap <= 2);
+
+test("slots and child buttons are 32x32 radius 8 with a 4px gap", () => {
+  const button = merged(".sketchizi-tool-sidebar-button");
+  assert.equal(button.width, "32px"); assert.equal(button.height, "32px");
+  assert.equal(button["border-radius"], "8px");
+  assert.equal(merged(".sketchizi-tool-sidebar-list").gap, "4px");
+  assert.equal(merged(".sketchizi-tool-sidebar-child-rail").gap, "4px");
 });
-test("all rail buttons are driven by the shared size variables so alignment stays consistent", () => {
-  const m = metrics(); assert.match(m.button.width, /var\(--sk-dock-btn-w\)/); assert.match(m.button.height, /var\(--sk-dock-btn-h\)/); assert.equal(m.button["box-sizing"], "border-box");
-  const svg = Object.assign({}, ...rulesFor(".sketchizi-tool-sidebar-button svg")); assert.match(svg.width, /var\(--sk-dock-icon\)/); assert.match(svg.height, /var\(--sk-dock-icon\)/);
-  const rail = Object.assign({}, ...rulesFor(".sketchizi-tool-sidebar").slice(0, 1)); assert.equal(rail["align-items"], "center");
+
+test("20px dividers separate the three sections", () => {
+  const divider = merged(".sketchizi-tool-sidebar-divider");
+  assert.equal(divider.width, "20px"); assert.equal(divider.height, "1px");
 });
-test("the selected tool keeps a clearly distinct filled state", () => {
-  const active = Object.assign({}, ...rulesFor(".sketchizi-tool-sidebar-button.is-active")); assert.ok(active.background && active.background !== "transparent"); assert.ok(active.color);
-  const hover = Object.assign({}, ...rulesFor(".sketchizi-tool-sidebar-button:hover:not(:disabled)")); assert.notEqual(active.background, hover.background);
+
+test("child rail is 44px wide, radius 12, padding 6, flush at left: 44px, with a 12px bridge", () => {
+  const rail = merged(".sketchizi-tool-sidebar-child-rail");
+  assert.equal(rail.position, "absolute"); assert.equal(rail.left, "44px"); assert.equal(rail.width, "44px");
+  assert.equal(rail.padding, "6px"); assert.equal(rail["border-radius"], "12px");
+  const bridge = merged(".sketchizi-tool-sidebar-hover-bridge");
+  assert.equal(bridge.width, "12px"); assert.equal(bridge.background, "transparent"); assert.equal(bridge["pointer-events"], "auto");
 });
-test("rail is height-capped symmetrically below the header so it cannot overlap the hamburger menu", () => {
-  const rail = Object.assign({}, ...rulesFor(".sketchizi-tool-sidebar").slice(0, 1)); assert.equal(rail.position, "fixed"); assert.equal(rail.bottom, "58px"); assert.match(rail["max-height"], /100dvh\s*-\s*112px/); assert.equal(rail.overflow, "hidden");
-  assert.match(css, /\.sketchizi-tool-sidebar-list[\s\S]*?overflow-y:\s*auto/); assert.match(css, /\.sketchizi-tool-sidebar\.is-expanded \.sketchizi-tool-sidebar-list/);
+
+test("the selected tool keeps a clearly distinct filled state with no outline or shadow", () => {
+  const active = merged(".sketchizi-tool-sidebar-button.is-active");
+  assert.equal(active.background, "var(--sk-dock-active-bg)");
+  assert.match(css, /--sk-dock-active-bg: #F3E8FF/); assert.match(css, /--sk-dock-active-fg: #6D28D9/);
+  assert.equal(active["box-shadow"], "none"); assert.equal(active.outline, "none");
+  const hover = merged(".sketchizi-tool-sidebar-button:hover:not(:disabled)");
+  assert.notEqual(active.background, hover.background);
 });
-test("phones get a smaller rail and iPad/touch keeps larger hit targets than desktop", () => {
-  const desktop = metrics(); const phone = metrics(rulesFor(".sketchizi-tool-sidebar", mediaBlock("(max-width: 600px)"))[0]); assert.ok(phone.width < desktop.width); assert.ok(phone.h <= desktop.h);
-  const touch = metrics(rulesFor(".sketchizi-tool-sidebar", mediaBlock("(pointer: coarse) and (min-width: 601px)"))[0]); assert.ok(touch.h >= 36); assert.ok(touch.h > desktop.h); assert.ok(touch.width <= 46);
+
+test("dock is height-capped, vertically scrollable inside the list only, and never scrolls horizontally", () => {
+  const dock = merged(".sketchizi-tool-sidebar");
+  assert.match(dock.position, /^fixed/); assert.match(dock["max-height"], /100dvh\s*-\s*112px/);
+  assert.match(css, /\.sketchizi-tool-sidebar\.is-expanded \.sketchizi-tool-sidebar-list \{[^}]*overflow-y: auto/);
+  assert.equal(merged(".sketchizi-tool-sidebar-list")["overflow-x"], "hidden");
+  assert.match(css, /\.sketchizi-tool-sidebar,\s*\.sketchizi-tool-sidebar-child-rail,\s*\.sketchizi-tool-sidebar-hover-bridge \{\s*overflow: visible !important;/);
+});
+
+test("coarse pointers get a larger hit area without changing the 32px visuals", () => {
+  assert.match(css, /@media \(pointer: coarse\) \{[\s\S]*?inset: -2px/);
 });

@@ -118,53 +118,6 @@ html, body {
   :root .properties-panel { max-width: 420px; }
 }
 
-/* ------------------------------------------------------------------ *
- * 4. Dock: tap-to-toggle trigger + tray (hud-capsules.css owns the
- *    animation; we only reshape the tray into a scrollable row)
- * ------------------------------------------------------------------ */
-@media (max-width: 1023.98px), (hover: none) {
-  /* The trigger keeps its bottom-left anchor (the bottom centre belongs to the
-     tool-options dock) and its 46px square, which already exceeds 44px. */
-  :root .app .sketchizi-tool-sidebar.sketchizi-tool-sidebar {
-    left: max(var(--rf-edge), var(--rf-safe-left)) !important;
-    bottom: max(var(--rf-edge), var(--rf-safe-bottom)) !important;
-  }
-  /* The tray becomes ONE horizontally scrollable row of 44px tools. */
-  :root .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list {
-    flex-direction: row;
-    justify-content: flex-start;
-    width: max-content;
-    max-width: calc(100dvw - max(var(--rf-edge), var(--rf-safe-left)) - max(var(--rf-edge), var(--rf-safe-right)));
-    max-height: none !important;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    touch-action: pan-x;
-    -webkit-overflow-scrolling: touch;
-  }
-  :root .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list::-webkit-scrollbar { display: none; }
-  :root .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button {
-    flex: 0 0 var(--rf-hit);
-    width: var(--rf-hit);
-    height: var(--rf-hit);
-    min-height: var(--rf-hit);
-    scroll-snap-align: center;
-  }
-  :root .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button.is-active {
-    flex-basis: var(--rf-hit);
-    width: var(--rf-hit);
-    height: var(--rf-hit);
-  }
-  :root .app .sketchizi-tool-sidebar .sketchizi-tool-sidebar-divider {
-    flex: 0 0 1px;
-    width: 1px;
-    height: 24px;
-    margin: 0 2px;
-  }
-}
-
 /* An open tool tray owns the bottom edge; tuck the minimap away meanwhile. */
 @media (max-width: 1023.98px) {
   :root .app:has(.sketchizi-tool-sidebar.is-expanded) .minimap { opacity: 0; pointer-events: none; }
@@ -378,9 +331,6 @@ html, body {
  * ------------------------------------------------------------------ */
 @media (max-height: 520px) and (orientation: landscape) {
   :root { --rf-sheet-max: 80dvh; }
-  :root .sketchizi-tool-sidebar .sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button {
-    flex-basis: 40px; width: 40px; height: 40px; min-height: 40px;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   :root .sketchizi-tool-sidebar,

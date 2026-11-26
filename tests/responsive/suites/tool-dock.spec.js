@@ -9,21 +9,22 @@ test.describe("C · Primary tool dock", () => {
     const dock = page.locator(SEL.primaryDock).first();
     if (!(await dock.isVisible().catch(() => false))) return qa.gap("Primary tool dock", "dock not visible");
     await qa.checkpoint("collapsed");
-    const toggle = page.locator(".sketchizi-tool-sidebar-expand").first();
+    const toggle = page.locator(".sketchizi-tool-sidebar-active").first();
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
     await expect(dock).toHaveClass(/is-expanded/);
     await settle(page);
     await qa.checkpoint("expanded");
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    // The bottom chevron cap collapses immediately.
+    await page.locator(".sketchizi-tool-sidebar-expand").first().click();
+    await expect(dock).not.toHaveClass(/is-expanded/);
   });
 
   test("active tool indicator follows tool selection", async ({ qa, page }) => {
-    const toggle = page.locator(".sketchizi-tool-sidebar-expand").first();
-    if (!(await toggle.isVisible().catch(() => false))) return qa.gap("Primary tool dock", "expand toggle not visible");
+    const toggle = page.locator(".sketchizi-tool-sidebar-active").first();
+    if (!(await toggle.isVisible().catch(() => false))) return qa.gap("Primary tool dock", "active-tool pill not visible");
     await toggle.click();
-    const rect = page.locator(`${SEL.primaryDockButton}[aria-label*='Rectangle' i]`).first();
+    const rect = page.locator(`${SEL.primaryDockButton}[aria-label*='Rectangle' i]`).first(); // slot label: "Shapes: Rectangle"
     await expect(rect).toBeVisible();
     await rect.click();
     await settle(page);
@@ -33,15 +34,16 @@ test.describe("C · Primary tool dock", () => {
   });
 
   test("every tool button is reachable inside the viewport (incl. last tool)", async ({ qa, page }) => {
-    const toggle = page.locator(".sketchizi-tool-sidebar-expand").first();
-    if (!(await toggle.isVisible().catch(() => false))) return qa.gap("Primary tool dock", "expand toggle not visible");
+    const toggle = page.locator(".sketchizi-tool-sidebar-active").first();
+    if (!(await toggle.isVisible().catch(() => false))) return qa.gap("Primary tool dock", "active-tool pill not visible");
     await toggle.click();
     await settle(page);
     const buttons = page.locator(SEL.primaryDockButton);
     const n = await buttons.count();
-    expect(n).toBeGreaterThan(3);
+    expect(n).toBe(10);
     const list = page.locator(".sketchizi-tool-sidebar-list").first();
     const scrolls = await list.evaluate((el) => ({ x: el.scrollWidth > el.clientWidth + 1, y: el.scrollHeight > el.clientHeight + 1 }));
+    expect(scrolls.x, "dock list must never scroll horizontally").toBe(false);
     // Horizontal / vertical scrolling is allowed; the LAST tool must become reachable by scrolling.
     const last = buttons.nth(n - 1);
     await last.scrollIntoViewIfNeeded().catch(() => {});
@@ -59,8 +61,8 @@ test.describe("C · Primary tool dock", () => {
 
   test("touch interaction selects a tool", async ({ qa, page }) => {
     test.skip(!isTouch(qa), "touch-only interaction");
-    const toggle = page.locator(".sketchizi-tool-sidebar-expand").first();
-    if (!(await toggle.isVisible().catch(() => false))) return qa.gap("Primary tool dock", "expand toggle not visible");
+    const toggle = page.locator(".sketchizi-tool-sidebar-active").first();
+    if (!(await toggle.isVisible().catch(() => false))) return qa.gap("Primary tool dock", "active-tool pill not visible");
     const tb = await toggle.boundingBox();
     await touchTap(page, { x: Math.round(tb.x + tb.width / 2), y: Math.round(tb.y + tb.height / 2) });
     await settle(page);

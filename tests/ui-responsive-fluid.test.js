@@ -70,10 +70,11 @@ test("phone sheets cap at 65dvh and touch targets are 44px", () => {
 });
 
 test("dock is tap-to-toggle on hover-less devices", () => {
-  assert.match(css, /\(hover:\s*none\)/);
   assert.match(dock, /\(hover: none\)/);
   assert.match(dock, /if \(!canHover\(\) && expanded\) \{ collapseDock\(\); return; \}/);
   assert.doesNotMatch(dock, /onMouseEnter=\{expandDock\}/);
+  // The old horizontally scrolling tray reshape must stay gone.
+  assert.doesNotMatch(css, /sketchizi-tool-sidebar-list[^}]*overflow-x:\s*auto/);
 });
 
 test("phone gate no longer blocks phones by default but can be re-enabled", () => {

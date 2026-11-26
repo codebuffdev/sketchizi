@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { DOCK_SLOTS, ALL_CHILDREN } from '../src/components/app/primaryDockModel.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
@@ -53,29 +54,21 @@ test('bottom-left navigation keeps only the zoom percentage visible', () => {
 });
 
 
-test('dock orders tools by family and keeps a neutral active accent', () => {
-  const primary = readFileSync(new URL('../src/components/app/PrimaryDock.jsx', import.meta.url), 'utf8');
-  const ids = [...primary.matchAll(/\{ id: "([a-z]+)", label:/g)].map((m) => m[1]);
+test('dock orders slots by section and keeps a purple active accent', () => {
+  const ids = DOCK_SLOTS.map((slot) => slot.id);
   const at = (id) => ids.indexOf(id);
-  // navigation -> shapes -> connectors -> drawing -> annotation -> utilities
+  // navigation -> primitives -> utilities
   assert.ok(at('selection') === 0 && at('hand') === 1);
-  assert.ok(at('hand') < at('rectangle') && at('rectangle') < at('arrow') && at('arrow') < at('freedraw'));
-  assert.ok(at('freedraw') < at('text') && at('text') < at('eraser') && at('eraser') < at('todo'));
+  assert.ok(at('hand') < at('shapes') && at('shapes') < at('connectors') && at('connectors') < at('freehand'));
+  assert.ok(at('freehand') < at('text') && at('text') < at('eraser') && at('eraser') < at('library'));
+  assert.deepEqual(DOCK_SLOTS.map((slot) => slot.section).join(''), 'AABBBBBCCC');
   assert.match(css, /data-sketchizi-dock-layout="grouped"/);
-  assert.match(css, /--sk-dock-group-divider/);
-  assert.match(css, /#477f91/);
-  assert.doesNotMatch(css, /#7669e8/);
 });
 
 
-test('tool families render as distinct compact clusters rather than a flat toolbar row', () => {
+test('slot sections render as distinct clusters separated by 20px dividers', () => {
   const primary = readFileSync(new URL('../src/components/app/PrimaryDock.jsx', import.meta.url), 'utf8');
-  // The React dock separates the Todo utility from the drawing tools with an explicit divider.
-  assert.match(primary, /\{ id: "todo", label: "Todo List", separated: true \}/);
-  assert.match(primary, /\{tool\.separated && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" \/>\}/);
+  assert.match(primary, /\{sectionBreakAfter\(slot, slotIndex\) && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" \/>\}/);
   assert.match(css, /\[data-sketchizi-tool-group\][\s\S]*?border-radius:\s*9px/);
   assert.match(css, /\[data-sketchizi-tool-group="navigation"\]/);
-  assert.match(css, /\[data-sketchizi-group-start="true"\]/);
-  assert.match(css, /width:\s*36px !important/);
-  assert.match(css, /background:\s*#477f91 !important/);
 });

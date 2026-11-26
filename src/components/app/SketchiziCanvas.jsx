@@ -24,6 +24,8 @@ export default function SketchiziCanvas({
   todoItems = [],
   onTodoItemsChange,
   onOpenTodoTab,
+  onOpenAiAsk = null,
+  onOpenLibrary = null,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
   selectedElements = [], onClearSelection, canEdit = true,
@@ -877,7 +879,9 @@ export default function SketchiziCanvas({
         isDarkTheme={isDarkTheme}
         canvasRevision={canvasRevision}
         nativeMenuOpen={nativeMenuOpen}
-        onOpenTodoTab={onOpenTodoTab}
+        onToolStyleChange={onToolStyleChange}
+        onOpenAiAsk={onOpenAiAsk}
+        onOpenLibrary={onOpenLibrary}
       />}
       <Excalidraw
         // Preserve the drawing background when restoring a scene.

@@ -1,98 +1,81 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { strokeWidthAppStatePatch } from "../../features/canvas/strokeWidthKey.js";
-
-const ICONS = {
-  selection: <><path d="m5 3 14 11-6 .8-2.6 5.2L5 3Z" /><path d="m12 15 3.5 4" /></>,
-  hand: <><path d="M8 12V5a1.5 1.5 0 0 1 3 0v5-7a1.5 1.5 0 0 1 3 0v7-5a1.5 1.5 0 0 1 3 0v7-3a1.5 1.5 0 0 1 3 0v6c0 4-2.5 6-6 6h-2c-2 0-3.5-1-4.5-2.5L4 14a1.7 1.7 0 0 1 2.5-2.2L8 13" /></>,
-  rectangle: <rect x="4" y="5" width="16" height="14" rx="1.5" />,
-  ellipse: <ellipse cx="12" cy="12" rx="8" ry="7" />,
-  diamond: <path d="m12 3 9 9-9 9-9-9 9-9Z" />,
-  arrow: <><path d="M4 19 19 4" /><path d="M9 4h10v10" /></>,
-  line: <path d="M4 20 20 4" />,
-  freedraw: <path d="M4 17c2-8 4-10 6-7s3 8 5 5 3-7 5-7" />,
-  text: <><path d="M4 6V4h16v2" /><path d="M12 4v16" /><path d="M8 20h8" /></>,
-  image: <><rect x="3.5" y="4" width="17" height="16" rx="2" /><circle cx="9" cy="9" r="1.5" /><path d="m5 17 5-5 3 3 2-2 4 4" /></>,
-  frame: <><rect x="4" y="4" width="16" height="16" rx="1" strokeDasharray="3 2" /><path d="M8 4v3M16 4v3M8 17v3M16 17v3M4 8h3M4 16h3M17 8h3M17 16h3" /></>,
-  eraser: <><path d="m7 16 8-10a2 2 0 0 1 3 0l2 2a2 2 0 0 1 0 3l-8 9H9l-5-5a2 2 0 0 1 0-3l3-4" /><path d="m11 20 8 0" /></>,
-  laser: <><path d="m5 19 8-8" /><path d="m12 5 1-2m4 4 2-1m-1 5 2 1" /><circle cx="16" cy="8" r="2" /></>,
-  bucketfill: <><path d="M4 13.5 13.5 4 20 10.5 10.5 20 4 13.5Z" /><path d="m9 8.5 6.5 6.5M17 16c0 2 1 3 2 3s2-1 2-3" /></>,
-  autoshape: <><path d="M3 16c2-7 5-9 7-6" /><path d="M11 12h3m-2-2 2 2-2 2" /><rect x="16" y="6" width="5" height="12" rx="1" /></>,
-  highlighter: <><path d="m9 11 6 6" /><path d="m14.5 5.5 4 4L10 18l-5 1 1-5 8.5-8.5Z" /><path d="M4 21h8" /></>,
-  todo: <><rect x="4" y="3.5" width="16" height="17" rx="2" /><path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" /></>,
-};
-
-const HIGHLIGHTER_DEFAULTS = { strokeColor: "#ffd60a", opacity: 40, strokeWidth: 8 };
+import { insertPresetShape } from "../../features/canvas/presetShapeInsertion.js";
+import { DockIcon } from "./primaryDockIcons.jsx";
+import {
+  DOCK_SLOTS,
+  HIGHLIGHTER_DEFAULTS,
+  defaultSlotMemory,
+  findChild,
+  findSlot,
+  isGroupedSlot,
+  isPersistentTool,
+  resolveActiveChild,
+  sectionBreakAfter,
+  tooltipLabel,
+} from "./primaryDockModel.js";
 
 // Grace period before the dock collapses after the pointer leaves it.
 const COLLAPSE_GRACE_MS = 3000;
+// Child rail timings (mouse only).
+const CHILD_OPEN_INTENT_MS = 90;
+const CHILD_CLOSE_GRACE_MS = 120;
+const SINGLE_TOOLTIP_DELAY_MS = 180;
+const CUSTOM_TOOLS = ["bucketfill", "autoshape", "highlighter"];
 
-// Hints are only shown for shortcuts already handled by Excalidraw.
-const TOOLS = [
-  { id: "selection", label: "Select", keyHint: "V" },
-  { id: "hand", label: "Pan Canvas", keyHint: "H" },
-  { id: "rectangle", label: "Rectangle", keyHint: "R" },
-  { id: "ellipse", label: "Ellipse", keyHint: "O" },
-  { id: "diamond", label: "Diamond", keyHint: "D" },
-  { id: "arrow", label: "Arrow", keyHint: "A" },
-  { id: "line", label: "Line", keyHint: "L" },
-  { id: "freedraw", label: "Draw", keyHint: "P" },
-  { id: "text", label: "Text", keyHint: "T" },
-  { id: "highlighter", label: "Highlighter" },
-  { id: "image", label: "Insert Image", keyHint: "I" },
-  { id: "frame", label: "Frame", keyHint: "F" },
-  { id: "eraser", label: "Eraser", keyHint: "E" },
-  { id: "laser", label: "Laser Pointer", keyHint: "K" },
-  { id: "bucketfill", label: "Bucket Fill" },
-  { id: "autoshape", label: "Draw to Shape" },
-  { id: "todo", label: "Todo List", separated: true },
-];
-
-function ToolIcon({ name }) {
-  return <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[name]}</svg>;
-}
-
-function activateTool({ id, root, apiRef, onOpenTodoTab }) {
-  if (id === "todo") {
-    onOpenTodoTab?.();
-    return;
-  }
-  if (id === "image") {
+function activateTool({ child, root, apiRef }) {
+  const api = apiRef.current;
+  if (child.tool === "image") {
     const imageButton = root?.querySelector('.excalidraw [data-testid="toolbar-image"], .excalidraw button[aria-label*="image" i]');
     if (imageButton instanceof HTMLElement) imageButton.click();
-    else apiRef.current?.setActiveTool?.({ type: "image" });
+    else api?.setActiveTool?.({ type: "image" });
     return;
   }
-  if (id === "highlighter") {
-    const api = apiRef.current;
-    api?.setActiveTool?.({ type: "freedraw" });
-    api?.updateScene?.({ appState: { currentItemStrokeColor: HIGHLIGHTER_DEFAULTS.strokeColor, currentItemOpacity: HIGHLIGHTER_DEFAULTS.opacity, ...strokeWidthAppStatePatch(HIGHLIGHTER_DEFAULTS.strokeWidth) } });
-    window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: "highlighter" } }));
-    return;
-  }
-  if (id === "bucketfill" || id === "autoshape") {
-    window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: id } }));
-    return;
-  }
-  apiRef.current?.setActiveTool?.({ type: id });
+  api?.setActiveTool?.({ type: child.tool });
 }
 
-export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], canEdit = true, isDarkTheme = false, canvasRevision = 0, onOpenTodoTab, nativeMenuOpen = false }) {
+export default function PrimaryDock({
+  rootRef,
+  apiRef,
+  selectedElements = [],
+  canEdit = true,
+  isDarkTheme = false,
+  canvasRevision = 0,
+  nativeMenuOpen = false,
+  onToolStyleChange = null,
+  onOpenAiAsk = null,
+  onOpenLibrary = null,
+}) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
   const [expanded, setExpanded] = useState(false);
+  const [slotMemory, setSlotMemory] = useState(defaultSlotMemory);
+  const [openSlotId, setOpenSlotId] = useState(null);
+  const [railTop, setRailTop] = useState(0);
+  const [tooltip, setTooltip] = useState(null);
+
+  const navRef = useRef(null);
   const customToolRef = useRef(null);
   const highlighterSavedRef = useRef(null);
   const collapseTimerRef = useRef(null);
-  const firstToolButtonRef = useRef(null);
+  const openTimerRef = useRef(null);
+  const closeTimerRef = useRef(null);
+  const tooltipTimerRef = useRef(null);
+  const pinnedRef = useRef(false);
+  const openSlotRef = useRef(null);
+  const slotButtonRefs = useRef({});
   const activeButtonRef = useRef(null);
+  const firstSlotButtonRef = useRef(null);
+
+  openSlotRef.current = openSlotId;
+  customToolRef.current = customTool;
 
   useEffect(() => {
     const nextTool = apiRef.current?.getAppState?.()?.activeTool?.type;
     if (nextTool) setActiveTool(nextTool);
   }, [apiRef, canvasRevision]);
 
-  customToolRef.current = customTool;
-
+  /* ---------------------------------------------------------------- highlighter */
   const restoreHighlighter = () => {
     const saved = highlighterSavedRef.current;
     highlighterSavedRef.current = null;
@@ -112,7 +95,7 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
   useEffect(() => {
     const syncCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
-      if (["bucketfill", "autoshape", "highlighter"].includes(tool)) setCustomTool(tool);
+      if (CUSTOM_TOOLS.includes(tool)) setCustomTool(tool);
     };
     const clearCustomTool = (event) => {
       // Highlighter is a persistent drawing mode; canvas clicks must not end it.
@@ -127,10 +110,13 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
     };
   }, []);
 
+  /* ---------------------------------------------------------------- timers */
+  const clearTimer = (ref) => { if (ref.current) window.clearTimeout(ref.current); ref.current = null; };
   useEffect(() => () => {
-    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
+    [collapseTimerRef, openTimerRef, closeTimerRef, tooltipTimerRef].forEach(clearTimer);
   }, []);
 
+  /* ---------------------------------------------------------------- selection-derived presentation */
   const appState = apiRef.current?.getAppState?.() || {};
   const selectedIds = Object.entries(appState.selectedElementIds || {})
     .filter(([, isSelected]) => isSelected)
@@ -138,55 +124,53 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
   const liveSelectedElements = (apiRef.current?.getSceneElements?.() || []).filter((element) =>
     selectedIds.includes(element.id) && element && !element.isDeleted && !element.deleted,
   );
-  const hasLiveSelectionState = appState.selectedElementIds &&
-    typeof appState.selectedElementIds === "object";
+  const hasLiveSelectionState = appState.selectedElementIds && typeof appState.selectedElementIds === "object";
   const selected = hasLiveSelectionState
     ? liveSelectedElements
     : selectedElements.filter((element) => element && !element.isDeleted && !element.deleted);
   const selectedType = selected.length > 0 && selected.every((element) => element.type === selected[0].type)
     ? selected[0].type
     : null;
-  const selectionToolByElementType = {
-    text: "text",
-    arrow: "arrow",
-    line: "line",
-    rectangle: "rectangle",
-    diamond: "diamond",
-    ellipse: "ellipse",
-    freedraw: "freedraw",
-    frame: "frame",
-    image: "image",
-  };
-  // Selection only changes the dock's presentation. Excalidraw's activeTool
-  // remains "selection", preserving normal move/resize/text-edit behavior.
-  const displayedTool = customTool || (activeTool !== "selection"
-    ? activeTool
-    : (selectionToolByElementType[selectedType] || "selection"));
-  const activeId = customTool || activeTool;
+  const selectedRounded = selectedType === "rectangle" && Boolean(selected[0]?.roundness);
 
-  // Any change of the active tool (click or keyboard shortcut) collapses the
-  // dock. Focus is deliberately left alone so typing shortcuts keep working.
+  const activeChild = resolveActiveChild({ activeToolType: activeTool, customTool, selectedType, selectedRounded, slotMemory });
+  const activeSlotId = activeChild?.slotId || null;
+  const activeId = customTool || activeTool;
+  const pillChild = activeChild || findChild("select");
+
+  /* ---------------------------------------------------------------- collapse */
   const previousActiveIdRef = useRef(activeId);
   const selectionKey = selected.map((element) => element.id).sort().join("|");
   const previousSelectionKeyRef = useRef(selectionKey);
-  const cancelCollapseTimer = () => {
-    if (collapseTimerRef.current) window.clearTimeout(collapseTimerRef.current);
-    collapseTimerRef.current = null;
-  };
+  const cancelCollapseTimer = () => clearTimer(collapseTimerRef);
+
+  const closeRail = useCallback(() => {
+    clearTimer(openTimerRef);
+    clearTimer(closeTimerRef);
+    pinnedRef.current = false;
+    setOpenSlotId(null);
+  }, []);
+
+  // Any change of the active tool (click or keyboard shortcut) collapses the
+  // dock, EXCEPT while a touch-pinned child rail is open: the tap that opened it
+  // also activated the remembered tool, and collapsing then would hide the rail
+  // the user is about to use. Focus is deliberately left alone.
   useEffect(() => {
     if (previousActiveIdRef.current === activeId) return;
     previousActiveIdRef.current = activeId;
+    if (pinnedRef.current) return;
     cancelCollapseTimer();
+    closeRail();
     setExpanded(false);
-  }, [activeId]);
+  }, [activeId, closeRail]);
   useEffect(() => {
     if (previousSelectionKeyRef.current === selectionKey) return;
     previousSelectionKeyRef.current = selectionKey;
+    if (pinnedRef.current) return;
     cancelCollapseTimer();
+    closeRail();
     setExpanded(false);
-  }, [selectionKey]);
-
-  const activeToolMeta = TOOLS.find((tool) => tool.id === displayedTool) || TOOLS[0];
+  }, [selectionKey, closeRail]);
 
   const expandDock = () => {
     cancelCollapseTimer();
@@ -196,47 +180,231 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
   // Ignore it so the pill is a true tap-to-toggle instead of expand-then-collapse.
   const canHover = () => typeof window === "undefined" || !window.matchMedia?.("(hover: none)").matches;
   const hoverExpand = () => { if (canHover()) expandDock(); };
-  const hoverCollapse = () => { if (canHover()) scheduleCollapse(); };
-  const handleExpandClick = () => {
-    if (!canHover() && expanded) { collapseDock(); return; }
-    expandDock();
-    window.requestAnimationFrame(() => firstToolButtonRef.current?.focus());
-  };
-  const collapseDock = () => {
+  const collapseDock = useCallback((returnFocus = true) => {
     cancelCollapseTimer();
+    closeRail();
+    setTooltip(null);
     setExpanded(false);
-    window.requestAnimationFrame(() => activeButtonRef.current?.focus());
-  };
+    if (returnFocus) window.requestAnimationFrame(() => activeButtonRef.current?.focus());
+  }, [closeRail]);
   const scheduleCollapse = () => {
     cancelCollapseTimer();
     collapseTimerRef.current = window.setTimeout(() => {
+      closeRail();
       setExpanded(false);
       collapseTimerRef.current = null;
     }, COLLAPSE_GRACE_MS);
   };
-  const chooseTool = (tool) => {
-    if (customToolRef.current === "highlighter" && tool.id !== "highlighter") {
+  const hoverCollapse = () => { if (canHover() && !pinnedRef.current) scheduleCollapse(); };
+  const handleExpandClick = () => {
+    if (!canHover() && expanded) { collapseDock(); return; }
+    expandDock();
+    window.requestAnimationFrame(() => firstSlotButtonRef.current?.focus());
+  };
+
+  // "\" toggles the dock immediately (ignored while typing or with modifiers).
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key !== "\\" || event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target?.isContentEditable) return;
+      event.preventDefault();
+      setExpanded((value) => {
+        if (value) { collapseDock(false); return false; }
+        cancelCollapseTimer();
+        return true;
+      });
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [collapseDock]);
+
+  /* ---------------------------------------------------------------- child rail open/close */
+  const measureRailTop = (slotId) => {
+    const nav = navRef.current;
+    const button = slotButtonRefs.current[slotId];
+    if (!nav || !button) return 0;
+    // rail top = hovered slot top - 6px, relative to the nav's padding box.
+    return Math.round(button.getBoundingClientRect().top - nav.getBoundingClientRect().top - nav.clientTop - 6);
+  };
+  const openRail = (slotId, { pinned = false } = {}) => {
+    clearTimer(closeTimerRef);
+    clearTimer(openTimerRef);
+    setTooltip(null);
+    setRailTop(measureRailTop(slotId));
+    pinnedRef.current = pinned;
+    setOpenSlotId(slotId);
+  };
+  const scheduleRailClose = () => {
+    clearTimer(openTimerRef);
+    clearTimer(closeTimerRef);
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = null;
+      if (!pinnedRef.current) setOpenSlotId(null);
+    }, CHILD_CLOSE_GRACE_MS);
+  };
+
+  // Pinned (touch/pen/keyboard) rail closes on outside tap or Escape.
+  useEffect(() => {
+    if (!openSlotId) return undefined;
+    const onPointerDown = (event) => {
+      if (navRef.current?.contains(event.target)) return;
+      closeRail();
+    };
+    const onKeyDown = (event) => {
+      if (event.key !== "Escape" || !openSlotRef.current) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      const slotId = openSlotRef.current;
+      closeRail();
+      window.requestAnimationFrame(() => slotButtonRefs.current[slotId]?.focus());
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, [openSlotId, closeRail]);
+
+  /* ---------------------------------------------------------------- activation */
+  const runChild = (child) => {
+    // Leaving the highlighter for anything else restores the previous style.
+    if (customToolRef.current === "highlighter" && child.kind !== "highlighter") {
       restoreHighlighter();
+      setCustomTool(null);
       window.dispatchEvent(new CustomEvent("sketchizi:clear-custom-tool"));
     }
-    if (tool.id === "highlighter" && customToolRef.current !== "highlighter") {
-      const state = apiRef.current?.getAppState?.() || {};
-      highlighterSavedRef.current = {
-        strokeColor: state.currentItemStrokeColor || "#1e1e1e",
-        opacity: state.currentItemOpacity ?? 100,
-        strokeWidth: state.currentItemStrokeWidth ?? 2,
-      };
+    const api = apiRef.current;
+    if (child.kind === "action") {
+      if (child.action === "ai") onOpenAiAsk?.();
+      else if (child.action === "library") onOpenLibrary?.();
+      return;
     }
-    activateTool({ id: tool.id, root: rootRef.current, apiRef, onOpenTodoTab });
-    if (tool.id !== "todo") {
-      setActiveTool(tool.id === "highlighter" ? "freedraw" : tool.id);
-      setCustomTool(["bucketfill", "autoshape", "highlighter"].includes(tool.id) ? tool.id : null);
+    if (child.kind === "preset") {
+      insertPresetShape(api, child.preset);
+      setActiveTool("selection");
+      return;
     }
-    collapseDock();
+    if (child.kind === "highlighter") {
+      if (customToolRef.current !== "highlighter") {
+        const state = api?.getAppState?.() || {};
+        highlighterSavedRef.current = {
+          strokeColor: state.currentItemStrokeColor || "#1e1e1e",
+          opacity: state.currentItemOpacity ?? 100,
+          strokeWidth: state.currentItemStrokeWidth ?? 2,
+        };
+      }
+      api?.setActiveTool?.({ type: "freedraw" });
+      api?.updateScene?.({ appState: { currentItemStrokeColor: HIGHLIGHTER_DEFAULTS.strokeColor, currentItemOpacity: HIGHLIGHTER_DEFAULTS.opacity, ...strokeWidthAppStatePatch(HIGHLIGHTER_DEFAULTS.strokeWidth) } });
+      window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: "highlighter" } }));
+      setActiveTool("freedraw");
+      setCustomTool("highlighter");
+      return;
+    }
+    // Variants (sharp vs rounded rectangle, arrow flavours) are recorded into the
+    // per-canvas tool presets. The preset controller re-applies the remembered
+    // style on every tool switch, so writing currentItem* directly would be undone.
+    if (child.record && typeof onToolStyleChange === "function") {
+      onToolStyleChange(child.record.targets, child.record.patch, { syncAppState: true });
+    }
+    activateTool({ child, root: rootRef.current, apiRef });
+    setActiveTool(child.tool);
+    setCustomTool(null);
   };
+
+  const rememberChild = (child) => setSlotMemory((memory) => ({ ...memory, [child.slotId]: child.id }));
+
+  const chooseChild = (child, { keepOpen = false } = {}) => {
+    rememberChild(child);
+    runChild(child);
+    if (!keepOpen) collapseDock();
+  };
+
+  const rememberedChild = (slot) => findChild(slotMemory[slot.id]) || slot.tools[0];
+
+  const handleSlotClick = (slot, event) => {
+    const child = rememberedChild(slot);
+    const isTouchLike = event.nativeEvent?.pointerType ? event.nativeEvent.pointerType !== "mouse" : !canHover();
+    if (isGroupedSlot(slot) && isTouchLike) {
+      // Touch / pen: activate the remembered tool (when it is a persistent tool)
+      // AND open the child rail pinned. Presets/actions are never re-fired by a tap.
+      openRail(slot.id, { pinned: true });
+      if (isPersistentTool(child)) { runChild(child); }
+      return;
+    }
+    chooseChild(child);
+  };
+
+  /* ---------------------------------------------------------------- slot pointer handlers (mouse only) */
+  const handleSlotPointerEnter = (slot, event) => {
+    if (event.pointerType !== "mouse") return;
+    clearTimer(closeTimerRef);
+    if (isGroupedSlot(slot)) {
+      clearTimer(tooltipTimerRef);
+      setTooltip(null);
+      clearTimer(openTimerRef);
+      if (openSlotRef.current === slot.id) return;
+      // Sliding from one grouped slot to another opens instantly.
+      const delay = openSlotRef.current ? 0 : CHILD_OPEN_INTENT_MS;
+      if (delay === 0) { openRail(slot.id); return; }
+      openTimerRef.current = window.setTimeout(() => { openTimerRef.current = null; openRail(slot.id); }, delay);
+      return;
+    }
+    // Single slot: close any open rail, then show its tooltip after 180ms.
+    clearTimer(openTimerRef);
+    if (openSlotRef.current) scheduleRailClose();
+    clearTimer(tooltipTimerRef);
+    const button = slotButtonRefs.current[slot.id];
+    const nav = navRef.current;
+    if (!button || !nav) return;
+    const top = Math.round(button.getBoundingClientRect().top - nav.getBoundingClientRect().top - nav.clientTop + button.offsetHeight / 2);
+    tooltipTimerRef.current = window.setTimeout(() => {
+      tooltipTimerRef.current = null;
+      if (!openSlotRef.current) setTooltip({ label: tooltipLabel(slot.tools[0]), top });
+    }, SINGLE_TOOLTIP_DELAY_MS);
+  };
+  const handleSlotPointerLeave = (slot, event) => {
+    if (event.pointerType !== "mouse") return; // touch "leaves" right after a tap
+    clearTimer(openTimerRef);
+    clearTimer(tooltipTimerRef);
+    setTooltip(null);
+    if (isGroupedSlot(slot) && openSlotRef.current === slot.id) scheduleRailClose();
+  };
+
+  /* ---------------------------------------------------------------- keyboard */
+  const focusSlotByOffset = (slotId, offset) => {
+    const ids = DOCK_SLOTS.map((slot) => slot.id);
+    const next = ids[(ids.indexOf(slotId) + offset + ids.length) % ids.length];
+    slotButtonRefs.current[next]?.focus();
+  };
+  const handleSlotKeyDown = (slot, event) => {
+    if (isGroupedSlot(slot) && (event.key === "Enter" || event.key === "ArrowRight")) {
+      event.preventDefault();
+      openRail(slot.id, { pinned: true });
+      window.requestAnimationFrame(() => navRef.current?.querySelector(".sketchizi-tool-sidebar-child-rail button")?.focus());
+    } else if (event.key === "ArrowDown") { event.preventDefault(); focusSlotByOffset(slot.id, 1); }
+    else if (event.key === "ArrowUp") { event.preventDefault(); focusSlotByOffset(slot.id, -1); }
+  };
+  const handleChildKeyDown = (slot, event) => {
+    const buttons = [...event.currentTarget.parentElement.querySelectorAll("button")];
+    const index = buttons.indexOf(event.currentTarget);
+    if (event.key === "ArrowDown") { event.preventDefault(); buttons[(index + 1) % buttons.length]?.focus(); }
+    else if (event.key === "ArrowUp") { event.preventDefault(); buttons[(index - 1 + buttons.length) % buttons.length]?.focus(); }
+    else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      closeRail();
+      slotButtonRefs.current[slot.id]?.focus();
+    }
+  };
+
+  const openSlot = openSlotId ? findSlot(openSlotId) : null;
+  const railHeight = openSlot ? openSlot.tools.length * 32 + (openSlot.tools.length - 1) * 4 + 12 : 0;
 
   return (
     <nav
+      ref={navRef}
       className={`sketchizi-tool-sidebar${isDarkTheme ? " is-dark" : ""}${nativeMenuOpen ? " is-menu-open" : ""}${expanded ? " is-expanded" : ""}`}
       aria-label="Drawing tools"
       aria-hidden={nativeMenuOpen}
@@ -245,63 +413,113 @@ export default function PrimaryDock({ rootRef, apiRef, selectedElements = [], ca
       onMouseEnter={hoverExpand}
       onMouseLeave={hoverCollapse}
       onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) scheduleCollapse();
+        if (!event.currentTarget.contains(event.relatedTarget) && !pinnedRef.current) scheduleCollapse();
       }}
     >
-      <div className="sketchizi-tool-sidebar-list" id="sketchizi-tool-sidebar-list" aria-label="All drawing tools" inert={!expanded}>
-        {TOOLS.map((tool, toolIndex) => {
-          const isDisplayed = displayedTool === tool.id;
+      <div className="sketchizi-tool-sidebar-list" id="sketchizi-tool-sidebar-list" role="toolbar" aria-orientation="vertical" aria-label="All drawing tools" inert={!expanded}>
+        {DOCK_SLOTS.map((slot, slotIndex) => {
+          const grouped = isGroupedSlot(slot);
+          const isActive = activeSlotId === slot.id;
+          const shown = isActive && activeChild ? activeChild : rememberedChild(slot);
+          const label = grouped ? `${slot.label}: ${shown.label}` : shown.label;
           return (
-            <React.Fragment key={tool.id}>
-              {tool.separated && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
+            <React.Fragment key={slot.id}>
               <button
                 type="button"
-                ref={tool.id === TOOLS[0].id ? firstToolButtonRef : undefined}
-                className={`sketchizi-tool-sidebar-button${isDisplayed ? " is-active" : ""}`}
-                aria-label={tool.label}
-                aria-pressed={isDisplayed}
-                title={tool.keyHint ? `${tool.label} (${tool.keyHint})` : tool.label}
-                disabled={!canEdit && tool.id !== "todo"}
-                style={{ "--sk-i": toolIndex }}
-                onClick={() => chooseTool(tool)}
+                ref={(node) => { slotButtonRefs.current[slot.id] = node; if (slotIndex === 0) firstSlotButtonRef.current = node; }}
+                className={`sketchizi-tool-sidebar-button${isActive ? " is-active" : ""}${grouped ? " has-children" : ""}${openSlotId === slot.id ? " is-open" : ""}`}
+                aria-label={label}
+                aria-pressed={isActive}
+                aria-haspopup={grouped ? "true" : undefined}
+                aria-expanded={grouped ? openSlotId === slot.id : undefined}
+                data-slot={slot.id}
+                disabled={!canEdit}
+                style={{ "--sk-i": slotIndex }}
+                onClick={(event) => handleSlotClick(slot, event)}
+                onPointerEnter={(event) => handleSlotPointerEnter(slot, event)}
+                onPointerLeave={(event) => handleSlotPointerLeave(slot, event)}
+                onKeyDown={(event) => handleSlotKeyDown(slot, event)}
               >
-                <ToolIcon name={tool.id} />
-                {tool.keyHint && <span className="sketchizi-tool-sidebar-key">{tool.keyHint}</span>}
+                <DockIcon name={shown.id} />
               </button>
+              {sectionBreakAfter(slot, slotIndex) && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
             </React.Fragment>
           );
         })}
       </div>
+
+      {/* Child rail + bridge are direct children of the nav (not portalled, not inside the
+          inert/overflow-clipped list) so pointer moves onto them never leave the nav. */}
+      {openSlot && (
+        <>
+          <div
+            className="sketchizi-tool-sidebar-hover-bridge"
+            aria-hidden="true"
+            style={{ top: railTop, height: railHeight }}
+            onPointerEnter={(event) => { if (event.pointerType === "mouse") clearTimer(closeTimerRef); }}
+          />
+          <div
+            className="sketchizi-tool-sidebar-child-rail"
+            role="toolbar"
+            aria-orientation="vertical"
+            aria-label={`${openSlot.label} tools`}
+            data-slot={openSlot.id}
+            style={{ top: railTop }}
+            onPointerEnter={(event) => { if (event.pointerType === "mouse") clearTimer(closeTimerRef); }}
+            onPointerLeave={(event) => { if (event.pointerType === "mouse" && !pinnedRef.current) scheduleRailClose(); }}
+          >
+            {openSlot.tools.map((child) => {
+              const isCurrent = activeChild?.id === child.id;
+              return (
+                <button
+                  key={child.id}
+                  type="button"
+                  className={`sketchizi-tool-sidebar-child${isCurrent ? " is-active" : ""}`}
+                  aria-label={child.label}
+                  aria-pressed={isCurrent}
+                  data-tool={child.id}
+                  data-tip={tooltipLabel(child)}
+                  disabled={!canEdit}
+                  onClick={() => chooseChild(child)}
+                  onKeyDown={(event) => handleChildKeyDown(openSlot, event)}
+                >
+                  <DockIcon name={child.id} />
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {tooltip && !openSlot && (
+        <div className="sketchizi-tool-sidebar-tooltip" role="tooltip" style={{ top: tooltip.top }}>{tooltip.label}</div>
+      )}
 
       <div className="sketchizi-tool-sidebar-collapsed">
         <button
           type="button"
           ref={activeButtonRef}
           className="sketchizi-tool-sidebar-active"
-          aria-label={`Active tool: ${activeToolMeta.label}. Expand drawing tools`}
+          aria-label={`Active tool: ${pillChild.label}. Expand drawing tools`}
           aria-expanded={expanded}
           aria-controls="sketchizi-tool-sidebar-list"
-          title={` ${activeToolMeta.label} — hover or focus to expand tools`}
-          disabled={!canEdit && activeToolMeta.id !== "todo"}
+          disabled={!canEdit}
           onMouseEnter={hoverExpand}
           onClick={handleExpandClick}
         >
-          <ToolIcon name={activeToolMeta.id} />
-          {activeToolMeta.keyHint && <span className="sketchizi-tool-sidebar-key">{activeToolMeta.keyHint}</span>}
-        </button>
-        <button
-          type="button"
-          className="sketchizi-tool-sidebar-expand"
-          aria-label={expanded ? "Collapse drawing tools" : "Expand drawing tools"}
-          aria-expanded={expanded}
-          tabIndex={-1}
-          onMouseEnter={hoverExpand}
-          onClick={handleExpandClick}
-        >
-          <span className="sketchizi-tool-sidebar-indicator" aria-hidden="true" />
-          <svg className="sketchizi-tool-sidebar-chevron" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+          <DockIcon name={pillChild.id} />
         </button>
       </div>
+      <button
+        type="button"
+        className="sketchizi-tool-sidebar-expand"
+        aria-label={expanded ? "Collapse drawing tools" : "Expand drawing tools"}
+        aria-expanded={expanded}
+        tabIndex={expanded ? 0 : -1}
+        onClick={() => (expanded ? collapseDock() : handleExpandClick())}
+      >
+        <svg className="sketchizi-tool-sidebar-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+      </button>
     </nav>
   );
 }

@@ -8,12 +8,16 @@ const css = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.cs
 test('dock labels never depend on a custom body-level tooltip that could be clipped', () => {
   const primary = readFileSync(new URL('../src/components/app/PrimaryDock.jsx', import.meta.url), 'utf8');
   assert.doesNotMatch(canvas, /document\.body\.appendChild\(toolbarTooltip\)|toolbarTooltip\.remove\(\)/);
-  assert.match(primary, /title=\{tool\.keyHint \? `\$\{tool\.label\} \(\$\{tool\.keyHint\}\)` : tool\.label\}/);
+  // Tooltips are DOM descendants of the dock (never portalled) and native titles are not used.
+  assert.match(primary, /data-tip=\{tooltipLabel\(child\)\}/);
+  assert.match(primary, /className="sketchizi-tool-sidebar-tooltip" role="tooltip"/);
+  assert.doesNotMatch(primary, /createPortal|\stitle=\{/);
 });
 
 test('dock buttons preserve accessible names and release their window listeners on cleanup', () => {
   const primary = readFileSync(new URL('../src/components/app/PrimaryDock.jsx', import.meta.url), 'utf8');
-  assert.match(primary, /aria-label=\{tool\.label\}/);
+  assert.match(primary, /aria-label=\{label\}/);
+  assert.match(primary, /aria-label=\{child\.label\}/);
   assert.match(primary, /window\.removeEventListener\("click", clearCustomTool, true\)/);
   assert.doesNotMatch(canvas, /button\.removeAttribute\("title"\)/);
 });

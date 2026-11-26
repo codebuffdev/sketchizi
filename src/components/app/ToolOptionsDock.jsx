@@ -467,7 +467,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       // Escape there must still clear the element selection and restore the
       // full dock; treating every dialog as protected swallowed that action.
       if (alignPopoverOpen || target?.closest?.(
-        "input, textarea, select, .sk-tool-choice-menu, .sk-tool-layer-menu, .sk-tool-align-popover, [role='menu']",
+        "input, textarea, select, .sk-tool-choice-menu, .sk-tool-layer-menu, .sk-tool-align-popover, .sketchizi-tool-sidebar-child-rail, [role='menu']",
       )) return;
 
       // Capture Escape before Excalidraw consumes it so selection is cleared consistently.

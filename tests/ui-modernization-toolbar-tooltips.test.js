@@ -7,16 +7,16 @@ const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx',
 const primaryDock = readFileSync(new URL('../src/components/app/PrimaryDock.jsx', import.meta.url), 'utf8');
 
 test('dock hover labels use accessible names and available shortcut hints', () => {
-  assert.match(primaryDock, /aria-label=\{tool\.label\}/);
-  assert.match(primaryDock, /title=\{tool\.keyHint \? `\$\{tool\.label\} \(\$\{tool\.keyHint\}\)` : tool\.label\}/);
+  assert.match(primaryDock, /aria-label=\{child\.label\}/);
+  assert.match(primaryDock, /data-tip=\{tooltipLabel\(child\)\}/);
   // Native zoom/undo/redo controls get a title only when they have none.
   assert.match(canvas, /if \(!button\.getAttribute\("title"\)\) button\.setAttribute\("title", title\)/);
   assert.match(canvas, /if \(!button\.getAttribute\("aria-label"\)\) button\.setAttribute\("aria-label", "Scroll back to content"\)/);
 });
 
-test('canvas never recreates, wraps or reorders native tools; the dock renders its own fixed tool list', () => {
+test('canvas never recreates, wraps or reorders native tools; the dock renders its own fixed slot list', () => {
   assert.doesNotMatch(canvas, /button\.replaceWith\(|toolbar\.insertBefore\(|Never reorder or wrap tools/);
-  assert.match(primaryDock, /\{TOOLS\.map\(\(tool, toolIndex\) => \{/);
+  assert.match(primaryDock, /\{DOCK_SLOTS\.map\(\(slot, slotIndex\) => \{/);
 });
 
 test('toolbar decoration continues to observe native DOM updates', () => {

@@ -10,8 +10,9 @@ const contextualStyles = await readFile(new URL("../src/styles/contextual-dock-p
 
 test("both docks retain hover for three seconds and clear pending timers on re-entry", () => {
   assert.match(primary, /const COLLAPSE_GRACE_MS = 3000/);
-  assert.match(primary, /onMouseEnter=\{expandDock\}/);
-  assert.match(primary, /onMouseLeave=\{scheduleCollapse\}/);
+  assert.match(primary, /onMouseEnter=\{hoverExpand\}/);
+  assert.match(primary, /onMouseLeave=\{hoverCollapse\}/);
+  assert.match(primary, /const scheduleCollapse = \(\) => \{\s*cancelCollapseTimer\(\);/);
   assert.match(primary, /cancelCollapseTimer\(\)/);
   assert.match(contextual, /}, 3000\)/);
   assert.match(contextual, /onMouseEnter=\{expandDock\}/);
@@ -38,8 +39,9 @@ test("contextual dock defers collapse while popovers, inputs, or opacity draggin
 });
 
 test("both docks use smooth downward fade and disable pointer events when collapsed", () => {
-  assert.match(primaryStyles, /transition: opacity 180ms ease, transform 200ms cubic-bezier\(0\.16, 1, 0\.3, 1\)/);
-  assert.match(primaryStyles, /translateY\(8px\)/);
+  assert.match(primaryStyles, /--sk-dock-ease: cubic-bezier\(\.16, 1, \.3, 1\)/);
+  assert.match(primaryStyles, /transition: max-height 160ms var\(--sk-dock-ease\)/);
+  assert.match(primaryStyles, /\.sketchizi-tool-sidebar-list \{[\s\S]*?pointer-events: none/);
   assert.match(hudStyles, /sk-hud-dock-in 240ms var\(--hud-ease-in\)/);
   assert.match(hudStyles, /sk-hud-dock-out 150ms var\(--hud-ease-out\)/);
   assert.match(hudStyles, /\.sketchizi-tool-options-dock\.is-collapsed/);

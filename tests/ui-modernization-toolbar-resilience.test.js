@@ -7,13 +7,14 @@ const css = readFileSync(new URL('../src/styles/ui-modernization-toolbar-dock.cs
 
 test('dock is keyboard operable and stays within the viewport', () => {
   const dock = readFileSync(new URL('../src/components/app/PrimaryDock.jsx', import.meta.url), 'utf8');
-  const dockCss = readFileSync(new URL('../src/styles/canvas-top-controls.css', import.meta.url), 'utf8');
-  // Focus reveals the tools, and focus leaving the dock collapses it again.
-  assert.match(dock, /onBlurCapture=\{\(event\) => \{\s*if \(!event\.currentTarget\.contains\(event\.relatedTarget\)\) scheduleCollapse\(\);/);
-  assert.match(dock, /firstToolButtonRef\.current\?\.focus\(\)/);
+  const dockCss = readFileSync(new URL('../src/styles/ipad-radial-tool-wheel.css', import.meta.url), 'utf8');
+  assert.match(dock, /onBlurCapture=\{\(event\) => \{\s*if \(!event\.currentTarget\.contains\(event\.relatedTarget\) && !pinnedRef\.current\) scheduleCollapse\(\);/);
+  assert.match(dock, /firstSlotButtonRef\.current\?\.focus\(\)/);
   assert.match(dock, /aria-label=\{expanded \? "Collapse drawing tools" : "Expand drawing tools"\}/);
-  // The dock can never outgrow the viewport; it is pinned with safe-area insets.
-  assert.match(dockCss, /max-height: calc\(100dvh - 24px - var\(--safe-top, 0px\) - var\(--safe-bottom, 0px\)\)/);
+  // Enter/ArrowRight open the child rail and focus its first child; Escape closes it.
+  assert.match(dock, /event\.key === "Enter" \|\| event\.key === "ArrowRight"/);
+  assert.match(dock, /event\.key !== "Escape"/);
+  assert.match(dockCss, /max-height: calc\(100dvh - 112px\)/);
   assert.doesNotMatch(canvas, /clampDockToViewport/);
 });
 

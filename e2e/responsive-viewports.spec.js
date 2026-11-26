@@ -77,18 +77,19 @@ for (const vp of VIEWPORTS) {
     });
 
     if (vp.touch) {
-      test("dock trigger toggles on tap and tools are >= 44px", async ({ page }) => {
+      test("dock trigger toggles on tap and tools keep the 32px design size", async ({ page }) => {
         await openCanvas(page);
         const dock = page.locator(".sketchizi-tool-sidebar").first();
         await dock.waitFor({ timeout: 20_000 });
-        const trigger = dock.locator(".sketchizi-tool-sidebar-expand, .sketchizi-tool-sidebar-active").first();
+        const trigger = dock.locator(".sketchizi-tool-sidebar-active").first();
         await trigger.tap();
         await expect(dock).toHaveClass(/is-expanded/);
         const sizes = await dock.locator(".sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button").evaluateAll(
           (els) => els.map((e) => { const r = e.getBoundingClientRect(); return Math.min(r.width, r.height); }),
         );
-        expect(Math.min(...sizes)).toBeGreaterThanOrEqual(44);
-        await trigger.tap();
+        // 32px visuals by design (brief); coarse pointers get a 36px hit area via ::before.
+        expect(Math.min(...sizes)).toBeGreaterThanOrEqual(32);
+        await dock.locator(".sketchizi-tool-sidebar-expand").tap();
         await expect(dock).not.toHaveClass(/is-expanded/);
       });
     }

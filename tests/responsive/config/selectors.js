@@ -18,7 +18,9 @@ export const SEL = {
   headerIslands: ".desktop-app-header-island",
 
   primaryDock: ".sketchizi-tool-sidebar",
-  primaryDockToggle: ".sketchizi-tool-sidebar-expand, .sketchizi-tool-sidebar-active",
+  primaryDockToggle: ".sketchizi-tool-sidebar-active",
+  primaryDockCollapse: ".sketchizi-tool-sidebar-expand",
+  primaryDockChildRail: ".sketchizi-tool-sidebar-child-rail",
   primaryDockButton: ".sketchizi-tool-sidebar-list .sketchizi-tool-sidebar-button",
 
   toolOptionsDock: ".sketchizi-tool-options-dock",

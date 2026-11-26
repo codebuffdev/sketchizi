@@ -21,7 +21,7 @@ test('dock window listeners are removed by the same effect that adds them', () =
 });
 
 test('pending collapse timers are cancelled on unmount and before rescheduling', () => {
-  assert.match(dock, /useEffect\(\(\) => \(\) => \{\s*if \(collapseTimerRef\.current\) window\.clearTimeout\(collapseTimerRef\.current\);\s*\}, \[\]\)/);
+  assert.match(dock, /useEffect\(\(\) => \(\) => \{\s*\[collapseTimerRef, openTimerRef, closeTimerRef, tooltipTimerRef\]\.forEach\(clearTimer\);\s*\}, \[\]\)/);
   assert.match(dock, /const scheduleCollapse = \(\) => \{\s*cancelCollapseTimer\(\);/);
   assert.match(dock, /collapseTimerRef\.current = null;/);
 });
