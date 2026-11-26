@@ -16,9 +16,10 @@ test('sign-in dialog is portalled to the viewport-level body while its trigger r
   assert.match(auth, /className="auth-header-button[^\"]*" type="button"/);
 });
 
-test('auth backdrop centers the dialog with viewport positioning and mobile-safe overflow', () => {
-  assert.match(css, /\.app \.auth-dialog-backdrop\s*\{[^}]*position: fixed !important;[^}]*inset: 0 !important;[^}]*align-items: center;[^}]*justify-content: center;/s);
-  assert.match(css, /\.app \.auth-dialog-backdrop \.auth-dialog\s*\{[^}]*width: min\(390px, 100%\);[^}]*max-height: calc\(100dvh[^}]*overflow-y: auto;/s);
+test('body-portalled auth backdrop centers the dialog with viewport positioning and mobile-safe overflow', () => {
+  assert.match(css, /\.auth-dialog-backdrop\s*\{[^}]*position: fixed !important;[^}]*inset: 0 !important;[^}]*align-items: center;[^}]*justify-content: center;/s);
+  assert.match(css, /\.auth-dialog-backdrop \.auth-dialog\s*\{[^}]*width: min\(390px, 100%\);[^}]*max-height: calc\(100dvh[^}]*overflow-y: auto;/s);
+  assert.doesNotMatch(css, /\.app \.auth-dialog-backdrop\s*\{/);
 });
 
 test('sign-in keeps Escape and backdrop-click dismissal', () => {
