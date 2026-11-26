@@ -43,8 +43,6 @@ export default function PrimaryDock({
   canvasRevision = 0,
   nativeMenuOpen = false,
   onToolStyleChange = null,
-  onOpenAiAsk = null,
-  onOpenLibrary = null,
 }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
@@ -277,11 +275,6 @@ export default function PrimaryDock({
       window.dispatchEvent(new CustomEvent("sketchizi:clear-custom-tool"));
     }
     const api = apiRef.current;
-    if (child.kind === "action") {
-      if (child.action === "ai") onOpenAiAsk?.();
-      else if (child.action === "library") onOpenLibrary?.();
-      return;
-    }
     if (child.kind === "preset") {
       insertPresetShape(api, child.preset);
       setActiveTool("selection");
@@ -510,16 +503,6 @@ export default function PrimaryDock({
           <DockIcon name={pillChild.id} />
         </button>
       </div>
-      <button
-        type="button"
-        className="sketchizi-tool-sidebar-expand"
-        aria-label={expanded ? "Collapse drawing tools" : "Expand drawing tools"}
-        aria-expanded={expanded}
-        tabIndex={expanded ? 0 : -1}
-        onClick={() => (expanded ? collapseDock() : handleExpandClick())}
-      >
-        <svg className="sketchizi-tool-sidebar-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-      </button>
     </nav>
   );
 }
