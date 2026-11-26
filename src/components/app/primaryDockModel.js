@@ -1,5 +1,5 @@
 /**
- * Data model for the Primary Dock: 10 slots in 3 sections.
+ * Data model for the Primary Dock: 9 slots in 3 sections.
  *
  * Framework-free so slot/child structure, shortcut hints and active-tool
  * resolution can be unit-tested in plain Node.
@@ -64,9 +64,6 @@ export const DOCK_SLOTS = Object.freeze([
     { id: "eraser", label: "Eraser", kind: "tool", tool: "eraser", keyHint: "E" },
     { id: "laser", label: "Laser Pointer", kind: "tool", tool: "laser", keyHint: "K" },
   ] },
-  { id: "draw-to-shape", label: "Smart Flow Connector", section: "C", tools: [
-    { id: "draw-to-shape", label: "Smart Flow Connector", kind: "custom", tool: "autoshape", keyHint: "C" },
-  ] },
   { id: "todo", label: "Todo List", section: "C", tools: [
     { id: "todo", label: "Todo List", kind: "action", action: "todo", keyHint: "L" },
   ] },
@@ -103,7 +100,6 @@ const ELEMENT_TYPE_TO_TOOL = Object.freeze({
  */
 export function resolveActiveChild({ activeToolType, customTool, selectedType, selectedRounded, slotMemory }) {
   if (customTool === "highlighter" || customTool === "bucketfill") return findChild(customTool);
-  if (customTool === "autoshape") return findChild("draw-to-shape");
   const type = activeToolType && activeToolType !== "selection"
     ? activeToolType
     : (ELEMENT_TYPE_TO_TOOL[selectedType] || activeToolType || "selection");
