@@ -1186,3 +1186,5 @@
   border-color: #41464d !important;
   background: #41464d !important;
 }
+
+@import "./styles/canvas-todo-widget.css";
