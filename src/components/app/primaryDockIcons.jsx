@@ -17,6 +17,7 @@ export const DOCK_ICONS = {
   cylinder: <><ellipse cx="12" cy="6.5" rx="7" ry="2.5" /><path d="M5 6.5v11c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-11" /></>,
   funnel: <path d="M3.5 5h17L14 12.5V19l-4 1.5v-8L3.5 5Z" />,
   bucketfill: <><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17a8.5 8.5 0 0 1-17 0Z" fill="currentColor" stroke="none" /></>,
+  "draw-to-shape": <><path d="M4 18c2-8 5-11 8-8s4 6 8 2" /><path d="M15 5h5v5" /><rect x="4" y="17" width="4" height="4" rx="1" /></>,
   arrow: <><path d="M4 20 19 5" /><path d="M9 5h10v10" /></>,
   "double-arrow": <><path d="m5 19 14-14" /><path d="M5 14v5h5" /><path d="M14 5h5v5" /></>,
   "curved-arrow": <><path d="M4.5 19.5C5 11 9.5 6.5 18 6" /><path d="m14.5 3.5 3.5 2.5-2.5 3.5" /></>,
