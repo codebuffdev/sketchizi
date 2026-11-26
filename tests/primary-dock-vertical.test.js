@@ -108,12 +108,12 @@ test("child rail structure: a DOM child of the nav, outside the inert list, no p
   assert.match(dock, /CHILD_OPEN_INTENT_MS = 90/);
   assert.match(dock, /CHILD_CLOSE_GRACE_MS = 160/);
   assert.match(dock, /SINGLE_TOOLTIP_DELAY_MS = 180/);
-  assert.match(dock, /- nav\.clientTop - 6/);
+  assert.match(dock, /const idealTop = buttonRect\.top \+ buttonRect\.height \/ 2 - railHeight \/ 2/);
 });
 
 test("parent tooltips are only produced for single-tool slots and never while a rail is open", () => {
   assert.match(dock, /if \(!openSlotRef\.current\) setTooltip/);
-  assert.match(dock, /\{tooltip && !openSlot && \(/);
+  assert.match(dock, /\{tooltip && !openSlotId && \(/);
   const groupedBranch = dock.slice(dock.indexOf("if (isGroupedSlot(slot)) {"), dock.indexOf("// Single slot"));
   assert.doesNotMatch(groupedBranch, /setTooltip\(\{/);
 });
