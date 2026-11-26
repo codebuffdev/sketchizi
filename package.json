@@ -74,7 +74,11 @@
     "test:kubernetes-diagnostic-fixes": "node --test tests/kubernetes-relationships.test.js",
     "test:workspace-gateway": "node --test tests/workspace-gateway.test.js",
     "test:smart-studio": "node --test tests/smart-studio-command-palette.test.js",
-    "test:e2e": "npm install --prefix e2e --no-audit --no-fund && npx --prefix e2e playwright test -c e2e/playwright.config.js"
+    "test:e2e": "npm install --prefix e2e --no-audit --no-fund && npx --prefix e2e playwright test -c e2e/playwright.config.js",
+    "test:responsive:smoke": "node tests/responsive/scripts/run-responsive.mjs smoke",
+    "test:responsive:full": "node tests/responsive/scripts/run-responsive.mjs full",
+    "test:responsive:discover": "node tests/responsive/scripts/discover-breakpoints.mjs",
+    "test:responsive:contract": "node --test tests/responsive-qa-suite.test.js"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",

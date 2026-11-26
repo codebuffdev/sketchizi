@@ -72,3 +72,7 @@ auth-service/.env.*
 # Playwright
 test-results/
 playwright-report/
+
+# Responsive QA suite output (reports, screenshots, raw JSON). Baselines stay tracked.
+tests/responsive/artifacts/
+e2e/node_modules/
