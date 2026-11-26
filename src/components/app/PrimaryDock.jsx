@@ -279,9 +279,9 @@ export default function PrimaryDock({
       if (child.action === "todo") onOpenTodoTab?.();
       return;
     }
-    if (child.kind === "custom" && child.tool === "bucketfill") {
-      window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: "bucketfill" } }));
-      setCustomTool("bucketfill");
+    if (child.kind === "custom") {
+      window.dispatchEvent(new CustomEvent("sketchizi:activate-tool", { detail: { tool: child.tool } }));
+      setCustomTool(child.tool);
       return;
     }
     if (child.kind === "preset") {
