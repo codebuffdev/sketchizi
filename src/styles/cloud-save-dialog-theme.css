@@ -1,0 +1,115 @@
+/* "Save to Cloud Workspace" dialog (and its nested "Create Cloud project"
+   panel): themed from tokens that live on the backdrop itself. The component
+   sets data-theme="light" | "dark" on the backdrop, so the dialog keeps the
+   right palette even if it is ever rendered in a portal outside `.app`. */
+.cloud-save-dialog-backdrop {
+  /* Day (light) palette is the default. */
+  --cs-backdrop: rgba(15, 23, 42, 0.35);
+  --cs-surface: #ffffff;
+  --cs-border: rgba(15, 23, 42, 0.1);
+  --cs-shadow: 0 20px 40px rgba(15, 23, 42, 0.14);
+  --cs-text: #0f172a;
+  --cs-muted: #64748b;
+  --cs-input-bg: #f8fafc;
+  --cs-input-border: #cbd5e1;
+  --cs-input-text: #0f172a;
+  --cs-focus: #7c3aed;
+  --cs-focus-ring: rgba(124, 58, 237, 0.28);
+  --cs-link: #6d28d9;
+  --cs-btn-bg: #f1f5f9;
+  --cs-btn-hover: #e2e8f0;
+  --cs-btn-text: #334155;
+  --cs-primary: #7c3aed;
+  --cs-primary-hover: #6d28d9;
+  --cs-primary-text: #ffffff;
+  --cs-close: #64748b;
+  --cs-close-hover: #f1f5f9;
+  --cs-panel-bg: #f8fafc;
+  --cs-panel-input-bg: #ffffff;
+  --cs-error-bg: #fef2f2;
+  --cs-error-border: #fecaca;
+  --cs-error-text: #b91c1c;
+  color-scheme: light;
+}
+.cloud-save-dialog-backdrop[data-theme="dark"] {
+  --cs-backdrop: rgba(4, 7, 12, 0.68);
+  --cs-surface: #181a20;
+  --cs-border: rgba(255, 255, 255, 0.1);
+  --cs-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+  --cs-text: #f8fafc;
+  --cs-muted: #929db0;
+  --cs-input-bg: #111318;
+  --cs-input-border: rgba(255, 255, 255, 0.1);
+  --cs-input-text: #f8fafc;
+  --cs-focus: #8c7bff;
+  --cs-focus-ring: rgba(140, 123, 255, 0.4);
+  --cs-link: #a89bff;
+  --cs-btn-bg: transparent;
+  --cs-btn-hover: rgba(255, 255, 255, 0.06);
+  --cs-btn-text: #f8fafc;
+  --cs-primary: #7c3aed;
+  --cs-primary-hover: #8b4df0;
+  --cs-primary-text: #ffffff;
+  --cs-close: #929db0;
+  --cs-close-hover: rgba(255, 255, 255, 0.08);
+  --cs-panel-bg: #111318;
+  --cs-panel-input-bg: #181a20;
+  --cs-error-bg: #2b1a20;
+  --cs-error-border: #81434b;
+  --cs-error-text: #ffc7ce;
+  color-scheme: dark;
+}
+
+.cloud-save-dialog-backdrop { background: var(--cs-backdrop); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.cloud-save-dialog-backdrop .cloud-save-dialog {
+  background: var(--cs-surface); color: var(--cs-text); border: 1px solid var(--cs-border); box-shadow: var(--cs-shadow);
+}
+.cloud-save-dialog-backdrop .cloud-save-dialog-header h2 { color: var(--cs-text); }
+.cloud-save-dialog-backdrop .cloud-save-dialog-header p,
+.cloud-save-dialog-backdrop .cloud-save-dialog-empty { color: var(--cs-muted); }
+.cloud-save-dialog-backdrop .cloud-save-dialog-empty { border-color: var(--cs-border); }
+.cloud-save-dialog-backdrop .cloud-save-dialog-fields label,
+.cloud-save-dialog-backdrop .cloud-save-create-project label { color: var(--cs-text); }
+
+.cloud-save-dialog-backdrop .cloud-save-dialog-fields input,
+.cloud-save-dialog-backdrop .cloud-save-dialog-fields select {
+  background: var(--cs-input-bg); color: var(--cs-input-text); border: 1px solid var(--cs-input-border);
+}
+.cloud-save-dialog-backdrop .cloud-save-dialog-fields input::placeholder { color: var(--cs-muted); opacity: 0.8; }
+.cloud-save-dialog-backdrop .cloud-save-dialog-fields select option { background: var(--cs-surface); color: var(--cs-text); }
+.cloud-save-dialog-backdrop .cloud-save-dialog-fields select option:disabled { color: var(--cs-muted); }
+/* Beats the graphite `.app ... :focus { !important }` override in styles.css. */
+.cloud-save-dialog-backdrop .cloud-save-dialog-fields input:focus,
+.cloud-save-dialog-backdrop .cloud-save-dialog-fields select:focus,
+.cloud-save-dialog-backdrop .cloud-save-create-project input:focus {
+  outline: 2px solid var(--cs-focus-ring) !important; border-color: var(--cs-focus) !important;
+}
+
+.cloud-save-dialog-backdrop .cloud-save-dialog-close {
+  background: transparent; color: var(--cs-close); border: 1px solid transparent;
+}
+.cloud-save-dialog-backdrop .cloud-save-dialog-close:hover:not(:disabled) { background: var(--cs-close-hover); }
+
+.cloud-save-dialog-backdrop .cloud-save-create-project-trigger { color: var(--cs-link); background: transparent; }
+.cloud-save-dialog-backdrop .cloud-save-create-project { background: var(--cs-panel-bg); border-color: var(--cs-border); }
+.cloud-save-dialog-backdrop .cloud-save-create-project input {
+  background: var(--cs-panel-input-bg); color: var(--cs-input-text); border: 1px solid var(--cs-input-border);
+}
+
+.cloud-save-dialog-backdrop .cloud-save-dialog-actions button,
+.cloud-save-dialog-backdrop .cloud-save-create-project-actions button {
+  background: var(--cs-btn-bg); color: var(--cs-btn-text); border: 1px solid var(--cs-border);
+}
+.cloud-save-dialog-backdrop .cloud-save-dialog-actions button:hover:not(:disabled),
+.cloud-save-dialog-backdrop .cloud-save-create-project-actions button:hover:not(:disabled) { background: var(--cs-btn-hover); }
+.cloud-save-dialog-backdrop .cloud-save-dialog-actions button.primary,
+.cloud-save-dialog-backdrop .cloud-save-create-project-actions button.primary {
+  background: var(--cs-primary); border-color: var(--cs-primary); color: var(--cs-primary-text);
+}
+.cloud-save-dialog-backdrop .cloud-save-dialog-actions button.primary:hover:not(:disabled),
+.cloud-save-dialog-backdrop .cloud-save-create-project-actions button.primary:hover:not(:disabled) {
+  background: var(--cs-primary-hover); border-color: var(--cs-primary-hover);
+}
+.cloud-save-dialog-backdrop .cloud-save-dialog-error {
+  background: var(--cs-error-bg); border-color: var(--cs-error-border); color: var(--cs-error-text);
+}

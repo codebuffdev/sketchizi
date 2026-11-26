@@ -2,7 +2,19 @@ import { useEffect, useState } from "react";
 import { workspaceClient } from "./workspaceClient.js";
 
 
-export default function CloudSaveDialog({ initialName, onClose, onSave }) {
+// Theme comes from the app (isDarkTheme). If the prop is omitted, fall back to
+// the nearest data-theme / .dark ancestor of the document so a portal still
+// matches the root app container.
+function detectTheme() {
+  if (typeof document === "undefined") return "light";
+  const root = document.querySelector("[data-theme]") || document.documentElement;
+  const attr = root.getAttribute("data-theme");
+  if (attr === "dark" || attr === "light") return attr;
+  return document.documentElement.classList.contains("dark") || document.querySelector(".app.theme-dark") ? "dark" : "light";
+}
+
+export default function CloudSaveDialog({ initialName, onClose, onSave, isDarkTheme }) {
+  const theme = isDarkTheme === undefined ? detectTheme() : isDarkTheme ? "dark" : "light";
   const [projects, setProjects] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [projectId, setProjectId] = useState("");
@@ -80,7 +92,7 @@ export default function CloudSaveDialog({ initialName, onClose, onSave }) {
   };
 
   return (
-    <div className="cloud-save-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) onClose(); }}>
+    <div className="cloud-save-dialog-backdrop" data-theme={theme} onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) onClose(); }}>
       <section className="cloud-save-dialog" role="dialog" aria-modal="true" aria-labelledby="cloud-save-dialog-title">
         <div className="cloud-save-dialog-header">
           <div>

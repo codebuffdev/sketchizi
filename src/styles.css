@@ -33,6 +33,7 @@
 @import "./styles/advanced-canvas-suite.css";
 @import "./styles/canvas-style-patterns.css";
 @import "./styles/canvas-vertical-scrollbar.css";
+@import "./styles/cloud-save-dialog-theme.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }
 .kubernetes-library-status > div:first-child { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }

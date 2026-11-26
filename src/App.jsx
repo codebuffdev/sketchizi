@@ -2388,7 +2388,7 @@ function App() {
           </div>
         </section>
       </div>}
-      {cloudSaveDialogOpen && <CloudSaveDialog initialName={cloudSessionRef.current.active && !cloudDetached ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")} onClose={() => setCloudSaveDialogOpen(false)} onSave={saveDrawingToCloud} />}
+      {cloudSaveDialogOpen && <CloudSaveDialog isDarkTheme={isDarkTheme} initialName={cloudSessionRef.current.active && !cloudDetached ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")} onClose={() => setCloudSaveDialogOpen(false)} onSave={saveDrawingToCloud} />}
       {designStudioOpen && (
         <CreateDesignScreen
           isDarkTheme={isDarkTheme}
