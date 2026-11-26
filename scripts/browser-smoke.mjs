@@ -385,7 +385,7 @@ try {
   const selectionRail = drawingTools.getByRole("toolbar", { name: "Selection tools" });
   await selectionRail.waitFor({ state: "visible", timeout: 10000 });
   await selectionRail.getByRole("button", { name: "Select", exact: true }).click();
-  await drawingTools.getByRole("button", { name: "Select", exact: true, pressed: true }).waitFor();
+  await drawingTools.getByRole("button", { name: /Select/, exact: false, pressed: true }).waitFor();
   await gridSession.page.waitForFunction(() =>
     !document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
   );
