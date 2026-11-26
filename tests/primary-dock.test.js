@@ -7,13 +7,13 @@ const dock = readFileSync(new URL("../src/components/app/PrimaryDock.jsx", impor
 const canvas = readFileSync(new URL("../src/components/app/SketchiziCanvas.jsx", import.meta.url), "utf8");
 const sidebarCss = readFileSync(new URL("../src/styles/ipad-radial-tool-wheel.css", import.meta.url), "utf8");
 
-test("primary dock renders the 9-slot tool set with Bucket Fill and Todo List", () => {
-  assert.equal(DOCK_SLOTS.length, 9);
+test("primary dock renders the 10-slot tool set with Bucket Fill, Draw to Shape, and Todo List", () => {
+  assert.equal(DOCK_SLOTS.length, 10);
   const ids = ALL_CHILDREN.map((child) => child.id);
-  for (const id of ["select", "lasso", "hand", "rectangle", "rounded-rectangle", "ellipse", "diamond", "triangle", "hexagon", "cylinder", "funnel", "arrow", "double-arrow", "curved-arrow", "elbow-arrow", "dashed-arrow", "line", "pen", "highlighter", "text", "sticky-note", "image", "frame", "eraser", "laser", "bucketfill", "todo"]) {
+  for (const id of ["select", "lasso", "hand", "rectangle", "rounded-rectangle", "ellipse", "diamond", "triangle", "hexagon", "cylinder", "funnel", "arrow", "double-arrow", "curved-arrow", "elbow-arrow", "dashed-arrow", "line", "pen", "highlighter", "text", "sticky-note", "image", "frame", "eraser", "laser", "bucketfill", "draw-to-shape", "todo"]) {
     assert.ok(ids.includes(id), "missing sidebar tool: " + id);
   }
-  for (const removed of ["autoshape", "ai-assist", "embed", "library"]) assert.ok(!ids.includes(removed));
+  for (const removed of ["ai-assist", "embed", "library"]) assert.ok(!ids.includes(removed));
   assert.match(dock, /detail: \{ tool: "bucketfill" \}/);
   assert.match(dock, /child\.action === "todo"/);
   assert.match(canvas, /onOpenTodoTab=\{onOpenTodoTab\}/);
