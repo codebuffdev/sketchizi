@@ -102,7 +102,7 @@ test("browser drawing smoke follows the nested Primary Dock child rails", async 
   assert.match(script, /name: "Shapes tools"/);
   assert.match(script, /name: "Bucket Fill"/);
   assert.match(script, /data-slot="selection"/);
-  assert.match(script, /name: "Selection tools"/);
+  assert.match(script, /name: "Select tools"/);
   assert.doesNotMatch(script, /"Draw to Shape"/);
   assert.match(dock, /id: "bucketfill", label: "Bucket Fill"/);
 });
