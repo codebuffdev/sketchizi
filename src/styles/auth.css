@@ -171,7 +171,7 @@
 
 
 /* The sign-in modal must sit above floating canvas tabs and tool docks. */
-.app .auth-dialog-backdrop {
+.auth-dialog-backdrop {
   z-index: 12000 !important;
 }
 .app .auth-dialog {
@@ -181,8 +181,8 @@
 
 
 /* Background canvas chrome must not intercept modal controls while sign-in is open. */
-.app:has(.auth-dialog-backdrop) .desktop-app-document-identity,
-.app:has(.auth-dialog-backdrop) .sketchizi-tool-sidebar {
+body:has(.auth-dialog-backdrop) .desktop-app-document-identity,
+body:has(.auth-dialog-backdrop) .sketchizi-tool-sidebar {
   pointer-events: none !important;
 }
 
