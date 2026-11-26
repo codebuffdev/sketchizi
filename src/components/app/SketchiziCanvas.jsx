@@ -4,6 +4,7 @@ import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import ToolOptionsDock from "./ToolOptionsDock";
 import PrimaryDock from "./PrimaryDock";
+import CanvasVerticalScrollbar from "./CanvasVerticalScrollbar";
 import AlignmentGuides from "./AlignmentGuides";
 import TextSizeIndicator from "./TextSizeIndicator";
 import ShapeMeasurements from "./ShapeMeasurements";
@@ -905,6 +906,7 @@ export default function SketchiziCanvas({
       <TextSizeIndicator apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} />
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
+      <CanvasVerticalScrollbar apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} disabled={pageContext?.mode === "pages"} />
       <Minimap minimapOpen={minimapOpen} minimapScene={minimapScene} apiRef={apiRef} minimapDragRef={minimapDragRef} centerOnMinimap={centerOnMinimap} />
       <ShortcutHelp open={shortcutHelpOpen} onClose={closeShortcuts} />
     </main>
