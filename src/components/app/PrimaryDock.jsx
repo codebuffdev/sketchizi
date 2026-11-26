@@ -50,6 +50,7 @@ export default function PrimaryDock({
   const [slotMemory, setSlotMemory] = useState(defaultSlotMemory);
   const [openSlotId, setOpenSlotId] = useState(null);
   const [railTop, setRailTop] = useState(0);
+  const [railArrowOffset, setRailArrowOffset] = useState(0);
   const [tooltip, setTooltip] = useState(null);
 
   const navRef = useRef(null);
@@ -223,7 +224,14 @@ export default function PrimaryDock({
     const button = slotButtonRefs.current[slotId];
     if (!nav || !button) return 0;
     // rail top = hovered slot top - 6px, relative to the nav's padding box.
-    return Math.round(button.getBoundingClientRect().top - nav.getBoundingClientRect().top - nav.clientTop - 6);
+    const slot = findSlot(slotId);
+    const railHeight = slot ? slot.tools.length * 32 + (slot.tools.length - 1) * 4 + 12 : 0;
+    const buttonRect = button.getBoundingClientRect();
+    const navRect = nav.getBoundingClientRect();
+    const idealTop = buttonRect.top + buttonRect.height / 2 - railHeight / 2;
+    const clampedTop = Math.max(16, Math.min(window.innerHeight - 16 - railHeight, idealTop));
+    setRailArrowOffset(idealTop - clampedTop);
+    return Math.round(clampedTop - navRect.top - nav.clientTop);
   };
   const openRail = (slotId, { pinned = false } = {}) => {
     clearTimer(closeTimerRef);
@@ -466,7 +474,7 @@ export default function PrimaryDock({
             aria-orientation="vertical"
             aria-label={`${openSlot.label} tools`}
             data-slot={openSlot.id}
-            style={{ top: railTop }}
+            style={{ top: railTop, "--arrow-offset": `${railArrowOffset}px` }}
             onPointerEnter={(event) => { if (event.pointerType === "mouse") clearTimer(closeTimerRef); }}
             onPointerLeave={(event) => { if (event.pointerType === "mouse" && !pinnedRef.current) scheduleRailClose(); }}
           >
