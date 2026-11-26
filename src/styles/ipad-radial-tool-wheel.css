@@ -320,10 +320,12 @@
   --sk-dock-active-fg: #C4B5FD;
 }
 .sketchizi-tool-sidebar-child-rail {
+  left: 56px;
   border-radius: 18px;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
+.sketchizi-tool-sidebar-hover-bridge { left: 38px; width: 18px; }
 .sketchizi-tool-sidebar-child-rail::before {
   content: "";
   position: absolute;
