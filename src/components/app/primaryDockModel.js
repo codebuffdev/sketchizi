@@ -48,7 +48,7 @@ export const DOCK_SLOTS = Object.freeze([
     { id: "line", label: "Line", kind: "tool", tool: "line" },
   ] },
   { id: "freehand", label: "Pen", section: "B", tools: [
-    { id: "pen", label: "Fine Pencil", kind: "tool", tool: "freedraw", keyHint: "P" },
+    { id: "pen", label: "Fine Pencil", kind: "tool", tool: "freedraw" },
     { id: "highlighter", label: "Highlighter", kind: "highlighter", tool: "freedraw" },
   ] },
   { id: "text", label: "Text", section: "B", tools: [

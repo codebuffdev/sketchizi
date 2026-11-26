@@ -60,8 +60,8 @@ test('dock orders slots by section and keeps a purple active accent', () => {
   // navigation -> primitives -> utilities
   assert.ok(at('selection') === 0 && at('hand') === 1);
   assert.ok(at('hand') < at('shapes') && at('shapes') < at('connectors') && at('connectors') < at('freehand'));
-  assert.ok(at('freehand') < at('text') && at('text') < at('eraser') && at('eraser') < at('library'));
-  assert.deepEqual(DOCK_SLOTS.map((slot) => slot.section).join(''), 'AABBBBBCCC');
+  assert.ok(at('freehand') < at('text') && at('text') < at('eraser') && at('eraser') < at('todo'));
+  assert.deepEqual(DOCK_SLOTS.map((slot) => slot.section).join(''), 'AABBBBBCC');
   assert.match(css, /data-sketchizi-dock-layout="grouped"/);
 });
 
