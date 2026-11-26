@@ -21,11 +21,11 @@ export const HIGHLIGHTER_DEFAULTS = Object.freeze({ strokeColor: "#ffd60a", opac
 const ARROW_BASE = { lineGeometry: "straight", startArrowhead: null, endArrowhead: "arrow", strokeStyle: "solid" };
 
 export const DOCK_SLOTS = Object.freeze([
-  { id: "selection", label: "Selection", section: "A", tools: [
+  { id: "selection", label: "Select", section: "A", tools: [
     { id: "select", label: "Select", kind: "tool", tool: "selection", keyHint: "V" },
     { id: "lasso", label: "Lasso Select", kind: "tool", tool: "lasso" },
   ] },
-  { id: "hand", label: "Hand", section: "A", tools: [
+  { id: "hand", label: "Hand Pan", section: "A", tools: [
     { id: "hand", label: "Pan Canvas", kind: "tool", tool: "hand", keyHint: "H" },
   ] },
   { id: "shapes", label: "Shapes", section: "B", tools: [
@@ -39,7 +39,7 @@ export const DOCK_SLOTS = Object.freeze([
     { id: "funnel", label: "Funnel", kind: "preset", preset: "funnel" },
     { id: "bucketfill", label: "Bucket Fill", kind: "custom", tool: "bucketfill", keyHint: "B" },
   ] },
-  { id: "connectors", label: "Connectors", section: "B", tools: [
+  { id: "connectors", label: "Arrow", section: "B", tools: [
     { id: "arrow", label: "Arrow", kind: "tool", tool: "arrow", keyHint: "A", record: { targets: ["arrow"], patch: { ...ARROW_BASE } } },
     { id: "double-arrow", label: "Double Arrow", kind: "tool", tool: "arrow", record: { targets: ["arrow"], patch: { ...ARROW_BASE, startArrowhead: "arrow" } } },
     { id: "curved-arrow", label: "Curved Arrow", kind: "tool", tool: "arrow", record: { targets: ["arrow"], patch: { ...ARROW_BASE, lineGeometry: "curved" } } },
@@ -47,25 +47,25 @@ export const DOCK_SLOTS = Object.freeze([
     { id: "dashed-arrow", label: "Dashed Arrow", kind: "tool", tool: "arrow", record: { targets: ["arrow"], patch: { ...ARROW_BASE, strokeStyle: "dashed" } } },
     { id: "line", label: "Line", kind: "tool", tool: "line" },
   ] },
-  { id: "freehand", label: "Freehand", section: "B", tools: [
-    { id: "pen", label: "Pen", kind: "tool", tool: "freedraw" },
+  { id: "freehand", label: "Pen", section: "B", tools: [
+    { id: "pen", label: "Fine Pencil", kind: "tool", tool: "freedraw", keyHint: "P" },
     { id: "highlighter", label: "Highlighter", kind: "highlighter", tool: "freedraw" },
   ] },
   { id: "text", label: "Text", section: "B", tools: [
     { id: "text", label: "Text Block", kind: "tool", tool: "text", keyHint: "T" },
     { id: "sticky-note", label: "Sticky Note", kind: "preset", preset: "sticky-note" },
   ] },
-  { id: "media", label: "Media", section: "B", tools: [
-    // Excalidraw's image shortcut is 9 (MoreTools.jsx documents it); "I" is not an image key.
-    { id: "image", label: "Insert Image", kind: "tool", tool: "image", keyHint: "9" },
+  { id: "media", label: "Image", section: "B", tools: [
+    // Sketchizi exposes the image tool on the I shortcut.
+    { id: "image", label: "Upload Image", kind: "tool", tool: "image", keyHint: "I" },
     { id: "frame", label: "Frame", kind: "tool", tool: "frame" },
   ] },
   { id: "eraser", label: "Eraser", section: "C", tools: [
     { id: "eraser", label: "Eraser", kind: "tool", tool: "eraser", keyHint: "E" },
     { id: "laser", label: "Laser Pointer", kind: "tool", tool: "laser", keyHint: "K" },
   ] },
-  { id: "draw-to-shape", label: "Draw to Shape", section: "C", tools: [
-    { id: "draw-to-shape", label: "Draw to Shape", kind: "custom", tool: "autoshape" },
+  { id: "draw-to-shape", label: "Smart Flow Connector", section: "C", tools: [
+    { id: "draw-to-shape", label: "Smart Flow Connector", kind: "custom", tool: "autoshape", keyHint: "C" },
   ] },
   { id: "todo", label: "Todo List", section: "C", tools: [
     { id: "todo", label: "Todo List", kind: "action", action: "todo", keyHint: "L" },
