@@ -247,12 +247,10 @@ export default function AuthenticationControl() {
     } finally { setBusy(false); }
   };
 
-  // The header uses stacking/positioning effects; mounting the modal inside
-  // the application shell keeps its fixed backdrop relative to the workspace
-  // instead of trapping it inside the top-right navigation.
-  const dialogHost = typeof document !== "undefined"
-    ? document.querySelector(".app") || document.body
-    : null;
+  // A transformed application shell can become the containing block for
+  // position: fixed. Portal to body so the backdrop and dialog are centered
+  // against the actual viewport, independent of editor/header transforms.
+  const dialogHost = typeof document !== "undefined" ? document.body : null;
 
   return (
     <div className="auth-control-root">
