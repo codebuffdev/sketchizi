@@ -492,7 +492,7 @@ export default function PrimaryDock({
         })}
       </div>
 
-      {tooltip && !openSlot && (
+      {tooltip && !openSlotId && (
         <div className="sketchizi-tool-sidebar-tooltip" role="tooltip" style={{ top: tooltip.top }}>{tooltip.label}</div>
       )}
 
