@@ -382,7 +382,7 @@ try {
     document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
   );
   await drawingTools.locator('.tool-slot[data-slot="selection"] > .sketchizi-tool-sidebar-button').hover();
-  const selectionRail = drawingTools.getByRole("toolbar", { name: "Selection tools" });
+  const selectionRail = drawingTools.getByRole("toolbar", { name: "Select tools" });
   await selectionRail.waitFor({ state: "visible", timeout: 10000 });
   await selectionRail.getByRole("button", { name: "Select", exact: true }).click();
   await drawingTools.getByRole("button", { name: /Select/, exact: false, pressed: true }).waitFor();
