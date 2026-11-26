@@ -421,3 +421,11 @@
 .sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list {
   overflow: visible !important;
 }
+
+
+/* Remove the decorative diagonal notch beside child rails. */
+.sketchizi-tool-sidebar-child-rail::before,
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock::after {
+  display: none !important;
+  content: none !important;
+}
