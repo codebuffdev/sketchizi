@@ -415,3 +415,9 @@
 @media (max-width: 600px) {
   .sketchizi-tool-sidebar { left: 12px !important; }
 }
+
+/* Flyouts are nested in .tool-slot, so the tool list must not clip their paint area. */
+.sketchizi-tool-sidebar-list,
+.sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list {
+  overflow: visible !important;
+}
