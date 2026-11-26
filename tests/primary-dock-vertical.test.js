@@ -11,11 +11,11 @@ import { filterStyleForTool, stylePatchToAppState } from "../src/features/canvas
 const dock = readFileSync(new URL("../src/components/app/PrimaryDock.jsx", import.meta.url), "utf8");
 const css = readFileSync(new URL("../src/styles/ipad-radial-tool-wheel.css", import.meta.url), "utf8");
 
-test("10 slots in three sections with the specified children", () => {
-  assert.equal(DOCK_SLOTS.length, 10);
+test("9 slots in three sections with the specified children", () => {
+  assert.equal(DOCK_SLOTS.length, 9);
   const counts = Object.fromEntries(DOCK_SLOTS.map((s) => [s.id, s.tools.length]));
-  assert.deepEqual(counts, { selection: 2, hand: 1, shapes: 8, connectors: 6, freehand: 2, text: 2, media: 2, eraser: 2, magic: 2, library: 1 });
-  assert.deepEqual(DOCK_SLOTS.map((s, i) => sectionBreakAfter(s, i)).map(Number), [0, 1, 0, 0, 0, 0, 1, 0, 0, 0]);
+  assert.deepEqual(counts, { selection: 2, hand: 1, shapes: 9, connectors: 6, freehand: 2, text: 2, media: 2, eraser: 2, todo: 1 });
+  assert.deepEqual(DOCK_SLOTS.map((s, i) => sectionBreakAfter(s, i)).map(Number), [0, 1, 0, 0, 0, 0, 1, 0, 0]);
 });
 
 test("every child has its own distinct icon", () => {
@@ -55,7 +55,7 @@ test("shortcut hints exist only on real, non-colliding keys and appear in toolti
   assert.equal(tooltipLabel(ALL_CHILDREN.find((c) => c.id === "rectangle")), "Rectangle (R)");
   assert.equal(tooltipLabel(ALL_CHILDREN.find((c) => c.id === "diamond")), "Diamond");
   const hinted = ALL_CHILDREN.filter((c) => c.keyHint).map((c) => c.keyHint);
-  for (const k of ["D", "G", "P", "M", "F", "X", "U", "B", "Y", "W", "S", "Q"]) assert.ok(!hinted.includes(k), `${k} must not be hinted`);
+  for (const k of ["D", "G", "P", "M", "F", "X", "U", "Y", "W", "S", "Q"]) assert.ok(!hinted.includes(k), `${k} must not be hinted`);
 });
 
 test("closed preset polygons repeat their first point and use the specified vertex counts", () => {
@@ -100,18 +100,20 @@ test("highlighter uses the brief's 14 / 38 style and the existing save/restore f
 
 test("child rail structure: a DOM child of the nav, outside the inert list, no portal", () => {
   assert.doesNotMatch(dock, /createPortal/);
-  const listEnd = dock.indexOf("</div>\n\n      {/* Child rail");
-  assert.ok(listEnd > 0 && dock.indexOf("sketchizi-tool-sidebar-child-rail\"\n            role") > listEnd, "rail must render after (outside) the list");
+  const listStart = dock.indexOf('className="sketchizi-tool-sidebar-list"');
+  const slotStart = dock.indexOf('className="tool-slot"', listStart);
+  const railStart = dock.indexOf('className="sketchizi-tool-sidebar-child-rail sub-dock"', slotStart);
+  assert.ok(listStart >= 0 && slotStart > listStart && railStart > slotStart, "rail must be nested in its owning tool slot inside the list");
   assert.match(dock, /event\.pointerType !== "mouse"/);
   assert.match(dock, /CHILD_OPEN_INTENT_MS = 90/);
-  assert.match(dock, /CHILD_CLOSE_GRACE_MS = 120/);
+  assert.match(dock, /CHILD_CLOSE_GRACE_MS = 160/);
   assert.match(dock, /SINGLE_TOOLTIP_DELAY_MS = 180/);
-  assert.match(dock, /- nav\.clientTop - 6/);
+  assert.match(dock, /const idealTop = buttonRect\.top \+ buttonRect\.height \/ 2 - railHeight \/ 2/);
 });
 
 test("parent tooltips are only produced for single-tool slots and never while a rail is open", () => {
   assert.match(dock, /if \(!openSlotRef\.current\) setTooltip/);
-  assert.match(dock, /\{tooltip && !openSlot && \(/);
+  assert.match(dock, /\{tooltip && !openSlotId && \(/);
   const groupedBranch = dock.slice(dock.indexOf("if (isGroupedSlot(slot)) {"), dock.indexOf("// Single slot"));
   assert.doesNotMatch(groupedBranch, /setTooltip\(\{/);
 });

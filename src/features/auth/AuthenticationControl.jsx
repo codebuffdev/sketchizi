@@ -137,6 +137,18 @@ export default function AuthenticationControl() {
   }, [dialogOpen]);
 
   useLayoutEffect(() => {
+    if (!dialogOpen || typeof document === "undefined") return undefined;
+    // Lock document scrolling while the body-level modal is open. Without this,
+    // mobile viewport changes can scroll the focused close button into view and
+    // make a fixed backdrop appear displaced from the visual viewport.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [dialogOpen]);
+
+  useLayoutEffect(() => {
     if (!profileMenuOpen) return undefined;
     const onPointerDown = (event) => {
       if (!(event.target instanceof Element)) return;
@@ -247,12 +259,10 @@ export default function AuthenticationControl() {
     } finally { setBusy(false); }
   };
 
-  // The header uses stacking/positioning effects; mounting the modal inside
-  // the application shell keeps its fixed backdrop relative to the workspace
-  // instead of trapping it inside the top-right navigation.
-  const dialogHost = typeof document !== "undefined"
-    ? document.querySelector(".app") || document.body
-    : null;
+  // A transformed application shell can become the containing block for
+  // position: fixed. Portal to body so the backdrop and dialog are centered
+  // against the actual viewport, independent of editor/header transforms.
+  const dialogHost = typeof document !== "undefined" ? document.body : null;
 
   return (
     <div className="auth-control-root">

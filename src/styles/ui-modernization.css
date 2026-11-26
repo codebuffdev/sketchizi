@@ -1070,9 +1070,9 @@
 }
 
 
-/* Center the sign-in modal over the canvas, not the animated header.
-   AuthenticationControl portals its backdrop directly into .app. */
-.app .auth-dialog-backdrop {
+/* Center the sign-in modal against the viewport. AuthenticationControl portals
+   directly to document.body so transformed app shells cannot offset position:fixed. */
+.auth-dialog-backdrop {
   position: fixed !important;
   inset: 0 !important;
   z-index: 10000 !important;
@@ -1085,7 +1085,7 @@
   overscroll-behavior: contain;
 }
 
-.app .auth-dialog-backdrop .auth-dialog {
+.auth-dialog-backdrop .auth-dialog {
   box-sizing: border-box;
   flex: 0 1 390px;
   width: min(390px, 100%);

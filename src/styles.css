@@ -32,6 +32,7 @@
 @import "./styles/right-header-rail.css";
 @import "./styles/advanced-canvas-suite.css";
 @import "./styles/canvas-style-patterns.css";
+@import "./styles/canvas-vertical-scrollbar.css";
 
 .kubernetes-library-status { margin: 10px 0 14px; }
 .kubernetes-library-status > div:first-child { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
@@ -1185,3 +1186,4 @@
   border-color: #41464d !important;
   background: #41464d !important;
 }
+

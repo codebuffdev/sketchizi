@@ -22,17 +22,18 @@ test("primary dock keeps the active tool visible while collapsed", () => {
 
 test("primary dock preserves native, custom and image tool activation; Todo/Bucket/Draw-to-Shape left the dock", () => {
   const tools = new Set(ALL_CHILDREN.map((child) => child.tool).filter(Boolean));
-  for (const tool of ["selection", "lasso", "hand", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "image", "frame", "eraser", "laser", "embeddable"]) {
+  for (const tool of ["selection", "lasso", "hand", "rectangle", "ellipse", "diamond", "arrow", "line", "freedraw", "text", "image", "frame", "eraser", "laser", "bucketfill"]) {
     assert.ok(tools.has(tool), `missing ${tool} tool`);
   }
   assert.match(component, /sketchizi:activate-tool/);
   assert.match(component, /toolbar-image/);
-  assert.doesNotMatch(component, /onOpenTodoTab|bucketfill"\s*,\s*label|Draw to Shape|Todo List/);
+  assert.match(component, /onOpenTodoTab/);
+  assert.ok(ALL_CHILDREN.some((child) => child.id === "todo" && child.kind === "action"));
 });
 
 test("primary dock exposes keyboard hints only for supported, non-colliding shortcuts", () => {
   const hinted = ALL_CHILDREN.filter((child) => child.keyHint).map((child) => child.keyHint).sort();
-  assert.deepEqual(hinted, ["9", "A", "E", "H", "K", "L", "O", "R", "T", "V"]);
+  assert.deepEqual(hinted, ["A", "B", "E", "H", "I", "K", "L", "O", "R", "T", "V"]);
   // Keys bound by app-level handlers (useSketchiziPreferences.js) are never advertised.
   for (const colliding of ["D", "G", "P", "M", "F"]) assert.ok(!hinted.includes(colliding));
   assert.match(component, /tooltipLabel/);

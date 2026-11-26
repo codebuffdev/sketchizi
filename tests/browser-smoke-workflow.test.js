@@ -95,3 +95,14 @@ test("browser smoke launches studios from the command palette, not the retired S
     assert.ok(source.includes(`aria-label="${closeLabel}"`), `close button: ${closeLabel}`);
   }
 });
+
+test("browser drawing smoke follows the nested Primary Dock child rails", async () => {
+  const dock = await readFile(new URL("../src/components/app/primaryDockModel.js", import.meta.url), "utf8");
+  assert.match(script, /data-slot="shapes"/);
+  assert.match(script, /name: "Shapes tools"/);
+  assert.match(script, /name: "Bucket Fill"/);
+  assert.match(script, /data-slot="selection"/);
+  assert.match(script, /name: "Select tools"/);
+  assert.doesNotMatch(script, /"Draw to Shape"/);
+  assert.match(dock, /id: "bucketfill", label: "Bucket Fill"/);
+});

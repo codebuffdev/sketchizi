@@ -1,0 +1,108 @@
+/* Infinite-canvas vertical navigator */
+:root,
+[data-theme="light"],
+.app.theme-light {
+  --sk-scroll-surface: rgba(255, 255, 255, .94);
+  --sk-scroll-border: rgba(15, 23, 42, .1);
+  --sk-scroll-ink: #475569;
+  --sk-scroll-accent: #6D28D9;
+  --sk-scroll-thumb: rgba(109, 40, 217, .48);
+}
+[data-theme="dark"],
+.app.theme-dark {
+  --sk-scroll-surface: rgba(24, 27, 32, .92);
+  --sk-scroll-border: rgba(255, 255, 255, .1);
+  --sk-scroll-ink: #cbd5e1;
+  --sk-scroll-accent: #C4B5FD;
+  --sk-scroll-thumb: rgba(196, 181, 253, .55);
+}
+.sketchizi-canvas-scrollbar {
+  position: fixed;
+  z-index: 10045;
+  top: 50%;
+  right: 12px;
+  display: flex;
+  width: 38px;
+  height: 280px;
+  padding: 7px 4px;
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  border: 1px solid var(--sk-scroll-border);
+  border-radius: 9999px;
+  background: var(--sk-scroll-surface);
+  color: var(--sk-scroll-ink);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, .12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  transform: translate3d(12px, -50%, 0);
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 180ms ease;
+  user-select: none;
+}
+.sketchizi-canvas-scrollbar.is-visible,
+.sketchizi-canvas-scrollbar:hover {
+  opacity: 1;
+  transform: translate3d(0, -50%, 0);
+  pointer-events: none;
+}
+/* Keep the floating shell transparent to hit-testing. Only the actual
+   scrollbar controls should receive pointer input, so nearby header actions
+   remain clickable even while the navigator is revealed. */
+.sketchizi-canvas-scrollbar > * { pointer-events: none; }
+.sketchizi-canvas-scrollbar.is-visible > *,
+.sketchizi-canvas-scrollbar:hover > * { pointer-events: auto; }
+.sketchizi-scroll-step {
+  display: grid;
+  flex: 0 0 20px;
+  width: 26px;
+  height: 20px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--sk-scroll-ink);
+  font: 700 9px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.sketchizi-scroll-step:hover { background: color-mix(in srgb, var(--sk-scroll-accent) 12%, transparent); color: var(--sk-scroll-accent); }
+.sketchizi-scroll-track {
+  position: relative;
+  flex: 1 1 auto;
+  width: 18px;
+  min-height: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sk-scroll-ink) 9%, transparent);
+  cursor: pointer;
+  touch-action: none;
+}
+.sketchizi-scroll-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 18px;
+  min-height: 32px;
+  border: 1px solid color-mix(in srgb, var(--sk-scroll-accent) 22%, transparent);
+  border-radius: 999px;
+  background: var(--sk-scroll-thumb);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .14);
+  cursor: grab;
+  touch-action: none;
+  will-change: transform;
+}
+.sketchizi-scroll-thumb:active { cursor: grabbing; }
+.sketchizi-scroll-percent {
+  color: var(--sk-scroll-ink);
+  font: 650 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-height: 420px) {
+  .sketchizi-canvas-scrollbar { height: min(280px, calc(100dvh - 24px)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sketchizi-canvas-scrollbar { transition: none; }
+}

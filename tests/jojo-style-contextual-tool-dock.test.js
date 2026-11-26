@@ -113,12 +113,12 @@ test("vertical Primary Dock grip has no reserved 24px space above Hand", () => {
 });
 
 
-test("the Primary Dock lists its own tools (no native overflow control) in 10 slots; removed tools are gone", () => {
+test("the Primary Dock lists its own tools (no native overflow control) in 9 slots; removed tools are gone", () => {
   assert.doesNotMatch(canvas, /sketchiziHideOverflowTools/);
-  assert.deepEqual(DOCK_SLOTS.map((slot) => slot.id), ["selection", "hand", "shapes", "connectors", "freehand", "text", "media", "eraser", "magic", "library"]);
+  assert.deepEqual(DOCK_SLOTS.map((slot) => slot.id), ["selection", "hand", "shapes", "connectors", "freehand", "text", "media", "eraser", "todo"]);
   const ids = ALL_CHILDREN.map((child) => child.id);
-  for (const removed of ["bucketfill", "autoshape", "todo"]) assert.ok(!ids.includes(removed), `${removed} must not be in the dock`);
-  assert.ok(ids.includes("laser") && ids.includes("eraser"));
+  for (const required of ["bucketfill", "todo", "laser", "eraser"]) assert.ok(ids.includes(required), `${required} must remain in the dock`);
+  for (const removed of ["autoshape", "ai-assist", "library"]) assert.ok(!ids.includes(removed), `${removed} must be absent`);
   assert.match(css, /\.App-toolbar > \.dropdown-menu-button[\s\S]*?display: none !important/);
 });
 

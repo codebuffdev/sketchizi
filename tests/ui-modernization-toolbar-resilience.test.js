@@ -10,7 +10,7 @@ test('dock is keyboard operable and stays within the viewport', () => {
   const dockCss = readFileSync(new URL('../src/styles/ipad-radial-tool-wheel.css', import.meta.url), 'utf8');
   assert.match(dock, /onBlurCapture=\{\(event\) => \{\s*if \(!event\.currentTarget\.contains\(event\.relatedTarget\) && !pinnedRef\.current\) scheduleCollapse\(\);/);
   assert.match(dock, /firstSlotButtonRef\.current\?\.focus\(\)/);
-  assert.match(dock, /aria-label=\{expanded \? "Collapse drawing tools" : "Expand drawing tools"\}/);
+  assert.match(dock, /aria-label=\{`Active tool: \$\{pillChild\.label\}\. Expand drawing tools`\}/);
   // Enter/ArrowRight open the child rail and focus its first child; Escape closes it.
   assert.match(dock, /event\.key === "Enter" \|\| event\.key === "ArrowRight"/);
   assert.match(dock, /event\.key !== "Escape"/);

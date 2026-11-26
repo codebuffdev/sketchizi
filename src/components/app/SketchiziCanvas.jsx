@@ -4,6 +4,7 @@ import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import ToolOptionsDock from "./ToolOptionsDock";
 import PrimaryDock from "./PrimaryDock";
+import CanvasVerticalScrollbar from "./CanvasVerticalScrollbar";
 import AlignmentGuides from "./AlignmentGuides";
 import TextSizeIndicator from "./TextSizeIndicator";
 import ShapeMeasurements from "./ShapeMeasurements";
@@ -24,8 +25,6 @@ export default function SketchiziCanvas({
   todoItems = [],
   onTodoItemsChange,
   onOpenTodoTab,
-  onOpenAiAsk = null,
-  onOpenLibrary = null,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
   selectedElements = [], onClearSelection, canEdit = true,
@@ -50,6 +49,21 @@ export default function SketchiziCanvas({
 
   const cameraLockUpdateRef = useRef(false);
   const pagesMode = pageContext?.mode === "pages";
+
+  useEffect(() => {
+    const onTodoShortcut = (event) => {
+      if (event.key?.toLowerCase() !== "l" || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || target.closest("input, textarea, select, [contenteditable='true']"))) return;
+      if (pagesMode || viewModeEnabled || !canEdit) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      onOpenTodoTab?.();
+    };
+    window.addEventListener("keydown", onTodoShortcut, true);
+    return () => window.removeEventListener("keydown", onTodoShortcut, true);
+  }, [pagesMode, viewModeEnabled, canEdit, onOpenTodoTab]);
 
   // A Pages chapter is a bounded sheet, not an infinite canvas. Consume all
   // viewport-navigation gestures before Excalidraw can translate its camera.
@@ -880,8 +894,7 @@ export default function SketchiziCanvas({
         canvasRevision={canvasRevision}
         nativeMenuOpen={nativeMenuOpen}
         onToolStyleChange={onToolStyleChange}
-        onOpenAiAsk={onOpenAiAsk}
-        onOpenLibrary={onOpenLibrary}
+        onOpenTodoTab={onOpenTodoTab}
       />}
       <Excalidraw
         // Preserve the drawing background when restoring a scene.
@@ -908,6 +921,7 @@ export default function SketchiziCanvas({
       <TextSizeIndicator apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} />
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
+      <CanvasVerticalScrollbar apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} disabled={pageContext?.mode === "pages"} />
       <Minimap minimapOpen={minimapOpen} minimapScene={minimapScene} apiRef={apiRef} minimapDragRef={minimapDragRef} centerOnMinimap={centerOnMinimap} />
       <ShortcutHelp open={shortcutHelpOpen} onClose={closeShortcuts} />
     </main>

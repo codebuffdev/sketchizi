@@ -289,3 +289,143 @@
     bottom: 20px !important;
   }
 }
+
+
+/* Full-height studio dock: vertically centered glass capsule with adaptive theme. */
+.sketchizi-tool-sidebar {
+  --sk-dock-bg: rgba(255, 255, 255, .94);
+  --sk-dock-line: rgba(15, 23, 42, .1);
+  --sk-dock-fg: #334155;
+  --sk-dock-hover: rgba(109, 40, 217, .08);
+  --sk-dock-active-bg: #EFE8FF;
+  --sk-dock-active-fg: #6D28D9;
+  position: fixed !important;
+  left: 24px !important;
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+  border-radius: 9999px;
+  background: var(--sk-dock-bg);
+  box-shadow: inset 0 0 0 1px var(--sk-dock-line), 0 10px 34px rgba(15, 23, 42, .1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.sketchizi-tool-sidebar.is-dark {
+  --sk-dock-bg: rgba(24, 27, 32, .92);
+  --sk-dock-line: rgba(255, 255, 255, .1);
+  --sk-dock-fg: #E2E8F0;
+  --sk-dock-hover: rgba(196, 181, 253, .1);
+  --sk-dock-active-bg: rgba(139, 92, 246, .22);
+  --sk-dock-active-fg: #C4B5FD;
+}
+.sketchizi-tool-sidebar-child-rail {
+  left: 56px;
+  border-radius: 18px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.sketchizi-tool-sidebar-hover-bridge { left: 38px; width: 18px; }
+.sketchizi-tool-sidebar-child-rail::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: calc(50% + var(--arrow-offset, 0px));
+  width: 10px;
+  height: 10px;
+  border-left: 1px solid var(--sk-dock-line);
+  border-bottom: 1px solid var(--sk-dock-line);
+  background: var(--sk-dock-bg);
+  transform: translateY(-50%) rotate(45deg);
+}
+@media (max-width: 600px) {
+  .sketchizi-tool-sidebar { left: 12px !important; }
+}
+
+
+/* Parent-relative flyouts: every child dock belongs to its own .tool-slot. */
+.sketchizi-tool-sidebar-list > .tool-slot {
+  position: relative;
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sketchizi-tool-sidebar-button {
+  position: relative;
+  z-index: 1;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock {
+  position: absolute;
+  z-index: 5;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(calc(-50% + var(--clamp-y, 0px)));
+  margin: 0;
+  min-width: 44px;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 0;
+  width: 12px;
+  height: 100%;
+  background: transparent;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock::after {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: calc(50% + var(--arrow-offset, 0px));
+  width: 10px;
+  height: 10px;
+  border-left: 1px solid var(--sk-dock-line);
+  border-bottom: 1px solid var(--sk-dock-line);
+  background: var(--sk-dock-bg);
+  transform: translateY(-50%) rotate(45deg);
+  pointer-events: none;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock > * {
+  position: relative;
+  z-index: 1;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock::before {
+  z-index: 0;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock {
+  isolation: isolate;
+}
+.sketchizi-tool-sidebar {
+  left: 24px !important;
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+  border-radius: 9999px !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.sketchizi-tool-sidebar.is-dark {
+  --sk-dock-bg: rgba(24, 27, 32, .92);
+  --sk-dock-line: rgba(255, 255, 255, .1);
+  --sk-dock-active-bg: rgba(139, 92, 246, .22);
+  --sk-dock-active-fg: #C4B5FD;
+}
+@media (max-width: 600px) {
+  .sketchizi-tool-sidebar { left: 12px !important; }
+}
+
+/* Flyouts are nested in .tool-slot, so the tool list must not clip their paint area. */
+.sketchizi-tool-sidebar-list,
+.sketchizi-tool-sidebar.is-expanded .sketchizi-tool-sidebar-list {
+  overflow: visible !important;
+}
+
+
+/* Remove the decorative diagonal notch beside child rails. */
+.sketchizi-tool-sidebar-child-rail::before,
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock::after {
+  display: none !important;
+  content: none !important;
+}

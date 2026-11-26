@@ -16,6 +16,8 @@ export const DOCK_ICONS = {
   hexagon: <path d="M7.5 4.5h9L21 12l-4.5 7.5h-9L3 12l4.5-7.5Z" />,
   cylinder: <><ellipse cx="12" cy="6.5" rx="7" ry="2.5" /><path d="M5 6.5v11c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-11" /></>,
   funnel: <path d="M3.5 5h17L14 12.5V19l-4 1.5v-8L3.5 5Z" />,
+  bucketfill: <><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17a8.5 8.5 0 0 1-17 0Z" fill="currentColor" stroke="none" /></>,
+  "draw-to-shape": <><path d="M4 18c2-8 5-11 8-8s4 6 8 2" /><path d="M15 5h5v5" /><rect x="4" y="17" width="4" height="4" rx="1" /></>,
   arrow: <><path d="M4 20 19 5" /><path d="M9 5h10v10" /></>,
   "double-arrow": <><path d="m5 19 14-14" /><path d="M5 14v5h5" /><path d="M14 5h5v5" /></>,
   "curved-arrow": <><path d="M4.5 19.5C5 11 9.5 6.5 18 6" /><path d="m14.5 3.5 3.5 2.5-2.5 3.5" /></>,
@@ -32,6 +34,7 @@ export const DOCK_ICONS = {
   laser: <><path d="m4 20 8-8" /><circle cx="15.5" cy="8.5" r="2.5" /><path d="M15.5 2.5v1.5M21.5 8.5H20M19.7 4.3l-1 1M11.3 4.3l1 1" /></>,
   "ai-assist": <><path d="m11 3 1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8L11 3Z" /><path d="m18.5 15 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z" /></>,
   embed: <><rect x="3.5" y="5" width="17" height="14" rx="2" /><path d="m9.5 10-2 2 2 2M14.5 10l2 2-2 2" /></>,
+  todo: <><rect x="4" y="3.5" width="16" height="17" rx="2" /><path d="m7.5 9 1.5 1.5L12 7.5M14 9h3M7.5 15l1.5 1.5 3-3M14 15h3" /></>,
   library: <><rect x="4" y="4" width="6.5" height="6.5" rx="1.5" /><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" /><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" /><path d="M16.75 13.5v6.5M13.5 16.75H20" /></>,
 };
 

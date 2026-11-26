@@ -361,23 +361,35 @@ try {
   await gridSession.page.getByRole("button", { name: "Create new tab" }).click();
   await gridSession.page.locator(".excalidraw").waitFor({ timeout: 30000 });
   const drawingTools = gridSession.page.getByRole("navigation", { name: "Drawing tools" });
-  // The redesigned dock intentionally keeps its full tool list collapsed.
-  // Hover the active-tool pill first, just as a user does, then exercise the
-  // expanded tool buttons instead of clicking through the collapsed surface.
-  for (const name of ["Bucket Fill", "Draw to Shape", "Select"]) {
-    // Selecting a tool now collapses the dock immediately. Re-open it before
-    // choosing the next tool, matching the interaction a user performs.
-    await drawingTools.locator(".sketchizi-tool-sidebar-active").hover();
-    await gridSession.page.waitForFunction(() =>
-      document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
-    );
-    await drawingTools.getByRole("button", { name, exact: true }).click();
-    await drawingTools.getByRole("button", { name, exact: true, pressed: true }).waitFor();
-    await gridSession.page.waitForFunction(() =>
-      !document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
-    );
-  }
-  console.log("PASS: dock expands on hover and quick tools activate, returning to Select.");
+  // The dock has grouped parent slots and nested child rails. Open Shapes by
+  // hovering its parent, then select Bucket Fill from the Shapes tools rail.
+  await drawingTools.locator(".sketchizi-tool-sidebar-active").hover();
+  await gridSession.page.waitForFunction(() =>
+    document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
+  );
+  await drawingTools.locator('.tool-slot[data-slot="shapes"] > .sketchizi-tool-sidebar-button').hover();
+  const shapesRail = drawingTools.getByRole("toolbar", { name: "Shapes tools" });
+  await shapesRail.waitFor({ state: "visible", timeout: 10000 });
+  await shapesRail.getByRole("button", { name: "Bucket Fill", exact: true }).click();
+  await drawingTools.getByRole("button", { name: /Bucket Fill/, exact: false, pressed: true }).waitFor();
+  await gridSession.page.waitForFunction(() =>
+    !document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
+  );
+
+  // Re-open the dock and use the Selection child rail to return to Select.
+  await drawingTools.locator(".sketchizi-tool-sidebar-active").hover();
+  await gridSession.page.waitForFunction(() =>
+    document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
+  );
+  await drawingTools.locator('.tool-slot[data-slot="selection"] > .sketchizi-tool-sidebar-button').hover();
+  const selectionRail = drawingTools.getByRole("toolbar", { name: "Select tools" });
+  await selectionRail.waitFor({ state: "visible", timeout: 10000 });
+  await selectionRail.getByRole("button", { name: "Select", exact: true }).click();
+  await drawingTools.getByRole("button", { name: /Select/, exact: false, pressed: true }).waitFor();
+  await gridSession.page.waitForFunction(() =>
+    !document.querySelector(".sketchizi-tool-sidebar")?.classList.contains("is-expanded"),
+  );
+  console.log("PASS: nested dock rails open and Bucket Fill/Select tools activate.");
   const focusGrid = gridSession.page.locator(".desktop-canvas-region .sketchizi-grid-spotlight");
   await focusGrid.waitFor({ state: "attached", timeout: 12000 });
   // Normalize the UI state so the OFF assertion tests the toggle, not a saved default.
@@ -600,7 +612,7 @@ try {
       if (!dialog || !backdrop) return null;
       const rect = dialog.getBoundingClientRect();
       return {
-        portalled: backdrop.parentElement?.classList.contains("app") === true,
+        portalled: backdrop.parentElement === document.body,
         dx: Math.abs(rect.left + rect.width / 2 - window.innerWidth / 2),
         dy: Math.abs(rect.top + rect.height / 2 - window.innerHeight / 2),
         withinViewport: rect.left >= 0 && rect.top >= 0 &&

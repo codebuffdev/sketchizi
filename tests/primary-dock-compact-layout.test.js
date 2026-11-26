@@ -20,7 +20,7 @@ test("dock is exactly 44px wide: 32px slots inside 6px padding, border drawn as 
   assert.equal(dock.width, "44px");
   assert.equal(dock.padding, "6px");
   assert.equal(dock["box-sizing"], "border-box");
-  assert.equal(dock["border-radius"], "12px");
+  assert.equal(dock["border-radius"], "9999px !important");
   assert.match(dock["box-shadow"], /inset 0 0 0 1px var\(--sk-dock-line\)/);
   assert.equal(32 + 2 * 6, 44);
 });
@@ -38,12 +38,12 @@ test("20px dividers separate the three sections", () => {
   assert.equal(divider.width, "20px"); assert.equal(divider.height, "1px");
 });
 
-test("child rail is 44px wide, radius 12, padding 6, flush at left: 44px, with a 12px bridge", () => {
+test("nested child rail is 44px wide with the current capsule surface and pointer bridge", () => {
   const rail = merged(".sketchizi-tool-sidebar-child-rail");
-  assert.equal(rail.position, "absolute"); assert.equal(rail.left, "44px"); assert.equal(rail.width, "44px");
-  assert.equal(rail.padding, "6px"); assert.equal(rail["border-radius"], "12px");
-  const bridge = merged(".sketchizi-tool-sidebar-hover-bridge");
-  assert.equal(bridge.width, "12px"); assert.equal(bridge.background, "transparent"); assert.equal(bridge["pointer-events"], "auto");
+  assert.equal(rail.position, "absolute"); assert.equal(rail.left, "56px"); assert.equal(rail.width, "44px");
+  assert.equal(rail.padding, "6px"); assert.equal(rail["border-radius"], "18px");
+  assert.match(css, /\.tool-slot > \.sub-dock \{[\s\S]*?left: calc\(100% \+ 12px\)/);
+  assert.match(css, /\.tool-slot > \.sub-dock::before \{[\s\S]*?width: 12px/);
 });
 
 test("the selected tool keeps a clearly distinct filled state with no outline or shadow", () => {
