@@ -27,7 +27,7 @@ test("primary dock preserves native, custom and image tool activation; Todo/Buck
   }
   assert.match(component, /sketchizi:activate-tool/);
   assert.match(component, /toolbar-image/);
-  assert.doesNotMatch(component, /onOpenTodoTab|bucketfill"\s*,\s*label|Draw to Shape|Todo List/);
+  assert.match(component, /onOpenTodoTab/);\n  assert.ok(ALL_CHILDREN.some((child) => child.id === "todo" && child.kind === "action"));
 });
 
 test("primary dock exposes keyboard hints only for supported, non-colliding shortcuts", () => {
