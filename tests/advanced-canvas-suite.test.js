@@ -12,6 +12,7 @@ const toolbarSource = readFileSync(new URL("../src/components/app/ContextualForm
 const templatesModalSource = readFileSync(new URL("../src/components/app/ArchitectureTemplatesModal.jsx", import.meta.url), "utf8");
 const packInsertionSource = readFileSync(new URL("../src/features/templates/architecturePackInsertion.js", import.meta.url), "utf8");
 const advancedCss = readFileSync(new URL("../src/styles/advanced-canvas-suite.css", import.meta.url), "utf8");
+const mapDockCss = readFileSync(new URL("../src/styles/map-dock.css", import.meta.url), "utf8");
 
 test("Capability 1: Canvas Mini-Map Navigator is integrated with header toggle and dark mode styles", () => {
   assert.ok(appHeader.includes("onToggleMinimap"), "Header accepts onToggleMinimap prop");
@@ -21,9 +22,10 @@ test("Capability 1: Canvas Mini-Map Navigator is integrated with header toggle a
   assert.match(appSource, /const \[minimapOpen, setMinimapOpen\] = useState\(false\);/);
   assert.match(appSource, /onToggleMinimap=\{\(\) => setMinimapOpen\(\(o\) => !o\)\}/);
 
-  assert.ok(advancedCss.includes(".app.theme-dark .minimap"), "Has dark theme minimap styling");
-  assert.ok(advancedCss.includes(".app.theme-dark .minimap-camera"), "Has dark theme camera indicator");
-  assert.ok(advancedCss.includes(".app.theme-dark .minimap-viewport"), "Has dark theme viewport background");
+  assert.ok(mapDockCss.includes(".app.theme-dark {"), "Map defines Dark Mode variables");
+  assert.ok(mapDockCss.includes(".app.theme-light {"), "Map defines Day Mode variables");
+  assert.ok(mapDockCss.includes("rgba(24, 27, 32, 0.88)"), "Dark popover surface");
+  assert.ok(mapDockCss.includes("rgba(255, 255, 255, 0.92)"), "Day popover surface");
 });
 
 test("Capability 2: Export Studio is available in document dropdown while native image export and find stay disabled", () => {

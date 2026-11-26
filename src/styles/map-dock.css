@@ -1,0 +1,231 @@
+/* Bottom-right dock: [ Map ] [ Zen ] and the Map radar popover.
+   Loaded after hud-capsules.css so the Zen pill can be re-parented into the
+   dock without touching that file. Theme comes from .app.theme-dark / .theme-light. */
+
+.app {
+  --map-violet: #8B5CF6;
+}
+.app.theme-dark {
+  --map-bg: rgba(24, 27, 32, 0.88);
+  --map-border: rgba(255, 255, 255, 0.1);
+  --map-ink: #e6e9f0;
+  --map-dim: #8f98ab;
+  --map-chip: rgba(255, 255, 255, 0.07);
+  --map-chip-hover: rgba(255, 255, 255, 0.12);
+  --map-stage: rgba(255, 255, 255, 0.035);
+  --map-divider: rgba(255, 255, 255, 0.08);
+  --map-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  --map-accent-ink: #b79cfb;
+}
+.app.theme-light {
+  --map-bg: rgba(255, 255, 255, 0.92);
+  --map-border: rgba(15, 23, 42, 0.1);
+  --map-ink: #252a35;
+  --map-dim: #6b7385;
+  --map-chip: rgba(15, 23, 42, 0.05);
+  --map-chip-hover: rgba(15, 23, 42, 0.09);
+  --map-stage: rgba(15, 23, 42, 0.035);
+  --map-divider: rgba(15, 23, 42, 0.08);
+  --map-shadow: 0 14px 34px rgba(15, 23, 42, 0.14);
+  --map-accent-ink: #6d3fd9;
+}
+
+/* ---------- Dock: Map left of Zen ---------- */
+.app .sk-hud-dock {
+  position: fixed;
+  right: calc(20px + var(--safe-right, 0px));
+  bottom: calc(20px + var(--safe-bottom, 0px));
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* The Zen pill used to be fixed on its own; inside the dock it is a flex item. */
+.app .sk-hud-dock .sk-zen-pill {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
+}
+
+/* ---------- Shared hover wrapper + bridge ---------- */
+.app .sk-map-wrap {
+  position: relative;
+  display: inline-flex;
+}
+/* Invisible bridge across the 12px gap between pill and popover so the
+   pointer never leaves the wrapper on its way up. Only exists while open,
+   so it can never swallow canvas clicks when the map is closed. */
+.app .sk-map-wrap.is-open::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  width: 230px;
+  height: 14px;
+}
+
+/* ---------- Map pill (same glass as the Zen pill) ---------- */
+.app .sk-map-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  background: var(--hud-bg);
+  border: var(--hud-border);
+  box-shadow: var(--hud-shadow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--hud-ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 150ms var(--hud-ease-out), color 150ms ease, border-color 150ms ease;
+}
+.app .sk-map-pill:hover,
+.app .sk-map-pill.is-open { color: var(--map-accent-ink); }
+.app .sk-map-pill:active { transform: scale(0.97); }
+.app .sk-map-pill:focus-visible { outline: 2px solid var(--map-violet); outline-offset: 2px; }
+.app .sk-map-pill.is-pinned { border-color: var(--map-violet); color: var(--map-accent-ink); }
+
+.app .sk-map-pin-dot {
+  display: none;
+  width: 6px;
+  height: 6px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--map-violet);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.22);
+}
+.app .sk-map-pill.is-pinned .sk-map-pin-dot { display: block; }
+
+/* ---------- Popover ---------- */
+.app .sk-map-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 12px);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  width: 230px;
+  height: 154px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--map-border);
+  border-radius: 14px;
+  background: var(--map-bg);
+  box-shadow: var(--map-shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--map-ink);
+  font-size: 11px;
+  user-select: none;
+  transform-origin: 100% 100%;
+  animation: sk-map-in 160ms var(--hud-ease-in) both;
+}
+@keyframes sk-map-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.app .sk-map-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 28px;
+  height: 28px;
+  padding: 0 6px 0 11px;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--map-divider);
+}
+.app .sk-map-title { font-size: 11.5px; font-weight: 650; letter-spacing: 0.01em; }
+.app .sk-map-zoom {
+  color: var(--map-dim);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.app .sk-map-fit,
+.app .sk-map-esc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--map-chip);
+  color: var(--map-ink);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.app .sk-map-fit { margin-left: auto; }
+.app .sk-map-fit:hover:not(:disabled),
+.app .sk-map-esc:hover { background: var(--map-chip-hover); color: var(--map-accent-ink); }
+.app .sk-map-fit:disabled { opacity: 0.4; cursor: default; }
+.app .sk-map-fit:focus-visible,
+.app .sk-map-esc:focus-visible { outline: 2px solid var(--map-violet); outline-offset: 1px; }
+
+.app .sk-map-fit kbd,
+.app .sk-map-esc kbd {
+  padding: 0 3px;
+  border: 1px solid var(--map-divider);
+  border-radius: 4px;
+  color: var(--map-dim);
+  font: inherit;
+  font-size: 9.5px;
+  font-weight: 600;
+  line-height: 13px;
+}
+.app .sk-map-esc > span[aria-hidden] { font-size: 13px; line-height: 1; color: var(--map-dim); }
+
+.app .sk-map-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--map-stage);
+}
+.app .sk-map-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  touch-action: none;
+  outline: none;
+}
+.app .sk-map-canvas:focus-visible { box-shadow: inset 0 0 0 2px var(--map-violet); }
+.app .sk-map-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding-bottom: 2px;
+  color: var(--map-dim);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .sk-map-popover { animation: none; }
+  .app .sk-map-pill,
+  .app .sk-map-fit,
+  .app .sk-map-esc { transition: none; }
+}
+
+/* Very narrow phones: the popover is anchored to the Map pill (~110px from the
+   right edge), so shrink it rather than let it run off the left side. */
+@media (max-width: 359px) {
+  .app .sk-map-popover { width: calc(100vw - 128px); }
+  .app .sk-map-wrap.is-open::after { width: calc(100vw - 128px); }
+}

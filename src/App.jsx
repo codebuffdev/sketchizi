@@ -29,7 +29,6 @@ import { awsIcons, awsCategories, awsCategoryCounts, awsCategoryRepresentatives,
 import { kubernetesIcons, kubernetesCategories, kubernetesCategoryCounts, kubernetesCategoryRepresentatives } from "./kubernetesArchitectureLibrary";
 import { useCanvasTools } from "./features/canvas/useCanvasTools";
 import { useToolStylePresets } from "./features/canvas/useToolStylePresets";
-import { useMinimapController } from "./features/canvas/useMinimapController";
 import { useExcalidrawScene } from "./features/canvas/useExcalidrawScene";
 import SketchiziCanvas from "./components/app/SketchiziCanvas";
 import TodoList from "./components/app/TodoList.jsx";
@@ -80,6 +79,7 @@ import "./styles/contextual-dock-polish.css";
 import "./styles/todo-canvas-polish.css";
 import "./styles/canvas-top-controls.css";
 import "./styles/hud-capsules.css";
+import "./styles/map-dock.css";
 import "./styles/edge-drawer-motion.css";
 import "./styles/smart-studio.css";
 import "./styles/responsive-fluid.css"; // must stay the LAST stylesheet import
@@ -181,9 +181,10 @@ function App() {
   const [minimapOpen, setMinimapOpen] = useState(false);
   const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
   const [exportStudioOpen, setExportStudioOpen] = useState(false);
-  const minimapDragRef = useRef(null);
-  const minimapController = useMinimapController({ apiRef, minimapOpen });
-  const { minimapScene, updateMinimap, centerOnMinimap } = minimapController;
+  // `minimapOpen` is the Map's *pinned* state (M key, command palette, View
+  // menu, Map pill click). Hover-peeking is local to MapDock.
+  const toggleMapPinned = useCallback(() => setMinimapOpen((open) => !open), []);
+  const closeMap = useCallback(() => setMinimapOpen(false), []);
   const nativeMenuOpenRef = useRef(false);
   const [nativeMenuOpen, setNativeMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
@@ -727,7 +728,7 @@ function App() {
   useNativeSketchiziMenu({ apiRef, fileActionsRef, openCloudWorkspace, closedTabs, reopenClosedTab, deleteClosedTab, clearClosedTabs, currentFolder, currentFolderFiles, recentFiles, recentFolders, refreshCurrentFolderFiles, handleFileError, useThemeDefaultBackground: preferences.useThemeDefaultBackground, markCanvasBackgroundCustom: preferences.markCanvasBackgroundCustom });
   const handleExcalidrawChange = useExcalidrawScene({
     apiRef, nativeMenuOpenRef, setNativeMenuOpen, onNativeMenuOpen: closeLeftPanel, lastSelectionSignature,
-    setSelectedCount, setSelectedElements, setSelectedConnector, updateMinimap, queueSketchSave,
+    setSelectedCount, setSelectedElements, setSelectedConnector, queueSketchSave,
     collaborationRemoteUpdateRef, collaborationRef, canEdit: collaborationCanEdit,
     onDocumentSceneChange: markCurrentDocumentChanged,
     toolStylePresets: toolStyles,
@@ -1833,6 +1834,11 @@ function App() {
     };
   }, []);
   useEffect(() => {
+    // The Map is hidden in Zen Mode: drop any pin, including one requested
+    // while Zen is active (M key, command palette).
+    if (isZenMode && minimapOpen) setMinimapOpen(false);
+  }, [isZenMode, minimapOpen]);
+  useEffect(() => {
     // Keep Excalidraw's own chrome in step with the HUD Zen state.
     apiRef.current?.updateScene?.({ appState: { zenModeEnabled: isZenMode } });
   }, [isZenMode, activeCanvasId]);
@@ -2046,11 +2052,7 @@ function App() {
             handleExcalidrawAPI={handleExcalidrawAPI}
             handleChange={handleThemeAwareExcalidrawChange}
             handleDrop={handleDrop}
-            minimapOpen={minimapOpen}
-            minimapScene={minimapScene}
             apiRef={apiRef}
-            minimapDragRef={minimapDragRef}
-            centerOnMinimap={centerOnMinimap}
             closeShortcuts={() => closePanel("shortcuts")}
             shortcutHelpOpen={shortcutHelpOpen}
             setMinimapOpen={setMinimapOpen}
@@ -2273,6 +2275,14 @@ function App() {
           onToggleZen={toggleZenMode}
           aiOpen={aiAskOpen}
           onToggleAi={toggleAiAsk}
+          mapProps={{
+            apiRef,
+            pinned: minimapOpen,
+            onTogglePinned: toggleMapPinned,
+            onClose: closeMap,
+            isDarkTheme,
+            onViewportChange: markLocalViewportNavigation,
+          }}
         />
       )}
       <AiAskPanel open={aiAskOpen} onClose={() => setAiAskOpen(false)} apiRef={apiRef} persistSketchNow={persistSketchNow} saveTimerRef={saveTimerRef} pageContext={canvasPageContext} />

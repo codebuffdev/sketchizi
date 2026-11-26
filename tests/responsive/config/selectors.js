@@ -1,7 +1,7 @@
 /**
  * Selector catalogue, derived from the real components (not guessed):
  *  PrimaryDock.jsx, ToolOptionsDock.jsx, ContextualFormattingToolbar.jsx,
- *  CanvasTabs.jsx, CanvasMiniMap.jsx, Minimap.jsx, CanvasZoomControl.jsx,
+ *  CanvasTabs.jsx, MapDock.jsx, CanvasMapRadar.jsx, CanvasZoomControl.jsx,
  *  IconLibraryPanel.jsx, PropertiesPanel.jsx, AiAskPanel.jsx,
  *  ArchitectureValidationPanel.jsx, pages/*, design/ui/*, Collaboration*.jsx,
  *  ExportStudioModal.jsx.
@@ -57,7 +57,7 @@ export const SEL = {
   propertiesClose: ".properties-close, button[aria-label='Close properties']",
   propertiesOpenFromDock: "button[aria-label='Open properties drawer']",
 
-  minimap: ".sketchizi-minimap-root, .minimap",
+  minimap: ".sk-map-popover",
   zoomControl: ".desktop-app-zoom-control",
 
   aiToggle: ".ai-ask-toggle",
@@ -116,7 +116,7 @@ export const FLOATING_SURFACES = [
   { name: "tabs-bar", selector: ".canvas-tabs-bar" },
   { name: "primary-dock", selector: ".sketchizi-tool-sidebar" },
   { name: "contextual-dock", selector: ".sketchizi-tool-options-dock.is-open, .contextual-formatting-toolbar" },
-  { name: "minimap", selector: ".sketchizi-minimap-root, .minimap" },
+  { name: "minimap", selector: ".sk-map-popover" },
   { name: "zoom-controls", selector: ".desktop-app-zoom-wrap" },
   { name: "properties-toggle", selector: ".properties-toggle" },
   { name: "properties-panel", selector: ".properties-panel" },

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
-import Minimap from "../../Minimap";
 import ShortcutHelp from "../../ShortcutHelp";
 import ToolOptionsDock from "./ToolOptionsDock";
 import PrimaryDock from "./PrimaryDock";
@@ -28,7 +27,7 @@ export default function SketchiziCanvas({
   onTodoItemsChange,
   onOpenTodoTab,
   viewModeEnabled = false,
-  minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
+  apiRef,
   selectedElements = [], onClearSelection, canEdit = true,
   closeShortcuts, shortcutHelpOpen, setMinimapOpen, collaborationParticipants = [], collaborationSelfId, updateCollaborationCursor, onViewportChange,
   gridEnabled = false, gridStyle = "focus", canvasAppearance = "clean", onGridVisibilityChange,
@@ -959,7 +958,6 @@ export default function SketchiziCanvas({
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
       <CanvasVerticalScrollbar apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} disabled={pageContext?.mode === "pages"} />
-      <Minimap minimapOpen={minimapOpen} minimapScene={minimapScene} apiRef={apiRef} minimapDragRef={minimapDragRef} centerOnMinimap={centerOnMinimap} />
       <ShortcutHelp open={shortcutHelpOpen} onClose={closeShortcuts} />
     </main>
   );

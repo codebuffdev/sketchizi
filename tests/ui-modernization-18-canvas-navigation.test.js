@@ -6,19 +6,20 @@ const canvas = readFileSync(new URL('../src/components/app/SketchiziCanvas.jsx',
 const styles = readFileSync(new URL('../src/styles/ui-modernization-navigation.css', import.meta.url), 'utf8');
 const entry = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
 
-const minimap = readFileSync(new URL('../src/Minimap.jsx', import.meta.url), 'utf8');
+const mapRadar = readFileSync(new URL('../src/features/canvas/mapRadar.js', import.meta.url), 'utf8');
+const mapRadarView = readFileSync(new URL('../src/components/app/CanvasMapRadar.jsx', import.meta.url), 'utf8');
 const preferences = readFileSync(new URL('../src/features/navigation/useSketchiziPreferences.js', import.meta.url), 'utf8');
 const shortcutHelp = readFileSync(new URL('../src/ShortcutHelp.jsx', import.meta.url), 'utf8');
 
-test('Fit to content is offered from the minimap zoom label and the F shortcut', () => {
-  assert.match(minimap, /className="minimap-zoom-label"/);
-  assert.match(minimap, /title="Fit diagram"/);
+test('Fit to content is offered from the Map header and the F shortcut', () => {
+  assert.match(mapRadarView, /className="sk-map-fit"/);
+  assert.match(mapRadarView, /Center and fit all content/);
   assert.match(shortcutHelp, /\["F", "Fit diagram to viewport"\]/);
   assert.match(preferences, /if \(key === "f"\) \{ event\.preventDefault\(\); fitDiagram\(\); \}/);
 });
 
 test('fit action delegates to native viewport APIs and ignores deleted elements', () => {
-  for (const source of [minimap, preferences]) {
+  for (const source of [mapRadar, preferences]) {
     assert.match(source, /getSceneElements\(\)\.filter\(\(element\) => !element\.isDeleted\)/);
     assert.match(source, /api\.setViewport\(\{ target: elements, fit: "contain" \}\)/);
     assert.match(source, /api\.scrollToContent\?\.\(elements, \{ fitToViewport: true, animate: true \}\)/);

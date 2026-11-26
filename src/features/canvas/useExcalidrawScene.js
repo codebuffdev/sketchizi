@@ -25,7 +25,7 @@ const NOOP_SCENE_CHANGE = () => {};
 export function useExcalidrawScene({
   apiRef, nativeMenuOpenRef, setNativeMenuOpen, onNativeMenuOpen,
   lastSelectionSignature, setSelectedCount, setSelectedElements, setSelectedConnector,
-  updateMinimap, queueSketchSave, collaborationRemoteUpdateRef,
+  queueSketchSave, collaborationRemoteUpdateRef,
   collaborationRef, canEdit = true, onArchitectureSceneChange = NOOP_SCENE_CHANGE, onDocumentSceneChange = NOOP_SCENE_CHANGE,
   toolStylePresets = null,
 }) {
@@ -121,7 +121,6 @@ export function useExcalidrawScene({
       // style last used with that tool on this canvas. Selection and other
       // non-drawing tools never touch the stored presets.
       toolStylePresets?.handleSceneChange?.(appState, { canEdit });
-      measureSyncDiagnostic("client.minimapUpdate", { elementCount: effectiveElements.length }, () => updateMinimap(effectiveElements, appState));
       // Prefer Excalidraw's live app state over the possibly stale onChange
       // snapshot when saving. This matters for currentItemFontFamily because it
       // is the default for text elements created after the current one.
@@ -241,5 +240,5 @@ export function useExcalidrawScene({
         });
       }
     }
-  }, [apiRef, collaborationRef, collaborationRemoteUpdateRef, lastSelectionSignature, nativeMenuOpenRef, queueSketchSave, scheduleArchitectureSceneChange, onNativeMenuOpen, setNativeMenuOpen, setSelectedConnector, setSelectedCount, setSelectedElements, updateMinimap, onDocumentSceneChange, toolStylePresets, canEdit]);
+  }, [apiRef, collaborationRef, collaborationRemoteUpdateRef, lastSelectionSignature, nativeMenuOpenRef, queueSketchSave, scheduleArchitectureSceneChange, onNativeMenuOpen, setNativeMenuOpen, setSelectedConnector, setSelectedCount, setSelectedElements, onDocumentSceneChange, toolStylePresets, canEdit]);
 }
