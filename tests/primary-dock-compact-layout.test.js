@@ -20,7 +20,7 @@ test("dock is exactly 44px wide: 32px slots inside 6px padding, border drawn as 
   assert.equal(dock.width, "44px");
   assert.equal(dock.padding, "6px");
   assert.equal(dock["box-sizing"], "border-box");
-  assert.equal(dock["border-radius"], "9999px");
+  assert.equal(dock["border-radius"], "9999px !important");
   assert.match(dock["box-shadow"], /inset 0 0 0 1px var\(--sk-dock-line\)/);
   assert.equal(32 + 2 * 6, 44);
 });

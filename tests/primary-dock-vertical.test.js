@@ -100,8 +100,10 @@ test("highlighter uses the brief's 14 / 38 style and the existing save/restore f
 
 test("child rail structure: a DOM child of the nav, outside the inert list, no portal", () => {
   assert.doesNotMatch(dock, /createPortal/);
-  const listEnd = dock.indexOf("</div>\n\n      {/* Child rail");
-  assert.ok(listEnd > 0 && dock.indexOf("sketchizi-tool-sidebar-child-rail\"\n            role") > listEnd, "rail must render after (outside) the list");
+  const listStart = dock.indexOf('className="sketchizi-tool-sidebar-list"');
+  const slotStart = dock.indexOf('className="tool-slot"', listStart);
+  const railStart = dock.indexOf('className="sketchizi-tool-sidebar-child-rail sub-dock"', slotStart);
+  assert.ok(listStart >= 0 && slotStart > listStart && railStart > slotStart, "rail must be nested in its owning tool slot inside the list");
   assert.match(dock, /event\.pointerType !== "mouse"/);
   assert.match(dock, /CHILD_OPEN_INTENT_MS = 90/);
   assert.match(dock, /CHILD_CLOSE_GRACE_MS = 160/);
