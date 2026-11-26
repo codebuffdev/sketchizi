@@ -2043,8 +2043,6 @@ function App() {
             todoItems={canvasTabs.find((tab) => tab.id === activeCanvasId)?.todoItems || []}
             onTodoItemsChange={updateCanvasTodoItems}
             onOpenTodoTab={openTodoTab}
-            onOpenAiAsk={() => setAiAskOpen(true)}
-            onOpenLibrary={() => { if (!libraryOpen) togglePanel("icon-library"); requestAnimationFrame(() => searchRef.current?.focus()); }}
             handleExcalidrawAPI={handleExcalidrawAPI}
             handleChange={handleThemeAwareExcalidrawChange}
             handleDrop={handleDrop}
