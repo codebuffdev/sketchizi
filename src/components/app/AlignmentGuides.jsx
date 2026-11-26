@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import {
+  calculateVerticalSpacing, formatGapLabel, SPACING_COLOR, EQUAL_SPACING_COLOR, TICK_HALF, KEYBOARD_GUIDE_MS,
+} from "../../features/canvas/verticalSpacing.js";
+import {
   calculateAlignmentGuides, calculateEqualSpacingGuides, calculateTextBaselineGuides, selectDisplayGuides, getGuideRenderAxis, sceneToCanvasPixel,
   calculatePlacementGuides, clientToScene, PLACEMENT_TOOLS, PLACEMENT_SNAP_TOOLS,
 } from "../../features/canvas/alignmentGuides.js";
@@ -15,15 +18,19 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
   // Pre-placement ruler guide (creation tools, before any click). Kept mounted
   // with `visible: false` so it can fade out instead of vanishing.
   const [placement, setPlacement] = useState(null);
+  // Vertical-gap ruler + left-edge guide, in scene coordinates (zoom-normalised on render).
+  const [spacing, setSpacing] = useState(null);
 
   useEffect(() => {
     const root = canvasRootRef.current;
     if (!root || !canEdit || viewModeEnabled) {
       setGuides(EMPTY_GUIDES);
       setPlacement(null);
+      setSpacing(null);
       return undefined;
     }
     let dragging = false;
+    let keyTimer = 0;
     let pressed = false;        // a creation-tool press/drag is in progress
     let altHeld = false;        // Alt/Option suppresses guides and snapping
     let hover = null;           // last hovering pointer position (client px)
@@ -78,6 +85,49 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
       setGuides(EMPTY_GUIDES);
+      if (keyTimer) clearTimeout(keyTimer);
+      keyTimer = 0;
+      setSpacing(null);
+    };
+
+    // Measure (and optionally snap) the single active element. Returns the
+    // spacing result, or null when there is nothing to measure.
+    const measureSpacing = ({ snap, showGuides }) => {
+      const api = apiRef?.current;
+      if (!api) return null;
+      const appState = api.getAppState?.() || {};
+      const selected = Object.entries(appState.selectedElementIds || {}).filter(([, on]) => on).map(([id]) => id);
+      if (selected.length !== 1) { if (showGuides) setSpacing(null); return null; }
+      const zoom = Math.max(0.1, Number(appState.zoom?.value ?? appState.zoom) || 1);
+      const elements = api.getSceneElements?.() || [];
+      const result = calculateVerticalSpacing(elements, selected[0], { zoom, snap: snap && !altHeld });
+      if (!result) { if (showGuides) setSpacing(null); return null; }
+      if (result.snapped) {
+        const target = elements.find((el) => el.id === selected[0]);
+        api.updateScene?.({
+          elements: elements.map((el) => (el.id === target.id
+            ? { ...el, x: result.x, y: result.y, version: (el.version || 0) + 1, versionNonce: Math.floor(Math.random() * 2 ** 31), updated: Date.now() }
+            : el)),
+        });
+      }
+      if (showGuides) setSpacing({ ...result, zoom, scrollX: Number(appState.scrollX) || 0, scrollY: Number(appState.scrollY) || 0 });
+      return result;
+    };
+
+    // Arrow-key nudges are applied by Excalidraw; measure after it has moved
+    // the element and keep the guides up briefly. Keyboard nudges never snap:
+    // a 1px step would otherwise be pulled back inside the snap zone.
+    const onNudgeKey = (event) => {
+      if (!event.key.startsWith("Arrow") || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+      if (apiRef?.current?.getAppState?.()?.editingTextElement) return;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (dragging) return;
+        const shown = measureSpacing({ snap: false, showGuides: true });
+        if (keyTimer) clearTimeout(keyTimer);
+        keyTimer = shown ? setTimeout(() => { keyTimer = 0; setSpacing(null); }, KEYBOARD_GUIDE_MS) : 0;
+      }));
     };
 
     const update = () => {
@@ -94,6 +144,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
       if (!viewport) { setGuides(EMPTY_GUIDES); return; }
       const viewportRect = viewport.getBoundingClientRect();
       setOverlay({ left: viewportRect.left - rootRect.left, top: viewportRect.top - rootRect.top, width: viewportRect.width, height: viewportRect.height });
+      measureSpacing({ snap: true, showGuides: true });
       const tolerance = 9 / zoom;
       const found = [
         ...calculateAlignmentGuides(elements, selectedIds, tolerance),
@@ -199,7 +250,15 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
         pressed = false;
         hover = null;
       }
-      if (event.pointerId === activePointerId) clear();
+      if (event.pointerId === activePointerId) {
+        if (dragging) {
+          // Excalidraw may write its raw drop position after our last frame;
+          // re-apply the snap once it has settled, then drop every guide now.
+          measureSpacing({ snap: true, showGuides: false });
+          setTimeout(() => measureSpacing({ snap: true, showGuides: false }), 0);
+        }
+        clear();
+      }
     };
     const onKey = (event) => {
       if (event.key !== "Alt") return;
@@ -212,9 +271,11 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
     window.addEventListener("pointerup", onPointerEnd);
     window.addEventListener("pointercancel", onPointerEnd);
     window.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", onNudgeKey);
     window.addEventListener("keyup", onKey);
     root.addEventListener("pointerleave", onLeave);
     return () => {
+      window.removeEventListener("keydown", onNudgeKey);
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("keyup", onKey);
       root.removeEventListener("pointerleave", onLeave);
@@ -238,6 +299,7 @@ export default function AlignmentGuides({ canvasRootRef, apiRef, canEdit, viewMo
   return (
     <>
       {dragSvg}
+      {spacing && <SpacingOverlay spacing={spacing} overlay={overlay} />}
       {placement && <PlacementRuler placement={placement} overlay={overlay} />}
     </>
   );
@@ -275,5 +337,51 @@ function PlacementRuler({ placement, overlay }) {
       {v && pill(v.label, v.indent ? "indent" : "align-left", v.x + 10, cy + 14)}
       {h && pill(h.label, "center-y", cx + 10, h.y - 26)}
     </div>
+  );
+}
+
+/**
+ * Non-interactive measurement overlay. Drawn in scene units inside a group
+ * transform so geometry tracks pan/zoom; every stroke, tick and label is
+ * divided by `zoom` so it stays crisp and constant-size on screen.
+ */
+function SpacingOverlay({ spacing, overlay }) {
+  const { zoom, scrollX, scrollY, prev, prevPrev, active, gap, referenceGap, isEqualSpacing, guideX, leftGuide } = spacing;
+  const width = Math.max(1, overlay.width);
+  const height = Math.max(1, overlay.height);
+  const color = isEqualSpacing ? EQUAL_SPACING_COLOR : SPACING_COLOR;
+  const sw = 1.25 / zoom;
+  const tick = TICK_HALF / zoom;
+  const ruler = (x, y1, y2, value, key) => {
+    const label = formatGapLabel(value);
+    const pillW = (label.length * 7 + 12) / zoom;
+    const pillH = 18 / zoom;
+    const cy = (y1 + y2) / 2;
+    return (
+      <g key={key} data-spacing-ruler={key}>
+        <line x1={x} x2={x} y1={y1} y2={y2} stroke={color} strokeWidth={sw} strokeDasharray={`${4 / zoom} ${3 / zoom}`} />
+        <line x1={x - tick} x2={x + tick} y1={y1} y2={y1} stroke={color} strokeWidth={sw} />
+        <line x1={x - tick} x2={x + tick} y1={y2} y2={y2} stroke={color} strokeWidth={sw} />
+        <rect x={x - pillW / 2} y={cy - pillH / 2} width={pillW} height={pillH} rx={pillH / 2} fill={color} />
+        <text x={x} y={cy} textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize={11 / zoom} fontWeight="700"
+          style={{ fontVariantNumeric: "tabular-nums" }}>{label}</text>
+      </g>
+    );
+  };
+  return (
+    <svg className="sketchizi-spacing-guides" data-spacing-guides={isEqualSpacing ? "equal" : "measure"}
+      style={{ left: overlay.left, top: overlay.top, width, height }} viewBox={`0 0 ${width} ${height}`} aria-hidden="true" focusable="false">
+      <g transform={`scale(${zoom}) translate(${scrollX} ${scrollY})`}>
+        {leftGuide && (
+          <line data-guide-kind="left-edge" x1={leftGuide.x} x2={leftGuide.x} y1={leftGuide.y1 - 12 / zoom} y2={leftGuide.y2 + 12 / zoom}
+            stroke={SPACING_COLOR} strokeWidth={sw} strokeDasharray={`${5 / zoom} ${4 / zoom}`} />
+        )}
+        {prev && guideX != null && gap != null && ruler(guideX, prev.bottom, active.top, gap, "primary")}
+        {isEqualSpacing && prevPrev && prev && referenceGap != null && ruler(
+          (Math.max(prevPrev.left, prev.left) + Math.min(prevPrev.right, prev.right)) / 2,
+          prevPrev.bottom, prev.top, referenceGap, "reference",
+        )}
+      </g>
+    </svg>
   );
 }

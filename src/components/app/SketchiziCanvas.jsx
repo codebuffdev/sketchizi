@@ -7,6 +7,7 @@ import PrimaryDock from "./PrimaryDock";
 import CanvasVerticalScrollbar from "./CanvasVerticalScrollbar";
 import AlignmentGuides from "./AlignmentGuides";
 import TextSizeIndicator from "./TextSizeIndicator";
+import SelectionFrame from "./SelectionFrame";
 import ShapeMeasurements from "./ShapeMeasurements";
 import RectangleTitles from "./RectangleTitles";
 import ArrowVertexEditor from "./ArrowVertexEditor";
@@ -14,7 +15,7 @@ import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasAppearanceBackground, getCanvasAppearanceRoughness, getCanvasAppearanceTheme } from "../../features/navigation/canvasAppearance.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
 import { handleStickyNoteRapidFlow } from "../../features/canvas/stickyNoteFlow.js";
-import { applyMarkdownListEdit, getMarkdownListEdit } from "../../features/canvas/markdownListShortcuts.js";
+import { applyMarkdownListEdit, getMarkdownListEdit, getMarkdownHeadingInputEdit } from "../../features/canvas/markdownListShortcuts.js";
 import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
 import { createFreeDrawElementFromSamples, drawFreeDrawPreviewSample, getPointerEventSamples } from "../../features/canvas/freeDrawEngine.js";
@@ -772,41 +773,74 @@ export default function SketchiziCanvas({
   useEffect(() => {
     const root = canvasRootRef.current;
     if (!root || !canEdit || viewModeEnabled) return undefined;
+    const isEditorTextarea = (target) => target instanceof HTMLTextAreaElement &&
+      target.matches(".excalidraw-textEditorContainer textarea");
+    const getEditingElement = () => {
+      const api = apiRef?.current;
+      const id = api?.getAppState?.()?.editingTextElement?.id;
+      if (!id) return null;
+      const elements = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
+      return elements.find((element) => element.id === id) || null;
+    };
+    // Heading style lives on the whole text box. Bold is recorded in
+    // customData (Excalidraw text has no native font weight).
+    const applyHeadingStyle = (edit) => {
+      const api = apiRef?.current;
+      const editing = getEditingElement();
+      if (!api || !editing) return;
+      const customData = { ...(editing.customData || {}) };
+      if (edit.headingLevel) { customData.markdownHeading = edit.headingLevel; customData.fontWeight = 700; }
+      else { delete customData.markdownHeading; delete customData.fontWeight; }
+      const elements = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
+      api.updateScene?.({
+        elements: elements.map((element) => element.id === editing.id
+          ? {
+            ...element,
+            fontSize: edit.headingFontSize,
+            customData,
+            version: (Number(element.version) || 0) + 1,
+            versionNonce: Math.floor(Math.random() * 2147483647),
+            updated: Date.now(),
+          }
+          : element),
+        captureUpdate: "IMMEDIATELY",
+      });
+    };
     const handleMarkdownListKeyDown = (event) => {
       const textarea = event.target;
-      if (!(textarea instanceof HTMLTextAreaElement) ||
-        !textarea.matches(".excalidraw-textEditorContainer textarea")) return;
+      if (!isEditorTextarea(textarea) || event.isComposing) return;
       const edit = getMarkdownListEdit({
         value: textarea.value,
         selectionStart: textarea.selectionStart,
         selectionEnd: textarea.selectionEnd,
         key: event.key,
+        isHeading: Boolean(getEditingElement()?.customData?.markdownHeading),
       });
       if (!edit) return;
       event.preventDefault();
       event.stopPropagation();
       applyMarkdownListEdit(textarea, edit);
-
-      if (edit.headingFontSize) {
-        const api = apiRef?.current;
-        const editingElementId = api?.getAppState?.()?.editingTextElement?.id;
-        if (editingElementId) {
-          const elements = api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [];
-          const updatedElements = elements.map((element) => element.id === editingElementId
-            ? {
-              ...element,
-              fontSize: edit.headingFontSize,
-              version: (Number(element.version) || 0) + 1,
-              versionNonce: Math.floor(Math.random() * 2147483647),
-              updated: Date.now(),
-            }
-            : element);
-          api.updateScene?.({ elements: updatedElements, captureUpdate: "IMMEDIATELY" });
-        }
-      }
+      if (edit.headingFontSize) applyHeadingStyle(edit);
     };
+    // Fallback for keyboards/IMEs where keydown does not report " ".
+    const handleMarkdownHeadingInput = (event) => {
+      const textarea = event.target;
+      if (!isEditorTextarea(textarea) || event.isComposing) return;
+      const edit = getMarkdownHeadingInputEdit({
+        value: textarea.value,
+        selectionStart: textarea.selectionStart,
+        selectionEnd: textarea.selectionEnd,
+      });
+      if (!edit) return;
+      applyMarkdownListEdit(textarea, edit);
+      applyHeadingStyle(edit);
+    };
+    root.addEventListener("input", handleMarkdownHeadingInput, true);
     root.addEventListener("keydown", handleMarkdownListKeyDown, true);
-    return () => root.removeEventListener("keydown", handleMarkdownListKeyDown, true);
+    return () => {
+      root.removeEventListener("keydown", handleMarkdownListKeyDown, true);
+      root.removeEventListener("input", handleMarkdownHeadingInput, true);
+    };
   }, [canEdit, viewModeEnabled]);
 
   useEffect(() => {
@@ -918,6 +952,7 @@ export default function SketchiziCanvas({
         pageContext={pageContext}
         canEdit={canEdit && !viewModeEnabled}
       />
+      <SelectionFrame apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled || hudSuppressed} />
       <TextSizeIndicator apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} />
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />

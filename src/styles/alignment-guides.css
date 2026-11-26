@@ -102,3 +102,23 @@
 @media (prefers-reduced-motion: reduce) {
   .sketchizi-placement-guides { transition: none; }
 }
+
+/* Vertical spacing ruler overlay (strokes are zoom-normalised in the SVG). */
+.sketchizi-spacing-guides {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 11;
+  shape-rendering: geometricPrecision;
+}
+
+/* Selection frame: crisp indigo box, square corner handles, rotation circle. */
+.sketchizi-selection-frame-layer { position: absolute; inset: 0; pointer-events: none; z-index: 9; overflow: hidden; }
+.sketchizi-selection-frame { position: absolute; box-sizing: border-box; border: 1.5px solid #6366F1; pointer-events: none; }
+.sketchizi-selection-frame .sk-handle {
+  position: absolute; width: 8px; height: 8px; box-sizing: border-box; background: #fff; border: 1.5px solid #6366F1;
+}
+.sketchizi-selection-frame .sk-rotate {
+  position: absolute; left: 50%; top: -24px; width: 10px; height: 10px; box-sizing: border-box; border-radius: 50%;
+  background: #fff; border: 1.5px solid #6366F1; transform: translateX(-50%);
+}

@@ -57,3 +57,43 @@ test("does not interfere with selected text or ordinary paragraphs", () => {
   assert.equal(getMarkdownListEdit({ value: "1. Item", selectionStart: 2, selectionEnd: 4, key: "Enter" }), null);
   assert.equal(edit("plain paragraph", "Enter"), null);
 });
+
+import { getMarkdownHeadingInputEdit, MARKDOWN_HEADING_SIZES } from "../src/features/canvas/markdownListShortcuts.js";
+
+test("heading prefix typed before existing text strips only the prefix", () => {
+  for (const [hashes, size] of [["#", 32], ["##", 26], ["###", 22]]) {
+    const value = `${hashes}hello`;
+    const edit = getMarkdownListEdit({ value, selectionStart: hashes.length, selectionEnd: hashes.length, key: " " });
+    assert.equal(edit.headingFontSize, size);
+    assert.equal(edit.headingLevel, hashes.length);
+    assert.equal(value.slice(0, edit.start) + edit.text + value.slice(edit.end), "hello");
+    assert.equal(edit.start, 0); // caret ends at index 0
+  }
+  assert.deepEqual(MARKDOWN_HEADING_SIZES, { 1: 32, 2: 26, 3: 22 });
+});
+
+test("heading shortcut applies on the current line only", () => {
+  const value = "first\n#second";
+  const edit = getMarkdownListEdit({ value, selectionStart: 7, selectionEnd: 7, key: " " });
+  assert.equal(edit.start, 6);
+  assert.equal(value.slice(0, edit.start) + edit.text + value.slice(edit.end), "first\nsecond");
+  assert.equal(getMarkdownListEdit({ value: "####hi", selectionStart: 4, selectionEnd: 4, key: " " }), null);
+  assert.equal(getMarkdownListEdit({ value: "a#hi", selectionStart: 2, selectionEnd: 2, key: " " }), null);
+});
+
+test("input fallback converts '# hello' with caret after the space", () => {
+  const edit = getMarkdownHeadingInputEdit({ value: "# hello", selectionStart: 2, selectionEnd: 2 });
+  assert.equal(edit.headingFontSize, 32);
+  assert.equal("# hello".slice(0, edit.start) + edit.text + "# hello".slice(edit.end), "hello");
+  assert.equal(getMarkdownHeadingInputEdit({ value: "# hello", selectionStart: 7, selectionEnd: 7 }), null);
+  assert.equal(getMarkdownHeadingInputEdit({ value: "#hello", selectionStart: 1, selectionEnd: 1 }), null);
+});
+
+test("Backspace at offset 0 of a heading reverts to body without deleting", () => {
+  const edit = getMarkdownListEdit({ value: "hello", selectionStart: 0, selectionEnd: 0, key: "Backspace", isHeading: true });
+  assert.equal(edit.revertHeading, true);
+  assert.equal(edit.headingFontSize, 20);
+  assert.equal(edit.text, "");
+  assert.equal(getMarkdownListEdit({ value: "hello", selectionStart: 0, selectionEnd: 0, key: "Backspace", isHeading: false }), null);
+  assert.equal(getMarkdownListEdit({ value: "hello", selectionStart: 2, selectionEnd: 2, key: "Backspace", isHeading: true }), null);
+});
