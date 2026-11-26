@@ -137,6 +137,18 @@ export default function AuthenticationControl() {
   }, [dialogOpen]);
 
   useLayoutEffect(() => {
+    if (!dialogOpen || typeof document === "undefined") return undefined;
+    // Lock document scrolling while the body-level modal is open. Without this,
+    // mobile viewport changes can scroll the focused close button into view and
+    // make a fixed backdrop appear displaced from the visual viewport.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [dialogOpen]);
+
+  useLayoutEffect(() => {
     if (!profileMenuOpen) return undefined;
     const onPointerDown = (event) => {
       if (!(event.target instanceof Element)) return;
