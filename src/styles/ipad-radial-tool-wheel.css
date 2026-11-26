@@ -341,3 +341,77 @@
 @media (max-width: 600px) {
   .sketchizi-tool-sidebar { left: 12px !important; }
 }
+
+
+/* Parent-relative flyouts: every child dock belongs to its own .tool-slot. */
+.sketchizi-tool-sidebar-list > .tool-slot {
+  position: relative;
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sketchizi-tool-sidebar-button {
+  position: relative;
+  z-index: 1;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock {
+  position: absolute;
+  z-index: 5;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(calc(-50% + var(--clamp-y, 0px)));
+  margin: 0;
+  min-width: 44px;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 0;
+  width: 12px;
+  height: 100%;
+  background: transparent;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock::after {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: calc(50% + var(--arrow-offset, 0px));
+  width: 10px;
+  height: 10px;
+  border-left: 1px solid var(--sk-dock-line);
+  border-bottom: 1px solid var(--sk-dock-line);
+  background: var(--sk-dock-bg);
+  transform: translateY(-50%) rotate(45deg);
+  pointer-events: none;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock > * {
+  position: relative;
+  z-index: 1;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock::before {
+  z-index: 0;
+}
+.sketchizi-tool-sidebar-list > .tool-slot > .sub-dock {
+  isolation: isolate;
+}
+.sketchizi-tool-sidebar {
+  left: 24px !important;
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+  border-radius: 9999px !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.sketchizi-tool-sidebar.is-dark {
+  --sk-dock-bg: rgba(24, 27, 32, .92);
+  --sk-dock-line: rgba(255, 255, 255, .1);
+  --sk-dock-active-bg: rgba(139, 92, 246, .22);
+  --sk-dock-active-fg: #C4B5FD;
+}
+@media (max-width: 600px) {
+  .sketchizi-tool-sidebar { left: 12px !important; }
+}
