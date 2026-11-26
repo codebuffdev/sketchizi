@@ -19,7 +19,7 @@ import {
 const COLLAPSE_GRACE_MS = 3000;
 // Child rail timings (mouse only).
 const CHILD_OPEN_INTENT_MS = 90;
-const CHILD_CLOSE_GRACE_MS = 120;
+const CHILD_CLOSE_GRACE_MS = 160;
 const SINGLE_TOOLTIP_DELAY_MS = 180;
 const CUSTOM_TOOLS = ["bucketfill", "autoshape", "highlighter"];
 
@@ -410,6 +410,13 @@ export default function PrimaryDock({
   };
 
   const openSlot = openSlotId ? findSlot(openSlotId) : null;
+
+  useEffect(() => {
+    if (!openSlotId) return undefined;
+    const reposition = () => setRailTop(measureRailTop(openSlotId));
+    window.addEventListener("resize", reposition);
+    return () => window.removeEventListener("resize", reposition);
+  }, [openSlotId]);
   const railHeight = openSlot ? openSlot.tools.length * 32 + (openSlot.tools.length - 1) * 4 + 12 : 0;
 
   return (
