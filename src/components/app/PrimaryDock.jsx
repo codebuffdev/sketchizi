@@ -49,7 +49,6 @@ export default function PrimaryDock({
   const [expanded, setExpanded] = useState(false);
   const [slotMemory, setSlotMemory] = useState(defaultSlotMemory);
   const [openSlotId, setOpenSlotId] = useState(null);
-  const [railTop, setRailTop] = useState(0);
   const [railArrowOffset, setRailArrowOffset] = useState(0);
   const [tooltip, setTooltip] = useState(null);
 
@@ -220,24 +219,21 @@ export default function PrimaryDock({
 
   /* ---------------------------------------------------------------- child rail open/close */
   const measureRailTop = (slotId) => {
-    const nav = navRef.current;
     const button = slotButtonRefs.current[slotId];
-    if (!nav || !button) return 0;
-    // rail top = hovered slot top - 6px, relative to the nav's padding box.
+    if (!button) return;
     const slot = findSlot(slotId);
     const railHeight = slot ? slot.tools.length * 32 + (slot.tools.length - 1) * 4 + 12 : 0;
     const buttonRect = button.getBoundingClientRect();
-    const navRect = nav.getBoundingClientRect();
     const idealTop = buttonRect.top + buttonRect.height / 2 - railHeight / 2;
     const clampedTop = Math.max(16, Math.min(window.innerHeight - 16 - railHeight, idealTop));
+    // The rail moves by (clamped - ideal); its notch counter-shifts by the inverse.
     setRailArrowOffset(idealTop - clampedTop);
-    return Math.round(clampedTop - navRect.top - nav.clientTop);
   };
   const openRail = (slotId, { pinned = false } = {}) => {
     clearTimer(closeTimerRef);
     clearTimer(openTimerRef);
     setTooltip(null);
-    setRailTop(measureRailTop(slotId));
+    measureRailTop(slotId);
     pinnedRef.current = pinned;
     setOpenSlotId(slotId);
   };
@@ -413,7 +409,7 @@ export default function PrimaryDock({
 
   useEffect(() => {
     if (!openSlotId) return undefined;
-    const reposition = () => setRailTop(measureRailTop(openSlotId));
+    const reposition = () => measureRailTop(openSlotId);
     window.addEventListener("resize", reposition);
     return () => window.removeEventListener("resize", reposition);
   }, [openSlotId]);
@@ -441,72 +437,63 @@ export default function PrimaryDock({
           const label = grouped ? `${slot.label}: ${shown.label}` : shown.label;
           return (
             <React.Fragment key={slot.id}>
-              <button
-                type="button"
-                ref={(node) => { slotButtonRefs.current[slot.id] = node; if (slotIndex === 0) firstSlotButtonRef.current = node; }}
-                className={`sketchizi-tool-sidebar-button${isActive ? " is-active" : ""}${grouped ? " has-children" : ""}${openSlotId === slot.id ? " is-open" : ""}`}
-                aria-label={label}
-                aria-pressed={isActive}
-                aria-haspopup={grouped ? "true" : undefined}
-                aria-expanded={grouped ? openSlotId === slot.id : undefined}
-                data-slot={slot.id}
-                disabled={!canEdit}
-                style={{ "--sk-i": slotIndex }}
-                onClick={(event) => handleSlotClick(slot, event)}
-                onPointerEnter={(event) => handleSlotPointerEnter(slot, event)}
-                onPointerLeave={(event) => handleSlotPointerLeave(slot, event)}
-                onKeyDown={(event) => handleSlotKeyDown(slot, event)}
-              >
-                <DockIcon name={shown.id} />
-              </button>
+              <div className="tool-slot" data-slot={slot.id}>
+                <button
+                  type="button"
+                  ref={(node) => { slotButtonRefs.current[slot.id] = node; if (slotIndex === 0) firstSlotButtonRef.current = node; }}
+                  className={`sketchizi-tool-sidebar-button${isActive ? " is-active" : ""}${grouped ? " has-children" : ""}${openSlotId === slot.id ? " is-open" : ""}`}
+                  aria-label={label}
+                  aria-pressed={isActive}
+                  aria-haspopup={grouped ? "true" : undefined}
+                  aria-expanded={grouped ? openSlotId === slot.id : undefined}
+                  data-slot={slot.id}
+                  disabled={!canEdit}
+                  style={{ "--sk-i": slotIndex }}
+                  onClick={(event) => handleSlotClick(slot, event)}
+                  onPointerEnter={(event) => handleSlotPointerEnter(slot, event)}
+                  onPointerLeave={(event) => handleSlotPointerLeave(slot, event)}
+                  onKeyDown={(event) => handleSlotKeyDown(slot, event)}
+                >
+                  <DockIcon name={shown.id} />
+                </button>
+                {openSlotId === slot.id && grouped && (
+                  <div
+                    className="sketchizi-tool-sidebar-child-rail sub-dock"
+                    role="toolbar"
+                    aria-orientation="vertical"
+                    aria-label={`${slot.label} tools`}
+                    data-slot={slot.id}
+                    style={{ "--arrow-offset": `${railArrowOffset}px`, "--clamp-y": `${-railArrowOffset}px` }}
+                    onPointerEnter={(event) => { if (event.pointerType === "mouse") clearTimer(closeTimerRef); }}
+                    onPointerLeave={(event) => { if (event.pointerType === "mouse" && !pinnedRef.current) scheduleRailClose(); }}
+                  >
+                    {slot.tools.map((child) => {
+                      const isCurrent = activeChild?.id === child.id;
+                      return (
+                        <button
+                          key={child.id}
+                          type="button"
+                          className={`sketchizi-tool-sidebar-child${isCurrent ? " is-active" : ""}`}
+                          aria-label={child.label}
+                          aria-pressed={isCurrent}
+                          data-tool={child.id}
+                          data-tip={tooltipLabel(child)}
+                          disabled={!canEdit}
+                          onClick={() => chooseChild(child)}
+                          onKeyDown={(event) => handleChildKeyDown(slot, event)}
+                        >
+                          <DockIcon name={child.id} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
               {sectionBreakAfter(slot, slotIndex) && <div className="sketchizi-tool-sidebar-divider" aria-hidden="true" />}
             </React.Fragment>
           );
         })}
       </div>
-
-      {/* Child rail + bridge are direct children of the nav (not portalled, not inside the
-          inert/overflow-clipped list) so pointer moves onto them never leave the nav. */}
-      {openSlot && (
-        <>
-          <div
-            className="sketchizi-tool-sidebar-hover-bridge"
-            aria-hidden="true"
-            style={{ top: railTop, height: railHeight }}
-            onPointerEnter={(event) => { if (event.pointerType === "mouse") clearTimer(closeTimerRef); }}
-          />
-          <div
-            className="sketchizi-tool-sidebar-child-rail"
-            role="toolbar"
-            aria-orientation="vertical"
-            aria-label={`${openSlot.label} tools`}
-            data-slot={openSlot.id}
-            style={{ top: railTop, "--arrow-offset": `${railArrowOffset}px` }}
-            onPointerEnter={(event) => { if (event.pointerType === "mouse") clearTimer(closeTimerRef); }}
-            onPointerLeave={(event) => { if (event.pointerType === "mouse" && !pinnedRef.current) scheduleRailClose(); }}
-          >
-            {openSlot.tools.map((child) => {
-              const isCurrent = activeChild?.id === child.id;
-              return (
-                <button
-                  key={child.id}
-                  type="button"
-                  className={`sketchizi-tool-sidebar-child${isCurrent ? " is-active" : ""}`}
-                  aria-label={child.label}
-                  aria-pressed={isCurrent}
-                  data-tool={child.id}
-                  data-tip={tooltipLabel(child)}
-                  disabled={!canEdit}
-                  onClick={() => chooseChild(child)}
-                  onKeyDown={(event) => handleChildKeyDown(openSlot, event)}
-                >
-                  <DockIcon name={child.id} />
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
 
       {tooltip && !openSlot && (
         <div className="sketchizi-tool-sidebar-tooltip" role="tooltip" style={{ top: tooltip.top }}>{tooltip.label}</div>
