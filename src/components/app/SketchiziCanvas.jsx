@@ -880,8 +880,7 @@ export default function SketchiziCanvas({
         canvasRevision={canvasRevision}
         nativeMenuOpen={nativeMenuOpen}
         onToolStyleChange={onToolStyleChange}
-        onOpenAiAsk={onOpenAiAsk}
-        onOpenLibrary={onOpenLibrary}
+        onOpenTodoTab={onOpenTodoTab}
       />}
       <Excalidraw
         // Preserve the drawing background when restoring a scene.
