@@ -47,8 +47,14 @@
 .sketchizi-canvas-scrollbar:hover {
   opacity: 1;
   transform: translate3d(0, -50%, 0);
-  pointer-events: auto;
+  pointer-events: none;
 }
+/* Keep the floating shell transparent to hit-testing. Only the actual
+   scrollbar controls should receive pointer input, so nearby header actions
+   remain clickable even while the navigator is revealed. */
+.sketchizi-canvas-scrollbar > * { pointer-events: none; }
+.sketchizi-canvas-scrollbar.is-visible > *,
+.sketchizi-canvas-scrollbar:hover > * { pointer-events: auto; }
 .sketchizi-scroll-step {
   display: grid;
   flex: 0 0 20px;
