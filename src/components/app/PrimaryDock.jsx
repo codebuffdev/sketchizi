@@ -43,7 +43,7 @@ export default function PrimaryDock({
   canvasRevision = 0,
   nativeMenuOpen = false,
   onToolStyleChange = null,
-  onSpawnTodoWidget = null,
+  onOpenTodoTab = null,
 }) {
   const [activeTool, setActiveTool] = useState(() => apiRef.current?.getAppState?.()?.activeTool?.type || "selection");
   const [customTool, setCustomTool] = useState(null);
@@ -281,7 +281,7 @@ export default function PrimaryDock({
     }
     const api = apiRef.current;
     if (child.kind === "action") {
-      if (child.action === "todo") onSpawnTodoWidget?.();
+      if (child.action === "todo") onOpenTodoTab?.();
       return;
     }
     if (child.kind === "custom") {
