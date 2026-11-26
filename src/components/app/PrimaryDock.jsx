@@ -406,16 +406,12 @@ export default function PrimaryDock({
     }
   };
 
-  const openSlot = openSlotId ? findSlot(openSlotId) : null;
-
   useEffect(() => {
     if (!openSlotId) return undefined;
     const reposition = () => measureRailTop(openSlotId);
     window.addEventListener("resize", reposition);
     return () => window.removeEventListener("resize", reposition);
   }, [openSlotId]);
-  const railHeight = openSlot ? openSlot.tools.length * 32 + (openSlot.tools.length - 1) * 4 + 12 : 0;
-
   return (
     <nav
       ref={navRef}
