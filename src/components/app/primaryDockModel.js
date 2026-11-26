@@ -1,5 +1,5 @@
 /**
- * Data model for the Primary Dock: 8 slots in 3 sections.
+ * Data model for the Primary Dock: 9 slots in 3 sections.
  *
  * Framework-free so slot/child structure, shortcut hints and active-tool
  * resolution can be unit-tested in plain Node.
@@ -9,6 +9,8 @@
  *                    recording a style patch into the per-canvas tool presets
  *   "highlighter" -> freedraw + highlighter style (save/restore handled by the dock)
  *   "preset"      -> inserts real Excalidraw elements (see presetShapes.js)
+ *   "custom"      -> activates a Sketchizi canvas tool through its event bridge
+ *   "action"      -> opens a workspace surface
  *
  * keyHint is ONLY set where the key really triggers the tool and is not also
  * bound by an app-level handler (useSketchiziPreferences.js binds D, G, P, M, F).
@@ -35,6 +37,7 @@ export const DOCK_SLOTS = Object.freeze([
     { id: "hexagon", label: "Hexagon", kind: "preset", preset: "hexagon" },
     { id: "cylinder", label: "Cylinder / Database", kind: "preset", preset: "cylinder" },
     { id: "funnel", label: "Funnel", kind: "preset", preset: "funnel" },
+    { id: "bucketfill", label: "Bucket Fill", kind: "custom", tool: "bucketfill", keyHint: "B" },
   ] },
   { id: "connectors", label: "Connectors", section: "B", tools: [
     { id: "arrow", label: "Arrow", kind: "tool", tool: "arrow", keyHint: "A", record: { targets: ["arrow"], patch: { ...ARROW_BASE } } },
@@ -61,6 +64,9 @@ export const DOCK_SLOTS = Object.freeze([
     { id: "eraser", label: "Eraser", kind: "tool", tool: "eraser", keyHint: "E" },
     { id: "laser", label: "Laser Pointer", kind: "tool", tool: "laser", keyHint: "K" },
   ] },
+  { id: "todo", label: "Todo List", section: "C", tools: [
+    { id: "todo", label: "Todo List", kind: "action", action: "todo" },
+  ] },
 ]);
 
 export const ALL_CHILDREN = Object.freeze(DOCK_SLOTS.flatMap((slot) => slot.tools.map((tool) => ({ ...tool, slotId: slot.id }))));
@@ -70,7 +76,7 @@ export const findSlot = (slotId) => DOCK_SLOTS.find((slot) => slot.id === slotId
 export const findChild = (childId) => ALL_CHILDREN.find((child) => child.id === childId) || null;
 
 /** Persistent tools can be re-activated by tapping the parent slot. Presets/actions cannot. */
-export const isPersistentTool = (child) => child?.kind === "tool" || child?.kind === "highlighter";
+export const isPersistentTool = (child) => child?.kind === "tool" || child?.kind === "highlighter" || child?.kind === "custom";
 
 export function defaultSlotMemory() {
   return Object.fromEntries(DOCK_SLOTS.map((slot) => [slot.id, slot.tools[0].id]));
@@ -93,7 +99,7 @@ const ELEMENT_TYPE_TO_TOOL = Object.freeze({
  * dock only changes presentation (same rule as before the redesign).
  */
 export function resolveActiveChild({ activeToolType, customTool, selectedType, selectedRounded, slotMemory }) {
-  if (customTool === "highlighter") return findChild("highlighter");
+  if (customTool === "highlighter" || customTool === "bucketfill") return findChild(customTool);
   const type = activeToolType && activeToolType !== "selection"
     ? activeToolType
     : (ELEMENT_TYPE_TO_TOOL[selectedType] || activeToolType || "selection");
