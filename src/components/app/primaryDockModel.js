@@ -1,5 +1,5 @@
 /**
- * Data model for the Primary Dock: 10 slots in 3 sections.
+ * Data model for the Primary Dock: 8 slots in 3 sections.
  *
  * Framework-free so slot/child structure, shortcut hints and active-tool
  * resolution can be unit-tested in plain Node.
@@ -9,7 +9,6 @@
  *                    recording a style patch into the per-canvas tool presets
  *   "highlighter" -> freedraw + highlighter style (save/restore handled by the dock)
  *   "preset"      -> inserts real Excalidraw elements (see presetShapes.js)
- *   "action"      -> opens an app panel (AI assist / library)
  *
  * keyHint is ONLY set where the key really triggers the tool and is not also
  * bound by an app-level handler (useSketchiziPreferences.js binds D, G, P, M, F).
@@ -61,13 +60,6 @@ export const DOCK_SLOTS = Object.freeze([
   { id: "eraser", label: "Eraser", section: "C", tools: [
     { id: "eraser", label: "Eraser", kind: "tool", tool: "eraser", keyHint: "E" },
     { id: "laser", label: "Laser Pointer", kind: "tool", tool: "laser", keyHint: "K" },
-  ] },
-  { id: "magic", label: "Magic Assist", section: "C", tools: [
-    { id: "ai-assist", label: "AI Diagram Assist", kind: "action", action: "ai" },
-    { id: "embed", label: "Embed Widget", kind: "tool", tool: "embeddable" },
-  ] },
-  { id: "library", label: "Library & Templates", section: "C", tools: [
-    { id: "library", label: "Library & Templates", kind: "action", action: "library" },
   ] },
 ]);
 
