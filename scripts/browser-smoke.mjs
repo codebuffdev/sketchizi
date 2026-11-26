@@ -612,7 +612,7 @@ try {
       if (!dialog || !backdrop) return null;
       const rect = dialog.getBoundingClientRect();
       return {
-        portalled: backdrop.parentElement?.classList.contains("app") === true,
+        portalled: backdrop.parentElement === document.body,
         dx: Math.abs(rect.left + rect.width / 2 - window.innerWidth / 2),
         dy: Math.abs(rect.top + rect.height / 2 - window.innerHeight / 2),
         withinViewport: rect.left >= 0 && rect.top >= 0 &&
