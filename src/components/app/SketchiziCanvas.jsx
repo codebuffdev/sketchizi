@@ -24,8 +24,6 @@ export default function SketchiziCanvas({
   todoItems = [],
   onTodoItemsChange,
   onOpenTodoTab,
-  onOpenAiAsk = null,
-  onOpenLibrary = null,
   viewModeEnabled = false,
   minimapOpen, minimapScene, apiRef, minimapDragRef, centerOnMinimap,
   selectedElements = [], onClearSelection, canEdit = true,
