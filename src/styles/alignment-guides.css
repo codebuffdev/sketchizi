@@ -112,11 +112,13 @@
   shape-rendering: geometricPrecision;
 }
 
-/* Text editing shows exactly one border.
-   - Canvas: Excalidraw draws its selection border in --color-selection. While the editor textarea
-     exists that color is transparent, so the canvas border disappears (it returns on commit).
-   - DOM: only the <textarea> carries a border; the wrapper stays bare and no focus ring is added.
-   Padding and the equal negative margin keep the text exactly where the canvas drew it. */
+/* Text editing: Ink-Adaptive Hairline Ghost.
+   Exactly one focus frame is drawn: .sketchizi-text-editor-frame (added by features/canvas/textEditorFrame.js).
+   - Canvas: Excalidraw draws its selection border in --color-selection. While the editor exists that
+     color is transparent, so the canvas selection rectangle disappears (it returns on commit).
+     Excalidraw also draws no resize/rotation handles for the box being edited.
+   - DOM: the <textarea> has no border, outline or shadow in any state, so there is no second border
+     and no browser focus ring. The frame is inflated around the textarea, so text never shifts. */
 .excalidraw:has(.excalidraw-textEditorContainer textarea) {
   --color-selection: transparent !important;
 }
@@ -126,16 +128,27 @@
   box-shadow: none;
   background: transparent;
 }
+.excalidraw-textEditorContainer .sketchizi-text-editor-frame {
+  --active-ink: #2f2f33;
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: none;
+  border: 1px dashed color-mix(in srgb, var(--active-ink) 40%, transparent);
+  background: color-mix(in srgb, var(--active-ink) 3%, transparent);
+  border-radius: 6px;
+  padding: 4px 6px;
+  outline: none;
+  box-shadow: none;
+}
 .excalidraw-textEditorContainer textarea,
 .excalidraw-textEditorContainer textarea:focus,
 .excalidraw-textEditorContainer textarea:focus-visible {
-  border: 1.5px solid #6366F1 !important;
-  border-radius: 6px;
+  border: none !important;
   outline: none !important;
   box-shadow: none !important;
-  background: transparent !important;
-  padding: 4px !important;
-  margin: -5.5px !important;
+  background: transparent;
+  padding: 0;
+  margin: 0;
 }
 
 /* Grid fill layer: painted over the Excalidraw canvas, never interactive. */

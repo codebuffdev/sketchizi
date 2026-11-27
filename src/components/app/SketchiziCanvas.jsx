@@ -6,6 +6,7 @@ import PrimaryDock from "./PrimaryDock";
 import CanvasVerticalScrollbar from "./CanvasVerticalScrollbar";
 import AlignmentGuides from "./AlignmentGuides";
 import TextSizeIndicator from "./TextSizeIndicator";
+import { attachTextEditorFrame } from "../../features/canvas/textEditorFrame.js";
 import GridFillLayer from "./GridFillLayer";
 import ShapeMeasurements from "./ShapeMeasurements";
 import RectangleTitles from "./RectangleTitles";
@@ -14,7 +15,7 @@ import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasAppearanceBackground, getCanvasAppearanceRoughness, getCanvasAppearanceTheme } from "../../features/navigation/canvasAppearance.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
 import { handleStickyNoteRapidFlow } from "../../features/canvas/stickyNoteFlow.js";
-import { applyMarkdownListEdit, getMarkdownListEdit, getMarkdownHeadingInputEdit } from "../../features/canvas/markdownListShortcuts.js";
+import { applyMarkdownListEdit, getListPasteEdit, getListRenumberEdit, getMarkdownListEdit, getMarkdownHeadingInputEdit } from "../../features/canvas/markdownListShortcuts.js";
 import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
 import { stripLegacyTextRuns } from "../../features/canvas/legacyTextRuns.js";
 import { attachPasteHintGuard } from "../../features/canvas/pasteHintGuard.js";
@@ -70,6 +71,9 @@ export default function SketchiziCanvas({
     observer.observe(root, { childList: true, subtree: true });
     return () => { observer.disconnect(); if (frame) cancelAnimationFrame(frame); };
   }, [apiRef]);
+  // Ink-Adaptive Hairline Ghost: one wrapper frame around the open text editor, tinted by the
+  // text element's strokeColor (--active-ink) and grown with the textarea.
+  useEffect(() => attachTextEditorFrame({ root: canvasRootRef.current, apiRef }), [apiRef]);
   // Excalidraw's "paste as a single element" hint: own a single timer and dismiss it on
   // paste-into-editor, Ctrl+Shift+V, canvas click, Escape, tab switch and unmount.
   useEffect(() => attachPasteHintGuard({ apiRef }), [apiRef]);
@@ -871,11 +875,51 @@ export default function SketchiziCanvas({
       applyMarkdownListEdit(textarea, edit);
       applyHeadingStyle(edit);
     };
+    // Multi-line paste in a list: strip duplicate markers, then cascade-renumber the block.
+    const handleMarkdownListPaste = (event) => {
+      const textarea = event.target;
+      if (!isEditorTextarea(textarea)) return;
+      const text = event.clipboardData?.getData("text/plain");
+      if (!text) return;
+      const edit = getListPasteEdit({
+        value: textarea.value,
+        selectionStart: textarea.selectionStart,
+        selectionEnd: textarea.selectionEnd,
+        text,
+      });
+      if (!edit) return;
+      event.preventDefault();
+      event.stopPropagation();
+      applyMarkdownListEdit(textarea, { ...edit, inputType: "insertFromPaste" });
+    };
+    // Deleting or cutting whole lines (Backspace joining lines, Delete, Cut) cascades the numbers below.
+    const lineCounts = new WeakMap();
+    const handleListBeforeInput = (event) => {
+      const textarea = event.target;
+      if (isEditorTextarea(textarea) && String(event.inputType || "").startsWith("delete")) {
+        lineCounts.set(textarea, textarea.value.split("\n").length);
+      }
+    };
+    const handleListDeleteInput = (event) => {
+      const textarea = event.target;
+      if (!isEditorTextarea(textarea) || event.isComposing || !String(event.inputType || "").startsWith("delete")) return;
+      const before = lineCounts.get(textarea);
+      lineCounts.delete(textarea);
+      if (!before || textarea.value.split("\n").length >= before) return;
+      const edit = getListRenumberEdit({ value: textarea.value, selectionStart: textarea.selectionStart });
+      if (edit) applyMarkdownListEdit(textarea, edit);
+    };
     root.addEventListener("input", handleMarkdownHeadingInput, true);
     root.addEventListener("keydown", handleMarkdownListKeyDown, true);
+    root.addEventListener("paste", handleMarkdownListPaste, true);
+    root.addEventListener("beforeinput", handleListBeforeInput, true);
+    root.addEventListener("input", handleListDeleteInput, true);
     return () => {
       root.removeEventListener("keydown", handleMarkdownListKeyDown, true);
       root.removeEventListener("input", handleMarkdownHeadingInput, true);
+      root.removeEventListener("paste", handleMarkdownListPaste, true);
+      root.removeEventListener("beforeinput", handleListBeforeInput, true);
+      root.removeEventListener("input", handleListDeleteInput, true);
     };
   }, [canEdit, viewModeEnabled]);
 

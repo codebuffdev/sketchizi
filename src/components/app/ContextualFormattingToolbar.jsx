@@ -9,7 +9,6 @@ import { normalizeArrowheadPatch, swapArrowheadsPatch, toUiArrowhead } from "../
 import { getRoutingMode, getRoutingPatch } from "../../features/canvas/arrowRouting.js";
 import { isHexColor } from "../../features/navigation/recentCustomColors.js";
 import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
-import { applyRichTextColor } from "../../features/canvas/richTextColorBridge.js";
 import { commitStyleScene } from "../../features/canvas/styleOnlyUpdate.js";
 
 const STROKE_COLORS = [
@@ -414,10 +413,7 @@ export default function ContextualFormattingToolbar({
   const applyFormatting = (rawPatch) => {
     const api = apiRef?.current;
     if (!api) return;
-    const rawKeys = Object.keys(rawPatch);
-    // Selected rich text box: color picks go to the box (whole box, or only the
-    // highlighted portion) instead of the generic element patch.
-    if (!toolMode && rawKeys.length === 1 && rawKeys[0] === "strokeColor" && applyRichTextColor(rawPatch.strokeColor)) return;
+    // Color picks always recolor the whole text box via element.strokeColor.
     const patch = normalizeArrowheadPatch(rawPatch);
     if (!toolMode) {
       // Use the same live selection snapshot that rendered this toolbar. The
