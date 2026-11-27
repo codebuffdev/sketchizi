@@ -3,7 +3,6 @@ import { getInitialThemeMode, THEME_PREFERENCE_KEY } from "./themePreference.js"
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { applyCanvasThemeBackground } from "./canvasTheme.js";
 import { applyCanvasAppearance } from "./canvasAppearance.js";
-import { readSpellcheckPreference, SPELLCHECK_PREFERENCE_KEY } from "../canvas/nativeSpellcheck.js";
 
 export {
   RECENT_CUSTOM_COLORS_KEY,
@@ -38,9 +37,6 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
       return ["light", "dark", "system"].includes(resolved) ? resolved : "dark";
     });
   }, []);
-  const [spellcheckEnabled, setSpellcheckEnabled] = useState(() => readSpellcheckPreference());
-  const toggleSpellcheck = useCallback(() => setSpellcheckEnabled((enabled) => !enabled), []);
-  useEffect(() => { try { localStorage.setItem(SPELLCHECK_PREFERENCE_KEY, spellcheckEnabled ? "true" : "false"); } catch {} }, [spellcheckEnabled]);
   // "Don't ask again for local drafts": closing an unsaved tab then keeps it in
   // Recently closed / Local drafts without showing the confirmation dialog.
   const [skipLocalDraftPrompt, setSkipLocalDraftPromptState] = useState(() => readSkipLocalDraftPrompt());
@@ -129,5 +125,5 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
     return () => document.removeEventListener("click", handleResetCanvas, true);
   }, [canEdit, fileActionsRef]);
 
-  return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram, markCanvasBackgroundCustom, useThemeDefaultBackground, spellcheckEnabled, setSpellcheckEnabled, toggleSpellcheck, skipLocalDraftPrompt, setSkipLocalDraftPrompt };
+  return { themeMode, setThemeMode, systemDark, isDarkTheme, fitDiagram, markCanvasBackgroundCustom, useThemeDefaultBackground, skipLocalDraftPrompt, setSkipLocalDraftPrompt };
 }

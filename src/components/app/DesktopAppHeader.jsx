@@ -157,8 +157,6 @@ export default function DesktopAppHeader({
   onCanvasAppearanceChange,
   onToggleGrid,
   canvasMode = "infinite",
-  spellcheckEnabled = false,
-  onToggleSpellcheck,
   onGridStyleChange,
   openCommandPalette,
   onOpenFullWorkspace,
@@ -720,19 +718,6 @@ export default function DesktopAppHeader({
 
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-center" aria-label="Current workspace">
-        {chapterNav && (
-          <nav className="desktop-app-chapter-nav" aria-label="Chapter navigation">
-            <button type="button" className="desktop-app-chapter-nav-button" disabled={!chapterNav.previous} onClick={() => onNavigateChapter?.(chapterNav.previous)} aria-label={chapterNav.previous ? `Previous chapter: ${chapterNav.previous.name}` : "No previous chapter"} title={chapterNav.previous?.name}>
-              <span aria-hidden="true">←</span>
-              <span className="desktop-app-chapter-nav-label">{chapterNav.previous ? formatChapterShortLabel(chapterNav.previous.chapterNumber) : "—"}</span>
-            </button>
-            <span className="desktop-app-chapter-nav-position" aria-live="polite">Chapter {chapterNav.index + 1} of {chapterNav.total}</span>
-            <button type="button" className="desktop-app-chapter-nav-button" disabled={!chapterNav.next} onClick={() => onNavigateChapter?.(chapterNav.next)} aria-label={chapterNav.next ? `Next chapter: ${chapterNav.next.name}` : "No next chapter"} title={chapterNav.next?.name}>
-              <span className="desktop-app-chapter-nav-label">{chapterNav.next ? formatChapterShortLabel(chapterNav.next.chapterNumber) : "—"}</span>
-              <span aria-hidden="true">→</span>
-            </button>
-          </nav>
-        )}
       </div>
       <div className="desktop-app-header-island desktop-app-header-island-right">
       {collaborationCreationState === "creating" && (
@@ -878,19 +863,30 @@ export default function DesktopAppHeader({
       </div>
 
 
-      <button
-        type="button"
-        role="switch"
-        aria-checked={spellcheckEnabled}
-        className={`desktop-app-spellcheck-toggle${spellcheckEnabled ? " is-on" : ""}`}
-        onClick={() => onToggleSpellcheck?.()}
-        aria-label={`Spellcheck ${spellcheckEnabled ? "On" : "Off"}`}
-        title={`Native spellcheck: ${spellcheckEnabled ? "On" : "Off"} (click to toggle)`}
-      >
-        <span className="desktop-app-spellcheck-label">Spellcheck</span>
-        <span className="desktop-app-spellcheck-state">{spellcheckEnabled ? "On" : "Off"}</span>
-        <span className="desktop-app-spellcheck-switch" aria-hidden="true" />
-      </button>
+      {chapterNav && (
+        <nav className="desktop-app-chapter-rail" aria-label="Chapter navigation">
+          <button
+            type="button"
+            className="desktop-app-chapter-rail-button"
+            disabled={!chapterNav.previous}
+            onClick={() => onNavigateChapter?.(chapterNav.previous)}
+            aria-label={chapterNav.previous ? `Previous chapter: ${chapterNav.previous.name}` : "No previous chapter"}
+            title={chapterNav.previous ? `Previous Chapter: ${formatChapterShortLabel(chapterNav.previous.chapterNumber)}` : "No previous chapter"}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
+          </button>
+          <button
+            type="button"
+            className="desktop-app-chapter-rail-button"
+            disabled={!chapterNav.next}
+            onClick={() => onNavigateChapter?.(chapterNav.next)}
+            aria-label={chapterNav.next ? `Next chapter: ${chapterNav.next.name}` : "No next chapter"}
+            title={chapterNav.next ? `Next Chapter: ${formatChapterShortLabel(chapterNav.next.chapterNumber)}` : "No next chapter"}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+          </button>
+        </nav>
+      )}
 
       <div className="desktop-app-header-spacer" />
 
@@ -1019,6 +1015,12 @@ export default function DesktopAppHeader({
           showAddButton
           newTabMode={activeIsSystemDesignTab ? "system-design" : canvasMode === "pages" ? "pages" : "canvas"}
         />
+        {chapterNav && (
+          <span className="desktop-app-chapter-badge" title={`Chapter ${chapterNav.index + 1} of ${chapterNav.total}`}>
+            <span aria-hidden="true">{formatChapterShortLabel(chapterNav.index + 1)} · {chapterNav.index + 1}/{chapterNav.total}</span>
+            <span className="desktop-app-chapter-badge-sr">Chapter {chapterNav.index + 1} of {chapterNav.total}</span>
+          </span>
+        )}
       </div>
 
       <div className="desktop-app-top-controls">

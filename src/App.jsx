@@ -68,7 +68,7 @@ const ExportStudioModal = lazy(() => import("./components/app/ExportStudioModal"
 import AiAskPanel from "./features/ai/AiAskPanel.jsx";
 import { getTabCloudMeta } from "./features/workspace/tabCloudState.js";
 import ZenHud from "./components/app/ZenHud.jsx";
-import { applyCanvasSpellcheck } from "./features/canvas/nativeSpellcheck.js";
+import { applyCanvasSpellcheck, clearLegacySpellcheckPreference } from "./features/canvas/nativeSpellcheck.js";
 import { startPeriodicBackendWarmup, wakeBackendOnPageLoad } from "./features/backend/backendWarmup.js";
 import "./styles/ai-ask.css";
 import "./features/design/design.css";
@@ -667,15 +667,17 @@ function App() {
     activateSelectionTool, setMinimapOpen, searchRef, saveTimerRef, fileActionsRef, setStorageError, sketchReady, savedSketch, canEdit: collaborationCanEdit,
     canvasAppearance, setCanvasAppearance,
   });
-  const { themeMode, setThemeMode, isDarkTheme, spellcheckEnabled, toggleSpellcheck } = preferences;
+  const { themeMode, setThemeMode, isDarkTheme } = preferences;
   skipDraftPromptRef.current = preferences.skipLocalDraftPrompt;
   useEffect(() => {
     if (typeof document === "undefined" || typeof MutationObserver === "undefined") return undefined;
-    applyCanvasSpellcheck(document, spellcheckEnabled);
-    const observer = new MutationObserver(() => applyCanvasSpellcheck(document, spellcheckEnabled));
+    // Spellcheck is mandatory: every canvas text editor gets spellcheck="true".
+    clearLegacySpellcheckPreference();
+    applyCanvasSpellcheck(document);
+    const observer = new MutationObserver(() => applyCanvasSpellcheck(document));
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [spellcheckEnabled]);
+  }, []);
   globalThemeRef.current = isDarkTheme ? "dark" : "light";
   useEffect(() => {
     if (!savedSketch) return;
@@ -718,8 +720,6 @@ function App() {
     setThemeMode,
     gridEnabled,
     toggleGrid,
-    spellcheckEnabled,
-    toggleSpellcheck,
     setMinimapOpen,
     fitDiagram: preferences.fitDiagram,
     activateMoreTool,
@@ -1913,8 +1913,6 @@ function App() {
         onToggleGrid={toggleGrid}
         workspaceMode={canvasTabsReady ? getWorkspaceTabMode(canvasTabs.find(tab => tab.id === activeCanvasId)) : canvasPageContext.mode}
         canvasMode={canvasPageContext.mode}
-        spellcheckEnabled={spellcheckEnabled}
-        onToggleSpellcheck={toggleSpellcheck}
         onGridStyleChange={setGridStyle}
         openCommandPalette={commandPalette.openCommandPalette}
         onOpenFullWorkspace={openCloudWorkspace}

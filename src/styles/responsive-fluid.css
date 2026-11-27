@@ -157,7 +157,6 @@ html, body {
      application menu (hamburger) and the command palette. */
   :root .desktop-app-search-shortcut,
   :root .desktop-app-header-action-divider,
-  :root .desktop-app-spellcheck-state { display: none; }
   :root .desktop-app-header button,
   :root .desktop-app-header [role="button"] { min-height: var(--rf-hit); min-width: var(--rf-hit); }
 }
