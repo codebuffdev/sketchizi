@@ -11,6 +11,7 @@ import GridFillLayer from "./GridFillLayer";
 import ShapeMeasurements from "./ShapeMeasurements";
 import RectangleTitles from "./RectangleTitles";
 import ArrowVertexEditor from "./ArrowVertexEditor";
+import CodeBlockLayer from "./CodeBlockLayer";
 import { RemoteCursors, RemoteSelections } from "./CollaborationPresence";
 import { getCanvasAppearanceBackground, getCanvasAppearanceRoughness, getCanvasAppearanceTheme } from "../../features/navigation/canvasAppearance.js";
 import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/canvas/fontFamilyDefaults.js";
@@ -1036,6 +1037,7 @@ export default function SketchiziCanvas({
         pageContext={pageContext}
         canEdit={canEdit && !viewModeEnabled}
       />
+      <CodeBlockLayer apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} canEdit={canEdit} viewModeEnabled={viewModeEnabled || hudSuppressed} canvasTheme={getCanvasAppearanceTheme(activeAppearance, isDarkTheme)} sceneKey={savedSketch} />
       <TextSizeIndicator apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} />
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />

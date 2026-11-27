@@ -7,6 +7,7 @@ const SHORTCUTS = [
   ["M", "Pin / unpin the Map"],
   ["1", "Fit all content (while the Map is open)"],
   ["F", "Fit diagram to viewport"],
+  ["C", "Code Block: click the canvas to place a syntax-highlighted code card"],
   ["A / L", "Arrow / Line: click points, double-click or Enter to finish"],
   ["Alt", "Arrow drawing / handle drag: skip angle snap"],
   ["Alt + click", "Delete a bend on a selected arrow"],

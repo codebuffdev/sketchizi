@@ -33,7 +33,7 @@ test("primary dock preserves native, custom and image tool activation; Todo/Buck
 
 test("primary dock exposes keyboard hints only for supported, non-colliding shortcuts", () => {
   const hinted = ALL_CHILDREN.filter((child) => child.keyHint).map((child) => child.keyHint).sort();
-  assert.deepEqual(hinted, ["A", "B", "E", "H", "I", "K", "L", "O", "R", "T", "V"]);
+  assert.deepEqual(hinted, ["A", "B", "C", "E", "H", "I", "K", "L", "O", "R", "T", "V"]);
   // Keys bound by app-level handlers (useSketchiziPreferences.js) are never advertised.
   for (const colliding of ["D", "G", "P", "M", "F"]) assert.ok(!hinted.includes(colliding));
   assert.match(component, /tooltipLabel/);

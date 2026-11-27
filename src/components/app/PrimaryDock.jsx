@@ -22,7 +22,7 @@ const COLLAPSE_GRACE_MS = 3000;
 const CHILD_OPEN_INTENT_MS = 90;
 const CHILD_CLOSE_GRACE_MS = 160;
 const SINGLE_TOOLTIP_DELAY_MS = 180;
-const CUSTOM_TOOLS = ["bucketfill", "autoshape", "highlighter"];
+const CUSTOM_TOOLS = ["bucketfill", "autoshape", "highlighter", "codeblock"];
 
 function activateTool({ child, root, apiRef }) {
   const api = apiRef.current;
@@ -97,17 +97,24 @@ export default function PrimaryDock({
   useEffect(() => {
     const syncCustomTool = (event) => {
       const tool = String(event.detail?.tool || "").toLowerCase();
-      if (CUSTOM_TOOLS.includes(tool)) setCustomTool(tool);
+      if (!CUSTOM_TOOLS.includes(tool)) return;
+      // Another custom tool (e.g. "C" for Code Block) taking over ends highlighter mode cleanly.
+      if (customToolRef.current === "highlighter" && tool !== "highlighter") restoreHighlighter();
+      setCustomTool(tool);
     };
     const clearCustomTool = (event) => {
       // Highlighter is a persistent drawing mode; canvas clicks must not end it.
       if (customToolRef.current === "highlighter") return;
       if (!event.target?.closest?.(".sketchizi-tool-sidebar button")) setCustomTool(null);
     };
+    // The Code Block layer disarms itself after placing a card (or on Esc).
+    const clearCodeBlockTool = () => { if (customToolRef.current === "codeblock") setCustomTool(null); };
     window.addEventListener("sketchizi:activate-tool", syncCustomTool);
+    window.addEventListener("sketchizi:clear-custom-tool", clearCodeBlockTool);
     window.addEventListener("click", clearCustomTool, true);
     return () => {
       window.removeEventListener("sketchizi:activate-tool", syncCustomTool);
+      window.removeEventListener("sketchizi:clear-custom-tool", clearCodeBlockTool);
       window.removeEventListener("click", clearCustomTool, true);
     };
   }, []);
@@ -279,6 +286,11 @@ export default function PrimaryDock({
     // Leaving the highlighter for anything else restores the previous style.
     if (customToolRef.current === "highlighter" && child.kind !== "highlighter") {
       restoreHighlighter();
+      setCustomTool(null);
+      window.dispatchEvent(new CustomEvent("sketchizi:clear-custom-tool"));
+    }
+    // Switching away from an armed Code Block tool disarms it.
+    if (customToolRef.current === "codeblock" && child.tool !== "codeblock") {
       setCustomTool(null);
       window.dispatchEvent(new CustomEvent("sketchizi:clear-custom-tool"));
     }

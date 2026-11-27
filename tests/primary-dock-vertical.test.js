@@ -14,7 +14,7 @@ const css = readFileSync(new URL("../src/styles/ipad-radial-tool-wheel.css", imp
 test("9 slots in three sections with the specified children", () => {
   assert.equal(DOCK_SLOTS.length, 9);
   const counts = Object.fromEntries(DOCK_SLOTS.map((s) => [s.id, s.tools.length]));
-  assert.deepEqual(counts, { selection: 2, hand: 1, shapes: 9, connectors: 6, freehand: 2, text: 2, media: 2, eraser: 2, todo: 1 });
+  assert.deepEqual(counts, { selection: 2, hand: 1, shapes: 9, connectors: 6, freehand: 2, text: 3, media: 2, eraser: 2, todo: 1 });
   assert.deepEqual(DOCK_SLOTS.map((s, i) => sectionBreakAfter(s, i)).map(Number), [0, 1, 0, 0, 0, 0, 1, 0, 0]);
 });
 

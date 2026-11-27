@@ -1,0 +1,160 @@
+/* Code Block tool: DOM editor, hover Copy chip and armed-tool cursor.
+   Committed cards are painted on the canvas (see features/canvas/codeBlock). */
+
+.sketchizi-code-tool-active .excalidraw canvas,
+.sketchizi-code-tool-active .excalidraw .excalidraw__canvas {
+  cursor: crosshair !important;
+}
+
+.sk-code-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- editor */
+.sk-code-editor {
+  position: absolute;
+  box-sizing: border-box;
+  transform-origin: 0 0;
+  pointer-events: auto;
+  color: var(--cb-plain);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.sk-code-editor__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.sk-code-editor__filename {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  height: 22px;
+  margin: 0;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--cb-header-text);
+  font: 600 12.5px/22px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: 0;
+  outline: none;
+  text-overflow: ellipsis;
+}
+.sk-code-editor__filename::placeholder { color: var(--cb-badge-text); opacity: 0.7; }
+.sk-code-editor__filename:hover { background: var(--cb-badge-fill); }
+.sk-code-editor__filename:focus { background: var(--cb-badge-fill); box-shadow: 0 0 0 1.5px var(--cb-border); }
+
+.sk-code-editor__badge {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  height: 16px;
+  padding: 0 5px;
+  border: 1px solid var(--cb-badge-border);
+  border-radius: 5px;
+  background: var(--cb-badge-fill);
+  color: var(--cb-badge-text);
+  font: 700 10px/14px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: 0;
+  user-select: none;
+}
+
+.sk-code-editor__copy,
+.sk-code-copy-chip {
+  box-sizing: border-box;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid var(--cb-badge-border);
+  border-radius: 6px;
+  background: var(--cb-badge-fill);
+  color: var(--cb-badge-text);
+  font: 600 11px/18px system-ui, -apple-system, "Segoe UI", sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sk-code-editor__copy {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.sk-code-editor:hover .sk-code-editor__copy,
+.sk-code-editor:focus-within .sk-code-editor__copy,
+.sk-code-editor__copy:focus-visible { opacity: 1; }
+.sk-code-editor__copy:hover,
+.sk-code-copy-chip:hover { border-color: var(--cb-border); color: var(--cb-header-text); }
+
+.sk-code-editor__card {
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: var(--cb-border-width) solid var(--cb-border);
+  border-radius: var(--cb-radius);
+  background: var(--cb-surface);
+}
+
+.sk-code-editor__highlight,
+.sk-code-editor__input {
+  position: absolute;
+  top: calc(-1 * var(--cb-border-width));
+  left: calc(-1 * var(--cb-border-width));
+  box-sizing: border-box;
+  width: calc(100% + 2 * var(--cb-border-width));
+  height: calc(100% + 2 * var(--cb-border-width));
+  margin: 0;
+  padding: var(--cb-pad-y) var(--cb-pad-x);
+  border: 0;
+  font: var(--cb-font-size) / var(--cb-line-height) ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-variant-ligatures: none;
+  letter-spacing: 0;
+  tab-size: var(--cb-tab-size);
+  -moz-tab-size: var(--cb-tab-size);
+  white-space: pre;
+  word-wrap: normal;
+  overflow: hidden;
+  text-align: left;
+}
+.sk-code-editor__highlight { pointer-events: none; color: var(--cb-plain); }
+.sk-code-editor__input {
+  resize: none;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--cb-plain);
+  -webkit-text-fill-color: transparent;
+}
+.sk-code-editor__input::selection { background: rgba(99, 120, 255, 0.32); }
+
+/* ---------------------------------------------------------------- hover Copy chip */
+.sk-code-copy-chip {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  padding: 0 9px;
+  pointer-events: auto;
+  transform: translateX(-100%);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  --cb-badge-border: #cbd5e1;
+  --cb-badge-fill: #ffffff;
+  --cb-badge-text: #475569;
+  --cb-border: #94a3b8;
+  --cb-header-text: #0f172a;
+}
+html[data-sketchizi-theme="dark"] .sk-code-copy-chip {
+  --cb-badge-border: #2f3b55;
+  --cb-badge-fill: #1a2032;
+  --cb-badge-text: #a8b4cb;
+  --cb-border: #3d4a63;
+  --cb-header-text: #e6eaf5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk-code-editor__copy { transition: none; }
+}

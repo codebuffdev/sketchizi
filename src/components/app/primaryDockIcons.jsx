@@ -28,6 +28,7 @@ export const DOCK_ICONS = {
   highlighter: <><path d="m14.5 4.5 5 5L10 19l-5.5 1 1-5.5 9-10Z" /><path d="m9.5 8.5 6 6" /><path d="M3.5 22h9" /></>,
   text: <><path d="M5 7V5h14v2" /><path d="M12 5v14" /><path d="M9 19h6" /></>,
   "sticky-note": <><path d="M5 4h14v10.5L13.5 20H5V4Z" /><path d="M13.5 20v-5.5H19" /></>,
+  "code-block": <><path d="m8.5 8-4 4 4 4" /><path d="m15.5 8 4 4-4 4" /><path d="m13.5 5.5-3 13" /></>,
   image: <><rect x="3.5" y="4" width="17" height="16" rx="2" /><circle cx="9" cy="9" r="1.5" /><path d="m5 17 5-5 3 3 2-2 4 4" /></>,
   frame: <><path d="M8 3v18M16 3v18M3 8h18M3 16h18" /></>,
   eraser: <><path d="m7 16 8-10a2 2 0 0 1 3 0l2 2a2 2 0 0 1 0 3l-8 9H9l-5-5a2 2 0 0 1 0-3l3-4" /><path d="m11 20 8 0" /></>,

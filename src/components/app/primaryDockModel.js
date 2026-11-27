@@ -10,10 +10,12 @@
  *   "highlighter" -> freedraw + highlighter style (save/restore handled by the dock)
  *   "preset"      -> inserts real Excalidraw elements (see presetShapes.js)
  *   "custom"      -> activates a Sketchizi canvas tool through its event bridge
+ *                    (bucketfill, codeblock; highlighter has its own kind)
  *   "action"      -> opens a workspace surface
  *
  * keyHint is ONLY set where the key really triggers the tool and is not also
  * bound by an app-level handler (useSketchiziPreferences.js binds D, G, P, M, F).
+ * "C" is owned by CodeBlockLayer (window keydown, ignored while typing).
  */
 
 export const HIGHLIGHTER_DEFAULTS = Object.freeze({ strokeColor: "#ffd60a", opacity: 38, strokeWidth: 14 });
@@ -54,6 +56,8 @@ export const DOCK_SLOTS = Object.freeze([
   { id: "text", label: "Text", section: "B", tools: [
     { id: "text", label: "Text Block", kind: "tool", tool: "text", keyHint: "T" },
     { id: "sticky-note", label: "Sticky Note", kind: "preset", preset: "sticky-note" },
+    // Click-to-place syntax-highlighted code card (see features/canvas/codeBlock).
+    { id: "code-block", label: "Code Block", kind: "custom", tool: "codeblock", keyHint: "C" },
   ] },
   { id: "media", label: "Image", section: "B", tools: [
     // Sketchizi exposes the image tool on the I shortcut.
@@ -100,6 +104,7 @@ const ELEMENT_TYPE_TO_TOOL = Object.freeze({
  */
 export function resolveActiveChild({ activeToolType, customTool, selectedType, selectedRounded, slotMemory }) {
   if (customTool === "highlighter" || customTool === "bucketfill") return findChild(customTool);
+  if (customTool === "codeblock") return findChild("code-block");
   const type = activeToolType && activeToolType !== "selection"
     ? activeToolType
     : (ELEMENT_TYPE_TO_TOOL[selectedType] || activeToolType || "selection");
