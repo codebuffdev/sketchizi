@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { getLocalDateString, isValidCanvasStartDate } from "../../features/canvas/canvasStartDate.js";
 import usePresence from "../../features/hud/usePresence.js";
 import "./CanvasStartDate.css";
@@ -30,6 +30,10 @@ export default function CanvasStartDate({ canvasId, value, originalValue, activi
   const dateValue = isValidCanvasStartDate(value) ? value : getLocalDateString();
   const selectedDate = toLocalDate(dateValue);
   const [open, setOpen] = useState(false);
+  // Accordion defaults on every open: history expanded, start-date calendar collapsed.
+  const [activityOpen, setActivityOpen] = useState(true);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const uid = useId();
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
   const rootRef = useRef(null);
   const popoverPresence = usePresence(open, 130);
@@ -83,15 +87,12 @@ export default function CanvasStartDate({ canvasId, value, originalValue, activi
     };
   }, [canvasId, disabled]);
 
-  const grouped = useMemo(() => {
-    const groups = new Map();
-    [...activity].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)).forEach((entry) => {
-      const day = formatDay(entry.startedAt);
-      if (!groups.has(day)) groups.set(day, []);
-      groups.get(day).push(entry);
-    });
-    return [...groups.entries()];
-  }, [activity]);
+  // Sessions that started on the selected calendar day, newest first.
+  const dayEntries = useMemo(() => (
+    [...activity]
+      .filter((entry) => toDateKey(new Date(entry.startedAt)) === dateValue)
+      .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
+  ), [activity, dateValue]);
 
   const calendarDays = useMemo(() => {
     const first = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
@@ -104,17 +105,24 @@ export default function CanvasStartDate({ canvasId, value, originalValue, activi
   }, [visibleMonth]);
 
   const label = selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  // Stay open after a pick so the filtered history is visible straight away.
   const selectDate = (next) => {
     if (disabled) return;
     onChange?.(next);
     setVisibleMonth(toLocalDate(next));
-    setOpen(false);
+  };
+  const togglePopover = () => {
+    if (!open) {
+      setActivityOpen(true);
+      setCalendarOpen(false);
+    }
+    setOpen((current) => !current);
   };
   const shiftMonth = (amount) => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1));
 
   return (
     <div className="canvas-start-date-wrap" ref={rootRef}>
-      <button type="button" className="canvas-start-date" aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} title="Document start date" aria-label={`Document start date: ${label}`}>
+      <button type="button" className="canvas-start-date" aria-expanded={open} aria-haspopup="dialog" onClick={togglePopover} title="Document start date" aria-label={`Document start date: ${label}`}>
         <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="2.25" y="3.5" width="11.5" height="10" rx="1.7" />
           <path d="M5 2v3M11 2v3M2.5 6.5h11" />
@@ -123,54 +131,63 @@ export default function CanvasStartDate({ canvasId, value, originalValue, activi
       </button>
       {popoverPresence.mounted && (
         <section className={`canvas-start-date-popover${popoverPresence.closing ? " is-closing" : ""}`} role="dialog" aria-label="Document Start Date">
-          <div className="canvas-start-date-title-row">
-            <strong>Document Start Date</strong>
-            <button type="button" className="canvas-start-date-reset" disabled={disabled || !originalValue || originalValue === dateValue} onClick={() => selectDate(originalValue)} title="Restore this board's original creation date">Reset</button>
-          </div>
-          <header className="canvas-start-date-calendar-header">
-            <strong>{monthLabel(visibleMonth)}</strong>
-            <div>
-              <button type="button" aria-label="Previous month" onClick={() => shiftMonth(-1)}><svg viewBox="0 0 16 16"><path d="m10 3-5 5 5 5" /></svg></button>
-              <button type="button" aria-label="Next month" onClick={() => shiftMonth(1)}><svg viewBox="0 0 16 16"><path d="m6 3 5 5-5 5" /></svg></button>
-            </div>
-          </header>
-          <div className="canvas-start-date-weekdays" aria-hidden="true">
-            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <span key={day}>{day}</span>)}
-          </div>
-          <div className="canvas-start-date-calendar-grid">
-            {calendarDays.map((day) => (
-              <button
-                type="button"
-                key={day.key}
-                className={`canvas-start-date-day${day.inMonth ? "" : " is-outside"}${day.key === dateValue ? " is-selected" : ""}`}
-                aria-label={new Date(`${day.key}T12:00:00`).toLocaleDateString("en-US", { dateStyle: "full" })}
-                aria-pressed={day.key === dateValue}
-                disabled={disabled}
-                onClick={() => selectDate(day.key)}
-              >{day.day}</button>
-            ))}
-          </div>
-          <div className="canvas-start-date-footer">
-            <span>{label}</span>
-          </div>
-          {grouped.length > 0 && (
-            <details className="canvas-start-date-activity">
-              <summary>Canvas activity history</summary>
-              <div className="canvas-activity-list">
-                {grouped.map(([day, entries]) => (
-                  <div className="canvas-activity-day" key={day}>
-                    <h3>{day}</h3>
-                    {entries.map((entry) => (
-                      <div className="canvas-activity-entry" key={entry.id}>
-                        <span className="canvas-activity-dot" />
-                        <div><strong>{formatTime(entry.startedAt)} – {formatTime(entry.endedAt)}</strong><span>{formatDuration(entry.durationMs)} · Opened canvas</span></div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
+          <div className="sd-section">
+            <button type="button" className="sd-toggle" id={`${uid}-activity-toggle`} aria-expanded={activityOpen} aria-controls={`${uid}-activity`} onClick={() => setActivityOpen((current) => !current)}>
+              <svg className="sd-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+              <span className="sd-title">Canvas activity history</span>
+            </button>
+            <div className={`sd-collapse${activityOpen ? " is-open" : ""}`} id={`${uid}-activity`} role="region" aria-labelledby={`${uid}-activity-toggle`}>
+              <div className="sd-collapse-inner">
+                <h3 className="canvas-activity-date">{formatDay(selectedDate)}</h3>
+                <div className="canvas-activity-list" tabIndex={dayEntries.length > 3 ? 0 : undefined} aria-label={`Sessions on ${formatDay(selectedDate)}`}>
+                  {dayEntries.length === 0 && <p className="canvas-activity-empty">No sessions recorded on this date.</p>}
+                  {dayEntries.map((entry) => (
+                    <div className="canvas-activity-entry" key={entry.id}>
+                      <span className="canvas-activity-dot" />
+                      <div><strong>{formatTime(entry.startedAt)} — {formatTime(entry.endedAt)}</strong><span>{formatDuration(entry.durationMs)} · Opened canvas</span></div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </details>
-          )}
+            </div>
+          </div>
+          <div className="sd-section">
+            <div className="sd-head-row">
+              <button type="button" className="sd-toggle" id={`${uid}-date-toggle`} aria-expanded={calendarOpen} aria-controls={`${uid}-date`} onClick={() => setCalendarOpen((current) => !current)}>
+                <svg className="sd-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+                <span className="sd-title">Document Start Date</span>
+                <span className="sd-badge">{label}</span>
+              </button>
+              <button type="button" className="canvas-start-date-reset" disabled={disabled || !originalValue || originalValue === dateValue} onClick={() => selectDate(originalValue)} title="Restore this board's original creation date">Reset</button>
+            </div>
+            <div className={`sd-collapse${calendarOpen ? " is-open" : ""}`} id={`${uid}-date`} role="region" aria-labelledby={`${uid}-date-toggle`}>
+              <div className="sd-collapse-inner">
+                <header className="canvas-start-date-calendar-header">
+                  <strong>{monthLabel(visibleMonth)}</strong>
+                  <div>
+                    <button type="button" aria-label="Previous month" onClick={() => shiftMonth(-1)}><svg viewBox="0 0 16 16"><path d="m10 3-5 5 5 5" /></svg></button>
+                    <button type="button" aria-label="Next month" onClick={() => shiftMonth(1)}><svg viewBox="0 0 16 16"><path d="m6 3 5 5-5 5" /></svg></button>
+                  </div>
+                </header>
+                <div className="canvas-start-date-weekdays" aria-hidden="true">
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <span key={day}>{day}</span>)}
+                </div>
+                <div className="canvas-start-date-calendar-grid">
+                  {calendarDays.map((day) => (
+                    <button
+                      type="button"
+                      key={day.key}
+                      className={`canvas-start-date-day${day.inMonth ? "" : " is-outside"}${day.key === dateValue ? " is-selected" : ""}`}
+                      aria-label={new Date(`${day.key}T12:00:00`).toLocaleDateString("en-US", { dateStyle: "full" })}
+                      aria-pressed={day.key === dateValue}
+                      disabled={disabled}
+                      onClick={() => selectDate(day.key)}
+                    >{day.day}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
       )}
     </div>

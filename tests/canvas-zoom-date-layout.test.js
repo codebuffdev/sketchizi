@@ -21,7 +21,7 @@ test("date picker is mounted in the top utility cluster immediately before the z
 test("start date popover is right-aligned below the pill with Reset and month navigation", () => {
   assert.match(dateStyles, /top:\s*calc\(100% \+ 8px\)/);
   assert.match(dateStyles, /right:\s*0/);
-  assert.match(dateStyles, /width:\s*248px/);
+  assert.match(dateStyles, /width:\s*320px/);
   assert.match(dateComponent, /Document Start Date/);
   assert.match(dateComponent, />Reset<\/button>/);
   assert.match(dateComponent, /aria-label="Previous month"/);

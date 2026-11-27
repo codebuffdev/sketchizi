@@ -34,69 +34,168 @@
 .canvas-start-date > span { white-space: nowrap; }
 .canvas-start-date > svg:first-child { flex: 0 0 auto; color: inherit; }
 .canvas-start-date:focus-visible { outline: 2px solid #4F46E5; outline-offset: 2px; opacity: 1; }
-.canvas-start-date-calendar-header button svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.canvas-start-date-title-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
-.canvas-start-date-title-row strong { font-size:12px; font-weight:650; }
-.canvas-start-date-reset { border:0; border-radius:7px; padding:4px 8px; background:rgba(79,70,229,.09); color:#4F46E5; font-size:11px; font-weight:650; cursor:pointer; }
-.canvas-start-date-reset:disabled { opacity:.4; cursor:default; }
-.app.theme-dark .canvas-start-date-reset { background:rgba(165,196,250,.13); color:#A5C4FA; }
+.canvas-start-date:focus-visible { outline-color: #7C3AED; }
 .app.theme-dark .canvas-start-date { border-color:rgba(255,255,255,.08); background:rgba(22,24,31,.72); color:#9aa6b7; }
 .app.theme-dark .canvas-start-date:hover, .app.theme-dark .canvas-start-date[aria-expanded="true"] { color:#eef3fa; background:rgba(22,24,31,.94); }
+
+/* ---------- Popover: theme tokens ----------
+   Day: #FFFFFF surface, #0F172A text, #64748B muted.
+   Dark: #181B20 surface, #F8FAFC text, #94A3B8 muted. */
+.canvas-start-date-popover {
+  --sd-surface: #FFFFFF;
+  --sd-ink: #0F172A;
+  --sd-muted: #64748B;
+  --sd-faint: #94A3B8;
+  --sd-border: rgba(15, 23, 42, .10);
+  --sd-divider: rgba(15, 23, 42, .08);
+  --sd-hover: rgba(109, 40, 217, .09);
+  --sd-chip: rgba(109, 40, 217, .10);
+  --sd-chip-ink: #6D28D9;
+  --sd-active: #6D28D9;
+  --sd-active-ink: #FFFFFF;
+  --sd-dot: #7C3AED;
+  --sd-thumb: rgba(15, 23, 42, .22);
+  --sd-shadow: 0 14px 38px rgba(15, 23, 42, .16);
+}
+.app.theme-dark .canvas-start-date-popover {
+  --sd-surface: #181B20;
+  --sd-ink: #F8FAFC;
+  --sd-muted: #94A3B8;
+  --sd-faint: #64748B;
+  --sd-border: rgba(255, 255, 255, .10);
+  --sd-divider: rgba(255, 255, 255, .08);
+  --sd-hover: rgba(124, 58, 237, .22);
+  --sd-chip: rgba(124, 58, 237, .22);
+  --sd-chip-ink: #C4B5FD;
+  --sd-active: #7C3AED;
+  --sd-active-ink: #FFFFFF;
+  --sd-dot: #A78BFA;
+  --sd-thumb: rgba(255, 255, 255, .24);
+  --sd-shadow: 0 16px 42px rgba(0, 0, 0, .5);
+}
 .canvas-start-date-popover {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
   left: auto;
   z-index: 10070;
-  width: 248px;
-  padding: 12px;
-  border: 1px solid rgba(15, 23, 42, .1);
+  width: 320px;
+  max-width: calc(100vw - 16px);
+  padding: 4px 12px;
+  box-sizing: border-box;
+  border: 1px solid var(--sd-border);
   border-radius: 13px;
-  background: rgba(255, 255, 255, .98);
-  color: #263244;
-  box-shadow: 0 14px 38px rgba(15, 23, 42, .16);
-  backdrop-filter: blur(16px);
+  background: var(--sd-surface);
+  color: var(--sd-ink);
+  box-shadow: var(--sd-shadow);
 }
-.canvas-start-date-calendar-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
-.canvas-start-date-calendar-header strong { font-size:13px; font-weight:650; }
-.canvas-start-date-calendar-header > div { display:flex; gap:4px; }
-.canvas-start-date-calendar-header button { display:grid; width:26px; height:26px; place-items:center; border:0; border-radius:7px; background:transparent; color:inherit; cursor:pointer; }
-.canvas-start-date-calendar-header button:hover { background:rgba(15,23,42,.06); }
-.canvas-start-date-weekdays,.canvas-start-date-calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:3px; }
-.canvas-start-date-weekdays { margin-bottom:4px; }
-.canvas-start-date-weekdays span { display:grid; height:25px; place-items:center; color:#8b95a3; font-size:10px; font-weight:600; }
-.canvas-start-date-day { display:grid; height:30px; place-items:center; border:0; border-radius:8px; background:transparent; color:inherit; font-size:11px; font-variant-numeric:tabular-nums; cursor:pointer; }
-.canvas-start-date-day:hover:not(:disabled) { background:rgba(79,70,229,.09); }
-.canvas-start-date-day.is-outside { color:#aab2bd; }
-.canvas-start-date-day.is-selected { background:#4F46E5; color:#fff; font-weight:650; }
-.canvas-start-date-day:disabled { cursor:default; opacity:.55; }
-.canvas-start-date-footer { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:9px; border-top:1px solid rgba(15,23,42,.08); }
-.canvas-start-date-footer button { border:0; border-radius:7px; padding:5px 8px; background:rgba(79,70,229,.09); color:#4F46E5; font-size:11px; font-weight:650; cursor:pointer; }
-.canvas-start-date-footer button:disabled { opacity:.4; cursor:default; }
-.canvas-start-date-footer span { color:#8b95a3; font-size:10px; font-variant-numeric:tabular-nums; }
-.canvas-start-date-activity { margin-top:10px; padding-top:9px; border-top:1px solid rgba(15,23,42,.08); }
-.canvas-start-date-activity summary { color:#667085; font-size:11px; font-weight:600; cursor:pointer; }
-.canvas-activity-list { max-height:150px; overflow:auto; padding-top:8px; }
-.canvas-activity-day + .canvas-activity-day { margin-top:8px; padding-top:8px; border-top:1px solid rgba(15,23,42,.08); }
-.canvas-activity-day h3 { margin:0 0 5px; color:#778195; font-size:10px; font-weight:650; }
-.canvas-activity-entry { display:flex; align-items:flex-start; gap:8px; padding:4px 0; }
-.canvas-activity-dot { width:6px; height:6px; flex:0 0 auto; margin:4px 0 0 2px; border-radius:50%; background:#7186ad; }
-.canvas-activity-entry div { display:flex; flex-direction:column; gap:2px; }
-.canvas-activity-entry strong { font-size:10px; font-weight:600; }
-.canvas-activity-entry span { color:#8993a2; font-size:10px; }
-.app.theme-dark .app.theme-dark .app.theme-dark .canvas-start-date-calendar-header button:hover { background:rgba(255,255,255,.08); color:#eef3fa; }
-.app.theme-dark .canvas-start-date-popover { border-color:rgba(255,255,255,.1); background:rgba(25,29,38,.98); color:#e4eaf2; box-shadow:0 16px 42px rgba(0,0,0,.42); }
-.app.theme-dark .canvas-start-date-day.is-selected { background:#A5C4FA; color:#172033; }
-.app.theme-dark .canvas-start-date-day:hover:not(:disabled) { background:rgba(165,196,250,.14); }
-.app.theme-dark .canvas-start-date-day.is-outside { color:#697586; }
-.app.theme-dark .canvas-start-date-footer { border-color:rgba(255,255,255,.1); }
-.app.theme-dark .canvas-start-date-footer button { background:rgba(165,196,250,.13); color:#A5C4FA; }
-.app.theme-dark .canvas-start-date-footer span,
-.app.theme-dark .canvas-start-date-activity summary,
-.app.theme-dark .canvas-activity-day h3,
-.app.theme-dark .canvas-activity-entry span { color:#9aa6b7; }
-.app.theme-dark .canvas-start-date-activity,
-.app.theme-dark .canvas-activity-day + .canvas-activity-day { border-color:rgba(255,255,255,.1); }
+
+/* ---------- Accordions ---------- */
+.sd-section + .sd-section { border-top: 1px solid var(--sd-divider); }
+.sd-section { padding: 8px 0; }
+.sd-head-row { display: flex; align-items: center; gap: 6px; }
+.sd-toggle {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 4px 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--sd-ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+.sd-toggle:focus-visible,
+.canvas-start-date-reset:focus-visible,
+.canvas-start-date-day:focus-visible,
+.canvas-start-date-calendar-header button:focus-visible,
+.canvas-activity-list:focus-visible { outline: 2px solid var(--sd-active); outline-offset: 1px; }
+.sd-title { flex: 0 0 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sd-chevron {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--sd-muted);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .18s ease;
+}
+.sd-toggle[aria-expanded="false"] .sd-chevron { transform: rotate(-90deg); }
+.sd-badge {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--sd-chip);
+  color: var(--sd-chip-ink);
+  font-size: 10.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.canvas-start-date-reset { flex: 0 0 auto; border: 0; border-radius: 7px; padding: 4px 8px; background: transparent; color: var(--sd-muted); font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
+.canvas-start-date-reset:hover:not(:disabled) { background: var(--sd-hover); color: var(--sd-chip-ink); }
+.canvas-start-date-reset:disabled { opacity: .4; cursor: default; }
+
+/* Smooth open/close: animate the grid row from 0fr to 1fr. Collapsed content
+   is visibility:hidden so it leaves the tab order and accessibility tree. */
+.sd-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition: grid-template-rows .2s ease, visibility 0s linear .2s;
+}
+.sd-collapse.is-open { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows .2s ease, visibility 0s; }
+.sd-collapse-inner { min-height: 0; overflow: hidden; padding: 0 2px; }
+.sd-collapse.is-open > .sd-collapse-inner { padding-top: 6px; padding-bottom: 2px; }
+
+/* ---------- Calendar ---------- */
+.canvas-start-date-calendar-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.canvas-start-date-calendar-header strong { font-size: 13px; font-weight: 650; }
+.canvas-start-date-calendar-header > div { display: flex; gap: 4px; }
+.canvas-start-date-calendar-header button { display: grid; width: 26px; height: 26px; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--sd-muted); cursor: pointer; }
+.canvas-start-date-calendar-header button:hover { background: var(--sd-hover); color: var(--sd-ink); }
+.canvas-start-date-calendar-header button svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.canvas-start-date-weekdays, .canvas-start-date-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.canvas-start-date-weekdays { margin-bottom: 4px; }
+.canvas-start-date-weekdays span { display: grid; height: 22px; place-items: center; color: var(--sd-muted); font-size: 10px; font-weight: 600; }
+.canvas-start-date-day { display: grid; height: 30px; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--sd-ink); font: inherit; font-size: 11px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.canvas-start-date-day:hover:not(:disabled) { background: var(--sd-hover); }
+.canvas-start-date-day.is-outside { color: var(--sd-faint); }
+.canvas-start-date-day.is-selected, .canvas-start-date-day.is-selected:hover:not(:disabled) { background: var(--sd-active); color: var(--sd-active-ink); font-weight: 650; }
+.canvas-start-date-day:disabled { cursor: default; opacity: .55; }
+
+/* ---------- Activity history ---------- */
+.canvas-activity-date { margin: 0 0 4px; color: var(--sd-muted); font-size: 11px; font-weight: 650; }
+.canvas-activity-list {
+  max-height: 150px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sd-thumb) transparent;
+}
+.canvas-activity-list::-webkit-scrollbar { width: 6px; }
+.canvas-activity-list::-webkit-scrollbar-track { background: transparent; }
+.canvas-activity-list::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--sd-thumb); }
+.canvas-activity-empty { margin: 4px 0 6px; color: var(--sd-muted); font-size: 11px; }
+.canvas-activity-entry { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; }
+.canvas-activity-entry + .canvas-activity-entry { border-top: 1px solid var(--sd-divider); }
+.canvas-activity-dot { width: 6px; height: 6px; flex: 0 0 auto; margin: 5px 0 0 2px; border-radius: 50%; background: var(--sd-dot); }
+.canvas-activity-entry div { display: flex; flex-direction: column; gap: 2px; }
+.canvas-activity-entry strong { color: var(--sd-ink); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.canvas-activity-entry span:not(.canvas-activity-dot) { color: var(--sd-muted); font-size: 10.5px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sd-collapse, .sd-collapse.is-open, .sd-chevron { transition: none; }
+}
 @media (max-width: 760px) {
   .canvas-start-date { gap:4px; padding:0 8px; font-size:11px; }
 }
