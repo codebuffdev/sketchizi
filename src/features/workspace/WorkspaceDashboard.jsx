@@ -7,6 +7,7 @@ import {
   CHAPTER_STATUS_LABELS, appendChapter, buildChapterLayout, countCompletedChapters, cycleChapterStatus, formatChapterBadge, formatChapterLabel,
   getChapterChanges, moveChapter, readChapterLayout, removeChapter, reorderChapters, resolveChapterSequence, setChapterStatus, suggestNextChapterName, writeChapterLayout,
 } from "./chapterSequence.js";
+import { buildDownloadPayload, computeDocumentBytes, downloadFilename, formatBytes, getDiagramBytes, getSizeState, loadFullDocument, readSizeCache, sumBytes, triggerJsonDownload, writeSizeCache } from "./diagramSize.js";
 import "./workspace.css";
 
 
@@ -53,15 +54,24 @@ const DiagramThumbnail = ({ diagram }) => {
 const VIEW_MODE_KEY = "sketchizi.workspace.chapterView.v1";
 
 const PencilIcon = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>;
+const DownloadIcon = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>;
+const SIZE_WARNING_TEXT = { heavy: "Heavy diagram (2 MB or more), often large embedded images" };
+const SizeBadge = ({ bytes }) => {
+  if (!Number.isFinite(bytes)) return null;
+  const state = getSizeState(bytes);
+  const title = SIZE_WARNING_TEXT[state] || `Canvas size: ${bytes.toLocaleString()} bytes`;
+  return <span className={`cw-size-badge is-${state}`} title={title} aria-label={`Size ${formatBytes(bytes)}${SIZE_WARNING_TEXT[state] ? `. ${SIZE_WARNING_TEXT[state]}` : ""}`}>{state === "heavy" && <span className="cw-size-dot" aria-hidden="true" />}{formatBytes(bytes)}</span>;
+};
 const TrashIcon = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>;
 
-function ChapterCard({ d, variant, busy, reorderable, isFirst, isLast, isLastOpened, renaming, dragging, dragOver, onOpen, onStartRename, onCommitRename, onCancelRename, onDelete, onDuplicate, onMove, onCycleStatus, dragProps }) {
+function ChapterCard({ d, bytes, downloading, onDownload, variant, busy, reorderable, isFirst, isLast, isLastOpened, renaming, dragging, dragOver, onOpen, onStartRename, onCommitRename, onCancelRename, onDelete, onDuplicate, onMove, onCycleStatus, dragProps }) {
   const classes = ["cw-diagram-card", "cw-chapter-card", variant === "flow" ? "is-flow" : "is-grid", `is-${d.chapterStatus}`, isLastOpened ? "is-last-opened" : "", dragging ? "is-dragging" : "", dragOver ? "is-drag-over" : ""].filter(Boolean).join(" ");
   const moveHint = reorderable ? undefined : "Switch to Sequence Order to reorder chapters";
   return <article className={classes} role={variant === "flow" ? "listitem" : undefined} data-chapter-id={d.id} {...dragProps}>
     <div className="cw-chapter-top">
       <span className="cw-drag-handle" aria-hidden="true" title={reorderable ? "Drag to reorder" : moveHint}>⋮⋮</span>
       <span className="cw-chapter-pill">{formatChapterBadge(d.chapterNumber)}</span>
+      <SizeBadge bytes={bytes} />
       <button type="button" className={`cw-status-pill is-${d.chapterStatus}`} disabled={busy} onClick={onCycleStatus} title="Click to change status" aria-label={`Status: ${CHAPTER_STATUS_LABELS[d.chapterStatus]}. Click to change.`}>{CHAPTER_STATUS_LABELS[d.chapterStatus]}</button>
     </div>
     <DiagramThumbnail diagram={d} />
@@ -77,10 +87,11 @@ function ChapterCard({ d, variant, busy, reorderable, isFirst, isLast, isLastOpe
           <button type="button" className="cw-icon-button cw-icon-danger" disabled={busy} onClick={onDelete} aria-label={`Delete ${d.name}`} title="Delete"><TrashIcon /></button>
         </span>
       </div>
-      <div className="cw-chapter-meta"><small>sketchizi · {dateLabel(d.lastOpenedAt || d.lastUsedAt || d.updatedAt || d.createdAt)}</small>{isLastOpened && <span className="cw-last-opened-pill">Last Opened</span>}</div>
+      <div className="cw-chapter-meta"><small>sketchizi · {dateLabel(d.lastOpenedAt || d.lastUsedAt || d.updatedAt || d.createdAt)}{Number.isFinite(bytes) ? ` · ${formatBytes(bytes)}` : ""}</small>{isLastOpened && <span className="cw-last-opened-pill">Last Opened</span>}</div>
       <div className="cw-chapter-actions">
         <button type="button" className="cw-open-button" disabled={busy} onClick={onOpen}>Open</button>
         <button type="button" disabled={busy} onClick={onDuplicate}>Duplicate</button>
+        <button type="button" className={`cw-download-button${downloading ? " is-loading" : ""}`} disabled={busy || downloading} onClick={onDownload} aria-busy={downloading || undefined} aria-label={`Download ${d.name} as .sketchizi.json`} title="Download .sketchizi.json">{downloading ? <span className="cw-spinner" aria-hidden="true" /> : <DownloadIcon />}</button>
         <span className="cw-move-group">
           <button type="button" disabled={busy || !reorderable || isFirst} onClick={() => onMove(-1)} aria-label="Move chapter earlier" title={moveHint || "Move earlier"}>←</button>
           <button type="button" disabled={busy || !reorderable || isLast} onClick={() => onMove(1)} aria-label="Move chapter later" title={moveHint || "Move later"}>→</button>
@@ -138,13 +149,24 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [dragId, setDragId] = useState("");
   const [dragOverId, setDragOverId] = useState("");
+  const [sizeById, setSizeById] = useState(() => readSizeCache());
+  const [projectSizes, setProjectSizes] = useState({});
+  const [downloadingId, setDownloadingId] = useState("");
+  const [toast, setToast] = useState("");
+  const toastTimer = useRef(0);
+  const showToast = useCallback((message) => { setToast(message); window.clearTimeout(toastTimer.current); toastTimer.current = window.setTimeout(() => setToast(""), 3500); }, []);
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
   const chapters = useMemo(() => resolveChapterSequence(diagrams, chapterLayout), [diagrams, chapterLayout]);
   const lastOpened = useMemo(() => findLastOpenedItem(chapters), [chapters]);
   const completedCount = countCompletedChapters(chapters);
-  const displayChapters = useMemo(() => viewMode === "grid" ? sortWorkspaceDiagrams(chapters, gridSort) : chapters, [chapters, viewMode, gridSort]);
+  const displayChapters = useMemo(() => viewMode === "grid" ? sortWorkspaceDiagrams(chapters, gridSort, (d) => sizeById[d.id] ?? getDiagramBytes(d)) : chapters, [chapters, viewMode, gridSort, sizeById]);
   const atDiagramLimit = !limits.admin && limits.diagramCount >= (limits.diagramLimit ?? 3);
   const nextChapterLabel = String(chapters.length + 1).padStart(2, "0");
+  const bytesFor = useCallback((d) => sizeById[d.id] ?? getDiagramBytes(d), [sizeById]);
+  const activeBytes = useMemo(() => sumBytes(chapters.map(bytesFor)), [chapters, bytesFor]);
   const active = projects.find((p) => p.id === activeId) || null;
+  const projectBytes = (p) => { const own = Number(p.sizeBytes); return p.id === activeId && activeBytes !== null ? activeBytes : Number.isFinite(own) ? own : projectSizes[p.id] ?? null; };
+  const totalBytes = projects.length && projects.every((p) => projectBytes(p) !== null) ? sumBytes(projects.map(projectBytes)) : (projects.length ? null : 0);
   const filtered = useMemo(() => projects.filter((p) => p.name.toLowerCase().includes(query.trim().toLowerCase())), [projects, query]);
 
   const reloadProjects = useCallback(async (preferred) => {
@@ -160,6 +182,21 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
   }, []);
 
   useEffect(() => {
+    if (!projects.length) return undefined;
+    let cancelled = false;
+    (async () => {
+      for (const project of projects) {
+        if (cancelled || typeof project.sizeBytes === "number" || project.id === activeId) continue;
+        try {
+          const rows = readDiagramRows(await workspaceClient.listDiagrams(project.id));
+          const total = rows.length ? sumBytes(rows.map((row) => getDiagramBytes(row, readSizeCache()))) : 0;
+          if (!cancelled && total !== null) setProjectSizes((current) => (current[project.id] === total ? current : { ...current, [project.id]: total }));
+        } catch { /* sizes are informational */ }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [projects, activeId]);
+  useEffect(() => {
     reloadProjects();
     workspaceClient.getLimits().then(setLimits).catch(() => {});
   }, [reloadProjects]);
@@ -171,6 +208,13 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
     writeChapterLayout(projectId, layout);
     setChapterLayout(layout);
     setDiagrams(merged);
+    const measured = {};
+    const cache = readSizeCache();
+    merged.forEach((row) => { const b = getDiagramBytes(row, cache); if (b !== null) measured[row.id] = b; });
+    writeSizeCache(measured);
+    setSizeById((current) => ({ ...current, ...measured }));
+    const total = sumBytes(merged.map((row) => measured[row.id]));
+    if (merged.length === 0 || total !== null) setProjectSizes((current) => ({ ...current, [projectId]: total ?? 0 }));
   }, []);
   const refreshDiagrams = useCallback(async (projectId) => {
     applyDiagramRows(projectId, readDiagramRows(await workspaceClient.listDiagrams(projectId)));
@@ -273,6 +317,20 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
       setNotice("Chapter duplicated and added to the end of the sequence.");
     } catch (e) { setError(e.message || "Could not duplicate chapter."); } finally { setBusy(false); }
   };
+  const downloadDiagram = async (d) => {
+    if (downloadingId) return;
+    setDownloadingId(d.id); setError("");
+    try {
+      const { document, name } = await loadFullDocument(d, workspaceClient.getDiagram);
+      const title = name || d.name;
+      const payload = buildDownloadPayload({ ...d, name: title }, document);
+      const exact = computeDocumentBytes(document);
+      triggerJsonDownload(downloadFilename(title), payload);
+      if (exact !== null) { writeSizeCache({ [d.id]: exact }); setSizeById((current) => ({ ...current, [d.id]: exact })); }
+      showToast(`Downloaded ${downloadFilename(title)} (${formatBytes(exact ?? bytesFor(d))})`);
+    } catch (e) { setError(e.message || "Could not download this diagram."); }
+    finally { setDownloadingId(""); }
+  };
   useEffect(() => {
     if (!deleteTarget) return undefined;
     const onKey = (event) => { if (event.key === "Escape" && !busy) setDeleteTarget(null); };
@@ -321,7 +379,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
   const cardProps = (d, index, list, variant) => {
     const reorderable = variant === "flow" || gridSort === "sequence";
     return {
-      d, variant, busy, reorderable,
+      d, variant, busy, reorderable, bytes: bytesFor(d), downloading: downloadingId === d.id, onDownload: () => downloadDiagram(d),
       isFirst: index === 0, isLast: index === list.length - 1,
       isLastOpened: lastOpened?.id === d.id,
       renaming: renamingId === d.id,
@@ -356,12 +414,12 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
 
   return <main className="cloud-workspace" data-theme={isDarkTheme ? "dark" : "light"}>
     <header className="cw-header"><a className="cw-brand" href="/" aria-label="Sketchizi"><span className="cw-brand-mark">S</span> Sketchizi <span className="cw-brand-sub">CLOUD WORKSPACE</span></a><div className="cw-header-actions"><span className="cw-user">{user?.name || user?.email || "Signed in"}</span><button className="cw-button cw-quiet" onClick={onOpenEditor}>Open editor</button><button className="cw-button cw-quiet" onClick={onSignOut}>Sign out</button></div></header>
-    <section className="cw-content"><div className="cw-eyebrow">YOUR WORKSPACE</div><div className="cw-title-row"><div><h1>Cloud Workspace</h1><p>Your projects and diagrams, saved to your account.</p><p className="cw-quota">{limits.admin ? `${limits.diagramCount} diagrams · Admin account (unlimited)` : `${limits.diagramCount} of ${limits.diagramLimit ?? 3} cloud diagrams used`}</p></div><button className="cw-button cw-primary" onClick={() => setProjectForm(!projectForm)}>+ New project</button></div>
+    <section className="cw-content"><div className="cw-eyebrow">YOUR WORKSPACE</div><div className="cw-title-row"><div><h1>Cloud Workspace</h1><p>Your projects and diagrams, saved to your account.</p><p className="cw-quota">{limits.admin ? `${limits.diagramCount} ${limits.diagramCount === 1 ? "diagram" : "diagrams"}${totalBytes !== null ? ` · ${formatBytes(totalBytes)} total used` : ""} · Admin account (unlimited)` : `${limits.diagramCount} of ${limits.diagramLimit ?? 3} cloud diagrams used${totalBytes !== null ? ` · ${formatBytes(totalBytes)} total used` : ""}`}</p></div><button className="cw-button cw-primary" onClick={() => setProjectForm(!projectForm)}>+ New project</button></div>
       {error && <div className="cw-message cw-error" role="alert">{error}<button onClick={() => setError("")} aria-label="Dismiss">×</button></div>}{notice && <div className="cw-message cw-success" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Dismiss">×</button></div>}
       {projectForm && <form className="cw-form" onSubmit={createProject}><label htmlFor="cw-project-name">Project name</label><input id="cw-project-name" autoFocus maxLength={120} required value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="e.g. E-commerce architecture"/><div className="cw-form-actions"><button type="button" className="cw-button cw-quiet" onClick={() => setProjectForm(false)}>Cancel</button><button className="cw-button cw-primary" disabled={busy}>{busy ? "Creating…" : "Create project"}</button></div></form>}
       <div className="cw-toolbar"><strong>PROJECTS <span>{projects.length}</span></strong><input aria-label="Search projects" className="cw-search" placeholder="Search projects…" value={query} onChange={(e) => setQuery(e.target.value)}/></div>
       {loading ? <div className="cw-loading">Loading your workspace…</div> : projects.length === 0 ? <div className="cw-empty"><div className="cw-empty-icon">▦</div><h2>Your workspace starts here</h2><p>Create a project to keep your architecture diagrams together. Projects are private to your account.</p><button className="cw-button cw-primary" onClick={() => setProjectForm(true)}>Create your first project</button></div> : <div className="cw-layout">
-        <aside className="cw-project-list" aria-label="Projects">{filtered.map((p) => <article className={p.id === activeId ? "cw-project is-active" : "cw-project"} key={p.id}><button className="cw-project-select" onClick={() => setActiveId(p.id)}><span className="cw-project-icon">▦</span><span><b>{p.name}</b><small>{p.diagramCount ?? 0} diagrams · {dateLabel(p.lastOpenedAt || p.lastUsedAt || p.updatedAt || p.createdAt)}</small></span></button><div className="cw-project-actions"><button disabled={busy} onClick={() => renameProject(p)}>Rename</button><button disabled={busy} onClick={() => deleteProject(p)}>Delete</button></div></article>)}{!filtered.length && <p className="cw-muted">No matching projects.</p>}</aside>
+        <aside className="cw-project-list" aria-label="Projects">{filtered.map((p) => <article className={p.id === activeId ? "cw-project is-active" : "cw-project"} key={p.id}><button className="cw-project-select" onClick={() => setActiveId(p.id)}><span className="cw-project-icon">▦</span><span><b>{p.name}</b><small>{p.diagramCount ?? 0} {(p.diagramCount ?? 0) === 1 ? "diagram" : "diagrams"} · {projectBytes(p) !== null ? `${formatBytes(projectBytes(p))} · ` : ""}{dateLabel(p.lastOpenedAt || p.lastUsedAt || p.updatedAt || p.createdAt)}</small></span></button><div className="cw-project-actions"><button disabled={busy} onClick={() => renameProject(p)}>Rename</button><button disabled={busy} onClick={() => deleteProject(p)}>Delete</button></div></article>)}{!filtered.length && <p className="cw-muted">No matching projects.</p>}</aside>
         <section className="cw-diagrams">{active ? <><div className="cw-diagram-heading"><div><div className="cw-eyebrow">PROJECT</div><h2>{active.name}</h2><p>{active.description || "Chapters in this project"}</p></div><button className="cw-button cw-primary" disabled={busy || atDiagramLimit} title={atDiagramLimit ? "Delete a diagram to create another" : undefined} onClick={openChapterForm}>+ Add Next Chapter</button></div>
           {chapters.length > 0 && sequenceControls}
           {diagramForm && <form className="cw-form" onSubmit={createDiagram}><label htmlFor="cw-diagram-name">Chapter name</label><input id="cw-diagram-name" ref={(el) => { if (el && !el.dataset.caretSet) { el.dataset.caretSet = "1"; el.setSelectionRange(el.value.length, el.value.length); } }} autoFocus maxLength={120} required value={diagramName} onChange={(e) => setDiagramName(e.target.value)} placeholder="e.g. day-06-systemdesign-deployment"/><div className="cw-form-actions"><button type="button" className="cw-button cw-quiet" onClick={() => setDiagramForm(false)}>Cancel</button><button className="cw-button cw-primary" disabled={busy}>{busy ? "Creating…" : "Create chapter"}</button></div></form>}
@@ -374,6 +432,7 @@ export default function WorkspaceDashboard({ user, onOpenEditor, onSignOut }) {
             : <div className="cw-diagram-grid">{displayChapters.map((d, index, list) => <ChapterCard key={d.id} {...cardProps(d, index, list, "grid")} />)}</div>)
             : <div className="cw-empty cw-empty-small"><div className="cw-empty-icon">◇</div><h3>No chapters yet</h3><p>Create your first chapter to start building this project.</p><button className="cw-button cw-quiet" onClick={openChapterForm}>Create first chapter</button></div>}
         </> : <div className="cw-empty cw-empty-small"><h3>Select a project</h3></div>}</section></div>}
+      {toast && <div className="cw-toast" role="status" aria-live="polite">{toast}</div>}
       <footer className="cw-footnote"><span/> Cloud storage · PostgreSQL · Private to your account</footer>
     </section>
     {deleteTarget && <div className="cw-modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) setDeleteTarget(null); }}>

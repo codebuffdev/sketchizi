@@ -11,6 +11,16 @@ import { isHexColor } from "../../features/navigation/recentCustomColors.js";
 import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
 import { absolutePointsToPatch, getAbsolutePoints, getRoutingMode, getRoutingPatch, normalizeOrthogonalPath } from "../../features/canvas/arrowRouting.js";
 import { applyAlignmentToSelection } from "../../utils/alignElements.js";
+import { applyColorToElement, withoutRuns } from "../../features/canvas/textRuns.js";
+import { TEXT_RUNS_CHANGED_EVENT } from "../../features/canvas/textEditorRunsMirror.js";
+import { armToolbarSelection, getTextEditSelection, releaseToolbarSelection, restoreTextSelection } from "../../features/canvas/textSelectionTracker.js";
+
+// Clicking a swatch must never blur the text editor: blur fires before click and
+// collapses the highlight. Native inputs keep their default behavior.
+const keepTextSelection = (event) => {
+  if (event.target instanceof Element && event.target.closest("input, select, textarea")) return;
+  event.preventDefault();
+};
 
 // Excalidraw reserves font-family ID 4 for host-provided custom fonts.
 // Register Kalam on the shared enum so its renderer resolves ID 4 to Kalam.
@@ -153,7 +163,7 @@ function ColorPicker({ label, value, onChange, transparent = false, presets = []
       <span className={`sk-tool-color-swatch${showRainbow ? " is-rainbow" : ""}`} style={showRainbow ? undefined : { background: transparent ? "transparent" : safeValue }} aria-hidden="true">{transparent ? "∅" : null}</span>
       <input ref={inputRef} type="color" aria-label={label} title="Custom color (click to pick)" value={safeValue}
         onChange={(event) => { onChange(event.target.value); onCommit?.(event.target.value); }}
-        onPointerDown={() => onEndSession?.()} onBlur={() => onEndSession?.()} />
+        onPointerDown={() => { armToolbarSelection(); onEndSession?.(); }} onBlur={() => { releaseToolbarSelection(); onEndSession?.(); }} />
     </label>
   );
 }
@@ -168,7 +178,7 @@ function RecentCustomSwatches({ colors, presets, activeColor, kind, theme, onPic
         className={`sk-tool-color-dot is-recent-custom${active ? " is-active" : ""}`}
         style={{ "--tool-color": kind === "stroke" ? displayColorForTheme(color, theme) : color }}
         aria-label={`Recent custom ${kind} color ${color}`} aria-pressed={active} title={`Recent custom color ${color}`}
-        onClick={() => onPick(color)} />
+        onMouseDown={keepTextSelection} onClick={() => onPick(color)} />
     );
   });
 }
@@ -632,6 +642,26 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const update = (rawPatch) => {
     const api = apiRef?.current;
     if (!api) return;
+    // A highlighted range in the text editor: color only that range through
+    // customData.runs, then put the highlight back so swatches can be re-clicked.
+    const rawKeys = Object.keys(rawPatch);
+    if (rawKeys.length === 1 && rawKeys[0] === "strokeColor") {
+      const selection = getTextEditSelection(api);
+      if (selection) {
+        const runsPatch = applyColorToElement(selection.element, rawPatch.strokeColor, { start: selection.start, end: selection.end }, selection.text);
+        const now = Date.now();
+        const scene = api.getSceneElements?.() || [];
+        api.updateScene({
+          elements: scene.map((element) => (element.id === selection.elementId
+            ? { ...element, ...runsPatch, customData: runsPatch.customData ? { ...runsPatch.customData } : undefined, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now, updatedAt: now }
+            : element)),
+          captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+        });
+        window.dispatchEvent(new Event(TEXT_RUNS_CHANGED_EVENT));
+        restoreTextSelection(selection);
+        return;
+      }
+    }
     // "dot" -> the value the Excalidraw renderer actually draws as a circle.
     const patch = normalizeArrowheadPatch(rawPatch);
     if (!isSelection) {
@@ -683,8 +713,9 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       effectivePatch.fillStyle = "solid";
     }
     const elements = api.getSceneElements?.() || [];
+    const wholeBoxColor = "strokeColor" in effectivePatch;
     const next = elements.map((element) => ids.has(element.id)
-      ? { ...applyStylePatch(element, effectivePatch), version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
+      ? { ...(wholeBoxColor && element.type === "text" ? withoutRuns(applyStylePatch(element, effectivePatch)) : applyStylePatch(element, effectivePatch)), version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
       : element);
     const arrowheadAppState = {};
     if ("startArrowhead" in effectivePatch) arrowheadAppState.currentItemStartArrowhead = effectivePatch.startArrowhead;
@@ -694,6 +725,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       ...(Object.keys(arrowheadAppState).length ? { appState: arrowheadAppState } : {}),
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
+    if (wholeBoxColor) window.dispatchEvent(new Event(TEXT_RUNS_CHANGED_EVENT));
     rememberStyle(stripGridKeys(effectivePatch));
   };
 
@@ -1004,6 +1036,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       data-tool={type}
       aria-hidden={!(dockOpen && isVisible)}
       inert={!(dockOpen && isVisible)}
+      onMouseDown={preserveTextEditorFocus ? keepTextSelection : undefined}
       onMouseEnter={expandDock}
       onMouseLeave={scheduleDockCollapse}
       onFocusCapture={expandDock}
@@ -1028,7 +1061,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
             <button type="button" aria-pressed={shapeColorTarget === "fill"} onClick={() => setShapeColorTarget("fill")} style={{ border:0, borderRadius:999, padding:"5px 9px", fontSize:11, fontWeight:600, cursor:"pointer", color:shapeColorTarget === "fill" ? "#fff" : "inherit", background:shapeColorTarget === "fill" ? "#6965db" : "transparent" }}>Fill</button>
           </div>
           {shapeColorTarget === "stroke" ? <>
-            {COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} aria-pressed={strokeColor === color} style={{ "--tool-color": displayColorForTheme(color, appState.theme) }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
+            {COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} aria-pressed={strokeColor === color} style={{ "--tool-color": displayColorForTheme(color, appState.theme) }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onMouseDown={keepTextSelection} onClick={() => update({ strokeColor: color })} />)}
             <RecentCustomSwatches colors={recentCustomColors} presets={COLORS} kind="stroke" activeColor={strokeColor} theme={appState.theme} onPick={(color) => update({ strokeColor: color })} />
             <ColorPicker label="Custom stroke color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} {...colorPickerProps} />
           </> : <>
@@ -1045,7 +1078,7 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
             </ToolButton>)}
           </div>
         </> : <>
-          {(!isFill || isHighlighter) && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} aria-pressed={strokeColor === color} style={{ "--tool-color": displayColorForTheme(color, appState.theme) }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onClick={() => update({ strokeColor: color })} />)}
+          {(!isFill || isHighlighter) && COLORS.map((color) => <button key={color} type="button" className={`sk-tool-color-dot${strokeColor === color ? " is-active" : ""}`} aria-pressed={strokeColor === color} style={{ "--tool-color": displayColorForTheme(color, appState.theme) }} aria-label={`Stroke ${color}`} title={`Stroke ${color}`} onMouseDown={keepTextSelection} onClick={() => update({ strokeColor: color })} />)}
           {(!isFill || isHighlighter) && <RecentCustomSwatches colors={recentCustomColors} presets={COLORS} kind="stroke" activeColor={strokeColor} theme={appState.theme} onPick={(color) => update({ strokeColor: color })} />}
           {(!isFill || isHighlighter) && <ColorPicker label="Custom color" value={strokeColor} onChange={(value) => update({ strokeColor: value })} {...colorPickerProps} />}
           {showClosedShapeFill && <>

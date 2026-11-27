@@ -56,14 +56,15 @@ export function sortWorkspaceRecentlyUsed(items = []) {
   return [...items].sort((a, b) => getWorkspaceActivityTime(b) - getWorkspaceActivityTime(a));
 }
 
-export const WORKSPACE_GRID_SORTS = Object.freeze({ sequence: "Sequence Order", recent: "Recently Opened" });
+export const WORKSPACE_GRID_SORTS = Object.freeze({ sequence: "Sequence Order", recent: "Recently Opened", size: "Largest Size" });
 
 /**
  * Sort for the Grid view. `sequence` (default) is strictly `orderIndex ASC`;
  * `recent` is the legacy recently-opened order. Neither mutates the source.
  */
-export function sortWorkspaceDiagrams(items = [], mode = "sequence") {
+export function sortWorkspaceDiagrams(items = [], mode = "sequence", getSize = () => null) {
   if (mode === "recent") return sortWorkspaceRecentlyUsed(items);
+  if (mode === "size") return [...items].sort((a, b) => (Number(getSize(b)) || 0) - (Number(getSize(a)) || 0) || (a.orderIndex ?? Infinity) - (b.orderIndex ?? Infinity));
   return [...items].sort((a, b) => (a.orderIndex ?? Infinity) - (b.orderIndex ?? Infinity));
 }
 

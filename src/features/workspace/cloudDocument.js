@@ -17,6 +17,13 @@ export function sanitizeCloudAppState(appState = {}) {
   return safe;
 }
 
+// Exact UTF-8 size of the serialized payload; stored on the record's metadata so the
+// workspace list can show sizes without fetching canvas payloads.
+export function measureCloudPayloadBytes(payload) {
+  const text = JSON.stringify(payload);
+  return typeof Blob === "function" ? new Blob([text]).size : new TextEncoder().encode(text).length;
+}
+
 export function createCloudDocument({
   api,
   elements,
@@ -51,14 +58,19 @@ export function createCloudDocument({
   // Keep the local binary cache warm so reopening this diagram is instant.
   putCachedFiles(files).catch(() => {});
 
+  const savedElements = liveElements.map((element) =>
+    element.type === "image" && files[element.fileId] && element.status !== "saved"
+      ? { ...element, status: "saved" }
+      : element);
+  const savedAppState = sanitizeCloudAppState(appState || api.getAppState?.() || {});
+  let sizeBytes;
+  try { sizeBytes = measureCloudPayloadBytes({ elements: savedElements, appState: savedAppState, files }); } catch { /* size is informational */ }
+
   return {
-    elements: liveElements.map((element) =>
-      element.type === "image" && files[element.fileId] && element.status !== "saved"
-        ? { ...element, status: "saved" }
-        : element),
-    appState: sanitizeCloudAppState(appState || api.getAppState?.() || {}),
+    elements: savedElements,
+    appState: savedAppState,
     files,
-    metadata: metadata.metadata || {},
+    metadata: { ...(metadata.metadata || {}), ...(sizeBytes !== undefined ? { sizeBytes } : {}) },
     extensions: metadata.extensions || {},
     format: metadata.format || "excalidraw",
   };
