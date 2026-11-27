@@ -90,6 +90,7 @@ export function restoreClosedTab(record, existingIds = [], now = Date.now()) {
     id,
     name: record.name || record.tab?.name || "Untitled canvas",
     dirty: true,
+    pinned: false,
     todoTabOpen: false,
     todoTabActive: false,
     snapshot: record.snapshot,

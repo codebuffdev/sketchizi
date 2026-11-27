@@ -4,6 +4,7 @@ import { getTabDisplayName } from "../../features/workspace/tabLabel.js";
 import { describeTabSync, getTabStatusClass } from "../../features/workspace/tabCloudState.js";
 import { countLiveElements, describeClosedAt } from "../../features/workspace/closedTabs.js";
 import WorkspaceModeIcon from "../../features/workspace/WorkspaceModeIcon.jsx";
+import { MAX_PINNED_TABS, PIN_LIMIT_MESSAGE } from "../../features/workspace/tabPinning.js";
 
 // Anything that counts as "the canvas" for dismissal purposes: the drawing
 // surface itself plus the in-canvas Pages header, page mask and navigator.
@@ -60,22 +61,64 @@ function CloseGlyph() {
   return <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" /></svg>;
 }
 
-export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, onRename, closedTabs = [], onReopenClosedTab, onDeleteClosedTab, onClearClosedTabs, activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved", activeStatusLabel = "Saved", disabled = false, showAddButton = true }) {
+const MAX_VISIBLE_TABS = 3;
+
+function TabSwitcherHud({ tabs, activeId }) {
+  const listRef = useRef(null);
+  useEffect(() => {
+    listRef.current?.querySelector(".is-active")?.scrollIntoView?.({ block: "nearest" });
+  }, [activeId]);
+  return (
+    <div className="canvas-tab-switcher" role="listbox" aria-label="Switch Tab" aria-activedescendant={`canvas-tab-switcher-${activeId}`}>
+      <div className="canvas-tab-switcher-heading">
+        <strong>Switch Tab</strong>
+        <span><kbd>Ctrl</kbd> + <kbd>Tab</kbd></span>
+      </div>
+      <div className="canvas-tab-switcher-list" ref={listRef}>
+        {tabs.map((tab) => {
+          const pinned = Boolean(tab.pinned && !tab.isTodoTab);
+          const active = tab.id === activeId;
+          return (
+            <div key={tab.id} id={`canvas-tab-switcher-${tab.id}`} role="option" aria-selected={active} className={`canvas-tab-switcher-item${active ? " is-active" : ""}`}>
+              {tab.isTodoTab ? <TodoGlyph /> : <WorkspaceModeIcon mode={tab.type === "page" ? "pages" : tab.type || "canvas"} className={`canvas-tab-icon canvas-tab-icon--${tab.type === "page" ? "pages" : tab.type || "canvas"}`} />}
+              <span className="canvas-tab-switcher-name" title={tab.name}>{getTabDisplayName(tab.name)}</span>
+              {pinned && <span className="canvas-tab-switcher-badge"><span aria-hidden="true">📌</span> Pinned</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose, onReorder, onTogglePin, switcher = null, onRename, closedTabs = [], onReopenClosedTab, onDeleteClosedTab, onClearClosedTabs, activeMenu = null, activeRenameAction = null, activeStatusClass = "is-saved", activeStatusLabel = "Saved", disabled = false, showAddButton = true }) {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [activeMenuOpen, setActiveMenuOpen] = useState(false);
   const [closedMenuOpen, setClosedMenuOpen] = useState(false);
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
+  const [tabMenuId, setTabMenuId] = useState(null);
+  const [pinPulse, setPinPulse] = useState({ count: 0, on: false });
+  const pinPulseTimerRef = useRef(null);
+  const tabMenuRef = useRef(null);
   const rootRef = useRef(null);
   const createMenuRef = useRef(null);
   const createTriggerRef = useRef(null);
   const overflowTriggerRef = useRef(null);
   const overflowMenuRef = useRef(null);
   const [overflowPosition, setOverflowPosition] = useState(null);
+  const isPinnedTab = (tab) => Boolean(tab?.pinned && !tab.isTodoTab);
+  const pinnedCount = tabs.filter(isPinnedTab).length;
+  const atPinLimit = pinnedCount >= MAX_PINNED_TABS;
+  // Pinned tabs are always on screen, at the far left. The remaining slots show
+  // a window of the unpinned tabs that keeps the active one in view.
   const visibleTabs = useMemo(() => {
-    if (tabs.length <= 3) return tabs;
-    const activeIndex = Math.max(0, tabs.findIndex((tab) => tab.id === activeId));
-    const start = Math.min(Math.max(0, activeIndex - 2), tabs.length - 3);
-    return tabs.slice(start, start + 3);
+    const pinned = tabs.filter(isPinnedTab);
+    const unpinned = tabs.filter((tab) => !isPinnedTab(tab));
+    const slots = Math.max(1, MAX_VISIBLE_TABS - pinned.length);
+    if (unpinned.length <= slots) return [...pinned, ...unpinned];
+    const activeIndex = Math.max(0, unpinned.findIndex((tab) => tab.id === activeId));
+    const start = Math.min(Math.max(0, activeIndex - (slots - 1)), unpinned.length - slots);
+    return [...pinned, ...unpinned.slice(start, start + slots)];
   }, [tabs, activeId]);
   const visibleIds = new Set(visibleTabs.map((tab) => tab.id));
   const hiddenTabs = tabs.filter((tab) => !visibleIds.has(tab.id));
@@ -87,7 +130,48 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
     setActiveMenuOpen(false);
     setClosedMenuOpen(false);
     setCreateMenuOpen(false);
+    setTabMenuId(null);
   }, [activeId]);
+
+  useEffect(() => () => { if (pinPulseTimerRef.current) window.clearTimeout(pinPulseTimerRef.current); }, []);
+
+  // Right-click menu for a single tab (Pin tab / Unpin tab).
+  useEffect(() => {
+    if (!tabMenuId) return undefined;
+    tabMenuRef.current?.querySelector("[role='menuitem']")?.focus();
+    const closeOnOutsideInteraction = (event) => {
+      if (!tabMenuRef.current?.contains(event.target)) setTabMenuId(null);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setTabMenuId(null);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideInteraction, true);
+    document.addEventListener("keydown", closeOnEscape, true);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideInteraction, true);
+      document.removeEventListener("keydown", closeOnEscape, true);
+    };
+  }, [tabMenuId]);
+
+  useEffect(() => {
+    if (tabMenuId && !tabs.some((tab) => tab.id === tabMenuId)) setTabMenuId(null);
+  }, [tabs, tabMenuId]);
+
+  // Pin from the badge button or the context menu. When the cap refuses it,
+  // briefly highlight the pinned badges so it is clear which ones to release.
+  const requestPinToggle = (tabId) => {
+    const result = onTogglePin?.(tabId);
+    if (result?.status !== "limit") return;
+    if (pinPulseTimerRef.current) window.clearTimeout(pinPulseTimerRef.current);
+    setPinPulse((current) => ({ count: current.count + 1, on: true }));
+    pinPulseTimerRef.current = window.setTimeout(() => {
+      pinPulseTimerRef.current = null;
+      setPinPulse((current) => ({ ...current, on: false }));
+    }, 1100);
+  };
 
   // Close every top-bar tab/mode popover as soon as the canvas or the in-canvas
   // Page Header is clicked, touched or focused (capture phase, so surfaces that
@@ -218,12 +302,26 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
     if (sourceId && sourceId !== targetId) onReorder?.(sourceId, targetId);
   };
 
-  const renderTab = (tab) => (
-    <div className={`canvas-tab-item${activeId === tab.id ? " is-active" : ""}`} key={tab.id}>
+  const renderTab = (tab) => {
+    const pinned = isPinnedTab(tab);
+    const pinBlocked = !pinned && atPinLimit;
+    const pinLabel = pinned ? `Unpin ${tab.name}` : pinBlocked ? PIN_LIMIT_MESSAGE : `Pin ${tab.name}`;
+    return (
+    <div
+      className={`canvas-tab-item${activeId === tab.id ? " is-active" : ""}${pinned ? " is-pinned" : ""}`}
+      key={tab.id}
+      onContextMenu={(event) => {
+        if (tab.isTodoTab || !onTogglePin) return;
+        event.preventDefault();
+        event.stopPropagation();
+        setOverflowOpen(false); setActiveMenuOpen(false); setClosedMenuOpen(false); setCreateMenuOpen(false);
+        setTabMenuId(tab.id);
+      }}
+    >
       <button
         type="button"
         role="tab"
-        className={`canvas-tab${activeId === tab.id ? " is-active" : ""}`}
+        className={`canvas-tab${activeId === tab.id ? " is-active" : ""}${pinned ? " is-pinned" : ""}`}
         aria-selected={activeId === tab.id}
         title={tab.name}
         draggable={!disabled && !tab.isTodoTab}
@@ -246,9 +344,39 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
       </button>
       {activeId === tab.id && activeRenameAction && <span className="canvas-tab-inline-rename">{activeRenameAction}</span>}
       {activeId === tab.id && activeMenu && <button type="button" className={`canvas-tab-menu-trigger${activeMenuOpen ? " is-open" : ""}`} aria-label="Canvas options" aria-haspopup="dialog" aria-expanded={activeMenuOpen} title="Canvas options" onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); setActiveMenuOpen((open) => !open); }} disabled={disabled}><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg></button>}
-      {onClose && <button type="button" className="canvas-tab-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); onClose(tab.id); }} disabled={disabled}><CloseGlyph /></button>}
+      {onTogglePin && !tab.isTodoTab && (
+        <button
+          type="button"
+          key={pinned ? `pin-${pinPulse.count}` : "pin"}
+          className={`canvas-tab-pin${pinned ? " is-pinned" : ""}${pinBlocked ? " is-blocked" : ""}${pinned && pinPulse.on ? " is-pulsing" : ""}`}
+          aria-label={pinLabel}
+          aria-pressed={pinned}
+          aria-disabled={pinBlocked || undefined}
+          title={pinLabel}
+          onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); requestPinToggle(tab.id); }}
+          disabled={disabled}
+        ><span aria-hidden="true">📌</span></button>
+      )}
+      {onClose && !pinned && <button type="button" className="canvas-tab-close" aria-label={`Close ${tab.name}`} title={`Close ${tab.name}`} onClick={(event) => { event.stopPropagation(); setOverflowOpen(false); onClose(tab.id); }} disabled={disabled}><CloseGlyph /></button>}
+      {tabMenuId === tab.id && (
+        <div ref={tabMenuRef} className="canvas-tab-context-menu" role="menu" aria-label={`${tab.name} tab options`}>
+          <button
+            type="button"
+            role="menuitem"
+            className={pinBlocked ? "is-blocked" : ""}
+            aria-disabled={pinBlocked || undefined}
+            title={pinBlocked ? PIN_LIMIT_MESSAGE : undefined}
+            onClick={() => { setTabMenuId(null); requestPinToggle(tab.id); }}
+          >
+            <span aria-hidden="true">📌</span>
+            <span>{pinned ? "Unpin tab" : "Pin tab"}</span>
+            {pinBlocked && <small>{pinnedCount}/{MAX_PINNED_TABS} pinned</small>}
+          </button>
+        </div>
+      )}
     </div>
-  );
+    );
+  };
 
   return (
     <div className="canvas-tabs-bar" role="tablist" aria-label="Workspace tabs" ref={rootRef} onContextMenu={(event) => { if (!closedTabs.length || !onReopenClosedTab) return; event.preventDefault(); setOverflowOpen(false); setActiveMenuOpen(false); setClosedMenuOpen(true); }}>
@@ -349,6 +477,7 @@ export default function CanvasTabs({ tabs, activeId, onSelect, onCreate, onClose
         </div>
       </div>
       {activeMenuOpen && activeMenu && <div className="canvas-tabs-active-menu" role="dialog" aria-label="Canvas options">{activeMenu}</div>}
+      {switcher?.open && tabs.length > 1 && <TabSwitcherHud tabs={tabs} activeId={switcher.activeId} />}
     </div>
   );
 }

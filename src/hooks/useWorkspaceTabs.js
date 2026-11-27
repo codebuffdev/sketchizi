@@ -18,6 +18,7 @@ import { buildChapterEditorUrl } from "../features/workspace/useChapterNavigatio
 import { readDiagramRows, findDuplicateDiagramName } from "../features/workspace/diagramNames.js";
 import { resolveChapterSequence, readChapterLayout, appendChapter, writeChapterLayout, buildChapterLayout } from "../features/workspace/chapterSequence.js";
 import { DEFAULT_SYSTEM_DESIGN_TAB_STATE, persistSystemDesignTabState } from "../features/system-design/systemDesignTabState.js";
+import { orderTabsByPin, togglePinTab, PIN_LIMIT_MESSAGE } from "../features/workspace/tabPinning.js";
 
 /**
  * Tab & workspace lifecycle, phase 2: everything that acts on the open canvas tabs.
@@ -187,7 +188,8 @@ export function useWorkspaceTabs({
   }, [apiRef, currentFileRef, getCurrentFileSceneSignature, toolStyles, systemDesignRef]);
 
   const persistCanvasTabs = useCallback((nextTabs) => {
-    const normalizedTabs = nextTabs.map((tab) => ({ ...tab, active: tab.id === activeCanvasIdRef.current }));
+    // Pinned tabs always sit at the far left and never exceed the pin cap.
+    const normalizedTabs = orderTabsByPin(nextTabs).map((tab) => ({ ...tab, active: tab.id === activeCanvasIdRef.current }));
     canvasTabsRef.current = normalizedTabs;
     setCanvasTabs(normalizedTabs);
     try {
@@ -330,7 +332,12 @@ export function useWorkspaceTabs({
     }
     setSavedSketch(snapshot.elements ? { elements, appState: snapshot.appState || {}, files: snapshot.files || {}, metadata: snapshot.metadata || {}, extensions: snapshot.extensions || {}, format: snapshot.format || "excalidraw" } : null);
     setCurrentFile(snapshot.file || null, snapshot.fileSceneSignature || undefined);
-    if (elements.length) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
+    // A tab that already has a saved view keeps its own pan and zoom. Only a
+    // tab that has never been viewed (or a Pages tab, which frames its page)
+    // is fitted to its content.
+    const storedView = sanitizeTabAppState(snapshot.appState);
+    const hasStoredView = Number.isFinite(storedView.scrollX) && Number.isFinite(storedView.scrollY) && Boolean(storedView.zoom) && !isPagesTab;
+    if (elements.length && !hasStoredView) api.scrollToContent?.(elements, { fitToContent: true, animate: false });
   }, [apiRef, setCurrentFile, setSavedSketch, toolStyles, systemDesignRef, persistCanvasTabs]);
 
   useEffect(() => {
@@ -663,6 +670,11 @@ export function useWorkspaceTabs({
     const currentTabs = canvasTabsRef.current;
     const tab = currentTabs.find((item) => item.id === tabId);
     if (!tab) return;
+    // Pinned tabs cannot be closed by accident; unpin first.
+    if (tab.pinned) {
+      showToast("Unpin this tab before closing it");
+      return;
+    }
     const isActive = tabId === activeCanvasIdRef.current;
     // Capture the live active scene (or use the persisted background-tab
     // snapshot) so generated Pages frame/paper elements can be distinguished
@@ -696,7 +708,7 @@ export function useWorkspaceTabs({
       return;
     }
     performCloseCanvasTab(tabId);
-  }, [captureCanvasTabSnapshot, performCloseCanvasTab]);
+  }, [captureCanvasTabSnapshot, performCloseCanvasTab, showToast]);
 
   // "Save to file" from the close prompt. Only close once the canvas is really
   // linked to a file; a cancelled picker leaves the tab open. The archive made
@@ -733,8 +745,23 @@ export function useWorkspaceTabs({
     if (from < 0 || to < 0 || from === to) return;
     const [moved] = current.splice(from, 1);
     current.splice(to, 0, moved);
+    // persistCanvasTabs regroups pinned tabs, so a drag can never carry a tab
+    // across the pinned / unpinned boundary.
     persistCanvasTabs(current);
   }, [persistCanvasTabs]);
+
+  // Pin or unpin a canvas tab. Returns { status } where status is "pinned",
+  // "unpinned", "limit" (already at the cap) or "missing", so the tab bar can
+  // react to a refused pin by highlighting the pin badges.
+  const togglePinCanvasTab = useCallback((tabId) => {
+    const result = togglePinTab(canvasTabsRef.current, tabId);
+    if (result.status === "limit") {
+      showToast(PIN_LIMIT_MESSAGE);
+      return result;
+    }
+    if (result.status === "pinned" || result.status === "unpinned") persistCanvasTabs(result.tabs);
+    return result;
+  }, [persistCanvasTabs, showToast]);
 
   useEffect(() => {
     if (!sketchReady || !apiReady || canvasTabsRestoredRef.current) return;
@@ -796,7 +823,7 @@ export function useWorkspaceTabs({
       if (cancelled) return;
       if (Array.isArray(stored) && stored.length) {
         const today = getLocalDateString();
-        const restoredTabs = (refreshedTabs.length ? refreshedTabs : stored).map((tab) => {
+        const restoredTabs = orderTabsByPin((refreshedTabs.length ? refreshedTabs : stored).map((tab) => {
           const normalized = { ...tab, ...normalizeTabDates(tab, today) };
           const hasPageChapters = (Array.isArray(normalized.chapters) && normalized.chapters.length > 0) ||
             (Array.isArray(normalized.snapshot?.chapters) && normalized.snapshot.chapters.length > 0) ||
@@ -804,7 +831,7 @@ export function useWorkspaceTabs({
           if (normalized.type === "pages" || normalized.type === "page") return { ...normalized, type: "pages" };
           if (normalized.type) return normalized;
           return hasPageChapters ? { ...normalized, type: "pages" } : normalized;
-        });
+        }));
         const activeId = restoredTabs.find((tab) => tab.active)?.id || restoredTabs[0].id;
         const activeTab = restoredTabs.find((tab) => tab.id === activeId) || restoredTabs[0];
         setActiveWorkspaceTabId(activeTab.todoTabOpen && activeTab.todoTabActive ? `todo:${activeId}` : activeId);
@@ -1118,6 +1145,7 @@ export function useWorkspaceTabs({
     closeCanvasTab,
     saveAndCloseTab,
     reorderCanvasTabs,
+    togglePinCanvasTab,
     openCloudWorkspace,
     openWorkspaceDiagram,
     createWorkspaceChapter,

@@ -207,6 +207,8 @@ export default function DesktopAppHeader({
   onSelectCanvasTab,
   onCreateCanvasTab,
   onReorderCanvasTabs,
+  onTogglePinCanvasTab,
+  tabSwitcher = null,
   onCloseCanvasTab,
   closedTabs = [],
   onReopenClosedTab,
@@ -929,6 +931,8 @@ export default function DesktopAppHeader({
           onDeleteClosedTab={onDeleteClosedTab}
           onClearClosedTabs={onClearClosedTabs}
           onReorder={onReorderCanvasTabs}
+          onTogglePin={onTogglePinCanvasTab}
+          switcher={tabSwitcher}
           onClose={(tabId) => {
             const closingTab = canvasTabs.find((tab) => tab.id === tabId);
             if (closingTab?.isTodoTab) onCloseTodoTab?.(closingTab.canvasId);

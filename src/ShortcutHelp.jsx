@@ -10,6 +10,8 @@ const SHORTCUTS = [
   ["A / L", "Arrow / Line: click points, double-click or Enter to finish"],
   ["Alt", "Arrow drawing / handle drag: skip angle snap"],
   ["Alt + click", "Delete a bend on a selected arrow"],
+  ["Ctrl+Tab / Ctrl+Shift+Tab", "Next / previous tab (Ctrl+] / Ctrl+[ also work)"],
+  ["Right-click a tab", "Pin tab / Unpin tab (up to 2 pinned)"],
   ["Esc", "Close panels / exit modes"],
   ["?", "Show keyboard shortcuts"],
 ];

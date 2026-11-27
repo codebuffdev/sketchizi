@@ -19,6 +19,7 @@ import { useDocumentPersistence } from "./hooks/useDocumentPersistence";
 import { useSystemDesignWorkspace } from "./features/system-design/useSystemDesignWorkspace.js"; import { useSystemDesignIconAssignment } from "./features/system-design/useSystemDesignIconAssignment.js";
 import { useWorkspaceTabState } from "./hooks/useWorkspaceTabState";
 import { useWorkspaceTabs } from "./hooks/useWorkspaceTabs";
+import { useTabSwitcher } from "./hooks/useTabSwitcher";
 import { getWorkspaceTabMode } from "./features/workspace/WorkspaceModeIcon.jsx";
 import { useCollaboration } from "./features/collaboration/useCollaboration";
 import { useFileManager } from "./features/files/useFileManager";
@@ -410,6 +411,7 @@ function App() {
     closeCanvasTab,
     saveAndCloseTab,
     reorderCanvasTabs,
+    togglePinCanvasTab,
     openCloudWorkspace,
     openWorkspaceDiagram,
     createWorkspaceChapter,
@@ -471,6 +473,14 @@ function App() {
     startupChoiceMadeRef,
     toolStyles,
     systemDesignRef,
+  });
+
+  const { switcher: tabSwitcher } = useTabSwitcher({
+    canvasTabsRef,
+    activeCanvasIdRef,
+    canvasTabsRestoredRef,
+    selectWorkspaceTab,
+    blocked: Boolean(closeTabPrompt),
   });
 
   const handlePageContextChange = useCallback((context) => {
@@ -1954,6 +1964,8 @@ function App() {
         onCloseTodoTab={closeTodoTab}
         onCreateCanvasTab={createCanvasTab}
         onReorderCanvasTabs={reorderCanvasTabs}
+        onTogglePinCanvasTab={togglePinCanvasTab}
+        tabSwitcher={tabSwitcher}
         onCloseCanvasTab={closeCanvasTab}
         closedTabs={closedTabs}
         onReopenClosedTab={reopenClosedTab}
