@@ -10,7 +10,7 @@ import {
 } from "../../features/workspace/workspaceClient.js";
 import { fetchCurrentUser } from "../../features/auth/authClient.js";
 import { readDiagramRows } from "../../features/workspace/diagramNames.js";
-import { formatBytes, getDiagramBytes, readSizeCache } from "../../features/workspace/diagramSize.js";
+import { formatBytes, getDiagramBytes, readSizeCache, sumBytes } from "../../features/workspace/diagramSize.js";
 import {
   formatChapterLabel,
   readChapterLayout,
@@ -18,7 +18,8 @@ import {
   suggestNextChapterName,
 } from "../../features/workspace/chapterSequence.js";
 
-const POPOVER_WIDTH = 348;
+const POPOVER_WIDTH = 520;
+const VIEWPORT_GAP = 12;
 const EDGE_GAP = 8;
 
 const readProjectRows = (result) => (Array.isArray(result) ? result : result?.projects || []);
@@ -47,10 +48,11 @@ export default function WorkspaceQuickPopover({
   const popoverRef = useRef(null);
   const inputRef = useRef(null);
   const listRef = useRef(null);
+  const searchActiveRef = useRef(false);
   const [position, setPosition] = useState({ top: 56, right: 12, width: POPOVER_WIDTH });
   const [projects, setProjects] = useState([]);
-  // "all" or a project id: which project pill is active.
-  const [scope, setScope] = useState("all");
+  // Project selected in the left rail ("" = the open chapter's project, else the first).
+  const [scope, setScope] = useState("");
   const [chaptersByProject, setChaptersByProject] = useState({});
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [loadingChapters, setLoadingChapters] = useState(false);
@@ -65,11 +67,11 @@ export default function WorkspaceQuickPopover({
   const [retryNonce, setRetryNonce] = useState(0);
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
+  searchActiveRef.current = query.length > 0;
   const [projectFormOpen, setProjectFormOpen] = useState(false);
   const [projectNameDraft, setProjectNameDraft] = useState("");
 
-  // Project that "+ New Chapter" targets: the active pill, else the open
-  // cloud project, else the first one.
+  // Project whose chapters fill the right pane and that "+ New chapter" targets.
   const project = projects.find((candidate) => candidate.id === scope)
     || projects.find((candidate) => candidate.id === activeProjectId)
     || projects[0] || null;
@@ -79,7 +81,7 @@ export default function WorkspaceQuickPopover({
   const place = useCallback(() => {
     const rect = anchorRef?.current?.getBoundingClientRect?.();
     if (!rect) return;
-    const width = Math.min(POPOVER_WIDTH, window.innerWidth - EDGE_GAP * 2);
+    const width = Math.min(POPOVER_WIDTH, window.innerWidth - VIEWPORT_GAP);
     const right = Math.max(EDGE_GAP, Math.min(window.innerWidth - rect.right, window.innerWidth - width - EDGE_GAP));
     setPosition({ top: rect.bottom + 8, right, width });
   }, [anchorRef]);
@@ -96,6 +98,13 @@ export default function WorkspaceQuickPopover({
     if (!open) return undefined;
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
+      if (searchActiveRef.current) {
+        // First Esc clears the search; the next one closes.
+        event.preventDefault();
+        event.stopPropagation();
+        setQuery("");
+        return;
+      }
       event.stopPropagation();
       onClose?.();
       anchorRef?.current?.focus?.();
@@ -112,9 +121,9 @@ export default function WorkspaceQuickPopover({
     };
   }, [open, onClose, anchorRef]);
 
-  // Drop a pill whose project disappeared; "all" always stays valid.
+  // Forget a selection whose project disappeared.
   const pickProject = useCallback((rows) => {
-    setScope((current) => (current === "all" || rows.some((row) => row.id === current) ? current : "all"));
+    setScope((current) => (!current || rows.some((row) => row.id === current) ? current : ""));
   }, []);
 
   // Step 1 on open: resolve auth. Props win; otherwise ask the shared, cached
@@ -139,7 +148,7 @@ export default function WorkspaceQuickPopover({
     const seeded = Array.isArray(workspaceProjects) && workspaceProjects.length ? workspaceProjects : cache.projects;
     const rows = seeded.filter((row) => row?.id);
     setProjects(rows);
-    setScope("all");
+    setScope("");
     setFormOpen(false);
     setProjectFormOpen(false);
     setQuery("");
@@ -183,7 +192,7 @@ export default function WorkspaceQuickPopover({
     return () => { cancelled = true; };
   }, [open, authState, retryNonce, pickProject]);
 
-  // Step 4: chapters for every project (the "All" pill and the counts need
+  // Step 4: chapters for every project (global search and the counts need
   // them), cache first, then one revalidation request per project.
   const projectKey = projects.map((row) => row.id).join("|");
   useEffect(() => {
@@ -226,12 +235,14 @@ export default function WorkspaceQuickPopover({
     if (open && authState === "authed" && projects.length) inputRef.current?.focus();
   }, [open, authState, projects.length]);
 
-  // Rows on screen: the active pill's chapters, narrowed by the filter text.
+  // Right pane rows: the selected project's chapters, or — while searching —
+  // matches across every project (owner shown only then).
   const needle = query.trim().toLowerCase();
+  const searching = needle.length > 0;
   const visibleRows = projects
-    .filter((candidate) => scope === "all" || candidate.id === scope)
+    .filter((candidate) => searching || candidate.id === project?.id)
     .flatMap((candidate) => (chaptersByProject[candidate.id] || []).map((chapter) => ({ chapter, owner: candidate })))
-    .filter(({ chapter, owner }) => !needle
+    .filter(({ chapter, owner }) => !searching
       || String(chapter.name || chapter.title || "").toLowerCase().includes(needle)
       || String(owner.name || "").toLowerCase().includes(needle));
   const visibleKey = visibleRows.map(({ chapter }) => chapter.id).join("|");
@@ -239,9 +250,9 @@ export default function WorkspaceQuickPopover({
   // Start the highlight on the open chapter (else the first row) whenever the list changes.
   useEffect(() => {
     const current = visibleRows.findIndex(({ chapter }) => chapter.id === activeDiagramId);
-    setHighlight(!needle && current >= 0 ? current : 0);
+    setHighlight(!searching && current >= 0 ? current : 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleKey, scope, needle]);
+  }, [visibleKey, project?.id, searching]);
 
   useEffect(() => {
     listRef.current?.querySelector?.(".is-highlighted")?.scrollIntoView?.({ block: "nearest" });
@@ -311,13 +322,16 @@ export default function WorkspaceQuickPopover({
     }));
   };
 
-  const pillCount = (candidate) => {
+  const countFor = (candidate) => {
     const loaded = chaptersByProject[candidate.id];
     if (Array.isArray(loaded)) return loaded.length;
     return Number.isFinite(candidate?.diagramCount) ? candidate.diagramCount : null;
   };
-  const totalChapters = projects.reduce((sum, candidate) => sum + (pillCount(candidate) || 0), 0);
   const sizeCache = readSizeCache();
+  const totalBytes = sumBytes(Object.values(chaptersByProject).flat().map((chapter) => getDiagramBytes(chapter, sizeCache)));
+  const holdsOpenChapter = (candidate) => candidate.id === activeProjectId
+    || (chaptersByProject[candidate.id] || []).some((chapter) => chapter.id === activeDiagramId);
+  const chapterCount = project ? countFor(project) : null;
 
   const onFilterKeyDown = (event) => {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -374,135 +388,154 @@ export default function WorkspaceQuickPopover({
         </>
       );
     }
-    const listId = "workspace-popover-listbox";
-    const highlighted = visibleRows[highlight];
-    return (
-      <>
-        {stale && (
-          <div className="workspace-popover-chip-row">
-            <span className="workspace-popover-chip" role="status">Offline / Cached view</span>
-            <button type="button" className="workspace-popover-chip is-action" onClick={retry}>Retry</button>
-          </div>
-        )}
-        <div className="workspace-popover-search">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-          <input
-            ref={inputRef}
-            autoFocus
-            type="text"
-            role="combobox"
-            aria-expanded="true"
-            aria-controls={listId}
-            aria-activedescendant={highlighted ? `workspace-popover-row-${highlighted.chapter.id}` : undefined}
-            aria-label="Filter projects or chapters"
-            placeholder="Filter projects or chapters..."
-            autoComplete="off"
-            spellCheck={false}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={onFilterKeyDown}
-          />
-          {query && (
-            <button type="button" className="workspace-popover-clear" aria-label="Clear filter" onClick={() => { setQuery(""); inputRef.current?.focus(); }}>✕</button>
-          )}
-        </div>
-        <div className="workspace-popover-projects" role="tablist" aria-label="Projects">
-          <button type="button" role="tab" aria-selected={scope === "all"} className={`workspace-popover-pill${scope === "all" ? " is-active" : ""}`} onClick={() => { setScope("all"); setFormOpen(false); }}>
-            All <span className="workspace-popover-pill-count">{totalChapters}</span>
-          </button>
-          {projects.map((candidate) => {
-            const count = pillCount(candidate);
-            return (
-              <button key={candidate.id} type="button" role="tab" aria-selected={scope === candidate.id} title={candidate.name} className={`workspace-popover-pill${scope === candidate.id ? " is-active" : ""}`} onClick={() => { setScope(candidate.id); setFormOpen(false); }}>
-                <span className="workspace-popover-pill-name">{candidate.name}</span>
-                {count !== null && <span className="workspace-popover-pill-count">{count}</span>}
-              </button>
-            );
-          })}
-          <button type="button" className="workspace-popover-pill is-ghost" aria-label="Create new project" title="Create New Project" onClick={() => setProjectFormOpen((value) => !value)}>+</button>
-        </div>
-        {projectFormOpen && (
-          <form className="workspace-popover-form" onSubmit={createProject}>
-            <input autoFocus maxLength={120} value={projectNameDraft} onChange={(event) => setProjectNameDraft(event.target.value)} aria-label="New project name" placeholder="Project name" />
-            <button type="submit" className="workspace-popover-primary" disabled={busy || !projectNameDraft.trim()}>{busy ? "Creating…" : "Create"}</button>
-          </form>
-        )}
-        <ul ref={listRef} id={listId} role="listbox" className="workspace-popover-chapters" aria-label="Chapters">
-          {loadingChapters && !visibleRows.length && <li className="workspace-popover-note">Loading chapters…</li>}
-          {!loadingChapters && !visibleRows.length && (
-            <li className="workspace-popover-note">{needle ? "No matching chapters." : "No chapters in this project yet."}</li>
-          )}
-          {visibleRows.map(({ chapter, owner }, index) => {
-            const current = chapter.id === activeDiagramId;
-            const bytes = getDiagramBytes(chapter, sizeCache);
-            const meta = [scope === "all" ? owner.name : "", bytes !== null ? formatBytes(bytes) : ""].filter(Boolean).join(" · ");
-            return (
-              <li key={chapter.id} id={`workspace-popover-row-${chapter.id}`} role="option" aria-selected={current}>
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  className={`workspace-popover-chapter${current ? " is-current" : ""}${index === highlight ? " is-highlighted" : ""}`}
-                  onClick={() => openDiagram(chapter, owner)}
-                  onMouseMove={() => { if (index !== highlight) setHighlight(index); }}
-                  aria-current={current ? "true" : undefined}
-                >
-                  <span className="workspace-popover-chapter-number">{formatChapterLabel(chapter.chapterNumber)}</span>
-                  <span className="workspace-popover-chapter-text">
-                    <span className="workspace-popover-chapter-name">{chapter.name || chapter.title || "Untitled"}</span>
-                    {meta && <span className="workspace-popover-chapter-meta">{meta}</span>}
-                  </span>
-                  <span className="workspace-popover-chapter-check" aria-hidden="true">{current ? "✓" : ""}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        {error === "create-failed" && <p className="workspace-popover-note" role="status">Couldn't create that. Please try again.</p>}
-        {formOpen ? (
-          <form className="workspace-popover-form workspace-popover-section" onSubmit={submitCreate}>
-            <input
-              autoFocus
-              maxLength={120}
-              value={nameDraft}
-              onChange={(event) => setNameDraft(event.target.value)}
-              aria-label="New chapter name"
-              placeholder="Chapter name"
-            />
-            <button type="submit" className="workspace-popover-primary" disabled={busy || !nameDraft.trim()}>{busy ? "Creating…" : "Create"}</button>
-          </form>
-        ) : (
-          <button type="button" className="workspace-popover-footer" onClick={startCreate} disabled={busy || !project}>
-            + New Chapter in {project?.name}
-          </button>
-        )}
-        <div className="workspace-popover-hint" aria-hidden="true">↑↓ navigate · ↵ switch · esc close</div>
-      </>
-    );
+    return null;
   })();
 
-  return createPortal(
-    <div
-      ref={popoverRef}
-      className={`workspace-popover${isDark ? " is-dark" : ""}`}
-      role="dialog"
-      aria-label="Cloud Workspace: Switch chapters without leaving the editor"
-      style={{ top: position.top, right: position.right, width: position.width }}
-    >
-      <div className="workspace-popover-header">
-        <div className="workspace-popover-heading" title="Switch chapters without leaving the editor">
-          <span className="workspace-popover-dot" aria-hidden="true">●</span>
-          <strong>Cloud Workspace</strong>
-          {authState === "authed" && totalChapters > 0 && (
-            <span className="workspace-popover-total">· {totalChapters} chapter{totalChapters === 1 ? "" : "s"}</span>
+  const showPalette = authState !== "anon" && projects.length > 0;
+  const listId = "workspace-popover-listbox";
+  const highlighted = visibleRows[highlight];
+  const dialogProps = {
+    ref: popoverRef,
+    className: `workspace-popover${isDark ? " is-dark" : ""}`,
+    role: "dialog",
+    "aria-label": "Cloud Workspace: Switch chapters without leaving the editor",
+    style: { top: position.top, right: position.right, width: position.width },
+  };
+  const searchIcon = <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>;
+
+  if (!showPalette) {
+    // Signed out / loading / empty / unavailable: a slim header over the state card.
+    return createPortal(
+      <div {...dialogProps}>
+        <div className="workspace-popover-topbar" title="Switch chapters without leaving the editor">
+          <span className="workspace-popover-title"><span className="workspace-popover-dot" aria-hidden="true">●</span> Cloud Workspace</span>
+          {authState !== "anon" && (
+            <button type="button" className="workspace-popover-full" onClick={() => { onClose?.(); onOpenFullWorkspace?.(); }}>Workspace ↗</button>
           )}
         </div>
-        {authState !== "anon" && (
-          <button type="button" className="workspace-popover-full" onClick={() => { onClose?.(); onOpenFullWorkspace?.(); }}>
-            Full View ↗
-          </button>
+        {body}
+      </div>,
+      document.body,
+    );
+  }
+
+  return createPortal(
+    <div {...dialogProps}>
+      <div className="workspace-popover-topbar" title="Switch chapters without leaving the editor">
+        <span className="workspace-popover-search-icon">{searchIcon}</span>
+        <input
+          ref={inputRef}
+          autoFocus
+          type="text"
+          role="combobox"
+          aria-expanded="true"
+          aria-controls={listId}
+          aria-activedescendant={highlighted ? `workspace-popover-row-${highlighted.chapter.id}` : undefined}
+          aria-label="Jump to chapter or project"
+          placeholder="Jump to chapter or project..."
+          autoComplete="off"
+          spellCheck={false}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={onFilterKeyDown}
+        />
+        {query && (
+          <button type="button" className="workspace-popover-esc" aria-label="Clear search" onClick={() => { setQuery(""); inputRef.current?.focus(); }}>Esc</button>
         )}
+        <button type="button" className="workspace-popover-full" onClick={() => { onClose?.(); onOpenFullWorkspace?.(); }}>Workspace ↗</button>
       </div>
-      {body}
+
+      <div className="workspace-popover-split">
+        <aside className="workspace-popover-rail" aria-label="Projects">
+          <div className="workspace-popover-pane-head">
+            <span>PROJECTS <b>{projects.length}</b></span>
+            <button type="button" className="workspace-popover-add" aria-label="Create new project" title="Create New Project" onClick={() => setProjectFormOpen((value) => !value)}>+</button>
+          </div>
+          {projectFormOpen && (
+            <form className="workspace-popover-form" onSubmit={createProject}>
+              <input autoFocus maxLength={120} value={projectNameDraft} onChange={(event) => setProjectNameDraft(event.target.value)} aria-label="New project name" placeholder="Project name" />
+              <button type="submit" className="workspace-popover-primary" disabled={busy || !projectNameDraft.trim()}>{busy ? "…" : "Add"}</button>
+            </form>
+          )}
+          <ul className="workspace-popover-projects" role="listbox" aria-label="Project list">
+            {projects.map((candidate) => {
+              const count = countFor(candidate);
+              const selected = !searching && candidate.id === project?.id;
+              return (
+                <li key={candidate.id} role="option" aria-selected={selected}>
+                  <button type="button" tabIndex={-1} title={candidate.name} className={`workspace-popover-project${selected ? " is-selected" : ""}`} onClick={() => { setScope(candidate.id); setQuery(""); setFormOpen(false); inputRef.current?.focus(); }}>
+                    <span className={`workspace-popover-project-dot${holdsOpenChapter(candidate) ? " is-open" : ""}`} aria-hidden="true" />
+                    <span className="workspace-popover-project-name">{candidate.name}</span>
+                    {count !== null && <span className="workspace-popover-project-count">{count}</span>}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="workspace-popover-sync" role="status">
+            {stale ? (
+              <><span className="workspace-popover-sync-dot is-stale" aria-hidden="true">●</span><span>Offline · cached</span><button type="button" onClick={retry}>Retry</button></>
+            ) : (
+              <><span className="workspace-popover-sync-dot" aria-hidden="true">●</span><span>Synced{totalBytes !== null ? ` · ${formatBytes(totalBytes)}` : ""}</span></>
+            )}
+          </div>
+        </aside>
+
+        <section className="workspace-popover-pane" aria-label="Chapters">
+          <div className="workspace-popover-pane-head">
+            <span className="workspace-popover-pane-title">
+              {searching ? "Search results" : (project?.name || "Chapters")}
+            </span>
+            <span className="workspace-popover-pane-count">
+              {searching
+                ? `${visibleRows.length} match${visibleRows.length === 1 ? "" : "es"}`
+                : chapterCount !== null ? `${chapterCount} chapter${chapterCount === 1 ? "" : "s"}` : ""}
+            </span>
+          </div>
+          <ul ref={listRef} id={listId} role="listbox" className="workspace-popover-chapters" aria-label="Chapters">
+            {loadingChapters && !visibleRows.length && <li className="workspace-popover-note">Loading chapters…</li>}
+            {!loadingChapters && !visibleRows.length && (
+              <li className="workspace-popover-note">{searching ? "No matching chapters." : "No chapters in this project yet."}</li>
+            )}
+            {visibleRows.map(({ chapter, owner }, index) => {
+              const current = chapter.id === activeDiagramId;
+              const bytes = getDiagramBytes(chapter, sizeCache);
+              return (
+                <li key={chapter.id} id={`workspace-popover-row-${chapter.id}`} role="option" aria-selected={current}>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    className={`workspace-popover-chapter${current ? " is-current" : ""}${index === highlight ? " is-highlighted" : ""}`}
+                    onClick={() => openDiagram(chapter, owner)}
+                    onMouseMove={() => { if (index !== highlight) setHighlight(index); }}
+                    aria-current={current ? "true" : undefined}
+                  >
+                    <span className="workspace-popover-chapter-number">{formatChapterLabel(chapter.chapterNumber)}</span>
+                    <span className="workspace-popover-chapter-text">
+                      <span className="workspace-popover-chapter-name">{chapter.name || chapter.title || "Untitled"}</span>
+                      {searching && <span className="workspace-popover-chapter-meta">{owner.name}</span>}
+                    </span>
+                    {bytes !== null && <span className="workspace-popover-chapter-size">{formatBytes(bytes)}</span>}
+                    <span className="workspace-popover-chapter-check" aria-hidden="true">{current ? "✓" : ""}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {error === "create-failed" && <p className="workspace-popover-note" role="status">Couldn't create that. Please try again.</p>}
+          {formOpen ? (
+            <form className="workspace-popover-form workspace-popover-section" onSubmit={submitCreate}>
+              <input autoFocus maxLength={120} value={nameDraft} onChange={(event) => setNameDraft(event.target.value)} aria-label="New chapter name" placeholder="Chapter name" />
+              <button type="submit" className="workspace-popover-primary" disabled={busy || !nameDraft.trim()}>{busy ? "Creating…" : "Create"}</button>
+            </form>
+          ) : (
+            <button type="button" className="workspace-popover-footer" onClick={startCreate} disabled={busy || !project}>
+              <span className="workspace-popover-footer-label">+ New chapter in {project?.name}</span>
+              <span className="workspace-popover-footer-keys" aria-hidden="true">↑↓ ↵</span>
+            </button>
+          )}
+        </section>
+      </div>
     </div>,
     document.body,
   );

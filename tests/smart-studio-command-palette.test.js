@@ -110,9 +110,9 @@ test("header Workspace icon button toggles a quick popover instead of jumping to
   // Popover: Escape + outside click, Full View, project pills, chapter rows, quick create.
   assert.match(popover, /event\.key !== "Escape"/);
   assert.match(popover, /pointerdown/);
-  assert.match(popover, /Full View ↗/);
+  assert.match(popover, /Workspace ↗/);
   assert.match(popover, /Switch chapters without leaving the editor/);
-  assert.match(popover, /\+ New Chapter in \{project\?\.name\}/);
+  assert.match(popover, /\+ New chapter in \{project\?\.name\}/);
   assert.match(popover, /formatChapterLabel\(chapter\.chapterNumber\)/);
   // App: only the explicit Full View goes to /workspace; chapters open in the editor.
   assert.match(app, /onOpenFullWorkspace=\{openCloudWorkspace\}/);
