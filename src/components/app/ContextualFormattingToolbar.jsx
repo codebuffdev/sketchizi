@@ -12,6 +12,7 @@ import { useRecentCustomColors } from "../../features/navigation/useRecentCustom
 import { applyRichTextColor } from "../../features/canvas/richTextColorBridge.js";
 import { applyColorToElement, withoutRuns } from "../../features/canvas/textRuns.js";
 import { TEXT_RUNS_CHANGED_EVENT } from "../../features/canvas/textEditorRunsMirror.js";
+import { commitStyleScene } from "../../features/canvas/styleOnlyUpdate.js";
 import {
   armToolbarSelection,
   getTextEditSelection,
@@ -442,11 +443,14 @@ export default function ContextualFormattingToolbar({
       if (selection) {
         const patch = applyColorToElement(selection.element, rawPatch.strokeColor, { start: selection.start, end: selection.end }, selection.text);
         const elements = api.getSceneElements?.() || [];
-        api.updateScene({
+        // Only styling fields change: position, size and camera stay exactly where they are.
+        commitStyleScene(api, {
           elements: elements.map((element) => (element.id === selection.elementId
-            ? { ...element, ...patch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
+            ? { ...element, ...patch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now(), updatedAt: Date.now() }
             : element)),
+          patchKeys: ["strokeColor", "customData"],
           captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+          neverCapture: CaptureUpdateAction.NEVER,
         });
         window.dispatchEvent(new Event(TEXT_RUNS_CHANGED_EVENT));
         restoreTextSelection(selection);
@@ -487,10 +491,12 @@ export default function ContextualFormattingToolbar({
         const arrowheadAppState = {};
         if ("startArrowhead" in patch) arrowheadAppState.currentItemStartArrowhead = patch.startArrowhead;
         if ("endArrowhead" in patch) arrowheadAppState.currentItemEndArrowhead = patch.endArrowhead;
-        api.updateScene({
+        commitStyleScene(api, {
           elements: updatedElements,
+          patchKeys: Object.keys(patch),
           ...(Object.keys(arrowheadAppState).length ? { appState: arrowheadAppState } : {}),
           captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+          neverCapture: CaptureUpdateAction.NEVER,
         });
         // Whole-box recolor cleared per-run colors: refresh the overlay / editor mirror.
         if ("strokeColor" in patch) window.dispatchEvent(new Event(TEXT_RUNS_CHANGED_EVENT));

@@ -12,6 +12,7 @@ import { useRecentCustomColors } from "../../features/navigation/useRecentCustom
 import { absolutePointsToPatch, getAbsolutePoints, getRoutingMode, getRoutingPatch, normalizeOrthogonalPath } from "../../features/canvas/arrowRouting.js";
 import { applyAlignmentToSelection } from "../../utils/alignElements.js";
 import { applyColorToElement, withoutRuns } from "../../features/canvas/textRuns.js";
+import { commitStyleScene } from "../../features/canvas/styleOnlyUpdate.js";
 import { TEXT_RUNS_CHANGED_EVENT } from "../../features/canvas/textEditorRunsMirror.js";
 import { armToolbarSelection, getTextEditSelection, releaseToolbarSelection, restoreTextSelection } from "../../features/canvas/textSelectionTracker.js";
 
@@ -651,11 +652,13 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
         const runsPatch = applyColorToElement(selection.element, rawPatch.strokeColor, { start: selection.start, end: selection.end }, selection.text);
         const now = Date.now();
         const scene = api.getSceneElements?.() || [];
-        api.updateScene({
+        commitStyleScene(api, {
           elements: scene.map((element) => (element.id === selection.elementId
             ? { ...element, ...runsPatch, customData: runsPatch.customData ? { ...runsPatch.customData } : undefined, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now, updatedAt: now }
             : element)),
+          patchKeys: ["strokeColor", "customData"],
           captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+          neverCapture: CaptureUpdateAction.NEVER,
         });
         window.dispatchEvent(new Event(TEXT_RUNS_CHANGED_EVENT));
         restoreTextSelection(selection);
@@ -720,10 +723,12 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
     const arrowheadAppState = {};
     if ("startArrowhead" in effectivePatch) arrowheadAppState.currentItemStartArrowhead = effectivePatch.startArrowhead;
     if ("endArrowhead" in effectivePatch) arrowheadAppState.currentItemEndArrowhead = effectivePatch.endArrowhead;
-    api.updateScene({
+    commitStyleScene(api, {
       elements: next,
+      patchKeys: Object.keys(effectivePatch),
       ...(Object.keys(arrowheadAppState).length ? { appState: arrowheadAppState } : {}),
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      neverCapture: CaptureUpdateAction.NEVER,
     });
     if (wholeBoxColor) window.dispatchEvent(new Event(TEXT_RUNS_CHANGED_EVENT));
     rememberStyle(stripGridKeys(effectivePatch));

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Excalidraw } from "@excalidraw/excalidraw";
+import { CaptureUpdateAction, Excalidraw } from "@excalidraw/excalidraw";
 import ShortcutHelp from "../../ShortcutHelp";
 import ToolOptionsDock from "./ToolOptionsDock";
 import PrimaryDock from "./PrimaryDock";
@@ -21,6 +21,7 @@ import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacemen
 import { installTextSelectionTracker } from "../../features/canvas/textSelectionTracker.js";
 import { attachTextRunsEditor } from "../../features/canvas/textEditorRunsMirror.js";
 import { attachPasteHintGuard } from "../../features/canvas/pasteHintGuard.js";
+import { attachPasteCentering } from "../../features/canvas/pasteCentering.js";
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
 import { useContainerAutoExpand } from "../../features/canvas/containerAutoExpand/useContainerAutoExpand.js";
 import { useImageImport } from "../../features/canvas/imageImport/useImageImport.js";
@@ -67,6 +68,11 @@ export default function SketchiziCanvas({
   // Excalidraw's "paste as a single element" hint: own a single timer and dismiss it on
   // paste-into-editor, Ctrl+Shift+V, canvas click, Escape, tab switch and unmount.
   useEffect(() => attachPasteHintGuard({ apiRef }), [apiRef]);
+  // Pasted text/elements land in the middle of the visible viewport, not at a stale cursor position.
+  useEffect(() => {
+    if (!canEdit || viewModeEnabled) return undefined;
+    return attachPasteCentering({ apiRef, neverCapture: CaptureUpdateAction.NEVER });
+  }, [apiRef, canEdit, viewModeEnabled]);
   const dropActiveRef = useRef(false);
   const workAnchorRef = useRef(null);
   const spotlightSelectedRef = useRef(selectedElements);
