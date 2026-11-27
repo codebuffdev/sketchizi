@@ -8,7 +8,6 @@ import AlignmentGuides from "./AlignmentGuides";
 import TextSizeIndicator from "./TextSizeIndicator";
 import SelectionFrame from "./SelectionFrame";
 import GridFillLayer from "./GridFillLayer";
-import RichTextRunsOverlay from "./RichTextRunsOverlay";
 import ShapeMeasurements from "./ShapeMeasurements";
 import RectangleTitles from "./RectangleTitles";
 import ArrowVertexEditor from "./ArrowVertexEditor";
@@ -18,8 +17,7 @@ import { DEFAULT_FONT_FAMILY_ID, normalizeFontFamilyId } from "../../features/ca
 import { handleStickyNoteRapidFlow } from "../../features/canvas/stickyNoteFlow.js";
 import { applyMarkdownListEdit, getMarkdownListEdit, getMarkdownHeadingInputEdit } from "../../features/canvas/markdownListShortcuts.js";
 import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
-import { installTextSelectionTracker } from "../../features/canvas/textSelectionTracker.js";
-import { attachTextRunsEditor } from "../../features/canvas/textEditorRunsMirror.js";
+import { stripLegacyTextRuns } from "../../features/canvas/legacyTextRuns.js";
 import { attachPasteHintGuard } from "../../features/canvas/pasteHintGuard.js";
 import { attachPasteCentering } from "../../features/canvas/pasteCentering.js";
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
@@ -55,16 +53,6 @@ export default function SketchiziCanvas({
   const drawingPointerRef = useRef(null);
   const textEditingRef = useRef(false);
 
-  // Inline text colors: remember the editor's highlighted range across toolbar
-  // clicks, keep runs aligned while typing, and show the colors inside the editor.
-  useEffect(() => {
-    if (!canEdit || viewModeEnabled) return undefined;
-    const stopTracking = installTextSelectionTracker({
-      getEditingElementId: () => apiRef?.current?.getAppState?.()?.editingTextElement?.id ?? null,
-    });
-    const stopEditorRuns = attachTextRunsEditor({ apiRef });
-    return () => { stopTracking(); stopEditorRuns(); };
-  }, [apiRef, canEdit, viewModeEnabled]);
   // Excalidraw's "paste as a single element" hint: own a single timer and dismiss it on
   // paste-into-editor, Ctrl+Shift+V, canvas click, Escape, tab switch and unmount.
   useEffect(() => attachPasteHintGuard({ apiRef }), [apiRef]);
@@ -929,7 +917,7 @@ export default function SketchiziCanvas({
   // instance; cloud loads and canvas-tab switches update the live scene via
   // api.updateScene and must never feed a new initialization object back in.
   const [excalidrawInitialData] = useState(() => ({
-    elements: savedSketch?.elements || [],
+    elements: stripLegacyTextRuns(savedSketch?.elements || []).elements,
     appState: {
       ...(savedSketch?.appState || {}),
       zenModeEnabled: false,
@@ -974,7 +962,6 @@ export default function SketchiziCanvas({
       />
       {!hudSuppressed && <ToolOptionsDock apiRef={apiRef} selectedElements={selectedElements} onClearSelection={onClearSelection} canvasRevision={canvasRevision} canEdit={canEdit && !viewModeEnabled} onToolStyleChange={onToolStyleChange} />}
       <GridFillLayer apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} />
-      <RichTextRunsOverlay apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} />
       <AlignmentGuides canvasRootRef={canvasRootRef} apiRef={apiRef} canEdit={canEdit} viewModeEnabled={viewModeEnabled} />
       <ArrowVertexEditor apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} canEdit={canEdit} viewModeEnabled={viewModeEnabled || hudSuppressed} />
       <ShapeMeasurements apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled} isDarkTheme={isDarkTheme} />

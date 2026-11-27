@@ -11,10 +11,7 @@ import { isHexColor } from "../../features/navigation/recentCustomColors.js";
 import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
 import { absolutePointsToPatch, getAbsolutePoints, getRoutingMode, getRoutingPatch, normalizeOrthogonalPath } from "../../features/canvas/arrowRouting.js";
 import { applyAlignmentToSelection } from "../../utils/alignElements.js";
-import { applyColorToElement, withoutRuns } from "../../features/canvas/textRuns.js";
 import { commitStyleScene } from "../../features/canvas/styleOnlyUpdate.js";
-import { TEXT_RUNS_CHANGED_EVENT } from "../../features/canvas/textEditorRunsMirror.js";
-import { armToolbarSelection, getTextEditSelection, releaseToolbarSelection, restoreTextSelection } from "../../features/canvas/textSelectionTracker.js";
 
 // Clicking a swatch must never blur the text editor: blur fires before click and
 // collapses the highlight. Native inputs keep their default behavior.
@@ -164,7 +161,7 @@ function ColorPicker({ label, value, onChange, transparent = false, presets = []
       <span className={`sk-tool-color-swatch${showRainbow ? " is-rainbow" : ""}`} style={showRainbow ? undefined : { background: transparent ? "transparent" : safeValue }} aria-hidden="true">{transparent ? "∅" : null}</span>
       <input ref={inputRef} type="color" aria-label={label} title="Custom color (click to pick)" value={safeValue}
         onChange={(event) => { onChange(event.target.value); onCommit?.(event.target.value); }}
-        onPointerDown={() => { armToolbarSelection(); onEndSession?.(); }} onBlur={() => { releaseToolbarSelection(); onEndSession?.(); }} />
+        onPointerDown={() => onEndSession?.()} onBlur={() => onEndSession?.()} />
     </label>
   );
 }
@@ -643,28 +640,6 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
   const update = (rawPatch) => {
     const api = apiRef?.current;
     if (!api) return;
-    // A highlighted range in the text editor: color only that range through
-    // customData.runs, then put the highlight back so swatches can be re-clicked.
-    const rawKeys = Object.keys(rawPatch);
-    if (rawKeys.length === 1 && rawKeys[0] === "strokeColor") {
-      const selection = getTextEditSelection(api);
-      if (selection) {
-        const runsPatch = applyColorToElement(selection.element, rawPatch.strokeColor, { start: selection.start, end: selection.end }, selection.text);
-        const now = Date.now();
-        const scene = api.getSceneElements?.() || [];
-        commitStyleScene(api, {
-          elements: scene.map((element) => (element.id === selection.elementId
-            ? { ...element, ...runsPatch, customData: runsPatch.customData ? { ...runsPatch.customData } : undefined, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now, updatedAt: now }
-            : element)),
-          patchKeys: ["strokeColor", "customData"],
-          captureUpdate: CaptureUpdateAction.IMMEDIATELY,
-          neverCapture: CaptureUpdateAction.NEVER,
-        });
-        window.dispatchEvent(new Event(TEXT_RUNS_CHANGED_EVENT));
-        restoreTextSelection(selection);
-        return;
-      }
-    }
     // "dot" -> the value the Excalidraw renderer actually draws as a circle.
     const patch = normalizeArrowheadPatch(rawPatch);
     if (!isSelection) {
@@ -716,9 +691,8 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       effectivePatch.fillStyle = "solid";
     }
     const elements = api.getSceneElements?.() || [];
-    const wholeBoxColor = "strokeColor" in effectivePatch;
     const next = elements.map((element) => ids.has(element.id)
-      ? { ...(wholeBoxColor && element.type === "text" ? withoutRuns(applyStylePatch(element, effectivePatch)) : applyStylePatch(element, effectivePatch)), version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
+      ? { ...(applyStylePatch(element, effectivePatch)), version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: now }
       : element);
     const arrowheadAppState = {};
     if ("startArrowhead" in effectivePatch) arrowheadAppState.currentItemStartArrowhead = effectivePatch.startArrowhead;
@@ -730,7 +704,6 @@ export default function ToolOptionsDock({ apiRef, selectedElements = [], onClear
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
       neverCapture: CaptureUpdateAction.NEVER,
     });
-    if (wholeBoxColor) window.dispatchEvent(new Event(TEXT_RUNS_CHANGED_EVENT));
     rememberStyle(stripGridKeys(effectivePatch));
   };
 

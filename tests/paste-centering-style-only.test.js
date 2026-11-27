@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { boundsOf, centerElements, centeringDelta, createPasteStagger, viewportCenterScene, STAGGER_PX } from "../src/features/canvas/pasteCentering.js";
 import { commitStyleScene, isGeometryPreservingPatch, restoreGeometry } from "../src/features/canvas/styleOnlyUpdate.js";
-import { applyColorToElement } from "../src/features/canvas/textRuns.js";
 
 const state = { width: 1000, height: 600, scrollX: -400, scrollY: 250, zoom: { value: 2 } };
 test("viewport center in scene space follows pan and zoom", () => {
@@ -46,9 +45,8 @@ test("commitStyleScene keeps position and camera even if the scene update drifts
     getAppState: () => app, getSceneElementsIncludingDeleted: () => scene, getSceneElements: () => scene,
     updateScene: ({ elements, appState }) => { if (elements) { scene = elements; app = { ...app, scrollX: 0, scrollY: 0 }; } if (appState) app = { ...app, ...appState }; },
   };
-  const patch = applyColorToElement(el, "#2563EB", { start: 5, end: 10 });
-  commitStyleScene(api, { elements: [{ ...el, ...patch, x: 0, y: 0 }], patchKeys: ["strokeColor", "customData"], neverCapture: "NEVER" });
+  commitStyleScene(api, { elements: [{ ...el, strokeColor: "#2563EB", x: 0, y: 0 }], patchKeys: ["strokeColor"], neverCapture: "NEVER" });
   assert.deepEqual([scene[0].x, scene[0].y, scene[0].width], [120, -40, 200]);
   assert.deepEqual([app.scrollX, app.scrollY, app.zoom.value], [-400, 250, 2]);
-  assert.equal(scene[0].customData.runs[1].color, "#2563eb");
+  assert.equal(scene[0].strokeColor, "#2563EB");
 });

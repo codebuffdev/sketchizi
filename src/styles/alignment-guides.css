@@ -125,22 +125,3 @@
 
 /* Grid fill layer: painted over the Excalidraw canvas, never interactive. */
 .sketchizi-grid-fill-layer { position: absolute; pointer-events: none; z-index: 5; }
-.sketchizi-rich-text-runs-layer { position: absolute; pointer-events: none; z-index: 6; }
-
-/* Multi-color text editing: one contentEditable editor renders the colored runs and owns the
-   single focus outline. Native selection paints a soft highlight *behind* real glyphs, so
-   highlighted text always stays visible. */
-.sketchizi-runs-editor {
-  outline: 1.5px solid #6366F1;
-  outline-offset: 2px;
-  border-radius: 6px;
-  user-select: text;
-  -webkit-user-select: text;
-  cursor: text;
-}
-.sketchizi-runs-editor:focus { outline: 1.5px solid #6366F1; }
-.sketchizi-runs-editor::selection,
-.sketchizi-runs-editor *::selection {
-  background: rgba(99, 102, 241, 0.24);
-  color: inherit;
-}

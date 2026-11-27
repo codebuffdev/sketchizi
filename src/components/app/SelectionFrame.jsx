@@ -37,8 +37,8 @@ export default function SelectionFrame({ apiRef, canvasRootRef, canvasRevision =
   if (!api || !root || viewModeEnabled) return null;
   const appState = api.getAppState?.() || {};
   const ids = Object.entries(appState.selectedElementIds || {}).filter(([, on]) => on).map(([id]) => id);
-  // While a text element is edited the editor owns the single focus outline.
-  if (ids.length !== 1 || appState.editingTextElement || root.querySelector(".sketchizi-runs-editor")) return null;
+  // While a text element is edited the textarea editor is the only visible container.
+  if (ids.length !== 1 || appState.editingTextElement) return null;
   const element = (api.getSceneElements?.() || []).find((el) => el.id === ids[0]);
   if (!element || element.isDeleted || element.type === "line" || element.type === "arrow" || element.type === "freedraw") return null;
   const viewport = root.querySelector(".excalidraw") || root;

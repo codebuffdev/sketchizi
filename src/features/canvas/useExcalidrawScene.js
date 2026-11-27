@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { toCanvasArrowhead } from "./arrowheads.js";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import { getActiveSelectedElementIds } from "./selectedElementIds.js";
+import { stripLegacyTextRuns } from "./legacyTextRuns.js";
 import {
   DEFAULT_FONT_FAMILY_ID,
   detectFontFamilyPreferenceChange,
@@ -91,6 +92,9 @@ export function useExcalidrawScene({
         : { elements: awsRelationshipSync.elements, changed: false };
       const effectiveElements = kubernetesRelationshipSync.elements;
       onDocumentSceneChange(effectiveElements);
+      // Legacy per-run text colors are gone: flatten any saved/remote `runs` back to single-color text.
+      const legacyRuns = canEdit && !remoteUpdate ? stripLegacyTextRuns(apiRef.current?.getSceneElementsIncludingDeleted?.() || effectiveElements) : { changed: false };
+      if (legacyRuns.changed) apiRef.current?.updateScene({ elements: legacyRuns.elements, captureUpdate: CaptureUpdateAction.NEVER });
       const relationshipSyncChanged = awsRelationshipSync.changed || kubernetesRelationshipSync.changed;
       scheduleArchitectureSceneChange(effectiveElements);
       if (relationshipSyncChanged) {
