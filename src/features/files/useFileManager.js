@@ -28,7 +28,7 @@ function getLiveSceneSignature(elements) {
   return `${(first >>> 0).toString(16).padStart(8, "0")}${(second >>> 0).toString(16).padStart(8, "0")}`;
 }
 
-export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketchSave, resetLocalSketch, setSavedSketch, documentMetadataRef, lastSelectionSignature, startCollaboration }) {
+export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketchSave, resetLocalSketch, setSavedSketch, documentMetadataRef, lastSelectionSignature, startCollaboration, recentFileTabsRef }) {
   const [currentFolder, setCurrentFolderState] = useState(null);
   const [currentFolderFiles, setCurrentFolderFiles] = useState([]);
   const currentFolderRef = useRef(null);
@@ -582,6 +582,11 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
     const api = apiRef.current;
     if (!api || !id) return;
     closeNativeMenu();
+    const tabs = recentFileTabsRef?.current;
+    // Already open in a tab: just focus it, never duplicate.
+    if (tabs?.focusExisting?.(id)) return;
+    // Recent files open in a NEW tab; without the tab layer fall back to replacing the canvas.
+    const placeInCanvas = (label) => (tabs?.create ? (tabs.create(label), true) : confirmCanvasReplacement(`open “${label}”`));
     const entry = recentFiles.find((item) => item.id === id);
     try {
       if (entry?.kind === "file") {
@@ -597,10 +602,10 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
           return;
         }
         const { name, text } = await readDrawingFromHandle(handle);
-        if (!(await confirmCanvasReplacement(`open “${name}”`))) return;
+        if (!(await placeInCanvas(name))) return;
         const loadedSignature = loadDrawingIntoCanvas(text);
         const actualName = handle?.name || name;
-        setCurrentFile({ id, name: actualName, handle }, loadedSignature);
+        setCurrentFile({ id, name: actualName, handle, recentId: id }, loadedSignature);
         rememberRecentFile({ id, name: actualName, handle, savedAt: Date.now(), lastOpenedAt: Date.now(), availability: "available", kind: "file" });
         logger.info("Recent document opened", { category: "file", fileName: name, source: "recent-file" });
         showToast(`Opened ${name}`);
@@ -614,9 +619,9 @@ export function useFileManager({ apiRef, closeNativeMenu, showToast, queueSketch
         showToast("This drawing is no longer available. You can remove it from Recent files or try again later.", "error");
         return;
       }
-      if (!(await confirmCanvasReplacement(`open “${record.name}”`))) return;
+      if (!(await placeInCanvas(record.name))) return;
       const loadedSignature = loadDrawingIntoCanvas(serializeDrawing({ elements: record.elements || [], appState: record.appState, files: record.files, format: record.format || getDrawingFormat(record.name), metadata: record.metadata, extensions: record.extensions }));
-      setCurrentFile({ id: null, name: record.name, handle: null }, loadedSignature);
+      setCurrentFile({ id: null, name: record.name, handle: null, recentId: id }, loadedSignature);
       rememberRecentFile({ ...record, lastOpenedAt: Date.now(), availability: "available", kind: "snapshot" });
       logger.info("Recent snapshot opened", { category: "file", fileName: record.name, source: "recent-snapshot" });
       showToast(`Opened ${record.name}`);

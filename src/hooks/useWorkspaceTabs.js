@@ -137,6 +137,7 @@ export function useWorkspaceTabs({
   startupChoiceMadeRef,
   toolStyles,
   systemDesignRef,
+  recentFileTabsRef,
 } = {}) {
   // Read volatile UI state through a ref so captureCanvasTabSnapshot (and every
   // callback built on it, including Excalidraw's onChange) keeps a stable
@@ -478,6 +479,32 @@ export function useWorkspaceTabs({
     persistCanvasTabs(nextTabs);
     switchCanvasTab(id);
   }, [apiRef, captureCanvasTabSnapshot, persistCanvasTabs, switchCanvasTab]);
+
+  // Recent files open in their own tab. `focusExisting` jumps to a tab that
+  // already holds the file (no duplicate); `create` adds a fresh, active tab
+  // and leaves every other tab (including the previously active one) intact.
+  useEffect(() => {
+    if (!recentFileTabsRef) return undefined;
+    const holdsFile = (file, recentId) => Boolean(file && (file.id === recentId || file.recentId === recentId));
+    recentFileTabsRef.current = {
+      focusExisting: (recentId) => {
+        if (!recentId) return false;
+        const activeId = activeCanvasIdRef.current;
+        if (holdsFile(currentFileRef.current, recentId)) return true; // already the active tab
+        const match = canvasTabsRef.current.find((tab) => tab.id !== activeId && holdsFile(tab.snapshot?.file, recentId));
+        if (!match) return false;
+        switchCanvasTab(match.id);
+        return true;
+      },
+      create: (name) => {
+        if (!apiRef.current) return false;
+        const label = String(name || "").replace(/\.(excalidraw|sketchizi)(\.json)?$|\.json$/i, "").trim();
+        createCanvasTab({ name: label || undefined });
+        return true;
+      },
+    };
+    return () => { recentFileTabsRef.current = null; };
+  }, [recentFileTabsRef, apiRef, activeCanvasIdRef, canvasTabsRef, currentFileRef, switchCanvasTab, createCanvasTab]);
 
   useEffect(() => {
     const createCanvasFromShortcut = (event) => {
