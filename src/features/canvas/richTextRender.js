@@ -34,7 +34,9 @@ export const hasRichTextRuns = (elements) =>
 
 // Paint only the segments whose color differs from the base color; the base-colored
 // text underneath is Excalidraw's own render. `scale` is zoom (for hairline width).
-export function paintRichTextRuns(ctx, elements, { skipId = null, scale = 1 } = {}) {
+// `origin` ({ x, y } in device px) is the scene->pixel translation of ctx, used to snap
+// unrotated text origins to whole device pixels for native-sharp anti-aliasing.
+export function paintRichTextRuns(ctx, elements, { skipId = null, scale = 1, origin = null } = {}) {
   for (const element of elements) {
     if (element.type !== "text" || element.isDeleted || element.id === skipId || !getElementRuns(element).length) continue;
     const layout = layoutRuns(element, measureFor(element));
@@ -47,16 +49,21 @@ export function paintRichTextRuns(ctx, elements, { skipId = null, scale = 1 } = 
     ctx.font = fontStringFor(element);
     ctx.textBaseline = "alphabetic";
     ctx.textAlign = "left";
-    ctx.lineJoin = "round";
-    ctx.lineWidth = 0.5 / Math.max(scale, 0.1); // covers the base glyph's anti-aliased edge
     const baseline = baselineOffset(ctx, element, layout.lineHeight);
     for (const line of layout.lines) {
       for (const segment of line.segments) {
         if (!segment.color || !segment.text.trim()) continue;
         ctx.fillStyle = segment.color;
-        ctx.strokeStyle = segment.color;
-        ctx.strokeText(segment.text, line.offsetX + segment.x, line.y + baseline);
-        ctx.fillText(segment.text, line.offsetX + segment.x, line.y + baseline);
+        // One fillText per segment: no strokeText outline pass.
+        let tx = line.offsetX + segment.x;
+        let ty = line.y + baseline;
+        if (origin && !element.angle && scale > 0) {
+          const devX = (element.x + tx) * scale + origin.x;
+          const devY = (element.y + ty) * scale + origin.y;
+          tx = (Math.round(devX) - origin.x) / scale - element.x;
+          ty = (Math.round(devY) - origin.y) / scale - element.y;
+        }
+        ctx.fillText(segment.text, tx, ty);
       }
     }
     ctx.restore();

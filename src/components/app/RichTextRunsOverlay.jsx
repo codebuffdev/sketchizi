@@ -35,7 +35,12 @@ export default function RichTextRunsOverlay({ apiRef, canvasRootRef, canvasRevis
     const appState = api.getAppState?.() || {};
     const zoom = Number(appState.zoom?.value ?? appState.zoom) || 1;
     ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, dpr * zoom * (Number(appState.scrollX) || 0), dpr * zoom * (Number(appState.scrollY) || 0));
-    paintRichTextRuns(ctx, elements, { skipId: appState.editingTextElement?.id ?? null, scale: zoom * dpr });
+    // While editing, the editor's mirrored <span> overlay is the sole renderer of that element.
+    paintRichTextRuns(ctx, elements, {
+      skipId: appState.editingTextElement?.id ?? null,
+      scale: zoom * dpr,
+      origin: { x: dpr * zoom * (Number(appState.scrollX) || 0), y: dpr * zoom * (Number(appState.scrollY) || 0) },
+    });
     // Excalidraw's dark theme inverts its canvases; do the same so colors agree.
     canvas.style.filter = appState.theme === "dark" ? "invert(93%) hue-rotate(180deg)" : "none";
   };
@@ -43,7 +48,7 @@ export default function RichTextRunsOverlay({ apiRef, canvasRootRef, canvasRevis
   useEffect(() => {
     let frame = 0;
     const schedule = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; paintRef.current(); }); };
-    const events = ["pointermove", "pointerup", "wheel", "keydown", "keyup", "resize", "sketchizi:text-runs-changed"];
+    const events = ["pointermove", "pointerup", "wheel", "keydown", "keyup", "focusin", "focusout", "resize", "sketchizi:text-runs-changed"];
     events.forEach((name) => window.addEventListener(name, schedule, { passive: true }));
     schedule();
     return () => {

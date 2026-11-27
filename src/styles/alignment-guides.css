@@ -127,3 +127,12 @@
 .sketchizi-grid-fill-layer { position: absolute; pointer-events: none; z-index: 5; }
 .sketchizi-rich-text-runs-layer { position: absolute; pointer-events: none; z-index: 6; }
 .sketchizi-text-runs-mirror { pointer-events: none; user-select: none; }
+
+/* Multi-color editing: the selection pill is translucent and never paints glyphs, so the
+   mirrored run spans behind the textarea stay visible inside the highlight. */
+.excalidraw-textEditorContainer textarea::selection {
+  background: rgba(99, 102, 241, 0.28) !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+.sketchizi-text-runs-mirror { z-index: 0; }

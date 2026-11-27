@@ -19,6 +19,7 @@ const COPIED_STYLES = [
   "whiteSpace", "wordBreak", "overflowWrap", "padding", "boxSizing", "direction", "color",
 ];
 
+const TEXTAREA_OVERRIDES = ["color", "-webkit-text-fill-color", "background", "caret-color"];
 const isEditor = (node) => node instanceof HTMLTextAreaElement && node.matches(EDITOR_SELECTOR);
 
 export function attachTextRunsEditor({ apiRef }) {
@@ -35,7 +36,13 @@ export function attachTextRunsEditor({ apiRef }) {
 
   function removeMirror(textarea) {
     textarea?.parentNode?.querySelector?.(`.${MIRROR_CLASS}`)?.remove();
-    if (textarea) { textarea.style.removeProperty("-webkit-text-fill-color"); textarea.style.removeProperty("caret-color"); }
+    if (!textarea || textarea.dataset.skRunsSaved === undefined) return;
+  // Hand Excalidraw's own inline styles back so a plain-text editor shows its glyphs again.
+  const saved = JSON.parse(textarea.dataset.skRunsSaved || "{}");
+  for (const name of TEXTAREA_OVERRIDES) {
+    if (saved[name]) textarea.style.setProperty(name, saved[name]); else textarea.style.removeProperty(name);
+  }
+  delete textarea.dataset.skRunsSaved;
   }
 
   function sync() {
@@ -59,16 +66,28 @@ export function attachTextRunsEditor({ apiRef }) {
       textarea.parentNode.insertBefore(mirror, textarea);
     }
     const computed = getComputedStyle(textarea);
+    const base = baseColorOf(element);
     for (const name of COPIED_STYLES) mirror.style[name] = computed[name];
-    Object.assign(mirror.style, { margin: "0", border: "0", background: "transparent", pointerEvents: "none", overflow: "hidden", resize: "none" });
-    mirror.replaceChildren(...getElementRuns(element).map((run) => {
+    Object.assign(mirror.style, {
+      margin: "0", border: "0", background: "transparent", pointerEvents: "none", overflow: "hidden", resize: "none",
+      whiteSpace: "pre-wrap", color: base, zIndex: "0",
+    });
+    const spans = getElementRuns(element).map((run) => {
       const span = document.createElement("span");
       span.textContent = run.text;
-      if (run.color) span.style.color = run.color;
+      span.style.color = run.color || base;
       return span;
-    }));
-    textarea.style.setProperty("-webkit-text-fill-color", "transparent");
-    textarea.style.caretColor = baseColorOf(element);
+    });
+    if (textarea.value.endsWith("\n")) spans.push(document.createTextNode("\u200b")); // keep the last empty line's height
+    mirror.replaceChildren(...spans);
+    if (textarea.dataset.skRunsSaved === undefined) {
+      textarea.dataset.skRunsSaved = JSON.stringify(Object.fromEntries(TEXTAREA_OVERRIDES.map((name) => [name, textarea.style.getPropertyValue(name)])));
+    }
+    // The textarea keeps caret + selection but never paints glyphs; the mirror is the only text layer.
+    textarea.style.setProperty("color", "transparent", "important");
+    textarea.style.setProperty("-webkit-text-fill-color", "transparent", "important");
+    textarea.style.setProperty("background", "transparent", "important");
+    textarea.style.setProperty("caret-color", `var(--active-caret-color, ${base})`, "important");
     observer?.takeRecords(); // our own style writes must not retrigger sync
   }
 

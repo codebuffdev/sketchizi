@@ -224,9 +224,15 @@ export function layoutRuns(element, measure) {
       else segments.push({ text: lineText[k], color });
     }
     cursor += lineText.length + 1;
-    let x = 0;
-    for (const segment of segments) { segment.x = x; segment.width = measure(segment.text); x += segment.width; }
-    const width = x;
+    // Advance by exact cumulative measurement of the line prefix (not by summing
+    // per-segment widths) so kerning across run boundaries matches the editor.
+    let prefix = "";
+    for (const segment of segments) {
+      segment.x = prefix ? measure(prefix) : 0;
+      prefix += segment.text;
+      segment.width = measure(prefix) - segment.x;
+    }
+    const width = prefix ? measure(prefix) : 0;
     const offsetX = align === "center" ? (element.width - width) / 2 : align === "right" ? element.width - width : 0;
     lines.push({ index, y: index * lineHeight, width, offsetX, segments });
   });
