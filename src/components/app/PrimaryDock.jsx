@@ -14,6 +14,7 @@ import {
   sectionBreakAfter,
   tooltipLabel,
 } from "./primaryDockModel.js";
+import { INSERT_IMAGE_EVENT } from "../../features/canvas/imageImport/imageImportModel.js";
 
 // Grace period before the dock collapses after the pointer leaves it.
 const COLLAPSE_GRACE_MS = 3000;
@@ -26,6 +27,8 @@ const CUSTOM_TOOLS = ["bucketfill", "autoshape", "highlighter"];
 function activateTool({ child, root, apiRef }) {
   const api = apiRef.current;
   if (child.tool === "image") {
+    // The canvas's role-aware image import owns the picker (size limits + shrink prompt).
+    if (!window.dispatchEvent(new CustomEvent(INSERT_IMAGE_EVENT, { cancelable: true }))) return;
     const imageButton = root?.querySelector('.excalidraw [data-testid="toolbar-image"], .excalidraw button[aria-label*="image" i]');
     if (imageButton instanceof HTMLElement) imageButton.click();
     else api?.setActiveTool?.({ type: "image" });

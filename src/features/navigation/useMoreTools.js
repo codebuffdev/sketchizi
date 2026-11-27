@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { INSERT_IMAGE_EVENT } from "../canvas/imageImport/imageImportModel.js";
 
 export function useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, canEdit = true }) {
   const [anchor, setAnchor] = useState({ left: 0, top: 0 });
@@ -21,6 +22,8 @@ export function useMoreTools({ apiRef, moreToolsOpen, togglePanel, closePanel, c
     const api = apiRef.current; if (!api) return;
     closePanel("more-tools");
     if (tool === "image") {
+      // Role-aware image import owns the picker (size limits + shrink prompt).
+      if (!window.dispatchEvent(new CustomEvent(INSERT_IMAGE_EVENT, { cancelable: true }))) return;
       const imageButton = document.querySelector('[data-testid="toolbar-image"]');
       if (imageButton instanceof HTMLElement) { imageButton.click(); return; }
       api.setActiveTool({ type: "image" }); return;

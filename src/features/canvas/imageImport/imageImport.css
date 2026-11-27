@@ -1,0 +1,63 @@
+/* Image size-limit modal. Light by default; `.theme-dark` mirrors the app's Day/Dark toggle. */
+.image-limit-backdrop {
+  --il-surface: #ffffff;
+  --il-text: #25283b;
+  --il-muted: #636a82;
+  --il-border: #e4e7ef;
+  --il-row: #f4f5fa;
+  --il-primary: #5b4ee6;
+  --il-primary-hover: #4a3ed0;
+  --il-primary-text: #ffffff;
+  --il-secondary-hover: #eceef6;
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(15 18 32 / 48%);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+.image-limit-backdrop.theme-dark {
+  --il-surface: #171b28;
+  --il-text: #edf0fa;
+  --il-muted: #a2a9c2;
+  --il-border: #30364a;
+  --il-row: #1f2434;
+  --il-primary: #8b80ff;
+  --il-primary-hover: #a097ff;
+  --il-primary-text: #14122b;
+  --il-secondary-hover: #252b3d;
+}
+.image-limit-dialog {
+  width: min(440px, 100%);
+  padding: 22px;
+  border: 1px solid var(--il-border);
+  border-radius: 16px;
+  background: var(--il-surface);
+  color: var(--il-text);
+  box-shadow: 0 24px 72px rgb(16 20 40 / 22%);
+  font: inherit;
+}
+.image-limit-title { margin: 0 0 14px; font-size: 1.1rem; font-weight: 700; }
+.image-limit-details { margin: 0 0 14px; padding: 4px 12px; border-radius: 10px; background: var(--il-row); }
+.image-limit-details > div { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; }
+.image-limit-details > div + div { border-top: 1px solid var(--il-border); }
+.image-limit-details dt { color: var(--il-muted); flex: 0 0 auto; }
+.image-limit-details dd { margin: 0; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.image-limit-message { margin: 0 0 18px; color: var(--il-muted); line-height: 1.5; }
+.image-limit-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.image-limit-button {
+  min-height: 36px; padding: 0 16px; border: 1px solid var(--il-border); border-radius: 10px;
+  background: transparent; color: var(--il-text); font: inherit; font-weight: 600; cursor: pointer;
+}
+.image-limit-button:hover:not(:disabled) { background: var(--il-secondary-hover); }
+.image-limit-button.is-primary { border-color: transparent; background: var(--il-primary); color: var(--il-primary-text); }
+.image-limit-button.is-primary:hover:not(:disabled) { background: var(--il-primary-hover); }
+.image-limit-button:disabled { opacity: .7; cursor: progress; }
+.image-limit-button:focus-visible { outline: 2px solid var(--il-primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .image-limit-dialog { animation: image-limit-in 140ms ease-out; }
+  @keyframes image-limit-in { from { opacity: 0; transform: translateY(6px) scale(.985); } }
+}

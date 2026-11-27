@@ -2064,6 +2064,7 @@ function App() {
             handleExcalidrawAPI={handleExcalidrawAPI}
             handleChange={handleThemeAwareExcalidrawChange}
             handleDrop={handleDrop}
+            showToast={showToast}
             apiRef={apiRef}
             closeShortcuts={() => closePanel("shortcuts")}
             shortcutHelpOpen={shortcutHelpOpen}

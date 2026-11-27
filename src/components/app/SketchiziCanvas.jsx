@@ -21,6 +21,8 @@ import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacemen
 import { installTextSelectionTracker } from "../../features/canvas/textSelectionTracker.js";
 import { attachTextRunsEditor } from "../../features/canvas/textEditorRunsMirror.js";
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
+import { useImageImport } from "../../features/canvas/imageImport/useImageImport.js";
+import ImageSizeLimitModal from "../../features/canvas/imageImport/ImageSizeLimitModal.jsx";
 import { createFreeDrawElementFromSamples, drawFreeDrawPreviewSample, getPointerEventSamples } from "../../features/canvas/freeDrawEngine.js";
 
 export default function SketchiziCanvas({
@@ -37,8 +39,10 @@ export default function SketchiziCanvas({
   nativeMenuOpen = false,
   hudSuppressed = false,
   onToolStyleChange = null,
+  showToast = null,
 }) {
   const canvasRootRef = useRef(null);
+  const imageImport = useImageImport({ apiRef, canvasRootRef, canEdit, viewModeEnabled, showToast });
   const collaborationCursorFrameRef = useRef(0);
   const pendingCollaborationCursorRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);
@@ -974,6 +978,7 @@ export default function SketchiziCanvas({
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
       <CanvasVerticalScrollbar apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} disabled={pageContext?.mode === "pages"} />
       <ShortcutHelp open={shortcutHelpOpen} onClose={closeShortcuts} />
+      <ImageSizeLimitModal prompt={imageImport.prompt} isDarkTheme={isDarkTheme} onShrink={imageImport.confirmShrink} onCancel={imageImport.cancelPrompt} />
     </main>
   );
 }
