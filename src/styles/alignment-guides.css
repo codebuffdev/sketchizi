@@ -125,3 +125,5 @@
 
 /* Grid fill layer: painted over the Excalidraw canvas, never interactive. */
 .sketchizi-grid-fill-layer { position: absolute; pointer-events: none; z-index: 5; }
+.sketchizi-rich-text-runs-layer { position: absolute; pointer-events: none; z-index: 6; }
+.sketchizi-text-runs-mirror { pointer-events: none; user-select: none; }

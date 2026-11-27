@@ -10,6 +10,16 @@ import { getRoutingMode, getRoutingPatch } from "../../features/canvas/arrowRout
 import { isHexColor } from "../../features/navigation/recentCustomColors.js";
 import { useRecentCustomColors } from "../../features/navigation/useRecentCustomColors.js";
 import { applyRichTextColor } from "../../features/canvas/richTextColorBridge.js";
+import { applyColorToElement, withoutRuns } from "../../features/canvas/textRuns.js";
+import { TEXT_RUNS_CHANGED_EVENT } from "../../features/canvas/textEditorRunsMirror.js";
+import {
+  armToolbarSelection,
+  getTextEditSelection,
+  getTextSelectionColor,
+  releaseToolbarSelection,
+  restoreTextSelection,
+  useTextSelectionVersion,
+} from "../../features/canvas/textSelectionTracker.js";
 
 const STROKE_COLORS = [
   ["#2f2f33", "Ink"],
@@ -240,6 +250,9 @@ export default function ContextualFormattingToolbar({
   const [openGroup, setOpenGroup] = useState(null);
   const [customToolMode, setCustomToolMode] = useState(null);
   const { recentCustomColors, commitRecent, endPickSession } = useRecentCustomColors();
+  // Re-render when the caret / highlight moves inside the text editor so the
+  // active swatch ring follows the color under the selection.
+  useTextSelectionVersion();
   const toolbarRef = useRef(null);
   const wasToolModeRef = useRef(false);
   useEffect(() => {
@@ -381,7 +394,11 @@ export default function ContextualFormattingToolbar({
   }, [toolMode, customToolMode]);
   if (!canEdit || (!liveSelection.length && !toolMode) || !position) return null;
 
-  const currentStroke = (toolMode ? appState.currentItemStrokeColor : ((noteSelection ? firstTextFormattingElement?.strokeColor : null) || first?.customData?.iconColor || first?.strokeColor))?.toLowerCase() || "#2f2f33";
+  const baseStroke = (toolMode ? appState.currentItemStrokeColor : ((noteSelection ? firstTextFormattingElement?.strokeColor : null) || first?.customData?.iconColor || first?.strokeColor))?.toLowerCase() || "#2f2f33";
+  // While editing text, the ring tracks the color under the caret / highlight.
+  // A highlight spanning several colors selects no swatch.
+  const editingTextColor = toolMode ? undefined : getTextSelectionColor(apiRef?.current);
+  const currentStroke = editingTextColor === undefined ? baseStroke : (editingTextColor || "");
   const currentFill = (toolMode ? appState.currentItemBackgroundColor : (noteSelection ? firstNoteBackgroundElement?.backgroundColor : first?.backgroundColor))?.toLowerCase() || "transparent";
   const currentStrokeWidth = Number(toolMode ? appState.currentItemStrokeWidth : (first?.strokeWidth ?? appState.currentItemStrokeWidth)) || 1;
   const currentFontSize = Number(toolMode ? appState.currentItemFontSize : (firstTextFormattingElement?.fontSize ?? appState.currentItemFontSize)) || 20;
@@ -416,6 +433,26 @@ export default function ContextualFormattingToolbar({
     // Selected rich text box: color picks go to the box (whole box, or only the
     // highlighted portion) instead of the generic element patch.
     if (!toolMode && rawKeys.length === 1 && rawKeys[0] === "strokeColor" && applyRichTextColor(rawPatch.strokeColor)) return;
+    // Case A: a substring is highlighted in the text editor. Color only that range
+    // (element.customData.runs) and put the highlight back so several swatches can
+    // be tried on the same word. Case B (no highlight) falls through to the
+    // whole-box path below, which also clears per-run colors.
+    if (!toolMode && rawKeys.length === 1 && rawKeys[0] === "strokeColor") {
+      const selection = getTextEditSelection(api);
+      if (selection) {
+        const patch = applyColorToElement(selection.element, rawPatch.strokeColor, { start: selection.start, end: selection.end }, selection.text);
+        const elements = api.getSceneElements?.() || [];
+        api.updateScene({
+          elements: elements.map((element) => (element.id === selection.elementId
+            ? { ...element, ...patch, version: (Number(element.version) || 0) + 1, versionNonce: Math.floor(Math.random() * 2147483647), updated: Date.now() }
+            : element)),
+          captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+        });
+        window.dispatchEvent(new Event(TEXT_RUNS_CHANGED_EVENT));
+        restoreTextSelection(selection);
+        return;
+      }
+    }
     const patch = normalizeArrowheadPatch(rawPatch);
     if (!toolMode) {
       // Use the same live selection snapshot that rendered this toolbar. The
@@ -438,8 +475,9 @@ export default function ContextualFormattingToolbar({
         if (hasSeparateNoteText && textOnlyPatch && element.type !== "text") return element;
         if (hasSeparateNoteText && containerOnlyPatch && element.type === "text") return element;
         if (hasSeparateNoteText && backgroundOnlyPatch && element.type === "text") return element;
+        const patched = applyStylePatch(element, patch);
         return {
-          ...applyStylePatch(element, patch),
+          ...(element.type === "text" && "strokeColor" in patch ? withoutRuns(patched) : patched),
           version: (Number(element.version) || 0) + 1,
           versionNonce: Math.floor(Math.random() * 2147483647),
           updated: now,
@@ -454,6 +492,8 @@ export default function ContextualFormattingToolbar({
           ...(Object.keys(arrowheadAppState).length ? { appState: arrowheadAppState } : {}),
           captureUpdate: CaptureUpdateAction.IMMEDIATELY,
         });
+        // Whole-box recolor cleared per-run colors: refresh the overlay / editor mirror.
+        if ("strokeColor" in patch) window.dispatchEvent(new Event(TEXT_RUNS_CHANGED_EVENT));
       }
       // Editing an existing element also teaches its tool: the next line/rectangle/
       // text drawn on this canvas inherits the look. Sticky notes keep their own
@@ -629,7 +669,7 @@ export default function ContextualFormattingToolbar({
               style={{ "--custom-color-value": /^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : "#7c3aed" }}
             >
               <span className="format-custom-color-icon" aria-hidden="true">✎</span>
-              <input type="color" aria-label="Choose custom color" value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : (recentCustomColors[0] || "#7c3aed")} onChange={(event) => applyFormatting({ strokeColor: event.target.value })} onInput={(event) => commitRecent(event.target.value, strokePalette.map(([c]) => c))} onPointerDown={endPickSession} onBlur={endPickSession} />
+              <input type="color" aria-label="Choose custom color" value={/^#[0-9a-f]{6}$/i.test(currentStroke || "") ? currentStroke : (recentCustomColors[0] || "#7c3aed")} onChange={(event) => applyFormatting({ strokeColor: event.target.value })} onInput={(event) => commitRecent(event.target.value, strokePalette.map(([c]) => c))} onPointerDown={() => { armToolbarSelection(); endPickSession(); }} onBlur={() => { releaseToolbarSelection(); endPickSession(); }} />
             </label>
           </div>
         </div>

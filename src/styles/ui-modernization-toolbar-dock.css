@@ -1355,6 +1355,8 @@
 .app .contextual-formatting-toolbar .format-option-swatch.is-selected {
   outline: 2px solid #7165e8;
   outline-offset: 2px;
+  /* #6366F1 halo: follows the color under the caret / highlight in the text editor */
+  box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.28), 0 0 0 1px #6366F1;
 }
 .app .contextual-formatting-toolbar .format-option-swatch.is-transparent {
   background: repeating-conic-gradient(#e5e7eb 0% 25%, #fff 0% 50%) 50% / 10px 10px;

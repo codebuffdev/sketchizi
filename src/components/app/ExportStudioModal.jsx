@@ -3,6 +3,7 @@ import { exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
 import { isSystemDesignEdge, isSystemDesignNode, readGraph } from "../../features/system-design/sceneModel.js";
 import { simulateTraffic } from "../../features/system-design/trafficSimulator.js";
 import { buildSystemDesignSvg, svgToCanvas } from "../../features/system-design/exportSystemDesignImage.js";
+import { expandRichTextRuns } from "../../features/canvas/richTextRender.js";
 
 const EMPTY_SNAPSHOT = Object.freeze({ elements: [] });
 const noopSubscribe = () => () => {};
@@ -49,7 +50,8 @@ export default function ExportStudioModal({ isOpen, onClose, apiRef, filename = 
       ? allElements.filter((element) => selectedIds.has(element.id))
       : allElements.filter((element) => !element.isDeleted && !element.deleted);
     return {
-      elements,
+      // Multi-color text boxes become per-segment native text so SVG and PNG match the canvas.
+      elements: expandRichTextRuns(elements),
       appState: { ...appState, exportBackground: bgMode !== "transparent", viewBackgroundColor: bgMode === "dark" ? "#12141c" : "#ffffff", exportScale: scale, exportPadding: 24 },
       files: api.getFiles?.() || {},
     };
