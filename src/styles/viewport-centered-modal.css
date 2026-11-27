@@ -1,0 +1,46 @@
+/* Excalidraw's own modal dialogs (e.g. "Clear canvas") always centre on the
+ * browser viewport, never on the (offset) canvas box. */
+.excalidraw-modal-container {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  transform: none;
+  contain: none;
+  pointer-events: none; /* empty container must not block the canvas */
+}
+.excalidraw-modal-container .Modal,
+.excalidraw .Modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: auto;
+  height: auto;
+  padding: 16px;
+  margin: 0;
+  transform: none;
+  pointer-events: auto;
+}
+.excalidraw-modal-container .Modal__background,
+.excalidraw .Modal__background {
+  position: fixed;
+  inset: 0;
+  width: auto;
+  height: auto;
+  background: rgba(15, 23, 42, 0.35);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.excalidraw-modal-container .Modal__content,
+.excalidraw .Modal__content {
+  position: relative;
+  inset: auto;
+  z-index: 1;
+  margin: 0;
+  transform: none;
+  max-width: min(100%, var(--max-width, 100%));
+  max-height: calc(100dvh - 32px);
+}

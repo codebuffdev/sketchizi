@@ -10,16 +10,15 @@ import {
 } from "../../features/workspace/workspaceClient.js";
 import { fetchCurrentUser } from "../../features/auth/authClient.js";
 import { readDiagramRows } from "../../features/workspace/diagramNames.js";
+import { formatBytes, getDiagramBytes, readSizeCache } from "../../features/workspace/diagramSize.js";
 import {
   formatChapterLabel,
-  normalizeChapterStatus,
   readChapterLayout,
   resolveChapterSequence,
   suggestNextChapterName,
 } from "../../features/workspace/chapterSequence.js";
 
-const STATUS_LABELS = { done: "Done", active: "Active", "up-next": "Up Next" };
-const POPOVER_WIDTH = 320;
+const POPOVER_WIDTH = 348;
 const EDGE_GAP = 8;
 
 const readProjectRows = (result) => (Array.isArray(result) ? result : result?.projects || []);
@@ -46,10 +45,13 @@ export default function WorkspaceQuickPopover({
   workspaceProjects = null,
 }) {
   const popoverRef = useRef(null);
+  const inputRef = useRef(null);
+  const listRef = useRef(null);
   const [position, setPosition] = useState({ top: 56, right: 12, width: POPOVER_WIDTH });
   const [projects, setProjects] = useState([]);
-  const [projectId, setProjectId] = useState("");
-  const [chapters, setChapters] = useState([]);
+  // "all" or a project id: which project pill is active.
+  const [scope, setScope] = useState("all");
+  const [chaptersByProject, setChaptersByProject] = useState({});
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [loadingChapters, setLoadingChapters] = useState(false);
   const [error, setError] = useState("");
@@ -61,12 +63,16 @@ export default function WorkspaceQuickPopover({
   // True when the last background refresh failed and the list on screen is cached.
   const [stale, setStale] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
-  const [selectorOpen, setSelectorOpen] = useState(false);
-  const [projectQuery, setProjectQuery] = useState("");
+  const [query, setQuery] = useState("");
+  const [highlight, setHighlight] = useState(0);
   const [projectFormOpen, setProjectFormOpen] = useState(false);
   const [projectNameDraft, setProjectNameDraft] = useState("");
 
-  const project = projects.find((candidate) => candidate.id === projectId) || null;
+  // Project that "+ New Chapter" targets: the active pill, else the open
+  // cloud project, else the first one.
+  const project = projects.find((candidate) => candidate.id === scope)
+    || projects.find((candidate) => candidate.id === activeProjectId)
+    || projects[0] || null;
   const knownSignedIn = typeof isAuthenticated === "boolean" ? isAuthenticated : (authUser ? true : undefined);
 
   // Anchor below the right edge of the button; clamp inside the viewport.
@@ -91,7 +97,6 @@ export default function WorkspaceQuickPopover({
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
       event.stopPropagation();
-      if (selectorOpen) { setSelectorOpen(false); return; }
       onClose?.();
       anchorRef?.current?.focus?.();
     };
@@ -105,14 +110,12 @@ export default function WorkspaceQuickPopover({
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("pointerdown", onPointerDown, true);
     };
-  }, [open, onClose, anchorRef, selectorOpen]);
+  }, [open, onClose, anchorRef]);
 
-  // Pick the project to show: keep the current one, else the active cloud
-  // project, else the first.
+  // Drop a pill whose project disappeared; "all" always stays valid.
   const pickProject = useCallback((rows) => {
-    setProjectId((current) => (rows.some((row) => row.id === current) ? current
-      : rows.some((row) => row.id === activeProjectId) ? activeProjectId : rows[0]?.id || ""));
-  }, [activeProjectId]);
+    setScope((current) => (current === "all" || rows.some((row) => row.id === current) ? current : "all"));
+  }, []);
 
   // Step 1 on open: resolve auth. Props win; otherwise ask the shared, cached
   // auth check. A failed check is not "signed out": try the cloud and let a
@@ -136,11 +139,11 @@ export default function WorkspaceQuickPopover({
     const seeded = Array.isArray(workspaceProjects) && workspaceProjects.length ? workspaceProjects : cache.projects;
     const rows = seeded.filter((row) => row?.id);
     setProjects(rows);
-    pickProject(rows);
+    setScope("all");
     setFormOpen(false);
-    setSelectorOpen(false);
     setProjectFormOpen(false);
-    setProjectQuery("");
+    setQuery("");
+    setHighlight(0);
     setError("");
     setStale(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -168,7 +171,7 @@ export default function WorkspaceQuickPopover({
           // Session ended: show the signed-out card, never the raw error, and
           // drop the snapshot so it cannot leak to the next account.
           clearWorkspaceCache();
-          setProjects([]); setChapters([]); setStale(false); setError("");
+          setProjects([]); setChaptersByProject({}); setStale(false); setError("");
           setAuthState("anon");
           return;
         }
@@ -180,49 +183,84 @@ export default function WorkspaceQuickPopover({
     return () => { cancelled = true; };
   }, [open, authState, retryNonce, pickProject]);
 
-  // Step 4: chapters for the selected project, cache first.
+  // Step 4: chapters for every project (the "All" pill and the counts need
+  // them), cache first, then one revalidation request per project.
+  const projectKey = projects.map((row) => row.id).join("|");
   useEffect(() => {
-    if (!open || !projectId || authState !== "authed") { if (!projectId) setChapters([]); return undefined; }
+    if (!open || authState !== "authed" || !projects.length) return undefined;
     let cancelled = false;
-    const cachedRows = readWorkspaceCache().chapters[projectId];
-    if (Array.isArray(cachedRows)) {
-      setChapters(resolveChapterSequence(cachedRows, readChapterLayout(projectId)));
-    } else {
-      setChapters([]);
+    const cached = readWorkspaceCache().chapters;
+    const seeded = {};
+    let missing = 0;
+    for (const row of projects) {
+      if (Array.isArray(cached[row.id])) seeded[row.id] = resolveChapterSequence(cached[row.id], readChapterLayout(row.id));
+      else missing += 1;
     }
-    setLoadingChapters(!Array.isArray(cachedRows));
-    workspaceClient.listDiagrams(projectId)
-      .then((result) => {
-        if (cancelled) return;
-        const rows = readDiagramRows(result);
-        setChapters(resolveChapterSequence(rows, readChapterLayout(projectId)));
-        writeWorkspaceCache({ chapters: { [projectId]: rows } });
-        setStale(false);
-      })
-      .catch((reason) => {
-        if (cancelled) return;
-        if (isWorkspaceUnauthorized(reason)) { clearWorkspaceCache(); setAuthState("anon"); return; }
-        setStale(true);
-        setError(isWorkspaceTimeout(reason) ? "timeout" : "unavailable");
-      })
-      .finally(() => { if (!cancelled) setLoadingChapters(false); });
+    setChaptersByProject((current) => ({ ...seeded, ...current }));
+    setLoadingChapters(missing > 0);
+    let pending = projects.length;
+    const settle = () => { pending -= 1; if (!cancelled && pending <= 0) setLoadingChapters(false); };
+    projects.forEach((row) => {
+      workspaceClient.listDiagrams(row.id)
+        .then((result) => {
+          if (cancelled) return;
+          const rows = readDiagramRows(result);
+          setChaptersByProject((current) => ({ ...current, [row.id]: resolveChapterSequence(rows, readChapterLayout(row.id)) }));
+          writeWorkspaceCache({ chapters: { [row.id]: rows } });
+          setStale(false);
+        })
+        .catch((reason) => {
+          if (cancelled) return;
+          if (isWorkspaceUnauthorized(reason)) { clearWorkspaceCache(); setAuthState("anon"); return; }
+          setStale(true);
+          setError(isWorkspaceTimeout(reason) ? "timeout" : "unavailable");
+        })
+        .finally(settle);
+    });
     return () => { cancelled = true; };
-  }, [open, projectId, authState, retryNonce]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, projectKey, authState, retryNonce]);
+
+  // Focus the filter as soon as it exists.
+  useEffect(() => {
+    if (open && authState === "authed" && projects.length) inputRef.current?.focus();
+  }, [open, authState, projects.length]);
+
+  // Rows on screen: the active pill's chapters, narrowed by the filter text.
+  const needle = query.trim().toLowerCase();
+  const visibleRows = projects
+    .filter((candidate) => scope === "all" || candidate.id === scope)
+    .flatMap((candidate) => (chaptersByProject[candidate.id] || []).map((chapter) => ({ chapter, owner: candidate })))
+    .filter(({ chapter, owner }) => !needle
+      || String(chapter.name || chapter.title || "").toLowerCase().includes(needle)
+      || String(owner.name || "").toLowerCase().includes(needle));
+  const visibleKey = visibleRows.map(({ chapter }) => chapter.id).join("|");
+
+  // Start the highlight on the open chapter (else the first row) whenever the list changes.
+  useEffect(() => {
+    const current = visibleRows.findIndex(({ chapter }) => chapter.id === activeDiagramId);
+    setHighlight(!needle && current >= 0 ? current : 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleKey, scope, needle]);
+
+  useEffect(() => {
+    listRef.current?.querySelector?.(".is-highlighted")?.scrollIntoView?.({ block: "nearest" });
+  }, [highlight, visibleKey]);
 
   if (!open) return null;
 
-  const openDiagram = async (diagram) => {
+  const openDiagram = async (diagram, owner = project) => {
     if (busy) return;
     if (diagram.id === activeDiagramId) { onClose?.(); return; }
     setBusy(true);
     try {
       onClose?.();
-      await onOpenDiagram?.(project, diagram);
+      await onOpenDiagram?.(owner, diagram);
     } finally { setBusy(false); }
   };
 
   const startCreate = () => {
-    setNameDraft(suggestNextChapterName(chapters));
+    setNameDraft(suggestNextChapterName(chaptersByProject[project?.id] || []));
     setError("");
     setFormOpen(true);
   };
@@ -251,11 +289,10 @@ export default function WorkspaceQuickPopover({
       const created = await workspaceClient.createProject({ name, description: "" });
       const next = [created, ...projects.filter((row) => row.id !== created?.id)].filter((row) => row?.id);
       setProjects(next);
-      setProjectId(created?.id || projectId);
+      if (created?.id) setScope(created.id);
       writeWorkspaceCache({ projects: next });
       setProjectFormOpen(false);
       setProjectNameDraft("");
-      setSelectorOpen(false);
     } catch (reason) {
       if (isWorkspaceUnauthorized(reason)) { clearWorkspaceCache(); setAuthState("anon"); }
       else setError("create-failed");
@@ -274,11 +311,26 @@ export default function WorkspaceQuickPopover({
     }));
   };
 
-  const filteredProjects = projects.filter((candidate) =>
-    !projectQuery.trim() || String(candidate.name || "").toLowerCase().includes(projectQuery.trim().toLowerCase()));
-  const chapterCountLabel = (candidate) => {
-    const count = Number.isFinite(candidate?.diagramCount) ? candidate.diagramCount : null;
-    return count === null ? "" : `${count} chapter${count === 1 ? "" : "s"}`;
+  const pillCount = (candidate) => {
+    const loaded = chaptersByProject[candidate.id];
+    if (Array.isArray(loaded)) return loaded.length;
+    return Number.isFinite(candidate?.diagramCount) ? candidate.diagramCount : null;
+  };
+  const totalChapters = projects.reduce((sum, candidate) => sum + (pillCount(candidate) || 0), 0);
+  const sizeCache = readSizeCache();
+
+  const onFilterKeyDown = (event) => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!visibleRows.length) return;
+      const step = event.key === "ArrowDown" ? 1 : -1;
+      setHighlight((value) => (value + step + visibleRows.length) % visibleRows.length);
+    } else if (event.key === "Enter") {
+      const target = visibleRows[highlight];
+      if (!target) return;
+      event.preventDefault();
+      openDiagram(target.chapter, target.owner);
+    }
   };
 
   const retry = () => { setError(""); setRetryNonce((value) => value + 1); };
@@ -322,6 +374,8 @@ export default function WorkspaceQuickPopover({
         </>
       );
     }
+    const listId = "workspace-popover-listbox";
+    const highlighted = visibleRows[highlight];
     return (
       <>
         {stale && (
@@ -330,81 +384,74 @@ export default function WorkspaceQuickPopover({
             <button type="button" className="workspace-popover-chip is-action" onClick={retry}>Retry</button>
           </div>
         )}
-        <div className="workspace-popover-selector">
-          <button
-            type="button"
-            className={`workspace-popover-selector-trigger${selectorOpen ? " is-open" : ""}`}
-            aria-haspopup="listbox"
-            aria-expanded={selectorOpen}
-            aria-label={`Project: ${project?.name || "Select a project"}`}
-            onClick={() => { setSelectorOpen((value) => !value); setProjectQuery(""); }}
-          >
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" /></svg>
-            <span className="workspace-popover-selector-name">{project?.name || "Select a project"}</span>
-            {project && chapterCountLabel(project) && <span className="workspace-popover-count">{chapterCountLabel(project)}</span>}
-            <svg className="workspace-popover-chevron" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-          </button>
-          {selectorOpen && (
-            <div className="workspace-popover-menu">
-              {projects.length > 4 && (
-                <input
-                  autoFocus
-                  type="search"
-                  className="workspace-popover-menu-search"
-                  placeholder="Search projects..."
-                  aria-label="Search projects"
-                  value={projectQuery}
-                  onChange={(event) => setProjectQuery(event.target.value)}
-                />
-              )}
-              <ul className="workspace-popover-menu-list" role="listbox" aria-label="Projects">
-                {filteredProjects.map((candidate) => {
-                  const selected = candidate.id === projectId;
-                  return (
-                    <li key={candidate.id} role="option" aria-selected={selected}>
-                      <button
-                        type="button"
-                        className={`workspace-popover-menu-item${selected ? " is-active" : ""}`}
-                        title={candidate.name}
-                        onClick={() => { setProjectId(candidate.id); setFormOpen(false); setSelectorOpen(false); }}
-                      >
-                        <span className="workspace-popover-menu-name">{candidate.name}</span>
-                        {chapterCountLabel(candidate) && <span className="workspace-popover-count">{chapterCountLabel(candidate)}</span>}
-                        <span className="workspace-popover-menu-check" aria-hidden="true">{selected ? "✓" : ""}</span>
-                      </button>
-                    </li>
-                  );
-                })}
-                {!filteredProjects.length && <li className="workspace-popover-note">No matching projects.</li>}
-              </ul>
-              {projectFormOpen ? (
-                <form className="workspace-popover-form workspace-popover-menu-form" onSubmit={createProject}>
-                  <input autoFocus maxLength={120} value={projectNameDraft} onChange={(event) => setProjectNameDraft(event.target.value)} aria-label="New project name" placeholder="Project name" />
-                  <button type="submit" className="workspace-popover-primary" disabled={busy || !projectNameDraft.trim()}>{busy ? "Creating…" : "Create"}</button>
-                </form>
-              ) : (
-                <button type="button" className="workspace-popover-menu-create" onClick={() => setProjectFormOpen(true)}>+ Create New Project</button>
-              )}
-            </div>
+        <div className="workspace-popover-search">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <input
+            ref={inputRef}
+            autoFocus
+            type="text"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls={listId}
+            aria-activedescendant={highlighted ? `workspace-popover-row-${highlighted.chapter.id}` : undefined}
+            aria-label="Filter projects or chapters"
+            placeholder="Filter projects or chapters..."
+            autoComplete="off"
+            spellCheck={false}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={onFilterKeyDown}
+          />
+          {query && (
+            <button type="button" className="workspace-popover-clear" aria-label="Clear filter" onClick={() => { setQuery(""); inputRef.current?.focus(); }}>✕</button>
           )}
         </div>
-        <ul className="workspace-popover-chapters" aria-label={`${project?.name || "Project"} chapters`}>
-          {loadingChapters && <li className="workspace-popover-note">Loading chapters…</li>}
-          {!loadingChapters && !chapters.length && <li className="workspace-popover-note">No chapters in this project yet.</li>}
-          {!loadingChapters && chapters.map((chapter) => {
-            const status = normalizeChapterStatus(chapter.chapterStatus);
-            const current = chapter.id === activeDiagramId;
+        <div className="workspace-popover-projects" role="tablist" aria-label="Projects">
+          <button type="button" role="tab" aria-selected={scope === "all"} className={`workspace-popover-pill${scope === "all" ? " is-active" : ""}`} onClick={() => { setScope("all"); setFormOpen(false); }}>
+            All <span className="workspace-popover-pill-count">{totalChapters}</span>
+          </button>
+          {projects.map((candidate) => {
+            const count = pillCount(candidate);
             return (
-              <li key={chapter.id}>
+              <button key={candidate.id} type="button" role="tab" aria-selected={scope === candidate.id} title={candidate.name} className={`workspace-popover-pill${scope === candidate.id ? " is-active" : ""}`} onClick={() => { setScope(candidate.id); setFormOpen(false); }}>
+                <span className="workspace-popover-pill-name">{candidate.name}</span>
+                {count !== null && <span className="workspace-popover-pill-count">{count}</span>}
+              </button>
+            );
+          })}
+          <button type="button" className="workspace-popover-pill is-ghost" aria-label="Create new project" title="Create New Project" onClick={() => setProjectFormOpen((value) => !value)}>+</button>
+        </div>
+        {projectFormOpen && (
+          <form className="workspace-popover-form" onSubmit={createProject}>
+            <input autoFocus maxLength={120} value={projectNameDraft} onChange={(event) => setProjectNameDraft(event.target.value)} aria-label="New project name" placeholder="Project name" />
+            <button type="submit" className="workspace-popover-primary" disabled={busy || !projectNameDraft.trim()}>{busy ? "Creating…" : "Create"}</button>
+          </form>
+        )}
+        <ul ref={listRef} id={listId} role="listbox" className="workspace-popover-chapters" aria-label="Chapters">
+          {loadingChapters && !visibleRows.length && <li className="workspace-popover-note">Loading chapters…</li>}
+          {!loadingChapters && !visibleRows.length && (
+            <li className="workspace-popover-note">{needle ? "No matching chapters." : "No chapters in this project yet."}</li>
+          )}
+          {visibleRows.map(({ chapter, owner }, index) => {
+            const current = chapter.id === activeDiagramId;
+            const bytes = getDiagramBytes(chapter, sizeCache);
+            const meta = [scope === "all" ? owner.name : "", bytes !== null ? formatBytes(bytes) : ""].filter(Boolean).join(" · ");
+            return (
+              <li key={chapter.id} id={`workspace-popover-row-${chapter.id}`} role="option" aria-selected={current}>
                 <button
                   type="button"
-                  className={`workspace-popover-chapter${current ? " is-current" : ""}`}
-                  onClick={() => openDiagram(chapter)}
+                  tabIndex={-1}
+                  className={`workspace-popover-chapter${current ? " is-current" : ""}${index === highlight ? " is-highlighted" : ""}`}
+                  onClick={() => openDiagram(chapter, owner)}
+                  onMouseMove={() => { if (index !== highlight) setHighlight(index); }}
                   aria-current={current ? "true" : undefined}
                 >
                   <span className="workspace-popover-chapter-number">{formatChapterLabel(chapter.chapterNumber)}</span>
-                  <span className="workspace-popover-chapter-name">{chapter.name || chapter.title || "Untitled"}</span>
-                  <span className={`workspace-popover-status is-${status}`}>{STATUS_LABELS[status]}</span>
+                  <span className="workspace-popover-chapter-text">
+                    <span className="workspace-popover-chapter-name">{chapter.name || chapter.title || "Untitled"}</span>
+                    {meta && <span className="workspace-popover-chapter-meta">{meta}</span>}
+                  </span>
+                  <span className="workspace-popover-chapter-check" aria-hidden="true">{current ? "✓" : ""}</span>
                 </button>
               </li>
             );
@@ -412,7 +459,7 @@ export default function WorkspaceQuickPopover({
         </ul>
         {error === "create-failed" && <p className="workspace-popover-note" role="status">Couldn't create that. Please try again.</p>}
         {formOpen ? (
-          <form className="workspace-popover-form" onSubmit={submitCreate}>
+          <form className="workspace-popover-form workspace-popover-section" onSubmit={submitCreate}>
             <input
               autoFocus
               maxLength={120}
@@ -428,6 +475,7 @@ export default function WorkspaceQuickPopover({
             + New Chapter in {project?.name}
           </button>
         )}
+        <div className="workspace-popover-hint" aria-hidden="true">↑↓ navigate · ↵ switch · esc close</div>
       </>
     );
   })();
@@ -437,13 +485,16 @@ export default function WorkspaceQuickPopover({
       ref={popoverRef}
       className={`workspace-popover${isDark ? " is-dark" : ""}`}
       role="dialog"
-      aria-label="Cloud Workspace"
+      aria-label="Cloud Workspace: Switch chapters without leaving the editor"
       style={{ top: position.top, right: position.right, width: position.width }}
     >
       <div className="workspace-popover-header">
-        <div className="workspace-popover-heading">
+        <div className="workspace-popover-heading" title="Switch chapters without leaving the editor">
+          <span className="workspace-popover-dot" aria-hidden="true">●</span>
           <strong>Cloud Workspace</strong>
-          <small>Switch chapters without leaving the editor</small>
+          {authState === "authed" && totalChapters > 0 && (
+            <span className="workspace-popover-total">· {totalChapters} chapter{totalChapters === 1 ? "" : "s"}</span>
+          )}
         </div>
         {authState !== "anon" && (
           <button type="button" className="workspace-popover-full" onClick={() => { onClose?.(); onOpenFullWorkspace?.(); }}>

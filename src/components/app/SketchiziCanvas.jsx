@@ -22,6 +22,7 @@ import { attachPasteHintGuard } from "../../features/canvas/pasteHintGuard.js";
 import { attachPasteCentering } from "../../features/canvas/pasteCentering.js";
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
 import { useContainerAutoExpand } from "../../features/canvas/containerAutoExpand/useContainerAutoExpand.js";
+import { useViewportCenteredModals } from "../../features/canvas/useViewportCenteredModals.js";
 import { useImageImport } from "../../features/canvas/imageImport/useImageImport.js";
 import ImageSizeLimitModal from "../../features/canvas/imageImport/ImageSizeLimitModal.jsx";
 import { createFreeDrawElementFromSamples, drawFreeDrawPreviewSample, getPointerEventSamples } from "../../features/canvas/freeDrawEngine.js";
@@ -44,6 +45,7 @@ export default function SketchiziCanvas({
   showToast = null,
 }) {
   const canvasRootRef = useRef(null);
+  useViewportCenteredModals(canvasRootRef);
   const containerAutoExpand = useContainerAutoExpand({ apiRef, canEdit, viewModeEnabled });
   const imageImport = useImageImport({ apiRef, canvasRootRef, canEdit, viewModeEnabled, showToast, storageMode });
   const collaborationCursorFrameRef = useRef(0);
