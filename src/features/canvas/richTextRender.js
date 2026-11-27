@@ -32,7 +32,9 @@ function baselineOffset(ctx, element, lineHeight) {
 export const hasRichTextRuns = (elements) =>
   elements.some((element) => element?.type === "text" && !element.isDeleted && getElementRuns(element).length > 0);
 
-// Paint only the segments whose color differs from the base color; the base-colored
+// Strict branch: an element with runs is painted here from its runs only (segment by
+// segment, one fillText each, never element.text / strokeColor); elements without runs are
+// left to Excalidraw's single text pass. Paint only the segments whose color differs from the base color; the base-colored
 // text underneath is Excalidraw's own render. `scale` is zoom (for hairline width).
 // `origin` ({ x, y } in device px) is the scene->pixel translation of ctx, used to snap
 // unrotated text origins to whole device pixels for native-sharp anti-aliasing.

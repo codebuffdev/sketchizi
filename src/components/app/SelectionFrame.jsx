@@ -14,12 +14,16 @@ export default function SelectionFrame({ apiRef, canvasRootRef, canvasRevision =
   useEffect(() => {
     let frame = 0;
     const bump = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; setTick((t) => (t + 1) % 1000); }); };
+    // Re-check on every gesture that can start or end text editing so the frame never lingers.
+    const extra = ["pointerdown", "pointerup", "dblclick", "focusin", "focusout"];
+    extra.forEach((name) => window.addEventListener(name, bump, true));
     window.addEventListener("pointermove", bump, { passive: true });
     window.addEventListener("wheel", bump, { passive: true });
     window.addEventListener("keydown", bump);
     window.addEventListener("resize", bump);
     return () => {
       if (frame) cancelAnimationFrame(frame);
+      extra.forEach((name) => window.removeEventListener(name, bump, true));
       window.removeEventListener("pointermove", bump);
       window.removeEventListener("wheel", bump);
       window.removeEventListener("keydown", bump);
@@ -33,7 +37,8 @@ export default function SelectionFrame({ apiRef, canvasRootRef, canvasRevision =
   if (!api || !root || viewModeEnabled) return null;
   const appState = api.getAppState?.() || {};
   const ids = Object.entries(appState.selectedElementIds || {}).filter(([, on]) => on).map(([id]) => id);
-  if (ids.length !== 1 || appState.editingTextElement) return null;
+  // While a text element is edited the editor owns the single focus outline.
+  if (ids.length !== 1 || appState.editingTextElement || root.querySelector(".sketchizi-runs-editor")) return null;
   const element = (api.getSceneElements?.() || []).find((el) => el.id === ids[0]);
   if (!element || element.isDeleted || element.type === "line" || element.type === "arrow" || element.type === "freedraw") return null;
   const viewport = root.querySelector(".excalidraw") || root;
