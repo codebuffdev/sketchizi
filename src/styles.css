@@ -1187,3 +1187,10 @@
   background: #41464d !important;
 }
 
+
+/* Excalidraw paste hint: dismissible pill (click or ×), fades out cleanly. */
+.excalidraw .Toast.sketchizi-paste-hint { pointer-events: auto !important; cursor: pointer; display: flex; align-items: center; gap: 10px; padding-right: 8px; transition: opacity .18s ease, transform .18s ease; }
+.excalidraw .Toast.sketchizi-paste-hint.is-dismissing { opacity: 0; transform: translateY(4px); pointer-events: none !important; }
+.excalidraw .Toast.sketchizi-paste-hint[data-sketchizi-dismissed="true"] { display: none !important; }
+.excalidraw .Toast.sketchizi-paste-hint .sketchizi-paste-hint-close { flex: 0 0 auto; width: 22px; height: 22px; margin-left: auto; padding: 0; border: 0; border-radius: 50%; background: transparent; color: inherit; font-size: 16px; line-height: 1; opacity: .7; cursor: pointer; }
+.excalidraw .Toast.sketchizi-paste-hint .sketchizi-paste-hint-close:hover { opacity: 1; background: color-mix(in srgb, currentColor 16%, transparent); }

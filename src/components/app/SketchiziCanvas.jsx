@@ -20,6 +20,7 @@ import { applyMarkdownListEdit, getMarkdownListEdit, getMarkdownHeadingInputEdit
 import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
 import { installTextSelectionTracker } from "../../features/canvas/textSelectionTracker.js";
 import { attachTextRunsEditor } from "../../features/canvas/textEditorRunsMirror.js";
+import { attachPasteHintGuard } from "../../features/canvas/pasteHintGuard.js";
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
 import { useContainerAutoExpand } from "../../features/canvas/containerAutoExpand/useContainerAutoExpand.js";
 import { useImageImport } from "../../features/canvas/imageImport/useImageImport.js";
@@ -63,6 +64,9 @@ export default function SketchiziCanvas({
     const stopEditorRuns = attachTextRunsEditor({ apiRef });
     return () => { stopTracking(); stopEditorRuns(); };
   }, [apiRef, canEdit, viewModeEnabled]);
+  // Excalidraw's "paste as a single element" hint: own a single timer and dismiss it on
+  // paste-into-editor, Ctrl+Shift+V, canvas click, Escape, tab switch and unmount.
+  useEffect(() => attachPasteHintGuard({ apiRef }), [apiRef]);
   const dropActiveRef = useRef(false);
   const workAnchorRef = useRef(null);
   const spotlightSelectedRef = useRef(selectedElements);
