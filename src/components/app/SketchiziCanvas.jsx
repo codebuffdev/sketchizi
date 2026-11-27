@@ -6,7 +6,6 @@ import PrimaryDock from "./PrimaryDock";
 import CanvasVerticalScrollbar from "./CanvasVerticalScrollbar";
 import AlignmentGuides from "./AlignmentGuides";
 import TextSizeIndicator from "./TextSizeIndicator";
-import SelectionFrame from "./SelectionFrame";
 import GridFillLayer from "./GridFillLayer";
 import ShapeMeasurements from "./ShapeMeasurements";
 import RectangleTitles from "./RectangleTitles";
@@ -53,6 +52,24 @@ export default function SketchiziCanvas({
   const drawingPointerRef = useRef(null);
   const textEditingRef = useRef(false);
 
+  // While a text box is open in the editor, CSS (alignment-guides.css) makes Excalidraw's own canvas
+  // selection border transparent so the textarea's border is the only one. Excalidraw reads that color
+  // when it draws, so repaint once as the editor appears and again as it goes away.
+  useEffect(() => {
+    const root = canvasRootRef.current;
+    if (!root || typeof MutationObserver !== "function") return undefined;
+    let editorOpen = !!root.querySelector(".excalidraw-textEditorContainer textarea");
+    let frame = 0;
+    const observer = new MutationObserver(() => {
+      const open = !!root.querySelector(".excalidraw-textEditorContainer textarea");
+      if (open === editorOpen) return;
+      editorOpen = open;
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => { frame = 0; apiRef?.current?.refresh?.(); });
+    });
+    observer.observe(root, { childList: true, subtree: true });
+    return () => { observer.disconnect(); if (frame) cancelAnimationFrame(frame); };
+  }, [apiRef]);
   // Excalidraw's "paste as a single element" hint: own a single timer and dismiss it on
   // paste-into-editor, Ctrl+Shift+V, canvas click, Escape, tab switch and unmount.
   useEffect(() => attachPasteHintGuard({ apiRef }), [apiRef]);
@@ -972,7 +989,6 @@ export default function SketchiziCanvas({
         pageContext={pageContext}
         canEdit={canEdit && !viewModeEnabled}
       />
-      <SelectionFrame apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} viewModeEnabled={viewModeEnabled || hudSuppressed} />
       <TextSizeIndicator apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} />
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />

@@ -70,8 +70,10 @@ export default function TextSizeIndicator({
     const byId = new Map(sceneElements.map((el) => [el.id, el]));
     const addedIds = new Set();
 
+    // The text box open in the editor shows only the editor's own border, no badge.
+    const editingId = appState.editingTextElement?.id ?? null;
     const pushUnique = (element) => {
-      if (!element || element.isDeleted || element.deleted || addedIds.has(element.id)) return;
+      if (!element || element.isDeleted || element.deleted || addedIds.has(element.id) || element.id === editingId) return;
       addedIds.add(element.id);
       elementsToIndicate.push(element);
     };
