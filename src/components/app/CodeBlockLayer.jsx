@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { sceneCoordsToViewportCoords, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
 import CodeBlockEditor from "./CodeBlockEditor.jsx";
-import { CODE_METRICS } from "../../features/canvas/codeBlock/codeBlockLayout.js";
+import { CODE_METRICS, getCodeBlockGeometry } from "../../features/canvas/codeBlock/codeBlockLayout.js";
 import { DEFAULT_CODE_FILENAME } from "../../features/canvas/codeBlock/codeLanguages.js";
 import { codeToCopy, findCodeBlocks, hitTestCodeBlock, readCodeBlock } from "../../features/canvas/codeBlock/codeBlockModel.js";
 import { insertCodeBlock, restoreCodeBlock, setCodeBlockOpacity, rethemeCodeBlocks, updateCodeBlock } from "../../features/canvas/codeBlock/codeBlockScene.js";
@@ -42,7 +42,7 @@ export default function CodeBlockLayer({ apiRef, canvasRootRef, canvasRevision =
 
   /* ------------------------------------------------------------ editor sessions */
   const openNew = useCallback((point) => {
-    setSession({ id: null, x: point.x, y: point.y, focus: "code", original: null, data: { code: "", filename: DEFAULT_CODE_FILENAME, theme: themeRef.current } });
+    setSession({ id: null, x: point.x, y: point.y, scale: 1, focus: "code", original: null, data: { code: "", filename: DEFAULT_CODE_FILENAME, theme: themeRef.current } });
   }, []);
 
   const openEdit = useCallback((element, focus = "code") => {
@@ -52,7 +52,10 @@ export default function CodeBlockLayer({ apiRef, canvasRootRef, canvasRevision =
     const original = { id: element.id, opacity: element.opacity ?? 100 };
     api.updateScene({ appState: { selectedElementIds: {} }, captureUpdate: "NEVER" });
     setCodeBlockOpacity(api, element.id, 0);
-    setSession({ id: element.id, x: element.x, y: element.y, focus, original, data: { ...data, theme: themeRef.current } });
+    // Carry the user's resize into the editor: `scale` is the uniform zoom of the card on the canvas and
+    // `box` the natural-size floor, so the overlay opens at exactly the canvas size with no jump.
+    const { scale, box } = getCodeBlockGeometry(element, data);
+    setSession({ id: element.id, x: element.x, y: element.y, scale, focus, original, data: { ...data, box, theme: themeRef.current } });
   }, [apiRef]);
 
   const handleCommit = useCallback((next) => {
@@ -69,7 +72,7 @@ export default function CodeBlockLayer({ apiRef, canvasRootRef, canvasRevision =
     restoreCodeBlock(api, current.original);
     const before = current.data;
     const changed = before.code !== data.code || before.filename !== data.filename || before.theme !== data.theme;
-    if (changed) updateCodeBlock(api, current.id, data);
+    if (changed) updateCodeBlock(api, current.id, data, { scale: current.scale });
     else api.updateScene({ appState: { selectedElementIds: { [current.id]: true } }, captureUpdate: "NEVER" });
   }, [apiRef]);
 
@@ -252,7 +255,7 @@ export default function CodeBlockLayer({ apiRef, canvasRootRef, canvasRevision =
   let editor = null;
   if (session && appState && layerRect) {
     const pos = toLocal(session.x, session.y);
-    editor = <CodeBlockEditor key={session.id ?? "new"} session={session} left={pos.left} top={pos.top} zoom={zoom} theme={canvasTheme} onCommit={handleCommit} />;
+    editor = <CodeBlockEditor key={session.id ?? "new"} session={session} left={pos.left} top={pos.top} zoom={zoom * (session.scale || 1)} theme={canvasTheme} onCommit={handleCommit} />;
   }
 
   // Copy chip: hovered or selected card, above its top-right corner.

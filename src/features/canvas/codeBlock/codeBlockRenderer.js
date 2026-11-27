@@ -116,8 +116,8 @@ export function pickRenderScale(width, height, dpr = (typeof window !== "undefin
  * Rasterise a snippet to a PNG data URL (DPR-scaled). PNG, not SVG: Excalidraw
  * colour-inverts SVG images in its dark theme, which would scramble the palette.
  */
-export function renderCodeBlockImage({ code, filename, theme }, { dpr } = {}) {
-  const layout = measureCodeBlock(code);
+export function renderCodeBlockImage({ code, filename, theme, box }, { dpr } = {}) {
+  const layout = measureCodeBlock(code, { minWidth: box?.width, minHeight: box?.height });
   const scale = pickRenderScale(layout.width, layout.height, dpr);
   const canvas = document.createElement("canvas");
   canvas.width = Math.ceil(layout.width * scale);

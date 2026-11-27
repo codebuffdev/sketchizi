@@ -18,11 +18,13 @@ const nonce = () => Math.floor(Math.random() * 2147483647);
 export function prepareCodeBlockAsset(api, rawData) {
   const data = normalizeCodeBlockData({ ...rawData, filename: effectiveFilename(rawData?.filename) });
   const rendered = renderCodeBlockImage(data);
-  const fileId = codeBlockFileId(data);
+  // `box` records the natural size the bitmap was painted at, so a later edit can keep a resized block's size.
+  const boxed = { ...data, box: { width: rendered.width, height: rendered.height } };
+  const fileId = codeBlockFileId(boxed);
   const file = { id: fileId, dataURL: rendered.dataURL, mimeType: "image/png", created: Date.now(), lastRetrieved: Date.now() };
   api.addFiles?.([file]);
   putCachedFiles({ [fileId]: file }).catch(() => {});
-  return { data, fileId, width: rendered.width, height: rendered.height };
+  return { data: boxed, fileId, width: rendered.width, height: rendered.height };
 }
 
 /** Insert a new code block with its top-left corner at (x, y); returns the element. */
@@ -49,16 +51,19 @@ export function insertCodeBlock(api, { x, y, code = "", filename, theme }) {
 const mapElement = (api, id, fn) => api.getSceneElementsIncludingDeleted().map((element) => (element.id === id ? fn(element) : element));
 
 /**
- * Replace a block's content. Natural size is recomputed from the new code
- * (so the card grows/shrinks with its text) while the top-left corner stays put.
+ * Replace a block's content. The top-left corner stays put. Size is the natural
+ * layout of the new content, floored at `rawData.box` and multiplied by `scale`.
  */
-export function updateCodeBlock(api, id, rawData, { capture = CaptureUpdateAction.IMMEDIATELY, select = true } = {}) {
+export function updateCodeBlock(api, id, rawData, { capture = CaptureUpdateAction.IMMEDIATELY, select = true, scale = 1 } = {}) {
   const asset = prepareCodeBlockAsset(api, rawData);
+  // Natural size times the user's resize factor: a resized block keeps its size (and scaled text),
+  // growing only when the new content no longer fits the floor carried in rawData.box.
+  const factor = Number.isFinite(scale) && scale > 0 ? scale : 1;
   api.updateScene({
     elements: mapElement(api, id, (element) => ({
       ...element,
-      width: asset.width,
-      height: asset.height,
+      width: asset.width * factor,
+      height: asset.height * factor,
       fileId: asset.fileId,
       crop: null,
       status: "saved",

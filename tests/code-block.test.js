@@ -348,7 +348,7 @@ test("scene glue: image elements via customData, theme refresh is not undoable, 
   assert.match(scene, /mimeType: "image\/png"/); // SVG would be colour-inverted by Excalidraw's dark theme
   assert.match(scene, /rethemeCodeBlocks[\s\S]*CaptureUpdateAction\.NEVER/);
   const layer = read("../src/components/app/CodeBlockLayer.jsx");
-  assert.ok(layer.indexOf("restoreCodeBlock(api, current.original)") < layer.indexOf("updateCodeBlock(api, current.id, data)"));
+  assert.ok(layer.indexOf("restoreCodeBlock(api, current.original)") < layer.indexOf("updateCodeBlock(api, current.id, data,"));
 });
 
 /* ------------------------------------------------------------------ CSS contract */
@@ -367,4 +367,46 @@ test("editor CSS matches the card spec and the copy button reveals on hover/focu
   assert.match(editor, /"--cb-radius": `\$\{CODE_METRICS\.radius\}px`/);
   assert.match(editor, /marginBottom: CODE_METRICS\.headerGap/);
   assert.match(editor, /copied \? "Copied" : "Copy"/);
+});
+
+/* ------------------------------------------------------------------ resized blocks keep their size while editing */
+
+test("a resized block's size is a floor: it never shrinks, and only grows when code overflows", async () => {
+  const { getCodeBlockGeometry } = await import("../src/features/canvas/codeBlock/codeBlockLayout.js");
+  const code = "class Test {}";
+  const natural = measureCodeBlock(code, { charWidth: 8 });
+  // Corner-resized 3x: element is 3x the natural box.
+  const element = { width: natural.width * 3, height: natural.height * 3 };
+  const geo = getCodeBlockGeometry(element, { code, box: { width: natural.width, height: natural.height } });
+  assert.ok(Math.abs(geo.scale - 3) < 1e-9);
+  assert.deepEqual(geo.box, { width: natural.width, height: natural.height });
+  // Same short content with the floor keeps the resized natural size.
+  const same = measureCodeBlock(code, { charWidth: 8, minWidth: geo.box.width, minHeight: geo.box.height });
+  assert.equal(same.width, natural.width);
+  assert.equal(same.height, natural.height);
+  // A taller floor (edge-resized height) is honoured and not collapsed to content height.
+  const tall = measureCodeBlock(code, { charWidth: 8, minWidth: 0, minHeight: 600 });
+  assert.equal(tall.height, 600);
+  // Overflowing content still grows past the floor.
+  const grown = measureCodeBlock("x".repeat(120), { charWidth: 8, minWidth: natural.width, minHeight: natural.height });
+  assert.ok(grown.width > natural.width);
+  // Legacy blocks without `box` derive scale from their content measurement.
+  const legacy = getCodeBlockGeometry({ width: 560, height: 400 }, { code: "" });
+  assert.ok(legacy.scale > 0);
+});
+
+test("box is persisted only when present and changes the bitmap file id", () => {
+  const plain = normalizeCodeBlockData({ code: "a", filename: "x.py", theme: "dark" });
+  assert.equal("box" in plain, false);
+  const boxed = normalizeCodeBlockData({ code: "a", filename: "x.py", theme: "dark", box: { width: 400.4, height: 200 } });
+  assert.deepEqual(boxed.box, { width: 400, height: 200 });
+  assert.notEqual(codeBlockFileId(plain), codeBlockFileId(boxed));
+});
+
+test("editor and layer wire the resize scale and box floor through edit sessions", () => {
+  const layer = read("../src/components/app/CodeBlockLayer.jsx");
+  assert.match(layer, /getCodeBlockGeometry\(element, data\)/);
+  assert.match(layer, /updateCodeBlock\(api, current\.id, data, \{ scale: current\.scale \}\)/);
+  const editor = read("../src/components/app/CodeBlockEditor.jsx");
+  assert.match(editor, /minWidth: floor\?\.width, minHeight: floor\?\.height/);
 });

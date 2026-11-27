@@ -24,6 +24,7 @@ function applyTextareaEdit(textarea, edit) {
  * Floating DOM editor for a code card. Same geometry and palette as the canvas
  * renderer: the card auto-grows with its text and sits under a filename header.
  */
+// `zoom` is the canvas zoom multiplied by the block's resize scale, so the overlay matches the canvas size exactly.
 export default function CodeBlockEditor({ session, left, top, zoom, theme, onCommit }) {
   const [code, setCode] = useState(session.data.code);
   const [filename, setFilename] = useState(session.data.filename);
@@ -33,20 +34,22 @@ export default function CodeBlockEditor({ session, left, top, zoom, theme, onCom
   const rootRef = useRef(null);
   const committedRef = useRef(false);
   const copiedTimerRef = useRef(0);
-  const latestRef = useRef({ code, filename });
-  latestRef.current = { code, filename };
+  const latestRef = useRef({ code, filename, box: session.data.box });
 
   const palette = getCodeTheme(theme);
   const name = effectiveFilename(filename);
   const language = languageForFilename(name);
   const badge = badgeForFilename(name);
-  const layout = useMemo(() => measureCodeBlock(code), [code]);
+  // The block's current (possibly user-resized) natural size is a floor: it only grows when the code overflows it.
+  const floor = session.data.box;
+  const layout = useMemo(() => measureCodeBlock(code, { minWidth: floor?.width, minHeight: floor?.height }), [code, floor?.width, floor?.height]);
+  latestRef.current = { code, filename, box: { width: layout.width, height: layout.height } };
   const tokenLines = useMemo(() => tokenizeCode(code, language), [code, language]);
 
   const commit = useCallback(() => {
     if (committedRef.current) return;
     committedRef.current = true;
-    onCommit({ code: latestRef.current.code, filename: effectiveFilename(latestRef.current.filename) });
+    onCommit({ code: latestRef.current.code, filename: effectiveFilename(latestRef.current.filename), box: latestRef.current.box });
   }, [onCommit]);
 
   useLayoutEffect(() => {
@@ -155,7 +158,7 @@ export default function CodeBlockEditor({ session, left, top, zoom, theme, onCom
           autoComplete="off"
           autoCapitalize="off"
           aria-label="Code block filename"
-          style={{ width: `${Math.max(10, Math.min(MAX_FILENAME_LENGTH, (filename || FILENAME_PLACEHOLDER).length + 1))}ch` }}
+          style={{ width: `${Math.max(10, Math.min(MAX_FILENAME_LENGTH, (filename || FILENAME_PLACEHOLDER).length + 2))}ch` }}
           onChange={(event) => setFilename(sanitizeFilename(event.target.value))}
           onKeyDown={(event) => {
             event.stopPropagation();

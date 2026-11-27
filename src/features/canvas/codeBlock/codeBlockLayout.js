@@ -57,15 +57,19 @@ export function expandTabs(line, tabSize = CODE_METRICS.tabSize) {
   return out;
 }
 
-/** Card + element size for a snippet. Width and height only ever grow with content. */
-export function measureCodeBlock(code, { charWidth = getCodeCharWidth() } = {}) {
+/**
+ * Card + element size for a snippet. Width and height only ever grow with content.
+ * `minWidth` / `minHeight` (total block size, natural units) are an optional floor,
+ * used to keep a block the user has resized from collapsing back to its content size.
+ */
+export function measureCodeBlock(code, { charWidth = getCodeCharWidth(), minWidth: floorWidth = 0, minHeight: floorHeight = 0 } = {}) {
   const lines = String(code ?? "").replace(/\r\n?/g, "\n").split("\n");
   const columns = lines.reduce((max, line) => Math.max(max, expandTabs(line).length), 0);
   const { paddingX, paddingY, lineHeight, minWidth, minHeight, headerHeight, headerGap } = CODE_METRICS;
   // One spare column keeps the caret from being clipped at the end of the longest line.
   const textWidth = Math.ceil((columns + (columns ? 1 : 0)) * charWidth);
-  const cardWidth = Math.max(minWidth, textWidth + paddingX * 2);
-  const cardHeight = Math.max(minHeight, lines.length * lineHeight + paddingY * 2);
+  const cardWidth = Math.max(minWidth, textWidth + paddingX * 2, Math.ceil(floorWidth) || 0);
+  const cardHeight = Math.max(minHeight, lines.length * lineHeight + paddingY * 2, (Math.ceil(floorHeight) || 0) - headerHeight - headerGap);
   return {
     lines,
     columns,
@@ -76,4 +80,20 @@ export function measureCodeBlock(code, { charWidth = getCodeCharWidth() } = {}) 
     width: cardWidth,
     height: headerHeight + headerGap + cardHeight,
   };
+}
+
+/**
+ * How a block sits on the canvas relative to its natural (unscaled) layout.
+ * Corner-resizing an image element scales it uniformly, so `scale` is the
+ * element width over the natural width it was last rendered at (`data.box`,
+ * or the content measurement for blocks saved before `box` existed). `box` is
+ * the natural-size floor the editor and re-render must not shrink below.
+ */
+export function getCodeBlockGeometry(element, data) {
+  const base = data?.box?.width > 0 && data?.box?.height > 0 ? data.box : measureCodeBlock(data?.code);
+  const elementWidth = Number(element?.width);
+  const scale = Number.isFinite(elementWidth) && elementWidth > 0 && base.width > 0 ? elementWidth / base.width : 1;
+  const elementHeight = Number(element?.height);
+  const height = Number.isFinite(elementHeight) && elementHeight > 0 ? elementHeight / scale : base.height;
+  return { scale, box: { width: base.width, height: Math.max(base.height, height) } };
 }

@@ -13,12 +13,21 @@ export function isCodeBlockElement(element) {
   return Boolean(element) && element.type === "image" && !element.isDeleted && Boolean(data) && typeof data.code === "string";
 }
 
+/** Natural-size floor {width, height} the card was last rendered at, or null. */
+function normalizeBox(box) {
+  const width = Number(box?.width);
+  const height = Number(box?.height);
+  return Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0 ? { width: Math.round(width), height: Math.round(height) } : null;
+}
+
 export function normalizeCodeBlockData(data = {}) {
+  const box = normalizeBox(data.box);
   return {
     v: CODE_BLOCK_SCHEMA,
     code: String(data.code ?? "").replace(/\r\n?/g, "\n").slice(0, MAX_CODE_LENGTH),
     filename: sanitizeFilename(data.filename ?? DEFAULT_CODE_FILENAME),
     theme: normalizeCodeTheme(data.theme),
+    ...(box ? { box } : {}),
   };
 }
 
@@ -29,8 +38,9 @@ export function readCodeBlock(element) {
 /** Raw code string the Copy action puts on the clipboard. */
 export const codeToCopy = (data) => String(data?.code ?? "");
 
-export function codeBlockFileId({ code, filename, theme }) {
-  return contentFileId("code", `${normalizeCodeTheme(theme)}\u0000${filename}\u0000${code}`);
+export function codeBlockFileId({ code, filename, theme, box }) {
+  const size = normalizeBox(box);
+  return contentFileId("code", `${normalizeCodeTheme(theme)}\u0000${filename}\u0000${code}${size ? `\u0000${size.width}x${size.height}` : ""}`);
 }
 
 export const codeBlockLanguage = (data) => languageForFilename(data?.filename);
