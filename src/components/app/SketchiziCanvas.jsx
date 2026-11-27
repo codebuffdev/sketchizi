@@ -21,6 +21,7 @@ import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacemen
 import { installTextSelectionTracker } from "../../features/canvas/textSelectionTracker.js";
 import { attachTextRunsEditor } from "../../features/canvas/textEditorRunsMirror.js";
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
+import { useContainerAutoExpand } from "../../features/canvas/containerAutoExpand/useContainerAutoExpand.js";
 import { useImageImport } from "../../features/canvas/imageImport/useImageImport.js";
 import ImageSizeLimitModal from "../../features/canvas/imageImport/ImageSizeLimitModal.jsx";
 import { createFreeDrawElementFromSamples, drawFreeDrawPreviewSample, getPointerEventSamples } from "../../features/canvas/freeDrawEngine.js";
@@ -42,6 +43,7 @@ export default function SketchiziCanvas({
   showToast = null,
 }) {
   const canvasRootRef = useRef(null);
+  const containerAutoExpand = useContainerAutoExpand({ apiRef, canEdit, viewModeEnabled });
   const imageImport = useImageImport({ apiRef, canvasRootRef, canEdit, viewModeEnabled, showToast });
   const collaborationCursorFrameRef = useRef(0);
   const pendingCollaborationCursorRef = useRef(null);
@@ -581,8 +583,9 @@ export default function SketchiziCanvas({
         setCanvasRevision((revision) => revision + 1);
       });
     }
+    containerAutoExpand.onSceneChange(elements, appState);
     handleChange?.(elements, appState, files);
-  }, [apiRef, handleChange, pageContext?.mode]);
+  }, [apiRef, handleChange, pageContext?.mode, containerAutoExpand.onSceneChange]);
   const handleViewportChange = useCallback((...args) => {
     if (!canvasRevisionFrameRef.current) {
       canvasRevisionFrameRef.current = requestAnimationFrame(() => {
