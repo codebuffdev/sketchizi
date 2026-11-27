@@ -49,6 +49,8 @@ import { getNetworkingResourceDefinitionById } from "./networkingResourceDefinit
 import { workspaceClient } from "./features/workspace/workspaceClient.js";
 import { hasMountableCanvas } from "./features/workspace/tabClose.js";
 import { findDuplicateTabName } from "./features/workspace/tabLabel.js";
+import { resolveStorageMode } from "./features/canvas/imageImport/imageSizePolicy.js";
+import CloudOptimizeModal from "./features/canvas/imageImport/CloudOptimizeModal.jsx";
 const CloudSaveDialog = lazy(() => import("./features/workspace/CloudSaveDialog.jsx"));
 import { isCloudSceneRestoring } from "./features/workspace/cloudSavePolicy.js";
 import { getSelectedAwsResource, updateAwsResource } from "./features/aws-resources/awsResourceService";
@@ -297,6 +299,9 @@ function App() {
     chapterNav,
     cloudSaveDialogOpen,
     setCloudSaveDialogOpen,
+    cloudOptimizePrompt,
+    confirmCloudOptimize,
+    keepCloudLocalOnly,
     saveDrawingToCloud,
     queueSketchSave,
     saveCloudDiagramNow,
@@ -2051,6 +2056,7 @@ function App() {
           {canvasMounted && (
           <SketchiziCanvas
             hudSuppressed={isWelcomeOrDashboardOpen}
+            storageMode={resolveStorageMode({ cloudActive: cloudSessionRef.current.active, detached: cloudDetached })}
             nativeMenuOpen={nativeMenuOpen}
             savedSketch={savedSketch}
             isDarkTheme={isDarkTheme}
@@ -2411,6 +2417,7 @@ function App() {
           </div>
         </section>
       </div>}
+      <CloudOptimizeModal prompt={cloudOptimizePrompt} isDarkTheme={isDarkTheme} onShrink={confirmCloudOptimize} onKeepLocal={keepCloudLocalOnly} />
       {cloudSaveDialogOpen && <CloudSaveDialog isDarkTheme={isDarkTheme} initialName={cloudSessionRef.current.active && !cloudDetached ? (cloudSessionRef.current.name || "Cloud diagram") : (currentFile?.name || "Untitled drawing")} onClose={() => setCloudSaveDialogOpen(false)} onSave={saveDrawingToCloud} />}
       {designStudioOpen && (
         <CreateDesignScreen

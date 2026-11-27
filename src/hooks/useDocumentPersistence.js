@@ -9,6 +9,10 @@ import { getPages } from "../features/pages/pageModel.js";
 import { hasCloudSceneChange, allowsEmptyCloudSave, isActiveCloudSession, resolveCloudLoadTarget } from "../features/workspace/cloudSavePolicy.js";
 import { normalizeCloudDiagramResponse } from "../features/workspace/cloudDiagramPayload.js";
 import { restoreElements, CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { measureCloudPayloadBytes } from "../features/workspace/cloudDocument.js";
+import { inspectCloudPayload } from "../features/workspace/cloudPayloadPolicy.js";
+import { optimizeEmbeddedImages } from "../features/workspace/cloudImageOptimizer.js";
+import { formatBytes, resolveCloudLimitBytes } from "../features/canvas/imageImport/imageSizePolicy.js";
 import { hydrateFilesSync, hydrateMissingFromCache } from "../features/workspace/binaryFileCache.js";
 import { recordWorkspaceItemOpened } from "../features/workspace/workspacePresentation.js";
 
@@ -73,6 +77,28 @@ export function useDocumentPersistence({
     diagramId: cloudSessionRef.current.diagramId || cloudDiagramId,
   });
   const [cloudSaveDialogOpen, setCloudSaveDialogOpen] = useState(false);
+  // Deferred compression prompt for local -> cloud migration (see saveDrawingToCloud).
+  const [cloudOptimizePrompt, setCloudOptimizePrompt] = useState(null);
+  const cloudOptimizeResolverRef = useRef(null);
+  const cloudOptimizeAbortRef = useRef(null);
+  const askCloudOptimize = useCallback((details) => new Promise((resolve) => {
+    cloudOptimizeResolverRef.current = resolve;
+    setCloudOptimizePrompt({ ...details, busy: false });
+  }), []);
+  const closeCloudOptimize = useCallback(() => {
+    cloudOptimizeResolverRef.current = null;
+    cloudOptimizeAbortRef.current = null;
+    setCloudOptimizePrompt(null);
+  }, []);
+  const confirmCloudOptimize = useCallback(() => {
+    setCloudOptimizePrompt((current) => (current ? { ...current, busy: true } : current));
+    cloudOptimizeResolverRef.current?.("shrink");
+  }, []);
+  const keepCloudLocalOnly = useCallback(() => {
+    if (cloudOptimizeAbortRef.current) { cloudOptimizeAbortRef.current.abort(); return; }
+    cloudOptimizeResolverRef.current?.("local");
+    closeCloudOptimize();
+  }, [closeCloudOptimize]);
 
   useEffect(() => {
     const detachCloudDocument = () => {
@@ -99,17 +125,55 @@ export function useDocumentPersistence({
     if (!limits?.admin && Number(limits?.diagramCount || 0) >= Number(limits?.diagramLimit || 3)) {
       throw new Error("Your Cloud Workspace diagram limit has been reached. Delete a cloud diagram before saving another.");
     }
-    const document = createCloudDocument({
+    let document = createCloudDocument({
       api,
       metadata: documentMetadataRef.current,
     });
-    if (!limits?.admin) {
-      const serializedDocument = JSON.stringify(document);
-      const documentBytes = new TextEncoder().encode(serializedDocument).byteLength;
-      const maxDocumentBytes = 2 * 1024 * 1024;
-      if (documentBytes > maxDocumentBytes) {
-        throw new Error(`This drawing is ${(documentBytes / (1024 * 1024)).toFixed(2)} MiB, above the 2 MiB Cloud Workspace limit for standard accounts. Administrator accounts are exempt from this application-level limit.`);
+    // Pre-upload inspection: local canvases hold full-resolution images, so the role limit
+    // (4 MB admin / 2 MB standard, plan-configurable) is checked here, once, before the upload.
+    const maxBytes = resolveCloudLimitBytes(limits);
+    const report = inspectCloudPayload({ document, totalBytes: measureCloudPayloadBytes(document), maxBytes });
+    if (report.exceeds) {
+      const names = new Map(report.images.map((image) => [image.id, image]));
+      const decision = await askCloudOptimize({
+        totalBytes: report.totalBytes,
+        maxBytes,
+        isAdmin: Boolean(limits?.admin),
+        feasible: report.plan.feasible,
+        images: (report.plan.feasible ? report.plan.targets : report.images.slice(0, 5)).map((item) => names.get(item.id) || item),
+      });
+      if (decision !== "shrink") {
+        // Keep Local Only: nothing was uploaded and the full-resolution diagram stays in local storage.
+        closeCloudOptimize();
+        setCloudSaveDialogOpen(false);
+        showToast("Kept local only — the full-resolution diagram was not uploaded", "info");
+        return;
       }
+      const controller = new AbortController();
+      cloudOptimizeAbortRef.current = controller;
+      try {
+        await optimizeEmbeddedImages({
+          api,
+          targets: report.plan.targets,
+          signal: controller.signal,
+          onProgress: (index, total) => setCloudOptimizePrompt((current) => (current ? { ...current, progress: `${index + 1}/${total}` } : current)),
+        });
+      } catch (cause) {
+        closeCloudOptimize();
+        if (cause?.name === "AbortError") {
+          setCloudSaveDialogOpen(false);
+          showToast("Kept local only — the full-resolution diagram was not uploaded", "info");
+          return;
+        }
+        throw cause;
+      }
+      closeCloudOptimize();
+      document = createCloudDocument({ api, metadata: documentMetadataRef.current });
+      const optimizedBytes = measureCloudPayloadBytes(document);
+      if (optimizedBytes > maxBytes) {
+        throw new Error(`After optimizing, this drawing is still ${formatBytes(optimizedBytes)}, above the ${formatBytes(maxBytes)} Cloud Workspace limit. Remove some content or keep it local only.`);
+      }
+      showToast(`Optimized images: ${formatBytes(report.totalBytes)} → ${formatBytes(optimizedBytes)}`, "success");
     }
     const result = await workspaceClient.createDiagram({
       projectId,
@@ -163,7 +227,7 @@ export function useDocumentPersistence({
     canvasTabsRef.current = updatedTabs;
     setCanvasTabs(updatedTabs);
     saveCanvasTabs(updatedTabs).catch(() => {});
-  }, [showToast]);
+  }, [showToast, askCloudOptimize, closeCloudOptimize]);
 
   const queueSketchSave = useCallback((elements, appState) => {
     if (!cloudSessionRef.current.active || cloudDetachedRef.current) {
@@ -510,6 +574,9 @@ export function useDocumentPersistence({
     chapterNav,
     cloudSaveDialogOpen,
     setCloudSaveDialogOpen,
+    cloudOptimizePrompt,
+    confirmCloudOptimize,
+    keepCloudLocalOnly,
     saveDrawingToCloud,
     queueSketchSave,
     saveCloudDiagramNow,

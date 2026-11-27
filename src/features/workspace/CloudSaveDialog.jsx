@@ -97,7 +97,7 @@ export default function CloudSaveDialog({ initialName, onClose, onSave, isDarkTh
         <div className="cloud-save-dialog-header">
           <div>
             <h2 id="cloud-save-dialog-title">Save to Cloud Workspace</h2>
-            <p>{isAdmin ? "Save this drawing and its embedded assets to a cloud project. Administrator accounts are exempt from the standard 2 MiB application limit." : "Save this drawing and its embedded assets to a cloud project. Standard accounts have a 2 MiB document limit."}</p>
+            <p>{isAdmin ? "Save this drawing and its embedded assets to a cloud project. Administrator accounts can save up to 4 MB; oversized images can be optimized before upload." : "Save this drawing and its embedded assets to a cloud project. Standard accounts can save up to 2 MB; oversized images can be optimized before upload."}</p>
           </div>
           <button type="button" className="cloud-save-dialog-close" aria-label="Close dialog" disabled={saving} onClick={onClose}>×</button>
         </div>

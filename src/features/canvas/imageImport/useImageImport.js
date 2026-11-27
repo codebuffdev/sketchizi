@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CaptureUpdateAction, convertToExcalidrawElements, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
 import { fetchCurrentUser } from "../../auth/authClient.js";
 import { putCachedFiles } from "../../workspace/binaryFileCache.js";
-import { formatBytes, isAdminUser, resolveMaxImageBytes } from "./imageSizePolicy.js";
+import { enforcesImportLimit, formatBytes, isAdminUser, resolveMaxImageBytes } from "./imageSizePolicy.js";
+import { contentFileId, readAsDataURL } from "./imageFileUtils.js";
 import { optimizeImageToLimit, readImageDimensions } from "./imageCompression.js";
 import { IMAGE_PICKER_ACCEPT, INSERT_IMAGE_EVENT, extractImageFiles, fitImageToViewport } from "./imageImportModel.js";
 
@@ -14,34 +15,20 @@ const EDITABLE_SELECTOR = "input, textarea, select, [contenteditable='true']";
 
 const isAbort = (error) => error?.name === "AbortError";
 
-function readAsDataURL(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error || new Error("Could not read the image."));
-    reader.readAsDataURL(blob);
-  });
-}
-
-async function contentFileId(blob) {
-  try {
-    const digest = await crypto.subtle.digest("SHA-1", await blob.arrayBuffer());
-    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-  } catch {
-    return `img-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-  }
-}
-
 /**
- * Role-aware image import for drag-and-drop, clipboard paste and the dock's
- * "Upload Image" picker. Files within the user's limit are placed unchanged;
- * larger ones open a confirmation modal and are optimized in the browser.
+ * Storage-aware image import for drag-and-drop, clipboard paste and the dock's "Upload Image" picker.
+ *  - storageMode "local": every image is placed at full original quality, with no size check, no user
+ *    lookup and no prompt. The cloud limit is applied later, when the canvas is saved to the cloud.
+ *  - storageMode "cloud": files within the user's role limit are placed unchanged; larger ones open the
+ *    "Image Exceeds Size Limit" modal and are optimized in the browser.
  */
-export function useImageImport({ apiRef, canvasRootRef, canEdit, viewModeEnabled, showToast }) {
+export function useImageImport({ apiRef, canvasRootRef, canEdit, viewModeEnabled, showToast, storageMode = "local" }) {
   const [prompt, setPrompt] = useState(null);
   const enabled = Boolean(canEdit) && !viewModeEnabled;
   const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
+  const storageModeRef = useRef(storageMode);
+  storageModeRef.current = storageMode;
   const showToastRef = useRef(showToast);
   showToastRef.current = showToast;
   const promptOpenRef = useRef(false);
@@ -119,6 +106,19 @@ export function useImageImport({ apiRef, canvasRootRef, canEdit, viewModeEnabled
   }, []);
 
   const processFiles = useCallback(async (files, origin) => {
+    // Local canvas: no limit, no prompt, original bytes.
+    if (!enforcesImportLimit(storageModeRef.current)) {
+      let index = 0;
+      for (const file of files) {
+        try {
+          await insertImageFile(file, origin, index);
+          index += 1;
+        } catch (error) {
+          notify(error?.message || "Could not import this image.", "error");
+        }
+      }
+      return;
+    }
     const user = await resolveUser();
     const maxBytes = resolveMaxImageBytes(user);
     let placed = 0;
@@ -182,9 +182,9 @@ export function useImageImport({ apiRef, canvasRootRef, canEdit, viewModeEnabled
   useEffect(() => {
     const reset = () => { userRef.current = { resolved: false, user: null }; };
     window.addEventListener("sketchizi:auth-changed", reset);
-    if (enabled) resolveUser();
+    if (enabled && enforcesImportLimit(storageMode)) resolveUser();
     return () => window.removeEventListener("sketchizi:auth-changed", reset);
-  }, [enabled, resolveUser]);
+  }, [enabled, storageMode, resolveUser]);
 
   useEffect(() => {
     const root = canvasRootRef.current;

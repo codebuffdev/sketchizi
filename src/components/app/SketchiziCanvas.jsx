@@ -39,12 +39,13 @@ export default function SketchiziCanvas({
   gridEnabled = false, gridStyle = "focus", canvasAppearance = "clean", onGridVisibilityChange,
   nativeMenuOpen = false,
   hudSuppressed = false,
+  storageMode = "local",
   onToolStyleChange = null,
   showToast = null,
 }) {
   const canvasRootRef = useRef(null);
   const containerAutoExpand = useContainerAutoExpand({ apiRef, canEdit, viewModeEnabled });
-  const imageImport = useImageImport({ apiRef, canvasRootRef, canEdit, viewModeEnabled, showToast });
+  const imageImport = useImageImport({ apiRef, canvasRootRef, canEdit, viewModeEnabled, showToast, storageMode });
   const collaborationCursorFrameRef = useRef(0);
   const pendingCollaborationCursorRef = useRef(null);
   const [canvasRevision, setCanvasRevision] = useState(0);

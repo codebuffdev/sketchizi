@@ -32,3 +32,28 @@ export function formatBytes(bytes) {
   if (value >= KB) return `${Math.round(value / KB)} KB`;
   return `${Math.round(value)} B`;
 }
+
+// ---- storage-aware policy -------------------------------------------------
+// Size limits protect Cloud Workspace only. A local canvas imports any image at full quality;
+// the limit is enforced at import time on cloud-backed canvases and once, up front, when a local
+// canvas is saved to the cloud (see cloudPayloadPolicy.js).
+
+export const STORAGE_MODE_LOCAL = "local";
+export const STORAGE_MODE_CLOUD = "cloud";
+
+export function resolveStorageMode({ cloudActive = false, detached = false } = {}) {
+  return cloudActive && !detached ? STORAGE_MODE_CLOUD : STORAGE_MODE_LOCAL;
+}
+
+/** Import-time size checks apply to cloud canvases only; an unknown mode fails closed (enforced). */
+export function enforcesImportLimit(storageMode) {
+  return storageMode !== STORAGE_MODE_LOCAL;
+}
+
+/** Limit for a Cloud Workspace account from /limits: admin 4 MB, otherwise plan value or 2 MB. */
+export function resolveCloudLimitBytes(limits) {
+  return resolveMaxImageBytes({
+    role: limits?.admin ? "admin" : "user",
+    limits: { maxImageSizeBytes: limits?.maxImageSizeBytes },
+  });
+}
