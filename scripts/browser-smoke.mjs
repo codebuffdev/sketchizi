@@ -197,10 +197,19 @@ try {
   // after leaving the port button, then exercise the keyboard connect mode.
   await blank.page.mouse.move(portPoolTargetBox.x + portPoolTargetBox.width / 2, portPoolTargetBox.y + portPoolTargetBox.height / 2);
   await portPoolTarget.locator(".sd-port.is-visible").first().waitFor({ state: "visible" });
-  // C uses the hovered destination node (or a selected node) as the source
+  // The C shortcut treats the canvas selection as authoritative and only falls back to the hovered card when
+  // nothing is selected (SystemDesignNodeOverlay). Earlier steps leave an unrelated card selected: the last
+  // canvas click selected the click-target card, and Add Component selects each new card. Select the card the
+  // scenario is about, exactly as a user would by clicking it, and wait for that selection to land so C
+  // cannot race it. The assertion below is unchanged: C must arm this card.
+  const portPoolTargetId = await portPoolTarget.getAttribute("data-node-id");
+  await blank.page.mouse.click(portPoolTargetBox.x + portPoolTargetBox.width / 2, portPoolTargetBox.y + portPoolTargetBox.height / 2);
+  await blank.page.waitForFunction((id) =>
+    document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-selected"),
+  portPoolTargetId);
+  // C uses the selected (or, with no selection, hovered) card as the source
   // and connects it to the next card without requiring a visible port click.
   await blank.page.keyboard.press("c");
-  const portPoolTargetId = await portPoolTarget.getAttribute("data-node-id");
   await blank.page.waitForFunction((id) =>
     document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-connect-armed"),
   portPoolTargetId);
