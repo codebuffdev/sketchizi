@@ -6,4 +6,19 @@
   <url>
     <loc>https://sketchizi.pages.dev/reviews</loc>
   </url>
+  <url>
+    <loc>https://sketchizi.pages.dev/flowchart-maker/</loc>
+  </url>
+  <url>
+    <loc>https://sketchizi.pages.dev/uml-diagram-maker/</loc>
+  </url>
+  <url>
+    <loc>https://sketchizi.pages.dev/architecture-diagrams/</loc>
+  </url>
+  <url>
+    <loc>https://sketchizi.pages.dev/kubernetes-visualizer/</loc>
+  </url>
+  <url>
+    <loc>https://sketchizi.pages.dev/docker-compose-visualizer/</loc>
+  </url>
 </urlset>
