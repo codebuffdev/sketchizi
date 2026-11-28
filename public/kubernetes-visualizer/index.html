@@ -4,34 +4,127 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kubernetes Architecture Visualizer | Sketchizi</title>
-<meta name="description" content="Visualize Kubernetes resources and relationships with Sketchizi. Build and refine Kubernetes architecture diagrams in an online workspace.">
+<meta name="description" content="Visualize Kubernetes architecture with Sketchizi. Learn how clusters, workloads, services, ingress, storage, and configuration fit together with a practical example.">
 <link rel="canonical" href="https://sketchizi.pages.dev/kubernetes-visualizer/">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sketchizi">
 <meta property="og:title" content="Kubernetes Architecture Visualizer | Sketchizi">
-<meta property="og:description" content="Visualize Kubernetes resources and relationships with Sketchizi. Build and refine Kubernetes architecture diagrams in an online workspace.">
+<meta property="og:description" content="Visualize Kubernetes architecture with Sketchizi. Learn how clusters, workloads, services, ingress, storage, and configuration fit together with a practical example.">
 <meta property="og:url" content="https://sketchizi.pages.dev/kubernetes-visualizer/">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kubernetes Architecture Visualizer | Sketchizi">
+<meta name="twitter:description" content="Visualize Kubernetes architecture with Sketchizi. Learn how clusters, workloads, services, ingress, storage, and configuration fit together with a practical example.">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Sketchizi","applicationCategory":"DiagrammingApplication","operatingSystem":"Web","url":"https://sketchizi.pages.dev/","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <style>
-:root{color-scheme:light dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:#0b1020;color:#eef2ff}*{box-sizing:border-box}body{margin:0;line-height:1.65}.wrap{width:min(960px,calc(100% - 40px));margin:auto}header{border-bottom:1px solid #29334a;padding:18px 0}header .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}a{color:#a5b4fc}header a{font-weight:650;text-decoration:none;color:#fff}.hero{padding:76px 0 54px}.eyebrow{color:#a5b4fc;font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}h1{font-size:clamp(2.4rem,6vw,4.3rem);line-height:1.08;letter-spacing:-.04em;margin:14px 0 20px}h2{font-size:1.5rem;margin:0 0 8px}h3{font-size:1.1rem;margin:0 0 6px}.lead{font-size:1.2rem;color:#cbd5e1;max-width:760px}.cta{display:inline-block;margin-top:18px;background:#818cf8;color:#10142a;padding:12px 20px;border-radius:10px;font-weight:750;text-decoration:none}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin:24px 0 56px}section{background:#141c30;border:1px solid #29334a;border-radius:14px;padding:22px;margin:16px 0}section p{color:#cbd5e1;margin:0}footer{border-top:1px solid #29334a;padding:30px 0 50px;color:#aab5c8}footer nav{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}@media(prefers-reduced-motion:no-preference){a{transition:opacity .15s}a:hover{opacity:.8}}
+:root{color-scheme:light dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:#0b1020;color:#eef2ff}*{box-sizing:border-box}body{margin:0;line-height:1.7}.wrap{width:min(960px,calc(100% - 40px));margin:auto}header{border-bottom:1px solid #29334a;padding:18px 0}header .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}a{color:#a5b4fc}header a{font-weight:650;text-decoration:none;color:#fff}.hero{padding:76px 0 54px}.eyebrow{color:#a5b4fc;font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}h1{font-size:clamp(2.4rem,6vw,4.3rem);line-height:1.08;letter-spacing:-.04em;margin:14px 0 20px}h2{font-size:1.5rem;line-height:1.25;margin:0 0 12px}h3{font-size:1.08rem;line-height:1.3;margin:0 0 6px}.lead{font-size:1.2rem;color:#cbd5e1;max-width:760px}.cta{display:inline-block;margin-top:18px;background:#818cf8;color:#10142a;padding:12px 20px;border-radius:10px;font-weight:750;text-decoration:none}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin:24px 0 42px}section{background:#141c30;border:1px solid #29334a;border-radius:14px;padding:24px;margin:18px 0}section p{color:#cbd5e1;margin:0 0 12px}section p:last-child{margin-bottom:0}ul,ol{color:#cbd5e1;padding-left:1.35rem;margin:12px 0 0}li{padding-left:4px;margin:7px 0}.example{border-left:3px solid #818cf8;padding:4px 0 4px 18px;margin:16px 0;color:#cbd5e1}.faq h3{margin-top:20px}.faq h3:first-of-type{margin-top:0}footer{border-top:1px solid #29334a;padding:30px 0 50px;color:#aab5c8}footer nav{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}@media(prefers-reduced-motion:no-preference){a{transition:opacity .15s}a:hover{opacity:.8}}
 </style>
 </head>
 <body>
 <header><div class="wrap"><a href="/">Sketchizi</a><a href="/?editor=1">Open the editor ↗</a></div></header>
 <main class="wrap">
-<div class="hero"><div class="eyebrow">Sketchizi diagramming workspace</div><h1>Kubernetes architecture visualizer</h1><p class="lead">Turn Kubernetes concepts into diagrams that are easier to inspect and explain. Sketchizi includes Kubernetes-focused resources and a dedicated studio for working with manifests and architecture.</p><a class="cta" href="/?editor=1">Start creating with Sketchizi</a></div>
-<div class="grid"><section><h2>Visualize Kubernetes resources</h2><p>Map workloads, services, networking, and supporting resources in a diagram.</p></section>
-      <section><h2>Explore relationships</h2><p>Show how Kubernetes resources connect so that architecture and deployment discussions have a shared visual reference.</p></section>
-      <section><h2>Work with a dedicated studio</h2><p>Use Sketchizi's Kubernetes studio alongside the general diagram canvas.</p></section></div>
-<section><h2>Frequently asked questions</h2></section>
-<section><h3>What can I visualize?</h3><p>You can create diagrams of Kubernetes resources, workloads, and their relationships using the available architecture resources.</p></section>
-      <section><h3>Is there a Kubernetes-specific workspace?</h3><p>Sketchizi includes a dedicated Kubernetes studio in addition to its general canvas.</p></section>
-<section><h2>Explore more with Sketchizi</h2><p>Use one flexible workspace for diagrams, technical planning, and visual explanations.</p><a class="cta" href="/?editor=1">Open Sketchizi</a></section>
+<div class="hero">
+  <div class="eyebrow">Sketchizi diagramming workspace</div>
+  <h1>Kubernetes architecture visualizer</h1>
+  <p class="lead">Make Kubernetes deployments easier to inspect and explain. Sketchizi includes Kubernetes-focused architecture resources and a dedicated studio, alongside an editable canvas for mapping workloads, services, and their relationships.</p>
+  <a class="cta" href="/?editor=1">Explore Sketchizi's Kubernetes tools</a>
+</div>
+
+<section>
+  <h2>Why visualize a Kubernetes cluster?</h2>
+  <p>Kubernetes describes the desired state of containerized applications through resources that work together. A deployment may involve workloads, pods, services, ingress rules, configuration, storage, and cluster infrastructure. When those relationships are spread across manifests and environments, it can be difficult to understand the whole system at a glance.</p>
+  <p>A Kubernetes architecture diagram gives a team a shared view of the important components and traffic paths. It can help explain an application to a new teammate, review a deployment design, investigate a dependency, or document how traffic reaches a workload.</p>
+</section>
+
+<section>
+  <h2>Kubernetes resources to include</h2>
+  <div class="grid">
+    <div><h3>Cluster and nodes</h3><p>Show the cluster boundary and, when useful, the worker nodes or node pools that provide compute capacity.</p></div>
+    <div><h3>Namespaces</h3><p>Use namespaces to group resources and make logical or team boundaries visible within a cluster.</p></div>
+    <div><h3>Workloads and pods</h3><p>Represent Deployments, StatefulSets, DaemonSets, Jobs, and the pods they manage when those details matter to the audience.</p></div>
+    <div><h3>Services and ingress</h3><p>Show how internal services expose workloads and how external traffic enters through an ingress controller or gateway.</p></div>
+    <div><h3>Configuration and secrets</h3><p>Document which workloads depend on ConfigMaps or Secrets without putting sensitive values in the diagram.</p></div>
+    <div><h3>Storage</h3><p>Show persistent volume claims, storage volumes, and the workloads that use them when data persistence is part of the design.</p></div>
+  </div>
+  <p>Only include the resources needed to explain the deployment. A high-level service map and a detailed cluster operations diagram have different audiences and should not be forced into one crowded view.</p>
+</section>
+
+<section>
+  <h2>How to map a Kubernetes deployment</h2>
+  <ol>
+    <li><strong>Choose the level of detail.</strong> Decide whether the diagram explains an application running in Kubernetes, a namespace, a cluster, or the surrounding platform.</li>
+    <li><strong>Draw the cluster boundary.</strong> Identify the cluster and any important namespaces, node pools, or external systems. Make it clear what is inside and outside the cluster.</li>
+    <li><strong>Add the workloads.</strong> Place the main Deployments, StatefulSets, or other workload controllers. Show pods only when replica layout or pod-level relationships matter.</li>
+    <li><strong>Trace network traffic.</strong> Start at the user or external client, then show the ingress or gateway, service, and target workload. Label important protocols or ports only when they are known and relevant.</li>
+    <li><strong>Add dependencies.</strong> Include configuration, secrets references, storage, databases, queues, and external APIs that materially affect the application.</li>
+    <li><strong>Check ownership and boundaries.</strong> Make namespace and team boundaries understandable, and avoid exposing secret values or sensitive infrastructure details.</li>
+    <li><strong>Review against the deployment.</strong> Ask someone familiar with the cluster to verify resource names, relationships, and traffic paths before using the diagram as operational documentation.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Example: a web application on Kubernetes</h2>
+  <p>Imagine a small web application deployed to a cluster. A useful first diagram might show this request path and its supporting dependencies:</p>
+  <div class="example">
+    <p><strong>External user:</strong> sends an HTTPS request to the application domain.</p>
+    <p><strong>Ingress:</strong> receives the request and routes it to the application Service.</p>
+    <p><strong>Service:</strong> provides a stable network endpoint for the selected application pods.</p>
+    <p><strong>Deployment:</strong> manages the desired number of web application pod replicas.</p>
+    <p><strong>Configuration:</strong> pods consume application settings from a ConfigMap and sensitive values through a Secret reference.</p>
+    <p><strong>Data dependency:</strong> the application connects to a database, which may run inside or outside the cluster.</p>
+  </div>
+  <p>This view helps answer basic questions: where does traffic enter, what selects the pods, where does configuration come from, and which data service does the application depend on? Add readiness probes, autoscaling, storage, or multiple namespaces in a separate view when those details are relevant.</p>
+</section>
+
+<section>
+  <h2>Traffic flow and workload relationships</h2>
+  <ul>
+    <li><strong>Ingress to Service:</strong> show the route from an external entry point to the service that exposes the application.</li>
+    <li><strong>Service to Pods:</strong> indicate which workload pods are selected by the service.</li>
+    <li><strong>Controller to Pods:</strong> show that a Deployment or StatefulSet manages the pods rather than implying the pods are standalone.</li>
+    <li><strong>Workload to configuration:</strong> show references to ConfigMaps and Secrets, but never copy secret values into a diagram.</li>
+    <li><strong>Workload to storage:</strong> connect a pod or workload to its persistent volume claim when persistent data is part of the design.</li>
+    <li><strong>Cluster to external dependency:</strong> distinguish traffic leaving the cluster from communication between in-cluster resources.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Kubernetes diagram best practices</h2>
+  <ul>
+    <li>Use a clear title and identify the cluster, environment, and namespace scope.</li>
+    <li>Group resources by namespace or application boundary, not just by visual convenience.</li>
+    <li>Distinguish controllers from the pods they manage.</li>
+    <li>Use arrows to show traffic direction and labels to explain important routes.</li>
+    <li>Do not confuse a Service with a Deployment: they represent different responsibilities.</li>
+    <li>Show external databases and managed services outside the cluster boundary.</li>
+    <li>Never include credential values, tokens, private keys, or other secrets in diagrams.</li>
+    <li>Keep a high-level overview separate from a detailed troubleshooting or operations view.</li>
+    <li>Update the diagram when workloads, namespaces, ingress routes, or dependencies change.</li>
+  </ul>
+</section>
+
+<section class="faq">
+  <h2>Kubernetes visualizer FAQs</h2>
+  <h3>What is a Kubernetes architecture diagram?</h3>
+  <p>It is a visual representation of Kubernetes resources and how they relate, such as clusters, namespaces, workloads, pods, services, ingress, storage, and external dependencies.</p>
+  <h3>Can Sketchizi help me create Kubernetes diagrams?</h3>
+  <p>Sketchizi includes Kubernetes-focused architecture resources and a dedicated Kubernetes studio. You can use the available workspace to create and refine visual explanations of your deployment.</p>
+  <h3>What is the difference between a Pod, Deployment, and Service?</h3>
+  <p>A Pod is the unit that runs one or more containers. A Deployment manages a desired set of interchangeable pod replicas for an application. A Service provides a stable network endpoint for a group of pods.</p>
+  <h3>Should I show every Kubernetes resource?</h3>
+  <p>No. Include the resources that help explain the purpose of the diagram. Start with the workloads and traffic path, then add configuration, storage, and operational details only when needed.</p>
+  <h3>Can I include Secrets in a Kubernetes diagram?</h3>
+  <p>You can show that a workload references a Secret, but never include the Secret's actual values, tokens, passwords, or credentials in the diagram.</p>
+  <h3>Can I visualize multiple namespaces?</h3>
+  <p>Yes. Use clearly labelled groups or boundaries to distinguish namespaces and show which workloads and services belong to each one.</p>
+</section>
+
+<section>
+  <h2>Explore related architecture tools</h2>
+  <p>For a broader infrastructure view, visit the <a href="/architecture-diagrams/">cloud and system architecture diagram tool</a>. For container service layouts, see the <a href="/docker-compose-visualizer/">Docker Compose visualizer</a>. You can also explore the <a href="/uml-diagram-maker/">UML diagram maker</a>, <a href="/flowchart-maker/">flowchart maker</a>, and <a href="/resources/">Sketchizi resources hub</a>.</p>
+  <a class="cta" href="/?editor=1">Open Sketchizi</a>
+</section>
 </main>
-<footer><div class="wrap">© Sketchizi · Online diagramming workspace<nav><a href="/">Home</a><a href="/flowchart-maker/">flowchart maker</a>
-        <a href="/uml-diagram-maker/">UML diagram maker</a>
-        <a href="/architecture-diagrams/">Cloud and system architecture diagrams</a>
-        <a href="/docker-compose-visualizer/">Docker Compose visualizer</a><a href="/reviews/">Community reviews</a><a href="/resources/">Diagramming guides</a></nav></div></footer>
-</body></html>
+<footer><div class="wrap">© Sketchizi · Online diagramming workspace<nav><a href="/">Home</a><a href="/flowchart-maker/">Flowchart maker</a><a href="/uml-diagram-maker/">UML diagram maker</a><a href="/architecture-diagrams/">Cloud and system architecture diagrams</a><a href="/docker-compose-visualizer/">Docker Compose visualizer</a><a href="/reviews">Community reviews</a><a href="/resources/">Diagramming guides</a></nav></div></footer>
+</body>
+</html>
