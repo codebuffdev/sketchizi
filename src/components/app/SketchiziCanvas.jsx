@@ -3,7 +3,7 @@ import { CaptureUpdateAction, Excalidraw } from "@excalidraw/excalidraw";
 import ShortcutHelp from "../../ShortcutHelp";
 import ToolOptionsDock from "./ToolOptionsDock";
 import PrimaryDock from "./PrimaryDock";
-import CanvasVerticalScrollbar from "./CanvasVerticalScrollbar";
+import CanvasScrollbars from "./CanvasScrollbars";
 import AlignmentGuides from "./AlignmentGuides";
 import TextSizeIndicator from "./TextSizeIndicator";
 import { attachTextEditorFrame } from "../../features/canvas/textEditorFrame.js";
@@ -1041,7 +1041,7 @@ export default function SketchiziCanvas({
       <TextSizeIndicator apiRef={apiRef} canvasRootRef={canvasRootRef} selectedElements={selectedElements} canvasRevision={canvasRevision} />
       <RemoteCursors participants={collaborationParticipants} selfId={collaborationSelfId} />
       <RemoteSelections participants={collaborationParticipants} selfId={collaborationSelfId} apiRef={apiRef} />
-      <CanvasVerticalScrollbar apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} disabled={pageContext?.mode === "pages"} />
+      <CanvasScrollbars apiRef={apiRef} canvasRootRef={canvasRootRef} canvasRevision={canvasRevision} disabled={pageContext?.mode === "pages"} />
       <ShortcutHelp open={shortcutHelpOpen} onClose={closeShortcuts} />
       <ImageSizeLimitModal prompt={imageImport.prompt} isDarkTheme={isDarkTheme} onShrink={imageImport.confirmShrink} onCancel={imageImport.cancelPrompt} />
     </main>

@@ -1,0 +1,58 @@
+/* Content-bounded floating edge-pill scrollbars.
+   Invisible at rest; revealed by edge hover, wheel scroll or thumb drag.
+   Hidden outright (display: none) on an empty canvas or when the drawing fits the viewport. */
+:root,
+[data-theme="light"],
+.app.theme-light {
+  --sk-scroll-thumb: rgba(100, 116, 139, 0.30);
+  --sk-scroll-thumb-active: rgba(79, 70, 229, 0.72);
+}
+[data-theme="dark"],
+.app.theme-dark {
+  --sk-scroll-thumb: rgba(148, 163, 184, 0.28);
+  --sk-scroll-thumb-active: rgba(129, 140, 248, 0.78);
+}
+
+/* Generous invisible hover hit-zone along the canvas edge. Insets keep the corners,
+   header actions, dock and bottom widgets clickable. */
+.sketchizi-scrollzone {
+  position: absolute;
+  z-index: 10045;
+  user-select: none;
+  touch-action: none;
+  background: transparent;
+}
+.sketchizi-scrollzone.is-vertical { right: 2px; top: 64px; bottom: 64px; width: 22px; }
+.sketchizi-scrollzone.is-horizontal { bottom: 2px; left: 72px; right: 72px; height: 22px; }
+.sketchizi-scrollzone.is-disabled { display: none; pointer-events: none; }
+
+.sketchizi-scroll-thumb {
+  position: absolute;
+  border-radius: 9999px;
+  border: 0;
+  box-shadow: none;
+  background: var(--sk-scroll-thumb);
+  opacity: 0;
+  cursor: grab;
+  touch-action: none;
+  will-change: transform;
+  transition: opacity 200ms ease, width 140ms ease, height 140ms ease, background-color 140ms ease;
+}
+.is-vertical > .sketchizi-scroll-thumb { top: 0; right: 3px; width: 5px; min-height: 36px; }
+.is-horizontal > .sketchizi-scroll-thumb { left: 0; bottom: 3px; height: 5px; min-width: 36px; }
+
+/* Reveal: edge hover, wheel/drag wake (JS adds .is-awake for 900ms). */
+.sketchizi-scrollzone:hover > .sketchizi-scroll-thumb,
+.sketchizi-scrollzone.is-awake > .sketchizi-scroll-thumb,
+.sketchizi-scrollzone.is-dragging > .sketchizi-scroll-thumb { opacity: 1; }
+
+/* Active hover / drag: widen and tint. */
+.is-vertical > .sketchizi-scroll-thumb:hover,
+.is-vertical.is-dragging > .sketchizi-scroll-thumb { width: 8px; background: var(--sk-scroll-thumb-active); }
+.is-horizontal > .sketchizi-scroll-thumb:hover,
+.is-horizontal.is-dragging > .sketchizi-scroll-thumb { height: 8px; background: var(--sk-scroll-thumb-active); }
+.sketchizi-scroll-thumb:active { cursor: grabbing; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sketchizi-scroll-thumb { transition: none; }
+}
