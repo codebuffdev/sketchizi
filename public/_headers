@@ -1,0 +1,11 @@
+# Keep account-specific, administrative, and user-submitted pages out of search indexes.
+/workspace*
+  X-Robots-Tag: noindex, nofollow
+/feedback*
+  X-Robots-Tag: noindex, nofollow
+/reviews/write
+  X-Robots-Tag: noindex, nofollow
+/reviews/mine
+  X-Robots-Tag: noindex, nofollow
+/admin*
+  X-Robots-Tag: noindex, nofollow
