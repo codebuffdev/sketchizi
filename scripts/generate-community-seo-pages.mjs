@@ -9,12 +9,12 @@ export const COMMUNITY_PAGES = {
   reviews: {
     title: "Sketchizi Reviews — Community Feedback",
     description: "Read community reviews of Sketchizi, the online diagram and architecture editor.",
-    canonical: \`${SITE_ORIGIN}/reviews\`,
+    canonical: SITE_ORIGIN + "/reviews",
   },
   "join-team": {
     title: "Join the Sketchizi Team",
     description: "Explore opportunities to contribute to Sketchizi and help build an online diagramming and architecture design tool.",
-    canonical: \`${SITE_ORIGIN}/join-team\`,
+    canonical: SITE_ORIGIN + "/join-team",
   },
 };
 
@@ -24,19 +24,19 @@ function escapeAttribute(value) {
 
 function setMeta(html, attribute, key, content) {
   const escaped = escapeAttribute(content);
-  const selector = new RegExp(\`<meta\\\\s+\${attribute}=["']\${key}["'][^>]*>\`, "i");
-  const tag = \`<meta \${attribute}="\${key}" content="\${escaped}" />\`;
+  const selector = new RegExp("<meta\\s+" + attribute + "=[\\"']" + key + "[\\"'][^>]*>", "i");
+  const tag = '<meta ' + attribute + '="' + key + '" content="' + escaped + '" />';
   return selector.test(html) ? html.replace(selector, tag) : html;
 }
 
 function setCanonical(html, canonical) {
-  const tag = \`<link rel="canonical" href="\${escapeAttribute(canonical)}" />\`;
-  const selector = /<link\\s+rel=["']canonical["'][^>]*>/i;
+  const tag = '<link rel="canonical" href="' + escapeAttribute(canonical) + '" />';
+  const selector = /<link\s+rel=["']canonical["'][^>]*>/i;
   return selector.test(html) ? html.replace(selector, tag) : html;
 }
 
 export function applyCommunityMetadata(html, page) {
-  let output = html.replace(/<title>[\\s\\S]*?<\\/title>/i, \`<title>\${escapeAttribute(page.title)}</title>\`);
+  let output = html.replace(/<title>[\s\S]*?<\/title>/i, "<title>" + escapeAttribute(page.title) + "</title>");
   output = setMeta(output, "name", "description", page.description);
   output = setMeta(output, "name", "robots", "index, follow, max-image-preview:large");
   output = setMeta(output, "property", "og:type", "website");
