@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { applyCommunityMetadata, generateCommunitySeoPages } from "../scripts/generate-community-seo-pages.mjs";
 
-const entryHtml = `<!doctype html>
+const entryHtml = \`<!doctype html>
 <html lang="en"><head>
 <title>Sketchizi home</title>
 <meta name="description" content="Home description" />
@@ -19,7 +19,7 @@ const entryHtml = `<!doctype html>
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Sketchizi home" />
 <meta name="twitter:description" content="Home description" />
-</head><body><div id="root"></div><script type="module" src="/assets/app.js"></script></body></html>`;
+</head><body><div id="root"></div><script type="module" src="/assets/app.js"></script></body></html>\`;
 
 test("community route metadata replaces homepage metadata without changing the app entry", () => {
   const html = applyCommunityMetadata(entryHtml, {
@@ -28,13 +28,13 @@ test("community route metadata replaces homepage metadata without changing the a
     canonical: "https://sketchizi.pages.dev/reviews",
   });
 
-  assert.match(html, /<title>Sketchizi Reviews — Community Feedback<\\/title>/);
-  assert.match(html, /name="description" content="Read community reviews of Sketchizi\."/);
-  assert.match(html, /rel="canonical" href="https:\/\/sketchizi\.pages\.dev\/reviews"/);
-  assert.match(html, /property="og:url" content="https:\/\/sketchizi\.pages\.dev\/reviews"/);
-  assert.match(html, /name="twitter:title" content="Sketchizi Reviews — Community Feedback"/);
-  assert.match(html, /<div id="root"><\\/div>/);
-  assert.match(html, /src="\/assets\/app\.js"/);
+  assert.ok(html.includes("<title>Sketchizi Reviews — Community Feedback</title>"));
+  assert.ok(html.includes('name="description" content="Read community reviews of Sketchizi."'));
+  assert.ok(html.includes('rel="canonical" href="https://sketchizi.pages.dev/reviews"'));
+  assert.ok(html.includes('property="og:url" content="https://sketchizi.pages.dev/reviews"'));
+  assert.ok(html.includes('name="twitter:title" content="Sketchizi Reviews — Community Feedback"'));
+  assert.ok(html.includes('<div id="root"></div>'));
+  assert.ok(html.includes('src="/assets/app.js"'));
 });
 
 test("build output receives separate HTML entry points for both public community routes", async () => {
@@ -47,11 +47,11 @@ test("build output receives separate HTML entry points for both public community
     const reviews = await readFile(path.join(outDir, "reviews", "index.html"), "utf8");
     const joinTeam = await readFile(path.join(outDir, "join-team", "index.html"), "utf8");
 
-    assert.match(reviews, /Sketchizi Reviews — Community Feedback/);
-    assert.match(reviews, /https:\/\/sketchizi\.pages\.dev\/reviews/);
-    assert.match(joinTeam, /<title>Join the Sketchizi Team<\\/title>/);
-    assert.match(joinTeam, /https:\/\/sketchizi\.pages\.dev\/join-team/);
-    assert.match(joinTeam, /src="\/assets\/app\.js"/);
+    assert.ok(reviews.includes("<title>Sketchizi Reviews — Community Feedback</title>"));
+    assert.ok(reviews.includes("https://sketchizi.pages.dev/reviews"));
+    assert.ok(joinTeam.includes("<title>Join the Sketchizi Team</title>"));
+    assert.ok(joinTeam.includes("https://sketchizi.pages.dev/join-team"));
+    assert.ok(joinTeam.includes('src="/assets/app.js"'));
   } finally {
     await rm(outDir, { recursive: true, force: true });
   }
