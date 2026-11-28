@@ -3,9 +3,9 @@
   X-Robots-Tag: noindex, nofollow
 /feedback*
   X-Robots-Tag: noindex, nofollow
-/reviews/write
+/reviews/write*
   X-Robots-Tag: noindex, nofollow
-/reviews/mine
+/reviews/mine*
   X-Robots-Tag: noindex, nofollow
 /admin*
   X-Robots-Tag: noindex, nofollow
