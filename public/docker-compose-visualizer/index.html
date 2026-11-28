@@ -4,34 +4,147 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Docker Compose Visualizer | Sketchizi</title>
-<meta name="description" content="Visualize Docker Compose services and connections with Sketchizi. Explore compose configurations and communicate container-based application layouts.">
+<meta name="description" content="Visualize Docker Compose services and dependencies with Sketchizi. Learn how to map containers, ports, networks, volumes, and a practical web app stack.">
 <link rel="canonical" href="https://sketchizi.pages.dev/docker-compose-visualizer/">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sketchizi">
 <meta property="og:title" content="Docker Compose Visualizer | Sketchizi">
-<meta property="og:description" content="Visualize Docker Compose services and connections with Sketchizi. Explore compose configurations and communicate container-based application layouts.">
+<meta property="og:description" content="Visualize Docker Compose services and dependencies with Sketchizi. Learn how to map containers, ports, networks, volumes, and a practical web app stack.">
 <meta property="og:url" content="https://sketchizi.pages.dev/docker-compose-visualizer/">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Docker Compose Visualizer | Sketchizi">
+<meta name="twitter:description" content="Visualize Docker Compose services and dependencies with Sketchizi. Learn how to map containers, ports, networks, volumes, and a practical web app stack.">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Sketchizi","applicationCategory":"DiagrammingApplication","operatingSystem":"Web","url":"https://sketchizi.pages.dev/","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <style>
-:root{color-scheme:light dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:#0b1020;color:#eef2ff}*{box-sizing:border-box}body{margin:0;line-height:1.65}.wrap{width:min(960px,calc(100% - 40px));margin:auto}header{border-bottom:1px solid #29334a;padding:18px 0}header .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}a{color:#a5b4fc}header a{font-weight:650;text-decoration:none;color:#fff}.hero{padding:76px 0 54px}.eyebrow{color:#a5b4fc;font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}h1{font-size:clamp(2.4rem,6vw,4.3rem);line-height:1.08;letter-spacing:-.04em;margin:14px 0 20px}h2{font-size:1.5rem;margin:0 0 8px}h3{font-size:1.1rem;margin:0 0 6px}.lead{font-size:1.2rem;color:#cbd5e1;max-width:760px}.cta{display:inline-block;margin-top:18px;background:#818cf8;color:#10142a;padding:12px 20px;border-radius:10px;font-weight:750;text-decoration:none}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin:24px 0 56px}section{background:#141c30;border:1px solid #29334a;border-radius:14px;padding:22px;margin:16px 0}section p{color:#cbd5e1;margin:0}footer{border-top:1px solid #29334a;padding:30px 0 50px;color:#aab5c8}footer nav{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}@media(prefers-reduced-motion:no-preference){a{transition:opacity .15s}a:hover{opacity:.8}}
+:root{color-scheme:light dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:#0b1020;color:#eef2ff}*{box-sizing:border-box}body{margin:0;line-height:1.7}.wrap{width:min(960px,calc(100% - 40px));margin:auto}header{border-bottom:1px solid #29334a;padding:18px 0}header .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}a{color:#a5b4fc}header a{font-weight:650;text-decoration:none;color:#fff}.hero{padding:76px 0 54px}.eyebrow{color:#a5b4fc;font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}h1{font-size:clamp(2.4rem,6vw,4.3rem);line-height:1.08;letter-spacing:-.04em;margin:14px 0 20px}h2{font-size:1.5rem;line-height:1.25;margin:0 0 12px}h3{font-size:1.08rem;line-height:1.3;margin:0 0 6px}.lead{font-size:1.2rem;color:#cbd5e1;max-width:760px}.cta{display:inline-block;margin-top:18px;background:#818cf8;color:#10142a;padding:12px 20px;border-radius:10px;font-weight:750;text-decoration:none}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin:24px 0 42px}section{background:#141c30;border:1px solid #29334a;border-radius:14px;padding:24px;margin:18px 0}section p{color:#cbd5e1;margin:0 0 12px}section p:last-child{margin-bottom:0}ul,ol{color:#cbd5e1;padding-left:1.35rem;margin:12px 0 0}li{padding-left:4px;margin:7px 0}.example{border-left:3px solid #818cf8;padding:4px 0 4px 18px;margin:16px 0;color:#cbd5e1}pre{overflow-x:auto;background:#0b1020;border:1px solid #29334a;border-radius:10px;padding:16px;color:#dbeafe;font-size:.9rem;line-height:1.55}.faq h3{margin-top:20px}.faq h3:first-of-type{margin-top:0}footer{border-top:1px solid #29334a;padding:30px 0 50px;color:#aab5c8}footer nav{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}@media(prefers-reduced-motion:no-preference){a{transition:opacity .15s}a:hover{opacity:.8}}
 </style>
 </head>
 <body>
 <header><div class="wrap"><a href="/">Sketchizi</a><a href="/?editor=1">Open the editor ↗</a></div></header>
 <main class="wrap">
-<div class="hero"><div class="eyebrow">Sketchizi diagramming workspace</div><h1>Docker Compose visualizer</h1><p class="lead">Make multi-service applications easier to reason about. Sketchizi includes a Docker Compose studio to help visualize service layouts and their connections.</p><a class="cta" href="/?editor=1">Start creating with Sketchizi</a></div>
-<div class="grid"><section><h2>Understand service layouts</h2><p>Represent the services that make up an application and how they relate to one another.</p></section>
-      <section><h2>Explore configuration visually</h2><p>Use the dedicated Docker Compose studio to work with compose-based application designs.</p></section>
-      <section><h2>Explain the architecture</h2><p>Create a visual reference that helps communicate service boundaries and dependencies.</p></section></div>
-<section><h2>Frequently asked questions</h2></section>
-<section><h3>What is a Docker Compose diagram useful for?</h3><p>It helps explain services in a compose application and the relationships or dependencies between them.</p></section>
-      <section><h3>Does Sketchizi have a Docker Compose studio?</h3><p>Yes. Sketchizi includes a dedicated Docker Compose studio.</p></section>
-<section><h2>Explore more with Sketchizi</h2><p>Use one flexible workspace for diagrams, technical planning, and visual explanations.</p><a class="cta" href="/?editor=1">Open Sketchizi</a></section>
+<div class="hero">
+  <div class="eyebrow">Sketchizi diagramming workspace</div>
+  <h1>Docker Compose visualizer</h1>
+  <p class="lead">Make multi-container applications easier to understand. Sketchizi includes a Docker Compose studio and an editable diagramming canvas for explaining services, networks, volumes, and the connections between them.</p>
+  <a class="cta" href="/?editor=1">Explore the Docker Compose studio</a>
+</div>
+
+<section>
+  <h2>What is a Docker Compose diagram?</h2>
+  <p>Docker Compose lets you define and run multi-container applications using a Compose file. That configuration describes services and can also define networks, volumes, environment settings, ports, and other runtime options.</p>
+  <p>A Docker Compose diagram turns those declarations into a visual map. It can show which services make up an application, which ports are exposed, which services share a network, where persistent data is stored, and which dependencies affect startup or operation.</p>
+  <p>The diagram complements the Compose file; it does not replace the configuration that Docker uses to run the application.</p>
+</section>
+
+<section>
+  <h2>What to show in a Compose architecture</h2>
+  <div class="grid">
+    <div><h3>Services and containers</h3><p>Show each service, the image or build context it uses, and the role it plays in the application.</p></div>
+    <div><h3>Ports and entry points</h3><p>Distinguish ports published to the host from ports used for communication between services.</p></div>
+    <div><h3>Networks</h3><p>Group services by the networks they join and show which services can communicate over each network.</p></div>
+    <div><h3>Volumes and data</h3><p>Show named volumes, bind mounts, and the services that read or write persistent data.</p></div>
+    <div><h3>Environment and configuration</h3><p>Indicate where configuration is supplied without copying credentials or sensitive environment values into the diagram.</p></div>
+    <div><h3>Dependencies</h3><p>Show important service dependencies and distinguish startup ordering from actual application readiness.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>How to visualize a Docker Compose application</h2>
+  <ol>
+    <li><strong>Start with the Compose file.</strong> Identify the services and the purpose of each one. Read the configuration alongside the application documentation if service roles are not obvious.</li>
+    <li><strong>Group the services.</strong> Separate the user-facing application, APIs, background workers, databases, caches, and supporting tools where that makes the architecture easier to follow.</li>
+    <li><strong>Map network membership.</strong> Record which services share each Compose network. Mark host-published ports separately from internal service-to-service communication.</li>
+    <li><strong>Trace persistent data.</strong> Identify named volumes and bind mounts, then connect them to the services that use them.</li>
+    <li><strong>Show important dependencies.</strong> Add relationships such as an API using a database or a worker consuming a queue. Label whether a relationship is a configuration dependency or a runtime data flow.</li>
+    <li><strong>Arrange the diagram.</strong> Use the <a href="/?editor=1">Sketchizi workspace</a> to lay out services, boundaries, labels, and connectors. Keep the main request path easy to follow.</li>
+    <li><strong>Compare the diagram with the configuration.</strong> Check service names, networks, ports, mounts, and dependencies against the Compose file before sharing the diagram.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Example: a small web application stack</h2>
+  <p>A common local development stack might contain a web application, an API, and a database. The simplified configuration below illustrates the kinds of relationships a diagram can explain:</p>
+  <pre><code>services:
+  web:
+    build: ./web
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: "configured-outside-this-example"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:</code></pre>
+  <div class="example">
+    <p><strong>Browser:</strong> connects to the host-published web port.</p>
+    <p><strong>Web service:</strong> serves the frontend and sends application requests to the API.</p>
+    <p><strong>API service:</strong> handles application logic and connects to the database over the Compose network.</p>
+    <p><strong>Database service:</strong> stores application data in a named volume so the data can persist beyond the lifetime of an individual container.</p>
+  </div>
+  <p>This is an illustrative configuration, not a complete production deployment. In a real diagram, verify the actual ports, networks, environment configuration, health checks, and volume mounts in your project.</p>
+</section>
+
+<section>
+  <h2>Important Compose relationships to understand</h2>
+  <ul>
+    <li><strong>Service versus container:</strong> a service is a definition in the Compose application; it can result in one or more running containers depending on configuration and scaling.</li>
+    <li><strong>Published port:</strong> maps a container port to a host port so traffic can enter from outside the Compose network.</li>
+    <li><strong>Internal network:</strong> lets connected services communicate without publishing every service port to the host.</li>
+    <li><strong>Named volume:</strong> provides managed persistent storage that can outlive a container.</li>
+    <li><strong>Bind mount:</strong> maps a host path into a container, often for source code or local development data.</li>
+    <li><strong>depends_on:</strong> expresses service dependency and startup ordering; by itself it does not guarantee that a dependency is ready to accept application traffic.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Docker Compose diagram best practices</h2>
+  <ul>
+    <li>Use the Compose service name as the diagram label so readers can match the view to the file.</li>
+    <li>Group services by role and make network boundaries visible.</li>
+    <li>Label host-published ports clearly; do not confuse them with container ports.</li>
+    <li>Show persistent storage separately from the container that uses it.</li>
+    <li>Mark external services, APIs, and host dependencies outside the Compose application boundary.</li>
+    <li>Never put passwords, tokens, private keys, or sensitive environment values in a diagram.</li>
+    <li>Do not assume startup order means readiness; include health checks and readiness behaviour in documentation when they matter.</li>
+    <li>Keep development, test, and production variants distinct if their topology differs.</li>
+    <li>Update the diagram when services, networks, ports, or volumes change.</li>
+  </ul>
+</section>
+
+<section class="faq">
+  <h2>Docker Compose visualizer FAQs</h2>
+  <h3>What does a Docker Compose visualizer show?</h3>
+  <p>A visualizer or diagram can show the services in a Compose application, their networks, published ports, dependencies, volumes, and important communication paths.</p>
+  <h3>Does Sketchizi have a Docker Compose studio?</h3>
+  <p>Yes. Sketchizi includes a dedicated Docker Compose studio for working with Compose-based application designs, alongside its general diagramming workspace.</p>
+  <h3>What is the difference between a Docker image, container, and Compose service?</h3>
+  <p>An image is a packaged template used to create containers. A container is a running or stopped instance created from an image. A Compose service defines how one or more containers for part of an application should be configured.</p>
+  <h3>Does depends_on wait until a database is ready?</h3>
+  <p>Not by itself. depends_on can control startup order, but application readiness requires an appropriate health check or retry behaviour. A diagram should not imply that startup ordering guarantees readiness.</p>
+  <h3>Why should I show volumes in the diagram?</h3>
+  <p>Volumes explain where persistent data is stored and which services use it. They help readers distinguish data that survives container replacement from data stored only in a container's writable layer.</p>
+  <h3>Can I show multiple Compose networks?</h3>
+  <p>Yes. Use separate labelled network boundaries and connect each service to the networks it joins. This makes communication boundaries easier to inspect.</p>
+</section>
+
+<section>
+  <h2>Explore more diagramming tools</h2>
+  <p>For container orchestration architecture, see the <a href="/kubernetes-visualizer/">Kubernetes architecture visualizer</a>. For a broader infrastructure view, visit the <a href="/architecture-diagrams/">cloud and system architecture diagram tool</a>. You can also explore the <a href="/uml-diagram-maker/">UML diagram maker</a>, <a href="/flowchart-maker/">flowchart maker</a>, and <a href="/resources/">Sketchizi resources hub</a>.</p>
+  <a class="cta" href="/?editor=1">Open Sketchizi</a>
+</section>
 </main>
-<footer><div class="wrap">© Sketchizi · Online diagramming workspace<nav><a href="/">Home</a><a href="/flowchart-maker/">flowchart maker</a>
-        <a href="/uml-diagram-maker/">UML diagram maker</a>
-        <a href="/architecture-diagrams/">Cloud and system architecture diagrams</a>
-        <a href="/kubernetes-visualizer/">Kubernetes architecture visualizer</a><a href="/reviews/">Community reviews</a><a href="/resources/">Diagramming guides</a></nav></div></footer>
-</body></html>
+<footer><div class="wrap">© Sketchizi · Online diagramming workspace<nav><a href="/">Home</a><a href="/flowchart-maker/">Flowchart maker</a><a href="/uml-diagram-maker/">UML diagram maker</a><a href="/architecture-diagrams/">Cloud and system architecture diagrams</a><a href="/kubernetes-visualizer/">Kubernetes architecture visualizer</a><a href="/reviews">Community reviews</a><a href="/resources/">Diagramming guides</a></nav></div></footer>
+</body>
+</html>
