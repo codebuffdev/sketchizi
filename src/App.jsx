@@ -1089,7 +1089,7 @@ function App() {
         id, type: "arrow", x, y, width: Math.abs(endPoint.x - startPoint.x), height: Math.abs(endPoint.y - startPoint.y),
         points: [[startPoint.x - x, startPoint.y - y], [endPoint.x - x, endPoint.y - y]],
         start: { id: source.id }, end: { id: target.id },
-        startBinding: { elementId: source.id, focus: 0, gap: 8 }, endBinding: { elementId: target.id, focus: 0, gap: 8 },
+        startBinding: { elementId: source.id, focus: 0, gap: 0 }, endBinding: { elementId: target.id, focus: 0, gap: 0 },
         strokeColor: color, strokeWidth: 2, roughness: 0, endArrowhead: "triangle",
         customData: { kubernetesRelationship: { fromResourceId: from.id, toResourceId: to.id, label } },
         label: { text: label, fontSize: 11 },
@@ -1315,8 +1315,8 @@ function App() {
         // Skeleton API uses start/end IDs to create real Excalidraw bindings.
         start: { id: fromElementId },
         end: { id: toElementId },
-        startBinding: { elementId: fromElementId, focus: 0, gap: 8 },
-        endBinding: { elementId: toElementId, focus: 0, gap: 8 },
+        startBinding: { elementId: fromElementId, focus: 0, gap: 0 },
+        endBinding: { elementId: toElementId, focus: 0, gap: 0 },
         strokeColor: color, strokeWidth: 2, roughness: 0, endArrowhead: "triangle",
         customData: { [appendToCanvas ? "kubernetesPracticeRelationship" : "kubernetesRelationship"]: { fromResourceId: fromResource.id, toResourceId: toResource.id, label } },
         label: { text: label, fontSize: 11 },
@@ -1489,8 +1489,8 @@ function App() {
       const startElement = createdById.get(edge.startBinding?.elementId);
       const endElement = createdById.get(edge.endBinding?.elementId);
       if (!arrow || !startElement || !endElement) return;
-      arrow.startBinding = { elementId: startElement.id, focus: edge.startBinding?.focus ?? 0, gap: edge.startBinding?.gap ?? 8 };
-      arrow.endBinding = { elementId: endElement.id, focus: edge.endBinding?.focus ?? 0, gap: edge.endBinding?.gap ?? 8 };
+      arrow.startBinding = { elementId: startElement.id, focus: edge.startBinding?.focus ?? 0, gap: 0 };
+      arrow.endBinding = { elementId: endElement.id, focus: edge.endBinding?.focus ?? 0, gap: 0 };
       startElement.boundElements = [
         ...(startElement.boundElements || []).filter((binding) => binding.id !== arrow.id),
         { id: arrow.id, type: "arrow" },

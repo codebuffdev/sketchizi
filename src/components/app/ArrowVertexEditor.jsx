@@ -2,25 +2,31 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import {
-  PORT_SHAPE_TYPES,
   absolutePointsToPatch,
-  findPortSnap,
   getAbsolutePoints,
-  getPortBindingChanges,
   getSegmentMidpoints,
-  getShapePorts,
   insertVertex,
   moveVertex,
   removeVertex,
   segmentAngleDegrees,
   softSnapAngle,
 } from "../../features/canvas/arrowRouting.js";
+import {
+  connectorActivity,
+  getBindingChanges,
+  getConnectionPorts,
+  getShapeCornerRadius,
+  isConnectableShape,
+  normalizeBounds,
+  resolveSmartBinding,
+} from "../../features/canvas/connectorBinding.js";
 import "./ArrowVertexEditor.css";
 
 const LINEAR_TYPES = new Set(["arrow", "line"]);
 
 const liveElements = (api) => (api?.getSceneElements?.() || []).filter((el) => el && !el.isDeleted);
-const portShapes = (elements) => elements.filter((el) => PORT_SHAPE_TYPES.has(el.type));
+const connectableShapes = (elements) => elements.filter(isConnectableShape);
+const isBypass = (event) => Boolean(event?.altKey || event?.metaKey); // Alt / Cmd: freehand, no magnetism
 
 function getView(api) {
   const state = api?.getAppState?.();
@@ -45,17 +51,18 @@ const bump = (element, patch) => ({
   updated: Date.now(),
 });
 
-/** Writes new absolute points (and optional end-binding changes) to one arrow / line. */
+/** Writes new absolute points (and optional end-binding changes) to one arrow / line - one pipeline for both. */
 function writePoints(api, elementId, absolutePoints, { binding = null, capture = CaptureUpdateAction.EVENTUALLY } = {}) {
   const scene = api.getSceneElements();
   const target = scene.find((el) => el.id === elementId);
   if (!target) return;
   let patch = absolutePointsToPatch(absolutePoints);
   const shapeUpdates = new Map();
-  if (binding && target.type === "arrow") {
-    for (const [which, port] of Object.entries(binding)) {
-      const changes = getPortBindingChanges({ ...target, ...patch }, which, port, scene);
-      patch = { ...patch, ...changes.arrowPatch };
+  if (binding) {
+    for (const [which, snap] of Object.entries(binding)) {
+      if (!snap && !target[`${which}Binding`]) continue; // nothing to clear
+      const changes = getBindingChanges({ ...target, ...patch }, which, snap, scene);
+      patch = { ...patch, ...changes.patch };
       changes.shapeUpdates.forEach((value, key) => shapeUpdates.set(key, value));
     }
   }
@@ -69,11 +76,35 @@ function writePoints(api, elementId, absolutePoints, { binding = null, capture =
   });
 }
 
+/** Accent outline of the shape a connector end will bind to (zoom-correct, rotation-aware). */
+function TargetOutline({ shape, view }) {
+  const b = normalizeBounds(shape);
+  if (!b) return null;
+  const c = toClient(view, { x: b.cx, y: b.cy });
+  const w = b.width * view.zoom;
+  const h = b.height * view.zoom;
+  const deg = ((Number(shape.angle) || 0) * 180) / Math.PI;
+  const r = getShapeCornerRadius(shape) * view.zoom;
+  const draw = (props) => {
+    if (shape.type === "ellipse") return <ellipse rx={w / 2} ry={h / 2} {...props} />;
+    if (shape.type === "diamond") return <polygon points={`0,${-h / 2} ${w / 2},0 0,${h / 2} ${-w / 2},0`} {...props} />;
+    return <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={r} ry={r} {...props} />;
+  };
+  return (
+    <svg className="sk-arrow-outline" width="100%" height="100%">
+      <g transform={`translate(${c.x} ${c.y}) rotate(${deg})`}>
+        {draw({ fill: "none", stroke: "rgba(79, 70, 229, 0.25)", strokeWidth: 6 })}
+        {draw({ fill: "rgba(79, 70, 229, 0.05)", stroke: "#4f46e5", strokeWidth: 1.5 })}
+      </g>
+    </svg>
+  );
+}
+
 export default function ArrowVertexEditor({ apiRef, canvasRevision, canvasRootRef, canEdit = true, viewModeEnabled = false }) {
   const [, setTick] = useState(0);
   const [hint, setHint] = useState(null); // { ports: [], snapPort, badge: { x, y, text, snapped } }
   const dragRef = useRef(null);
-  const drawRef = useRef({ id: null, alt: false });
+  const drawRef = useRef({ id: null, alt: false, stickyId: null });
   const enabled = canEdit && !viewModeEnabled;
   const rerender = useCallback(() => setTick((n) => n + 1), []);
 
@@ -89,26 +120,29 @@ export default function ArrowVertexEditor({ apiRef, canvasRevision, canvasRootRe
     const points = getAbsolutePoints(element);
     const raw = toScene(view, event.clientX, event.clientY);
     const isEnd = drag.index === 0 || drag.index === points.length - 1;
-    const shapes = portShapes(liveElements(api));
-    const port = isEnd ? findPortSnap(raw, shapes, { zoom: view.zoom, excludeIds: [element.id] }) : null;
+    const shapes = connectableShapes(liveElements(api));
+    const bypass = isBypass(event);
+    const snap = isEnd ? resolveSmartBinding(raw, shapes, { zoom: view.zoom, bypass, excludeIds: [element.id], stickyId: drag.stickyId }) : null;
+    drag.stickyId = snap?.shapeId ?? null;
     let target = raw;
     let badge;
-    if (port) {
-      target = { x: port.x, y: port.y };
-      badge = { text: "Port Snap", snapped: true };
+    if (snap) {
+      target = { x: snap.x, y: snap.y }; // exact border / port: gap 0
+      badge = { text: snap.portSnapped ? "Port Snap" : "Edge Snap", snapped: true };
     } else {
       const anchor = drag.index === 0 ? points[1] : points[drag.index - 1];
-      const snap = softSnapAngle(anchor, raw, { disabled: event.altKey });
-      target = snap.point;
-      badge = { text: `${Math.round(snap.angle)}°`, snapped: snap.snapped };
+      const angle = softSnapAngle(anchor, raw, { disabled: event.altKey || event.metaKey });
+      target = angle.point;
+      badge = { text: `${Math.round(angle.angle)}°`, snapped: angle.snapped };
     }
     const next = moveVertex(points, drag.index, target);
-    const binding = element.type === "arrow" && isEnd ? { [drag.index === 0 ? "start" : "end"]: port || null } : null;
+    const binding = isEnd ? { [drag.index === 0 ? "start" : "end"]: snap || null } : null;
     writePoints(api, element.id, next, { binding });
     const client = toClient(view, target);
     setHint({
-      ports: port ? getShapePorts(shapes.find((s) => s.id === port.shapeId)) : [],
-      snapPort: port,
+      shape: snap?.shape || null,
+      ports: snap ? getConnectionPorts(snap.shape) : [],
+      snapPort: snap,
       badge: { ...badge, x: client.x, y: client.y },
     });
   }, [apiRef]);
@@ -120,6 +154,7 @@ export default function ArrowVertexEditor({ apiRef, canvasRevision, canvasRootRe
     window.removeEventListener("pointerup", endDrag, true);
     window.removeEventListener("pointercancel", endDrag, true);
     dragRef.current = null;
+    connectorActivity.dragId = null;
     setHint(null);
     const api = apiRef?.current;
     if (api && (drag.moved || drag.inserted)) {
@@ -136,7 +171,8 @@ export default function ArrowVertexEditor({ apiRef, canvasRevision, canvasRootRe
   const beginDrag = useCallback((event, elementId, index, inserted) => {
     event.preventDefault();
     event.stopPropagation();
-    dragRef.current = { elementId, index, pointerId: event.pointerId, moved: false, inserted };
+    dragRef.current = { elementId, index, pointerId: event.pointerId, moved: false, inserted, stickyId: null };
+    connectorActivity.dragId = elementId; // reconcile leaves a connector alone while its handle is dragged
     window.addEventListener("pointermove", onWindowMove, true);
     window.addEventListener("pointerup", endDrag, true);
     window.addEventListener("pointercancel", endDrag, true);
@@ -176,6 +212,7 @@ export default function ArrowVertexEditor({ apiRef, canvasRevision, canvasRootRe
   };
 
   useEffect(() => () => {
+    connectorActivity.dragId = null;
     window.removeEventListener("pointermove", onWindowMove, true);
     window.removeEventListener("pointerup", endDrag, true);
     window.removeEventListener("pointercancel", endDrag, true);
@@ -197,31 +234,33 @@ export default function ArrowVertexEditor({ apiRef, canvasRevision, canvasRootRe
       const view = getView(api);
       if (!api || !view || !latest || !isDrawingTool(view.state) || dragRef.current) return;
       const draft = view.state.multiElement || view.state.newElement;
-      if (draft && LINEAR_TYPES.has(draft.type)) drawRef.current = { id: draft.id, alt: latest.altKey };
+      if (draft && LINEAR_TYPES.has(draft.type)) drawRef.current = { ...drawRef.current, id: draft.id, alt: isBypass(latest) };
       const raw = toScene(view, latest.clientX, latest.clientY);
-      const shapes = portShapes(liveElements(api));
-      const port = findPortSnap(raw, shapes, { zoom: view.zoom, excludeIds: draft ? [draft.id] : [] });
+      const shapes = connectableShapes(liveElements(api));
+      const snap = resolveSmartBinding(raw, shapes, {
+        zoom: view.zoom, bypass: isBypass(latest), excludeIds: draft ? [draft.id] : [], stickyId: drawRef.current.stickyId,
+      });
+      drawRef.current.stickyId = snap?.shapeId ?? null;
       let badge = null;
-      if (port) {
-        const client = toClient(view, port);
-        badge = { text: "Port Snap", snapped: true, x: client.x, y: client.y };
+      if (snap) {
+        const client = toClient(view, snap.point);
+        badge = { text: snap.portSnapped ? "Port Snap" : "Edge Snap", snapped: true, x: client.x, y: client.y };
       } else if (draft && LINEAR_TYPES.has(draft.type) && draft.points?.length >= 2) {
         const points = getAbsolutePoints(draft);
         const anchor = points[points.length - 2];
-        const snap = softSnapAngle(anchor, raw, { disabled: latest.altKey });
-        badge = { text: `${Math.round(segmentAngleDegrees(anchor, snap.point)) % 360}°`, snapped: snap.snapped, x: latest.clientX, y: latest.clientY };
+        const angle = softSnapAngle(anchor, raw, { disabled: isBypass(latest) });
+        badge = { text: `${Math.round(segmentAngleDegrees(anchor, angle.point)) % 360}°`, snapped: angle.snapped, x: latest.clientX, y: latest.clientY };
       }
-      // Highlight the ports of the shape the cursor is closest to (within ~3x snap range).
-      const nearby = shapes.find((shape) => {
-        const x1 = Math.min(shape.x, shape.x + shape.width) - 42 / view.zoom;
-        const x2 = Math.max(shape.x, shape.x + shape.width) + 42 / view.zoom;
-        const y1 = Math.min(shape.y, shape.y + shape.height) - 42 / view.zoom;
-        const y2 = Math.max(shape.y, shape.y + shape.height) + 42 / view.zoom;
-        return raw.x >= x1 && raw.x <= x2 && raw.y >= y1 && raw.y <= y2;
+      // Without a snap, still preview the ports of the shape the cursor is approaching (~3x reach).
+      const nearby = snap ? snap.shape : shapes.find((shape) => {
+        const b = normalizeBounds(shape);
+        const pad = 42 / view.zoom;
+        return raw.x >= b.minX - pad && raw.x <= b.maxX + pad && raw.y >= b.minY - pad && raw.y <= b.maxY + pad;
       });
       setHint({
-        ports: nearby ? getShapePorts(nearby) : [],
-        snapPort: port,
+        shape: snap ? snap.shape : null,
+        ports: nearby ? getConnectionPorts(nearby) : [],
+        snapPort: snap,
         badge,
       });
     };
@@ -232,7 +271,7 @@ export default function ArrowVertexEditor({ apiRef, canvasRevision, canvasRootRe
         return;
       }
       latest = { clientX: event.clientX, clientY: event.clientY, altKey: event.altKey };
-      if (drawRef.current.id) drawRef.current.alt = event.altKey;
+      if (drawRef.current.id) drawRef.current.alt = isBypass(event);
       if (!frame) frame = requestAnimationFrame(computeHint);
     };
 
@@ -244,7 +283,7 @@ export default function ArrowVertexEditor({ apiRef, canvasRevision, canvasRootRe
       if (!api || !id) return;
       const state = api.getAppState?.();
       if (state?.multiElement || state?.newElement) return; // still drawing
-      drawRef.current = { id: null, alt: false };
+      drawRef.current = { id: null, alt: false, stickyId: null };
       const element = api.getSceneElements().find((el) => el.id === id);
       if (!element || element.isDeleted || !LINEAR_TYPES.has(element.type) || element.elbowed) return;
       const view = getView(api);
@@ -254,17 +293,19 @@ export default function ArrowVertexEditor({ apiRef, canvasRevision, canvasRootRe
       if (!alt) {
         for (let i = 1; i < points.length - 1; i += 1) points[i] = softSnapAngle(points[i - 1], points[i]).point;
       }
-      const shapes = portShapes(liveElements(api));
+      const shapes = connectableShapes(liveElements(api));
       const last = points.length - 1;
-      const startPort = findPortSnap(points[0], shapes, { zoom: view.zoom, excludeIds: [id] });
-      const endPort = findPortSnap(points[last], shapes, { zoom: view.zoom, excludeIds: [id] });
-      if (startPort) points[0] = { x: startPort.x, y: startPort.y };
-      if (endPort) points[last] = { x: endPort.x, y: endPort.y };
+      const opts = { zoom: view.zoom, bypass: alt, excludeIds: [id] };
+      const startSnap = resolveSmartBinding(points[0], shapes, opts);
+      const endSnap = resolveSmartBinding(points[last], shapes, opts);
+      if (startSnap) points[0] = { x: startSnap.x, y: startSnap.y };
+      if (endSnap) points[last] = { x: endSnap.x, y: endSnap.y };
       else if (!alt) points[last] = softSnapAngle(points[last - 1], points[last]).point;
       const changed = points.some((p, i) => Math.abs(p.x - original[i].x) > 1e-6 || Math.abs(p.y - original[i].y) > 1e-6);
-      if (!changed && !startPort && !endPort) return;
+      if (!changed && !startSnap && !endSnap) return;
       writePoints(api, id, points, {
-        binding: element.type === "arrow" ? { ...(startPort ? { start: startPort } : {}), ...(endPort ? { end: endPort } : {}) } : null,
+        // line and arrow take the same binding path
+        binding: { ...(startSnap ? { start: startSnap } : {}), ...(endSnap ? { end: endSnap } : {}) },
         // The native commit already recorded the creation; refining it in place
         // must not add a second undo step.
         capture: CaptureUpdateAction.NEVER,
@@ -337,11 +378,16 @@ export default function ArrowVertexEditor({ apiRef, canvasRevision, canvasRootRe
           />
         );
       })}
+      {hint?.shape && <TargetOutline shape={hint.shape} view={view} />}
       {hint?.ports?.map((port) => {
         const c = toClient(view, port);
-        const active = hint.snapPort && hint.snapPort.shapeId === port.shapeId && hint.snapPort.side === port.side;
+        const active = hint.snapPort?.portSnapped && hint.snapPort.shapeId === port.shapeId && hint.snapPort.side === port.side;
         return <span key={`${port.shapeId}-${port.side}`} className={`sk-arrow-port${active ? " is-active" : ""}`} style={{ left: c.x, top: c.y }} />;
       })}
+      {hint?.snapPort && (() => {
+        const c = toClient(view, hint.snapPort.point);
+        return <span className="sk-arrow-anchor-ring" style={{ left: c.x, top: c.y }} />;
+      })()}
       {hint?.badge && (
         <span className={`sk-arrow-badge${hint.badge.snapped ? " is-snapped" : ""}`} style={{ left: hint.badge.x + 14, top: hint.badge.y - 26 }}>
           {hint.badge.text}

@@ -164,7 +164,7 @@ test("vertex editor wires midpoint pull-out, bend deletion, port snap and Alt by
   assert.match(editor, /onDoubleClick=/);
   assert.match(editor, /event\.altKey/);
   assert.match(editor, /disabled: event\.altKey/);
-  assert.match(editor, /findPortSnap/);
+  assert.match(editor, /resolveSmartBinding/);
   assert.match(editor, /CaptureUpdateAction\.IMMEDIATELY/);
 });
 

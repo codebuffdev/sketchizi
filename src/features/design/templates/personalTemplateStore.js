@@ -1,3 +1,4 @@
+import { remapConnectorBindingIds } from "../../canvas/connectorBinding.js";
 const STORAGE_KEY = "sketchizi-personal-templates-v1";
 const FORMAT = "sketchizi-template";
 const FORMAT_VERSION = 1;
@@ -87,9 +88,7 @@ export function cloneTemplateElements(template) {
     element.id = idMap.get(element.id) || element.id;
     if (Array.isArray(element.boundElements)) element.boundElements = element.boundElements.map((binding) => ({ ...binding, id: idMap.get(binding.id) || binding.id }));
     if (element.containerId) element.containerId = idMap.get(element.containerId) || element.containerId;
-    for (const key of ["startBinding", "endBinding"]) {
-      if (element[key]?.elementId) element[key].elementId = idMap.get(element[key].elementId) || element[key].elementId;
-    }
+    remapConnectorBindingIds(element, idMap); // startBinding, endBinding and the line customData mirror
     if (Array.isArray(element.groupIds)) element.groupIds = element.groupIds.map((groupId) => idMap.get(groupId) || groupId);
     element.version = 1;
     element.versionNonce = Math.floor(Math.random() * 2147483647);

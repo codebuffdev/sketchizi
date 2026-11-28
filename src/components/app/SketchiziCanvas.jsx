@@ -20,6 +20,7 @@ import { applyMarkdownListEdit, getListPasteEdit, getListRenumberEdit, getMarkdo
 import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
 import { stripLegacyTextRuns } from "../../features/canvas/legacyTextRuns.js";
 import { attachPasteHintGuard } from "../../features/canvas/pasteHintGuard.js";
+import { applyReconcile, connectorActivity, createConnectorMemory, reconcileConnectors } from "../../features/canvas/connectorBinding.js";
 import { attachFocalZoom } from "../../features/canvas/focalZoom.js";
 import { attachPasteCentering } from "../../features/canvas/pasteCentering.js";
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
@@ -57,6 +58,8 @@ export default function SketchiziCanvas({
   const spotlightNodeRef = useRef(null);
   const drawingPointerRef = useRef(null);
   const textEditingRef = useRef(false);
+  const connectorMemoryRef = useRef(createConnectorMemory());
+  const connectorReconcilingRef = useRef(false);
 
   // While a text box is open in the editor, CSS (alignment-guides.css) makes Excalidraw's own canvas
   // selection border transparent so the textarea's border is the only one. Excalidraw reads that color
@@ -594,9 +597,33 @@ export default function SketchiziCanvas({
         setCanvasRevision((revision) => revision + 1);
       });
     }
+    // Smart Connect: keep every bound line / arrow glued to its shape in the same tick as the
+    // move, resize, align, nudge, undo / redo or duplicate that changed it.
+    const connectorApi = apiRef?.current;
+    if (connectorApi && canEdit && !viewModeEnabled && !connectorReconcilingRef.current) {
+      const linear = appState?.selectedLinearElement;
+      const result = reconcileConnectors(elements, {
+        memory: connectorMemoryRef.current,
+        activeIds: [
+          appState?.newElement?.id, appState?.multiElement?.id, appState?.editingLinearElement?.elementId,
+          linear?.isDragging ? linear.elementId : null, connectorActivity.dragId,
+        ],
+      });
+      if (result.patches.size || result.shapePatches.size) {
+        connectorReconcilingRef.current = true;
+        try {
+          connectorApi.updateScene({
+            elements: applyReconcile(connectorApi.getSceneElementsIncludingDeleted(), result),
+            captureUpdate: "NEVER",
+          });
+        } finally {
+          connectorReconcilingRef.current = false;
+        }
+      }
+    }
     containerAutoExpand.onSceneChange(elements, appState);
     handleChange?.(elements, appState, files);
-  }, [apiRef, handleChange, pageContext?.mode, containerAutoExpand.onSceneChange]);
+  }, [apiRef, canEdit, viewModeEnabled, handleChange, pageContext?.mode, containerAutoExpand.onSceneChange]);
   const handleViewportChange = useCallback((...args) => {
     if (!canvasRevisionFrameRef.current) {
       canvasRevisionFrameRef.current = requestAnimationFrame(() => {
