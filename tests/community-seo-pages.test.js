@@ -20,7 +20,7 @@ const entryHtml = [
   '<meta name="twitter:card" content="summary_large_image" />',
   '<meta name="twitter:title" content="Sketchizi home" />',
   '<meta name="twitter:description" content="Home description" />',
-  "</head><body><div id=\\"root\\"></div><script type=\\"module\\" src=\\"/assets/app.js\\"></script></body></html>",
+  '</head><body><div id="root"></div><script type="module" src="/assets/app.js"></script></body></html>',
 ].join("\n");
 
 test("community route metadata replaces homepage metadata without changing the app entry", () => {
