@@ -83,7 +83,8 @@
     "test:responsive:smoke": "node tests/responsive/scripts/run-responsive.mjs smoke",
     "test:responsive:full": "node tests/responsive/scripts/run-responsive.mjs full",
     "test:responsive:discover": "node tests/responsive/scripts/discover-breakpoints.mjs",
-    "test:responsive:contract": "node --test tests/responsive-qa-suite.test.js"
+    "test:responsive:contract": "node --test tests/responsive-qa-suite.test.js",
+    "postbuild": "node scripts/generate-community-seo-pages.mjs"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0-c0ad61c",
