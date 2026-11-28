@@ -1,3 +1,4 @@
+import { invalidateCsrfToken } from "../src/features/auth/csrfClient.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { aiApiRequest, aiApiRequestWithTimeout, createRequestId } from "../src/features/ai/aiApiClient.js";
@@ -94,6 +95,7 @@ test("HTTP errors retain safe status, code, and server correlation ID", async ()
 
 
 test("conversation creation timeout also aborts the preliminary CSRF request", async () => {
+  invalidateCsrfToken(); // the shared client caches tokens from earlier tests
   const originalFetch = globalThis.fetch;
   let observedAbort = false;
   globalThis.fetch = async (url, options = {}) => {

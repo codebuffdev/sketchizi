@@ -68,7 +68,7 @@ test("gate returns allowed / reason / upgradeTarget without role checks in the U
 
 test("build metadata resolution order, short hash and dev-local fallback", () => {
   const now = new Date("2026-11-28T00:00:00Z");
-  assert.deepEqual(resolveBuildMetadata({}, now), { shortHash: DEV_LOCAL_HASH, fullHash: DEV_LOCAL_HASH, branch: "", builtAt: now.toISOString() });
+  assert.deepEqual(resolveBuildMetadata({}, now), { shortHash: DEV_LOCAL_HASH, fullHash: DEV_LOCAL_HASH, branch: "", commitMessage: "", builtAt: now.toISOString() });
   const sha = "0123456789abcdef0123456789abcdef01234567";
   assert.equal(resolveBuildMetadata({ VITE_GIT_COMMIT_HASH: sha, CF_PAGES_COMMIT_SHA: "x" }).shortHash, "0123456");
   assert.equal(resolveBuildMetadata({ NEXT_PUBLIC_GIT_COMMIT_HASH: sha, CF_PAGES_COMMIT_SHA: "x" }).fullHash, sha);
@@ -78,6 +78,10 @@ test("build metadata resolution order, short hash and dev-local fallback", () =>
   assert.equal(meta.branch, "main");
   assert.equal(meta.builtAt, "2026-01-01T00:00:00Z");
   assert.equal(resolveBuildMetadata({ VITE_GIT_BRANCH: "feat", CF_PAGES_BRANCH: "main" }).branch, "feat");
+  assert.equal(resolveBuildMetadata({ VITE_GIT_COMMIT_MESSAGE: "a", CF_PAGES_COMMIT_MESSAGE: "b" }).commitMessage, "a");
+  assert.equal(resolveBuildMetadata({ CF_PAGES_COMMIT_MESSAGE: "b", VERCEL_GIT_COMMIT_MESSAGE: "c" }).commitMessage, "b");
+  assert.equal(resolveBuildMetadata({ VERCEL_GIT_COMMIT_MESSAGE: "  Fix it\n\nbody  " }).commitMessage, "Fix it");
+  assert.equal(resolveBuildMetadata({ VITE_GIT_COMMIT_MESSAGE: "x".repeat(500) }).commitMessage.length, 200);
   assert.equal(getBuildMetadata().shortHash.length > 0, true);
 });
 

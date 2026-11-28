@@ -1,6 +1,7 @@
+import { execFileSync } from "node:child_process";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { resolveBuildMetadata } from "./src/config/buildMetadata.js";
+import { normalizeCommitMessage, resolveBuildMetadata } from "./src/config/buildMetadata.js";
 import { onRequestGet as eraserCatalog } from "./functions/api/eraser-catalog.js";
 import { onRequestGet as eraserIcon } from "./functions/api/eraser-icon.js";
 import { onRequest as authGateway } from "./functions/api/auth/[[path]].js";
@@ -107,11 +108,21 @@ function sketchiziPagesFunctionsDev() {
   };
 }
 
+/** Last-resort commit subject for local builds; "" when git or a repository is unavailable (e.g. Docker without .git). */
+function gitCommitSubject() {
+  try {
+    return normalizeCommitMessage(execFileSync("git", ["log", "-1", "--pretty=%s"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 3000 }));
+  } catch {
+    return "";
+  }
+}
+
 const buildMetadata = resolveBuildMetadata(process.env);
+const commitMessage = buildMetadata.commitMessage || gitCommitSubject();
 
 export default defineConfig({
   define: {
-    __SKETCHIZI_BUILD__: JSON.stringify({ fullHash: buildMetadata.fullHash, branch: buildMetadata.branch, builtAt: buildMetadata.builtAt }),
+    __SKETCHIZI_BUILD__: JSON.stringify({ fullHash: buildMetadata.fullHash, branch: buildMetadata.branch, commitMessage, builtAt: buildMetadata.builtAt }),
   },
   plugins: [react(), sketchiziPagesFunctionsDev()],
   server: {

@@ -60,6 +60,7 @@ import { AWS_RELATIONSHIP_TYPES, getAwsRelationship, updateRelationshipType } fr
 import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, getKubernetesRelationshipGuidance, updateKubernetesRelationshipMetadata } from "./features/kubernetes-relationships/kubernetesRelationshipService";
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
+import { invalidateCsrfToken } from "./features/auth/csrfClient.js";
 const SystemDesignStudio = lazy(() => import("./features/system-design/SystemDesignStudio.jsx"));
 const DockerComposeStudio = lazy(() => import("./features/docker-compose/ui/DockerComposeStudio.jsx"));
 const KubernetesStudio = lazy(() => import("./features/kubernetes-studio/ui/KubernetesStudio.jsx"));
@@ -1892,6 +1893,7 @@ function App() {
             <button type="button" className="is-primary" onClick={() => {
               const api = apiRef.current;
               if (!api) return;
+              invalidateCsrfToken();
               queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
             }}>Retry save</button>
             <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>

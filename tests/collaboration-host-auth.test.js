@@ -44,7 +44,10 @@ test("host authorization uses CSRF-protected same-origin API and does not persis
   const source = await readFile(new URL("../src/features/auth/authClient.js", import.meta.url), "utf8");
   assert.match(source, /\/api\/auth\/collaboration-host-token/);
   assert.match(source, /credentials: "same-origin"/);
-  assert.match(source, /\[headerName \|\| "X-XSRF-TOKEN"\]: token/);
+  assert.match(source, /getCsrfHeaders/);
+  const csrf = await readFile(new URL("../src/features/auth/csrfClient.js", import.meta.url), "utf8");
+  assert.match(csrf, /\/api\/auth\/csrf/);
+  assert.match(csrf, /payload\.headerName \|\| DEFAULT_HEADER/);
   assert.doesNotMatch(source, /localStorage\.setItem\([^\n]*(?:token|auth)/i);
 });
 

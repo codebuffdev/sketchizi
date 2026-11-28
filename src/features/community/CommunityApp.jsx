@@ -3,11 +3,11 @@ import { getCommunitySeo } from "./communitySeo.js";
 import { fetchAuthProviders, fetchCurrentUser, startGoogleSignIn } from "../auth/authClient.js";
 import { getInitialThemeMode } from "../navigation/themePreference.js";
 import "./community.css";
+import { getCsrfHeaders } from "../auth/csrfClient.js";
 
 async function csrfHeaders(json = true) {
-  const r = await fetch("/api/auth/csrf", { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
-  if (!r.ok) throw new Error("Could not prepare a secure request. Refresh and try again.");
-  const { token, headerName } = await r.json(); return { ...(json ? { "content-type": "application/json" } : {}), [headerName || "X-XSRF-TOKEN"]: token };
+  try { return { ...(json ? { "content-type": "application/json" } : {}), ...(await getCsrfHeaders()) }; }
+  catch { throw new Error("Could not prepare a secure request. Refresh and try again."); }
 }
 async function api(path, options = {}) {
   const headers = new Headers(options.headers || {});

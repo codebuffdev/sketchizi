@@ -80,7 +80,8 @@ test("Workspace client does not depend on the separate AI service warm-up", asyn
   const source = await read("../src/features/workspace/workspaceClient.js");
   assert.doesNotMatch(source, /backendWarmup|ensureBackendReady/);
   assert.match(source, /const PREFIX = "\/api\/workspace"/);
-  assert.match(source, /const CSRF_URL = "\/api\/auth\/csrf"/);
+  assert.match(source, /from "\.\.\/auth\/csrfClient\.js"/);
+  assert.match(await read("../src/features/auth/csrfClient.js"), /const CSRF_URL = "\/api\/auth\/csrf"/);
 });
 
 test("Vite development middleware routes Workspace API calls through the Pages Function", async () => {
@@ -168,7 +169,8 @@ test("Workspace API requests time out instead of leaving save operations pending
   const dialog = await read("../src/features/workspace/CloudSaveDialog.jsx");
   const app = await readAppSource();
   assert.match(client, /REQUEST_TIMEOUT_MS = 12000/);
-  assert.match(client, /signal: timeoutSignal\(\)/);
+  assert.match(client, /signal: timeoutSignal\(timeout\)/);
+  assert.match(await read("../src/features/auth/csrfClient.js"), /AbortSignal\.timeout\(FETCH_TIMEOUT_MS\)/);
   assert.match(client, /Cloud Workspace request timed out/);
   assert.doesNotMatch(dialog, /MAX_DOCUMENT_BYTES/);
   assert.match(app, /resolveCloudLimitBytes\(limits\)/);

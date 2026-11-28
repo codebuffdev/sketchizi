@@ -1,18 +1,11 @@
 import { ensureBackendReady } from "../backend/backendWarmup.js";
+import { getCsrfHeaders } from "../auth/csrfClient.js";
 
 const API_BASE = "/api/ai";
 
 async function csrfHeaders(signal) {
-  const response = await fetch("/api/auth/csrf", {
-    credentials: "same-origin",
-    cache: "no-store",
-    headers: { accept: "application/json" },
-    signal,
-  });
-  if (!response.ok) throw new Error("Could not prepare a secure AI request. Refresh your sign-in session and try again.");
-  const payload = await response.json();
-  if (!payload?.token) throw new Error("Could not prepare a secure AI request. Refresh your sign-in session and try again.");
-  return { [payload.headerName || "X-XSRF-TOKEN"]: payload.token };
+  try { return await getCsrfHeaders({ signal }); }
+  catch { throw new Error("Could not prepare a secure AI request. Refresh your sign-in session and try again."); }
 }
 
 export async function aiApiRequest(path, { method = "GET", body, signal } = {}) {

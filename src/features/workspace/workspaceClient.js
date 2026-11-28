@@ -1,5 +1,6 @@
 const PREFIX = "/api/workspace";
-const CSRF_URL = "/api/auth/csrf";
+import { getCsrfHeaders, invalidateCsrfToken, isCsrfRejection } from "../auth/csrfClient.js";
+
 const REQUEST_TIMEOUT_MS = 12000;
 const DRAWING_WRITE_TIMEOUT_MS = 75000;
 
@@ -58,66 +59,63 @@ export function clearWorkspaceCache() {
   try { window.localStorage.removeItem(CACHE_KEY); } catch { /* Ignore. */ }
 }
 
-async function getCsrfHeaders() {
-  // Workspace persistence is served by the authenticated backend, not AI Ask.
-  // Do not block project operations on the separate AI service warm-up endpoint.
-  let response;
-  try {
-    response = await fetch(CSRF_URL, {
-      credentials: "same-origin",
-      cache: "no-store",
-      headers: { accept: "application/json" },
-      signal: timeoutSignal(),
-    });
-  } catch (error) {
-    throw requestFailure(error, "Could not obtain a security token. Refresh the page and retry.");
-  }
-  if (!response.ok) throw new Error("Could not obtain a security token. Refresh the page and retry.");
-  const payload = await response.json();
-  if (!payload?.token || !payload?.headerName) throw new Error("The security token response was invalid.");
-  return { [payload.headerName]: payload.token };
-}
-
 async function request(path, { method = "GET", body, headers = {}, timeout } = {}) {
-  const requestHeaders = new Headers({ accept: "application/json", ...headers });
+  const isWrite = !["GET", "HEAD"].includes(method);
   let serialized;
-  if (body !== undefined) {
-    requestHeaders.set("content-type", "application/json");
-    serialized = JSON.stringify(body);
-  }
-  if (!["GET", "HEAD"].includes(method)) {
-    Object.entries(await getCsrfHeaders()).forEach(([key, value]) => requestHeaders.set(key, value));
-  }
+  if (body !== undefined) serialized = JSON.stringify(body);
+  const buildHeaders = async (forceToken) => {
+    const requestHeaders = new Headers({ accept: "application/json", ...headers });
+    if (serialized !== undefined) requestHeaders.set("content-type", "application/json");
+    if (isWrite) {
+      try {
+        Object.entries(await getCsrfHeaders({ force: forceToken })).forEach(([key, value]) => requestHeaders.set(key, value));
+      } catch (error) { throw requestFailure(error, error?.message); }
+    }
+    return requestHeaders;
+  };
   // Reads are idempotent, so one automatic retry on a transient timeout is safe.
-  // Writes are never retried: a timed-out write may still have been applied.
+  // Writes are never retried after a timeout (it may have been applied), but a
+  // 403 means the server rejected the request, so one retry with a fresh
+  // security token is safe and avoids a manual page refresh.
   const attempts = method === "GET" ? 2 : 1;
-  let response;
+  let csrfRetried = false;
+  let forceToken = false;
   for (let attempt = 1; ; attempt += 1) {
+    const requestHeaders = await buildHeaders(forceToken);
+    forceToken = false;
+    let response;
     try {
       response = await fetch(`${PREFIX}${path}`, {
         method,
-        credentials: "same-origin",
+        credentials: "include",
         cache: "no-store",
         headers: requestHeaders,
         body: serialized,
         signal: timeoutSignal(timeout),
       });
-      break;
     } catch (error) {
       const failure = requestFailure(error, "Cloud Workspace is temporarily unavailable.");
       if (attempt >= attempts || failure.code !== "workspace_timeout") throw failure;
+      continue;
     }
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      if (isWrite && !csrfRetried && isCsrfRejection(response.status, payload)) {
+        csrfRetried = true;
+        invalidateCsrfToken();
+        forceToken = true;
+        attempt -= 1;
+        continue;
+      }
+      const error = new Error(payload?.error || `Workspace request failed (${response.status}).`);
+      error.status = response.status;
+      error.code = payload?.code || "workspace_request_failed";
+      error.payload = payload;
+      throw error;
+    }
+    if (response.status === 204) return null;
+    return response.json();
   }
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    const error = new Error(payload?.error || `Workspace request failed (${response.status}).`);
-    error.status = response.status;
-    error.code = payload?.code || "workspace_request_failed";
-    error.payload = payload;
-    throw error;
-  }
-  if (response.status === 204) return null;
-  return response.json();
 }
 
 export const workspaceClient = Object.freeze({
