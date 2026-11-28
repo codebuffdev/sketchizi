@@ -207,8 +207,20 @@ try {
   await blank.page.waitForFunction((id) =>
     document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-selected"),
   portPoolTargetId);
-  // C uses the selected (or, with no selection, hovered) card as the source
-  // and connects it to the next card without requiring a visible port click.
+  // C uses the selected (or, with no selection, hovered) card as the source and connects it to the next card
+  // without requiring a visible port click. The Code Block tool also listens for a plain C at window level; the
+  // studio claims the keypress (registerPlainCKeyClaim) so Code Block steps aside only when a card will be armed.
+  await blank.page.keyboard.press("c");
+  await blank.page.waitForFunction((id) =>
+    document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-connect-armed"),
+  portPoolTargetId);
+  // Escape cancels connection mode. Then re-select the card the way a user would and arm it again.
+  await blank.page.keyboard.press("Escape");
+  await blank.page.waitForFunction(() => document.querySelectorAll(".sd-node.is-connect-armed").length === 0);
+  await blank.page.mouse.click(portPoolTargetBox.x + portPoolTargetBox.width / 2, portPoolTargetBox.y + portPoolTargetBox.height / 2);
+  await blank.page.waitForFunction((id) =>
+    document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-selected"),
+  portPoolTargetId);
   await blank.page.keyboard.press("c");
   await blank.page.waitForFunction((id) =>
     document.querySelector(`.sd-node[data-node-id="${id}"]`)?.classList.contains("is-connect-armed"),

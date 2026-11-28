@@ -3,6 +3,8 @@ import { PORTS, choosePorts, getPortPoint, nearestPort, pointAlong, roundedPath,
 import { nodeFacets, serviceNames } from "./yamlPreview.js";
 import { formatRps, packetCountForRps, nodeCapacity } from "./trafficSimulator.js";
 import { PrimitiveIcon } from "./PrimitiveIcon.jsx";
+import { isConnectKeyBlockedTarget, isConnectKeyEvent, resolveConnectKeyAction } from "./connectKeyboard.js";
+import { registerPlainCKeyClaim } from "../canvas/codeBlock/codeBlockShortcut.js";
 
 const STATUS_LABEL = { healthy: "Healthy", elevated: "Elevated", overloaded: "Overloaded", lagging: "Lagging", down: "Down" };
 const stop = (event) => event.stopPropagation();
@@ -157,26 +159,42 @@ export default function SystemDesignNodeOverlay({ graph, simulation, mode, snaps
   const dropTarget = drag ? nodeAt(graph.nodes, drag.point, drag.fromId, 20) : null;
   const dropPort = dropTarget && dragFrom ? dropPortFor(dragFrom, dropTarget, drag.point) : null;
 
+  // Latest state for the claim below, which is registered once and must not go stale.
+  const connectKeyStateRef = useRef(null);
+  connectKeyStateRef.current = { canEdit, selectedIds, nodeIds: byId, hoverId };
+
+  // The Code Block tool also owns a plain C through a window-level capture handler that registers at app start,
+  // so it ran first and swallowed the key before this overlay could arm a card. Claim exactly the keypresses
+  // this overlay will handle so the Code Block tool steps aside only then.
+  useEffect(() => registerPlainCKeyClaim((event) => {
+    const state = connectKeyStateRef.current;
+    if (!state?.canEdit || !isConnectKeyEvent(event) || isConnectKeyBlockedTarget(event.target)) return false;
+    return resolveConnectKeyAction({ selectedIds: state.selectedIds, isNode: (id) => state.nodeIds.has(id), hoverId: state.hoverId }) !== null;
+  }), []);
+
   useEffect(() => {
     const onKeyDown = (event) => {
+      // Same plain-C condition as isConnectKeyEvent (used by the claim above); kept inline because the
+      // guardrail tests pin this exact check in the overlay source.
       if (!canEdit || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey
-        || event.key.toLowerCase() !== "c"
-        || event.target?.closest?.("input, textarea, select, [contenteditable='true'], [data-sketchizi-inline-editor]")) return;
-      const selectedNodes = selectedIds.filter((id) => byId.has(id));
-      if (selectedNodes.length >= 2) {
-        event.preventDefault(); event.stopPropagation();
-        actions.connect(selectedNodes[0], selectedNodes[1]); armConnect(null);
-      } else {
-        // Selection is authoritative; when nothing is selected, the hovered card
-        // is a convenient fallback for keyboard-first connect workflows.
-        const sourceId = selectedNodes[0] || (selectedIds.length === 0 ? hoverId : null);
-        if (!sourceId) return;
-        event.preventDefault(); event.stopPropagation();
-        armConnect({ nodeId: sourceId, port: null });
-      }
+        || event.key.toLowerCase() !== "c" || isConnectKeyBlockedTarget(event.target)) return;
+      const action = resolveConnectKeyAction({ selectedIds, isNode: (id) => byId.has(id), hoverId });
+      if (!action) return;
+      event.preventDefault(); event.stopPropagation();
+      if (action.type === "connect") { actions.connect(action.fromId, action.toId); armConnect(null); }
+      else armConnect({ nodeId: action.sourceId, port: null });
+    };
+    // Escape cancels an armed connection. Other window-level Escape handlers (e.g. the tool dock clearing the
+    // selection) stop the keydown before it reaches this overlay, but never the matching keyup.
+    const onKeyUp = (event) => {
+      if (event.key === "Escape" && armedConnectRef.current) armConnect(null);
     };
     window.addEventListener("keydown", onKeyDown, true);
-    return () => window.removeEventListener("keydown", onKeyDown, true);
+    window.addEventListener("keyup", onKeyUp, true);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("keyup", onKeyUp, true);
+    };
   }, [canEdit, selectedIds, byId, hoverId, actions]);
 
   const layerStyle = { transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom}) translate(${scrollX}px, ${scrollY}px)` };
