@@ -85,4 +85,54 @@ function FeedbackDetail({ user }) {
 }
 function AdminDashboard({user}){const [tab,setTab]=useState("PENDING"),[items,setItems]=useState([]),[error,setError]=useState(""),[reason,setReason]=useState({}),[response,setResponse]=useState({});async function load(){setError("");try{const endpoint=tab==="REPORTS"?"/api/admin/reports":tab==="FEEDBACK"?"/api/admin/feedback":"/api/admin/reviews?status="+tab;const d=await api(endpoint);setItems(d.items||[]);}catch(e){setError(e.message);setItems([]);}}useEffect(()=>{if(user)load();},[user,tab]);if(!user)return <Shell user={user} title="Admin Dashboard"><SignInPrompt/></Shell>;async function act(id,action,body={}){try{await api(action,{method:action.endsWith("/reject")||action.endsWith("/feedback/"+id)?"POST":"POST",body:JSON.stringify(body)});await load();}catch(e){setError(e.message);}}return <Shell user={user} title="Admin Dashboard" eyebrow="RESTRICTED ADMINISTRATION"><div className="admin-tabs">{[["PENDING","Pending reviews"],["PUBLISHED","Published reviews"],["REPORTS","Reported reviews"],["FEEDBACK","Private feedback"]].map(([v,l])=><button className={tab===v?"active":""} onClick={()=>setTab(v)} key={v}>{l}</button>)}</div><Notice error={error}/>{items.map(i=><article className="admin-item" key={i.id}><div className="admin-item-head"><strong>{i.title||i.summary||i.displayName||"Reported review"}</strong><span className="status-pill">{i.status}</span></div>{i.body&&<p>{i.body}</p>}{i.description&&<p>{i.description}</p>}{i.reason&&<p>Report: {i.reason}</p>}{i.rating&&<p>{"★".repeat(i.rating)}</p>}{tab==="PENDING"&&<div className="community-actions"><button onClick={()=>act(i.id,`/api/admin/reviews/${i.id}/approve`)}>Approve</button><input placeholder="Required rejection reason" value={reason[i.id]||""} onChange={e=>setReason(v=>({...v,[i.id]:e.target.value}))}/><button className="danger" disabled={!reason[i.id]?.trim()} onClick={()=>act(i.id,`/api/admin/reviews/${i.id}/reject`,{reason:reason[i.id]})}>Reject</button></div>}{tab==="REPORTS"&&<div className="community-actions"><button onClick={()=>act(i.id,`/api/admin/reports/${i.id}/dismiss`)}>Dismiss report</button><button className="danger" onClick={()=>act(i.id,`/api/admin/reports/${i.id}/action`)}>Remove review</button></div>}{tab==="FEEDBACK"&&<div className="admin-feedback-actions"><select defaultValue={i.status} onChange={e=>setReason(v=>({...v,[i.id]:e.target.value}))}><option>RECEIVED</option><option>UNDER_REVIEW</option><option>PLANNED</option><option>RESOLVED</option><option>DECLINED</option></select><input placeholder="Private response (optional)" value={response[i.id]||""} onChange={e=>setResponse(v=>({...v,[i.id]:e.target.value}))}/><button onClick={()=>api(`/api/admin/feedback/${i.id}`,{method:"PATCH",body:JSON.stringify({status:reason[i.id]||i.status,response:response[i.id]||""})}).then(load).catch(e=>setError(e.message))}>Save</button></div>}</article>)}{!items.length&&!error&&<div className="community-empty">No items in this queue.</div>}</Shell>;}
 function JoinTeam({user}){const [form,setForm]=useState({name:"",email:"",interest:"FRONTEND",message:""}),[file,setFile]=useState(null),[error,setError]=useState(""),[success,setSuccess]=useState(""),[busy,setBusy]=useState(false);async function submit(e){e.preventDefault();if(!file){setError("Please attach your CV.");return;}setBusy(true);setError("");const fd=new FormData();Object.entries(form).forEach(([k,v])=>fd.append(k,v));fd.append("cv",file);try{const r=await fetch("/api/team-applications",{method:"POST",credentials:"same-origin",headers:await csrfHeaders(false),body:fd});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Could not submit the application.");setSuccess("Your application was accepted for email delivery. This does not guarantee the recipient has read it.");setForm({name:"",email:"",interest:"FRONTEND",message:""});setFile(null);}catch(e){setError(e.message);}finally{setBusy(false);}}return <Shell user={user} title="Join the Sketchizi team"><p className="community-lede">Interested in helping build Sketchizi? Tell us about yourself and attach your CV.</p><Notice error={error} success={success}/><form className="community-form-card" onSubmit={submit}><label>Full name<input required maxLength={120} value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><label>Email<input required type="email" maxLength={320} value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></label><label>Area of interest<select value={form.interest} onChange={e=>setForm({...form,interest:e.target.value})}><option value="FRONTEND">Frontend</option><option value="BACKEND">Backend</option><option value="UI_UX">UI/UX</option><option value="DEVOPS">DevOps</option><option value="OTHER">Other</option></select></label><label>Introduction<textarea required minLength={10} maxLength={3000} rows={5} value={form.message} onChange={e=>setForm({...form,message:e.target.value})}/></label><label>CV attachment <span>PDF or DOCX; size limit enforced by server</span><input required type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={e=>setFile(e.target.files?.[0]||null)}/></label><button disabled={busy}>{busy?"Submitting…":"Submit application"}</button></form></Shell>;}
-export default function CommunityApp(){const [user,setUser]=useState(null);const [themeMode,setThemeMode]=useState(()=>getInitialThemeMode());useEffect(()=>{fetchCurrentUser().then(d=>setUser(d.authenticated?d.user:null)).catch(()=>setUser(null));},[]);useEffect(()=>{let mode=themeMode;if(mode==="system"){try{mode=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}catch{mode="dark";}}document.documentElement.dataset.sketchiziTheme=mode;return()=>{delete document.documentElement.dataset.sketchiziTheme;};},[themeMode]);useEffect(()=>{const update=()=>setThemeMode(getInitialThemeMode());window.addEventListener("storage",update);return()=>window.removeEventListener("storage",update);},[]);const route=path();if(route==="/reviews/write")return <WriteReview user={user}/>;if(route==="/reviews/mine")return <MyReviews user={user}/>;if(route==="/feedback/new")return <FeedbackForm user={user}/>;if(route==="/feedback")return <MyFeedback user={user}/>;if(route.startsWith("/feedback/"))return <FeedbackDetail user={user}/>;if(route.startsWith("/admin/"))return <AdminDashboard user={user}/>;if(route==="/join-team")return <JoinTeam user={user}/>;return <PublicReviews user={user}/>;}
+const COMMUNITY_SEO = {
+  "/reviews": {
+    title: "Sketchizi Reviews — Community Feedback",
+    description: "Read community reviews of Sketchizi, the online diagram and architecture editor.",
+    canonical: "https://sketchizi.pages.dev/reviews",
+  },
+  "/join-team": {
+    title: "Join the Sketchizi Team",
+    description: "Explore opportunities to contribute to Sketchizi and help build an online diagramming and architecture design tool.",
+    canonical: "https://sketchizi.pages.dev/join-team",
+  },
+};
+
+function updateCommunitySeo(route) {
+  const isPrivate = route === "/workspace" || route.startsWith("/workspace/")
+    || route === "/feedback" || route.startsWith("/feedback/")
+    || route === "/reviews/write" || route === "/reviews/mine"
+    || route === "/admin" || route.startsWith("/admin/");
+  const page = COMMUNITY_SEO[route] || {
+    title: "Sketchizi",
+    description: "Create diagrams and visualize ideas with Sketchizi.",
+    canonical: "https://sketchizi.pages.dev/",
+  };
+  document.title = page.title;
+  const setMeta = (selector, attribute, value, create) => {
+    let element = document.head.querySelector(selector);
+    if (!element && create) {
+      element = document.createElement("meta");
+      if (selector.startsWith('meta[property="')) element.setAttribute("property", selector.slice(15, -2));
+      else element.setAttribute("name", selector.slice(11, -2));
+      document.head.appendChild(element);
+    }
+    if (element) element.setAttribute(attribute, value);
+  };
+  setMeta('meta[name="description"]', "content", page.description, true);
+  setMeta('meta[name="robots"]', "content", isPrivate ? "noindex, nofollow" : "index, follow, max-image-preview:large", true);
+  setMeta('meta[property="og:title"]', "content", page.title, true);
+  setMeta('meta[property="og:description"]', "content", page.description, true);
+  setMeta('meta[property="og:url"]', "content", page.canonical, true);
+  setMeta('meta[name="twitter:title"]', "content", page.title, true);
+  setMeta('meta[name="twitter:description"]', "content", page.description, true);
+  let canonical = document.head.querySelector('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement("link");
+    canonical.rel = "canonical";
+    document.head.appendChild(canonical);
+  }
+  canonical.href = page.canonical;
+}
+
+export default function CommunityApp(){const [user,setUser]=useState(null);const [themeMode,setThemeMode]=useState(()=>getInitialThemeMode());useEffect(()=>{fetchCurrentUser().then(d=>setUser(d.authenticated?d.user:null)).catch(()=>setUser(null));},[]);useEffect(()=>{let mode=themeMode;if(mode==="system"){try{mode=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}catch{mode="dark";}}document.documentElement.dataset.sketchiziTheme=mode;return()=>{delete document.documentElement.dataset.sketchiziTheme;};},[themeMode]);useEffect(()=>{const update=()=>setThemeMode(getInitialThemeMode());window.addEventListener("storage",update);return()=>window.removeEventListener("storage",update);},[]);const route=path();useEffect(()=>{updateCommunitySeo(route);},[route]);if(route==="/reviews/write")return <WriteReview user={user}/>;if(route==="/reviews/mine")return <MyReviews user={user}/>;if(route==="/feedback/new")return <FeedbackForm user={user}/>;if(route==="/feedback")return <MyFeedback user={user}/>;if(route.startsWith("/feedback/"))return <FeedbackDetail user={user}/>;if(route.startsWith("/admin/"))return <AdminDashboard user={user}/>;if(route==="/join-team")return <JoinTeam user={user}/>;return <PublicReviews user={user}/>;}
