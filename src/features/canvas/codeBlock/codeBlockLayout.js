@@ -8,7 +8,12 @@
  *   rounded card                              cardHeight
  */
 
-export const CODE_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace";
+/**
+ * Single source of truth for every Code Block font: canvas renderer, bounds measurement and the DOM editor
+ * (the editor passes it to CSS as --cb-font-family). Never hardcode a font stack anywhere else.
+ */
+export const CODE_FONT_FAMILY =
+  "'Consolas', 'Cascadia Code', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace";
 
 export const CODE_METRICS = Object.freeze({
   fontSize: 14,

@@ -21,7 +21,7 @@
   transform-origin: 0 0;
   pointer-events: auto;
   color: var(--cb-plain);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: var(--cb-font-family);
 }
 
 .sk-code-editor__header {
@@ -43,7 +43,7 @@
   border-radius: 5px;
   background: transparent;
   color: var(--cb-header-text);
-  font: 600 12.5px/22px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font: 600 12.5px/22px var(--cb-font-family);
   letter-spacing: 0;
   outline: none;
   text-overflow: ellipsis;
@@ -61,7 +61,7 @@
   border-radius: 5px;
   background: var(--cb-badge-fill);
   color: var(--cb-badge-text);
-  font: 700 10px/14px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font: 700 10px/14px var(--cb-font-family);
   letter-spacing: 0;
   user-select: none;
 }
@@ -110,9 +110,9 @@
   margin: 0;
   padding: var(--cb-pad-y) var(--cb-pad-x);
   border: 0;
-  font: var(--cb-font-size) / var(--cb-line-height) ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font: var(--cb-font-size) / var(--cb-line-height) var(--cb-font-family);
   font-variant-ligatures: none;
-  letter-spacing: 0;
+  letter-spacing: 0px;
   tab-size: var(--cb-tab-size);
   -moz-tab-size: var(--cb-tab-size);
   white-space: pre;

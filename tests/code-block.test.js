@@ -410,3 +410,28 @@ test("editor and layer wire the resize scale and box floor through edit sessions
   const editor = read("../src/components/app/CodeBlockEditor.jsx");
   assert.match(editor, /minWidth: floor\?\.width, minHeight: floor\?\.height/);
 });
+
+test("Consolas-first CODE_FONT_FAMILY is the only code font: canvas, measurer, editor and stylesheet", async () => {
+  const { CODE_FONT_FAMILY, CODE_METRICS } = await import("../src/features/canvas/codeBlock/codeBlockLayout.js");
+  assert.equal(CODE_FONT_FAMILY, "'Consolas', 'Cascadia Code', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace");
+  // Canvas: header, badge and every token set ctx.font from the constant.
+  const fonts = [];
+  const ctx = new Proxy({}, {
+    get: (t, k) => (k === "measureText" ? (text) => ({ width: String(text).length * 8 }) : k in t ? t[k] : () => {}),
+    set: (t, k, v) => { if (k === "font") fonts.push(v); t[k] = v; return true; },
+  });
+  drawCodeBlock(ctx, { code: "int x = 1;", filename: "test.java", theme: "dark" }, measureCodeBlock("int x = 1;", { charWidth: 8 }));
+  assert.ok(fonts.length >= 3);
+  for (const f of fonts) assert.ok(f.endsWith(CODE_FONT_FAMILY), f);
+  assert.ok(fonts.some((f) => f.startsWith(`600 ${CODE_METRICS.headerFontSize}px`)), "filename header");
+  assert.ok(fonts.some((f) => f.startsWith(`700 ${CODE_METRICS.badgeFontSize}px`)), "language badge");
+  // No hardcoded stacks in the stylesheet or editor / renderer sources.
+  const css = read("../src/styles/code-block.css");
+  assert.doesNotMatch(css, /monospace|JetBrains|Consolas/i);
+  assert.match(css, /var\(--cb-font-family\)/);
+  for (const f of ["../src/components/app/CodeBlockEditor.jsx", "../src/features/canvas/codeBlock/codeBlockRenderer.js"]) assert.doesNotMatch(read(f), /monospace|JetBrains/i, f);
+  // Editor: textarea and pre share one typography object.
+  const editor = read("../src/components/app/CodeBlockEditor.jsx");
+  assert.equal((editor.match(/style=\{CODE_TYPOGRAPHY\}/g) || []).length, 2);
+  for (const needle of [/fontFamily: CODE_FONT_FAMILY/, /fontVariantLigatures: "none"/, /letterSpacing: "0px"/, /tabSize: CODE_METRICS\.tabSize/]) assert.match(editor, needle);
+});

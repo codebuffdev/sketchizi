@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_CODE_FILENAME, FILENAME_PLACEHOLDER, MAX_FILENAME_LENGTH, badgeForFilename, effectiveFilename, languageForFilename, sanitizeFilename } from "../../features/canvas/codeBlock/codeLanguages.js";
-import { CODE_METRICS, measureCodeBlock } from "../../features/canvas/codeBlock/codeBlockLayout.js";
+import { CODE_FONT_FAMILY, CODE_METRICS, measureCodeBlock } from "../../features/canvas/codeBlock/codeBlockLayout.js";
 import { CODE_BORDER_WIDTH, getCodeTheme, isItalicToken } from "../../features/canvas/codeBlock/codeSyntaxTheme.js";
 import { tokenizeCode } from "../../features/canvas/codeBlock/codeTokenizer.js";
 import { getEnterEdit, getTabEdit, normalizePastedCode } from "../../features/canvas/codeBlock/codeEditing.js";
@@ -25,6 +25,19 @@ function applyTextareaEdit(textarea, edit) {
  * renderer: the card auto-grows with its text and sits under a filename header.
  */
 // `zoom` is the canvas zoom multiplied by the block's resize scale, so the overlay matches the canvas size exactly.
+// Identical typography for the transparent <textarea> and its highlighted <pre> underlay so the caret
+// sits on every glyph. Zoom is applied by the editor's CSS transform, so these are natural-size metrics.
+const CODE_TYPOGRAPHY = Object.freeze({
+  fontFamily: CODE_FONT_FAMILY,
+  fontSize: `${CODE_METRICS.fontSize}px`,
+  lineHeight: `${CODE_METRICS.lineHeight}px`,
+  padding: `${CODE_METRICS.paddingY}px ${CODE_METRICS.paddingX}px`,
+  fontVariantLigatures: "none",
+  letterSpacing: "0px",
+  tabSize: CODE_METRICS.tabSize,
+  MozTabSize: CODE_METRICS.tabSize,
+});
+
 export default function CodeBlockEditor({ session, left, top, zoom, theme, onCommit }) {
   const [code, setCode] = useState(session.data.code);
   const [filename, setFilename] = useState(session.data.filename);
@@ -120,6 +133,7 @@ export default function CodeBlockEditor({ session, left, top, zoom, theme, onCom
     "--cb-badge-fill": palette.badgeFill,
     "--cb-badge-border": palette.badgeBorder,
     "--cb-plain": palette.tokens.plain,
+    "--cb-font-family": CODE_FONT_FAMILY,
     "--cb-font-size": `${CODE_METRICS.fontSize}px`,
     "--cb-line-height": `${CODE_METRICS.lineHeight}px`,
     "--cb-pad-x": `${CODE_METRICS.paddingX}px`,
@@ -172,7 +186,7 @@ export default function CodeBlockEditor({ session, left, top, zoom, theme, onCom
         </button>
       </div>
       <div className="sk-code-editor__card" style={{ width: layout.width, height: layout.cardHeight }}>
-        <pre className="sk-code-editor__highlight" aria-hidden="true">
+        <pre className="sk-code-editor__highlight" aria-hidden="true" style={CODE_TYPOGRAPHY}>
           {tokenLines.map((tokens, row) => (
             <span className="sk-code-editor__line" key={row}>
               {tokens.map((token, index) => (
@@ -185,6 +199,7 @@ export default function CodeBlockEditor({ session, left, top, zoom, theme, onCom
         <textarea
           ref={textareaRef}
           className="sk-code-editor__input"
+          style={CODE_TYPOGRAPHY}
           value={code}
           wrap="off"
           spellCheck={false}
