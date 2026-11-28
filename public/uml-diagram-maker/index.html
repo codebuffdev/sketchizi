@@ -4,34 +4,122 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Online UML Diagram Maker | Sketchizi</title>
-<meta name="description" content="Design UML diagrams online with Sketchizi. Visualize software structure, classes, relationships, and system behaviour on a flexible diagram canvas.">
+<meta name="description" content="Create UML-style software diagrams online with Sketchizi. Learn when to use class, use-case, sequence, and component diagrams, with a practical example.">
 <link rel="canonical" href="https://sketchizi.pages.dev/uml-diagram-maker/">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sketchizi">
 <meta property="og:title" content="Online UML Diagram Maker | Sketchizi">
-<meta property="og:description" content="Design UML diagrams online with Sketchizi. Visualize software structure, classes, relationships, and system behaviour on a flexible diagram canvas.">
+<meta property="og:description" content="Create UML-style software diagrams online with Sketchizi. Learn when to use class, use-case, sequence, and component diagrams, with a practical example.">
 <meta property="og:url" content="https://sketchizi.pages.dev/uml-diagram-maker/">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Online UML Diagram Maker | Sketchizi">
+<meta name="twitter:description" content="Create UML-style software diagrams online with Sketchizi. Learn when to use class, use-case, sequence, and component diagrams, with a practical example.">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Sketchizi","applicationCategory":"DiagrammingApplication","operatingSystem":"Web","url":"https://sketchizi.pages.dev/","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <style>
-:root{color-scheme:light dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:#0b1020;color:#eef2ff}*{box-sizing:border-box}body{margin:0;line-height:1.65}.wrap{width:min(960px,calc(100% - 40px));margin:auto}header{border-bottom:1px solid #29334a;padding:18px 0}header .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}a{color:#a5b4fc}header a{font-weight:650;text-decoration:none;color:#fff}.hero{padding:76px 0 54px}.eyebrow{color:#a5b4fc;font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}h1{font-size:clamp(2.4rem,6vw,4.3rem);line-height:1.08;letter-spacing:-.04em;margin:14px 0 20px}h2{font-size:1.5rem;margin:0 0 8px}h3{font-size:1.1rem;margin:0 0 6px}.lead{font-size:1.2rem;color:#cbd5e1;max-width:760px}.cta{display:inline-block;margin-top:18px;background:#818cf8;color:#10142a;padding:12px 20px;border-radius:10px;font-weight:750;text-decoration:none}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin:24px 0 56px}section{background:#141c30;border:1px solid #29334a;border-radius:14px;padding:22px;margin:16px 0}section p{color:#cbd5e1;margin:0}footer{border-top:1px solid #29334a;padding:30px 0 50px;color:#aab5c8}footer nav{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}@media(prefers-reduced-motion:no-preference){a{transition:opacity .15s}a:hover{opacity:.8}}
+:root{color-scheme:light dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:#0b1020;color:#eef2ff}*{box-sizing:border-box}body{margin:0;line-height:1.7}.wrap{width:min(960px,calc(100% - 40px));margin:auto}header{border-bottom:1px solid #29334a;padding:18px 0}header .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}a{color:#a5b4fc}header a{font-weight:650;text-decoration:none;color:#fff}.hero{padding:76px 0 54px}.eyebrow{color:#a5b4fc;font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}h1{font-size:clamp(2.4rem,6vw,4.3rem);line-height:1.08;letter-spacing:-.04em;margin:14px 0 20px}h2{font-size:1.5rem;line-height:1.25;margin:0 0 12px}h3{font-size:1.08rem;line-height:1.3;margin:0 0 6px}.lead{font-size:1.2rem;color:#cbd5e1;max-width:760px}.cta{display:inline-block;margin-top:18px;background:#818cf8;color:#10142a;padding:12px 20px;border-radius:10px;font-weight:750;text-decoration:none}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin:24px 0 42px}section{background:#141c30;border:1px solid #29334a;border-radius:14px;padding:24px;margin:18px 0}section p{color:#cbd5e1;margin:0 0 12px}section p:last-child{margin-bottom:0}ul,ol{color:#cbd5e1;padding-left:1.35rem;margin:12px 0 0}li{padding-left:4px;margin:7px 0}.note{border-left:3px solid #818cf8;padding:4px 0 4px 18px;margin:16px 0;color:#cbd5e1}.faq h3{margin-top:20px}.faq h3:first-of-type{margin-top:0}footer{border-top:1px solid #29334a;padding:30px 0 50px;color:#aab5c8}footer nav{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}@media(prefers-reduced-motion:no-preference){a{transition:opacity .15s}a:hover{opacity:.8}}
 </style>
 </head>
 <body>
 <header><div class="wrap"><a href="/">Sketchizi</a><a href="/?editor=1">Open the editor ↗</a></div></header>
 <main class="wrap">
-<div class="hero"><div class="eyebrow">Sketchizi diagramming workspace</div><h1>Online UML diagram maker</h1><p class="lead">Visualize software systems with UML-style diagrams. Sketchizi helps you lay out components, relationships, and technical ideas in one editable workspace.</p><a class="cta" href="/?editor=1">Start creating with Sketchizi</a></div>
-<div class="grid"><section><h2>Explain software structure</h2><p>Use diagram shapes and connectors to communicate classes, components, and relationships.</p></section>
-      <section><h2>Design and iterate visually</h2><p>Move elements, adjust labels, and refine the structure as your architecture changes.</p></section>
-      <section><h2>Keep technical thinking in one workspace</h2><p>Use a flexible canvas to explore related system concepts and supporting notes.</p></section></div>
-<section><h2>Frequently asked questions</h2></section>
-<section><h3>What is a UML diagram used for?</h3><p>UML diagrams help describe software structure and behaviour, including classes, components, interactions, and system workflows.</p></section>
-      <section><h3>Can I edit diagrams after creating them?</h3><p>Yes. Sketchizi is an editable diagram workspace, so you can continue refining your diagram on the canvas.</p></section>
-<section><h2>Explore more with Sketchizi</h2><p>Use one flexible workspace for diagrams, technical planning, and visual explanations.</p><a class="cta" href="/?editor=1">Open Sketchizi</a></section>
+<div class="hero">
+  <div class="eyebrow">Sketchizi diagramming workspace</div>
+  <h1>Online UML diagram maker</h1>
+  <p class="lead">Plan and explain software systems with UML-style diagrams. Sketchizi gives you an editable visual canvas for arranging classes, actors, components, messages, and the relationships between them.</p>
+  <a class="cta" href="/?editor=1">Create a software diagram</a>
+</div>
+
+<section>
+  <h2>What is UML?</h2>
+  <p>Unified Modeling Language (UML) is a standard visual language for describing the structure and behaviour of software systems. Instead of relying only on paragraphs or code, a team can use diagrams to discuss what a system contains, who interacts with it, and how parts communicate.</p>
+  <p>UML is a family of diagram types, not one single drawing style. Choose the diagram that answers the question your audience has. A class diagram can explain a data model, while a sequence diagram can show the order of messages in one scenario.</p>
+</section>
+
+<section>
+  <h2>Choose the right UML diagram</h2>
+  <div class="grid">
+    <div><h3>Class diagrams</h3><p>Show classes, their attributes and operations, and relationships such as association, inheritance, and composition. Useful when discussing domain models or object-oriented design.</p></div>
+    <div><h3>Use-case diagrams</h3><p>Show the people or external systems that interact with an application and the goals they want to achieve. Useful for scoping requirements and system boundaries.</p></div>
+    <div><h3>Sequence diagrams</h3><p>Show participants and the messages exchanged over time for one scenario. Useful for explaining request flows, authentication, and service interactions.</p></div>
+    <div><h3>Component diagrams</h3><p>Show the major software components, their responsibilities, and dependencies. Useful for discussing modules, services, and integration boundaries.</p></div>
+    <div><h3>Activity diagrams</h3><p>Show the flow of actions and decisions in a process. Useful for business logic, user journeys, and workflows with branches.</p></div>
+    <div><h3>State machine diagrams</h3><p>Show the states an object or process can occupy and the events that trigger transitions. Useful when behaviour depends on lifecycle state.</p></div>
+  </div>
+  <p>These descriptions are a starting point, not a requirement to use every UML notation detail in every conversation. Match the level of formality to the people who will read the diagram.</p>
+</section>
+
+<section>
+  <h2>How to create a UML-style diagram</h2>
+  <ol>
+    <li><strong>Start with a question.</strong> Decide whether you need to explain structure, interactions, requirements, or behaviour. This determines which diagram type will be most useful.</li>
+    <li><strong>Set the system boundary.</strong> Name the application or feature being modelled. Decide which users, external services, and internal parts belong in the picture.</li>
+    <li><strong>List the important elements.</strong> For a class diagram, list the key classes. For a sequence diagram, list the participants and the messages in the scenario. Avoid adding details that do not help answer the original question.</li>
+    <li><strong>Arrange the elements on the canvas.</strong> Open the <a href="/?editor=1">Sketchizi editor</a> and place related elements together. Use consistent labels and leave room for relationships and annotations.</li>
+    <li><strong>Connect related elements.</strong> Use lines and connectors to show associations, dependencies, message order, or transitions. Label relationships when their meaning might otherwise be unclear.</li>
+    <li><strong>Validate the diagram with a real scenario.</strong> Walk through a typical interaction or design decision. Ask a developer or stakeholder to check whether the picture matches the intended system.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Example: an online order system</h2>
+  <p>Consider a simple online store. The same system can be described in different ways depending on the question:</p>
+  <div class="note">
+    <p><strong>Class view:</strong> Customer places an Order. An Order contains OrderItems. Each OrderItem refers to a Product. This view helps discuss the domain model and how information is related.</p>
+    <p><strong>Use-case view:</strong> A Customer can browse products, place an order, and view order status. A Payment Provider participates in the payment interaction. This view helps define system responsibilities and external actors.</p>
+    <p><strong>Sequence view:</strong> Customer submits checkout; the application validates the cart; the order service creates an order; the payment provider processes payment; the application returns a confirmation. This view helps discuss message order and failure points.</p>
+  </div>
+  <p>These are three views of one system, not three competing diagrams. Keeping each diagram focused makes it easier to review and maintain.</p>
+</section>
+
+<section>
+  <h2>UML relationships and notation to know</h2>
+  <ul>
+    <li><strong>Association:</strong> a relationship between model elements, often used to show that objects are connected.</li>
+    <li><strong>Inheritance or generalization:</strong> shows a more specific class deriving from a general class.</li>
+    <li><strong>Dependency:</strong> indicates that one element relies on another.</li>
+    <li><strong>Composition:</strong> represents a strong whole-part relationship in which the part's lifecycle is tied to the whole.</li>
+    <li><strong>Multiplicity:</strong> indicates how many instances can participate in a relationship, such as one-to-many.</li>
+    <li><strong>Message:</strong> in a sequence diagram, represents communication between participants and is arranged in time order.</li>
+  </ul>
+  <p>Use notation consistently. If your audience is unfamiliar with UML, add a short legend or annotation instead of assuming every connector is self-explanatory.</p>
+</section>
+
+<section>
+  <h2>Tips for clearer software diagrams</h2>
+  <ul>
+    <li>Keep one diagram focused on one question or scenario.</li>
+    <li>Use meaningful names from the domain rather than vague labels such as “Manager” or “Data”.</li>
+    <li>Show only the attributes, operations, and relationships needed for the discussion.</li>
+    <li>Arrange sequence participants consistently and keep messages in chronological order.</li>
+    <li>Distinguish external actors and services from elements inside your system boundary.</li>
+    <li>Use notes to explain important assumptions, constraints, or exceptions.</li>
+    <li>Update the diagram when the design changes, and make sure it still matches the implementation or agreed specification.</li>
+  </ul>
+</section>
+
+<section class="faq">
+  <h2>UML diagram maker FAQs</h2>
+  <h3>Can I create UML diagrams online with Sketchizi?</h3>
+  <p>Yes. Sketchizi provides an online diagramming canvas where you can arrange shapes, labels, and connectors to create UML-style diagrams. Choose the notation and level of detail that suit your project.</p>
+  <h3>Which UML diagram should I create first?</h3>
+  <p>Start with the question you need to answer. Use a use-case diagram to discuss user goals, a class diagram to explain structure, a sequence diagram to trace an interaction, or a component diagram to show major software parts.</p>
+  <h3>What is the difference between a class diagram and a sequence diagram?</h3>
+  <p>A class diagram describes static structure: classes and their relationships. A sequence diagram describes behaviour over time: participants and the messages exchanged during a scenario.</p>
+  <h3>Is UML only for object-oriented programming?</h3>
+  <p>UML is often used in object-oriented design, but its diagrams can also help communicate system boundaries, interactions, workflows, and component relationships across many software architectures.</p>
+  <h3>Do I need to use every UML symbol?</h3>
+  <p>No. Use the notation needed to communicate the design accurately. A focused diagram with clear labels is usually more useful than a crowded diagram containing every possible detail.</p>
+  <h3>Can I edit a UML-style diagram later?</h3>
+  <p>Yes. You can return to your Sketchizi canvas and refine the elements and connections as your design or understanding changes.</p>
+</section>
+
+<section>
+  <h2>Explore related diagramming tools</h2>
+  <p>Use a flowchart to explain process logic, or explore infrastructure-focused diagrams for cloud and deployment design. See the <a href="/flowchart-maker/">flowchart maker</a>, <a href="/architecture-diagrams/">architecture diagram tool</a>, <a href="/kubernetes-visualizer/">Kubernetes visualizer</a>, and <a href="/docker-compose-visualizer/">Docker Compose visualizer</a>. More guidance is available in the <a href="/resources/">Sketchizi resources hub</a>.</p>
+  <a class="cta" href="/?editor=1">Open Sketchizi</a>
+</section>
 </main>
-<footer><div class="wrap">© Sketchizi · Online diagramming workspace<nav><a href="/">Home</a><a href="/flowchart-maker/">flowchart maker</a>
-        <a href="/architecture-diagrams/">Cloud and system architecture diagrams</a>
-        <a href="/kubernetes-visualizer/">Kubernetes architecture visualizer</a>
-        <a href="/docker-compose-visualizer/">Docker Compose visualizer</a><a href="/reviews/">Community reviews</a><a href="/resources/">Diagramming guides</a></nav></div></footer>
-</body></html>
+<footer><div class="wrap">© Sketchizi · Online diagramming workspace<nav><a href="/">Home</a><a href="/flowchart-maker/">Flowchart maker</a><a href="/architecture-diagrams/">Cloud and system architecture diagrams</a><a href="/kubernetes-visualizer/">Kubernetes architecture visualizer</a><a href="/docker-compose-visualizer/">Docker Compose visualizer</a><a href="/reviews">Community reviews</a><a href="/resources/">Diagramming guides</a></nav></div></footer>
+</body>
+</html>
