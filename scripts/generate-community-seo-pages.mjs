@@ -25,7 +25,7 @@ function escapeAttribute(value) {
 function setMeta(html, attribute, key, content) {
   const escaped = escapeAttribute(content);
   const marker = '<meta ' + attribute + '="' + key + '"';
-  const tag = '<meta ' + attribute + '="' + key + '" content="' + escaped + '" />";
+  const tag = '<meta ' + attribute + '="' + key + '" content="' + escaped + '" />';
   const start = html.indexOf(marker);
   if (start < 0) return html;
   const end = html.indexOf(">", start);
