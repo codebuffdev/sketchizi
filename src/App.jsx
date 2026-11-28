@@ -1905,6 +1905,7 @@ function App() {
         </span>
       </div>}
       <DesktopAppHeader
+        getElementCount={() => (apiRef.current?.getSceneElements?.() || []).length}
         commands={commands}
         gridEnabled={gridEnabled}
         gridStyle={gridStyle}

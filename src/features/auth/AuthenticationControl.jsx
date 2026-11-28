@@ -1,13 +1,15 @@
 import { useEffect, useState, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { fetchAuthProviders, fetchCurrentUser, fetchGitHubRepositoryConnection, invalidateCurrentUserCache, disconnectGitHubRepositoryConnection, signOut, startGitHubRepositoryConnection, startGitHubSignIn, startGoogleSignIn } from "./authClient.js";
-import { ROLE_PRIVILEGES, resolveUserRole } from "../../config/privileges.js";
+import { ROLE_PRIVILEGES, USER_ROLES, resolveUserRole } from "../../config/privileges.js";
 import { AdminBuildStrip, RolePill } from "./ProfileIdentity.jsx";
+import AdminDiagnosticsModal from "../../components/AdminDiagnosticsModal.jsx";
 
-export default function AuthenticationControl() {
+export default function AuthenticationControl({ getElementCount }) {
   const [auth, setAuth] = useState({ status: "loading", user: null, error: "" });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [loginError, setLoginError] = useState("");
   // Keep both sign-in choices visible while provider discovery is unavailable.
   // A successful provider response below still hides any provider not configured.
@@ -302,7 +304,7 @@ export default function AuthenticationControl() {
                 {githubConnection.connected && <button className="auth-account-menu-item" type="button" role="menuitem" onClick={handleDisconnectGitHubRepositories} disabled={githubConnectionBusy}>{githubConnectionBusy ? "Disconnecting…" : "Disconnect GitHub"}</button>}
                 {githubConnectionMessage && <span className="auth-github-repository-status" role="status">{githubConnectionMessage}</span>}
               </div>
-              <AdminBuildStrip role={accountRole} />
+              <AdminBuildStrip role={accountRole} onOpenDiagnostics={() => { setProfileMenuOpen(false); setDiagnosticsOpen(true); }} />
               <button className="auth-account-menu-item" type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); handleSignOut(); }} disabled={busy}>
                 <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 3H4.8A1.8 1.8 0 0 0 3 4.8v10.4A1.8 1.8 0 0 0 4.8 17H8" /><path d="M11 6l4 4-4 4M15 10H7" /></svg>
                 <span>{busy ? "Signing out…" : "Sign out"}</span>
@@ -356,6 +358,9 @@ export default function AuthenticationControl() {
           </section>
         </div>,
         dialogHost
+      )}
+      {diagnosticsOpen && accountRole === USER_ROLES.ADMIN && auth.status === "authenticated" && (
+        <AdminDiagnosticsModal role={accountRole} open onClose={() => setDiagnosticsOpen(false)} getElementCount={getElementCount} />
       )}
     </div>
   );

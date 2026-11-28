@@ -89,7 +89,7 @@ export const ROLE_PRIVILEGES = Object.freeze({
   }),
   admin: Object.freeze({
     label: "ADMIN",
-    summary: "Unlimited · Debug",
+    summary: "Owner · Unlimited",
     features: adminFeatures,
     limits: Object.freeze({ maxProjects: Infinity, storageBytes: Infinity, maxCollabGuests: Infinity, maxGithubRepos: Infinity, githubPublicOnly: false, aiQuota: "unrestricted" }),
     areas: Object.freeze({

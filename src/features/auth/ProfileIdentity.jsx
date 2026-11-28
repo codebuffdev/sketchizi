@@ -26,7 +26,7 @@ async function copyText(text) {
 }
 
 /** Admin-only build strip. Renders nothing for free and pro users. */
-export function AdminBuildStrip({ role }) {
+export function AdminBuildStrip({ role, onOpenDiagnostics }) {
   const [state, setState] = useState("idle");
   const timer = useRef(null);
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -49,6 +49,7 @@ export function AdminBuildStrip({ role }) {
       <button type="button" className="auth-build-copy" onClick={handleCopy} aria-label="Copy full commit SHA">
         <span role="status" aria-live="polite">{state === "copied" ? "Copied" : state === "failed" ? "Failed" : "Copy"}</span>
       </button>
+      {onOpenDiagnostics && <button type="button" className="auth-build-copy auth-build-diagnostics" onClick={onOpenDiagnostics} aria-haspopup="dialog">Diagnostics ↗</button>}
     </div>
   );
 }

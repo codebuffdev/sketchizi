@@ -173,6 +173,7 @@ export default function DesktopAppHeader({
   startCollaboration,
   collaborationActive,
   collaborationCreationState = "idle",
+  getElementCount,
   collaborationCreationError = "",
   nativeMenuOpen = false,
   toggleNativeMenu,
@@ -591,7 +592,7 @@ export default function DesktopAppHeader({
         onPointerEnter={clearHeaderCollapseTimer}
         onPointerLeave={() => { if (!headerPinned) scheduleHeaderCollapse(); }}
       >
-      <AuthenticationControl />
+      <AuthenticationControl getElementCount={getElementCount} />
       <div className="desktop-app-header-island desktop-app-header-island-left">
       {libraryToggle}
 

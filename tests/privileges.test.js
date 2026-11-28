@@ -50,7 +50,7 @@ test("limits and plan summaries match the product spec", () => {
   assert.equal(ROLE_PRIVILEGES.free.limits.githubPublicOnly, true);
   assert.equal(ROLE_PRIVILEGES.pro.limits.storageBytes, 5 * 1024 ** 3);
   assert.equal(ROLE_PRIVILEGES.pro.summary, "Unlimited · 5 GB");
-  assert.equal(ROLE_PRIVILEGES.admin.summary, "Unlimited · Debug");
+  assert.equal(ROLE_PRIVILEGES.admin.summary, "Owner · Unlimited");
   assert.deepEqual(Object.keys(ROLE_PRIVILEGES.free.areas), ["cloudWorkspace", "githubSync", "ai", "systemDesign", "collab", "exportStudio"]);
 });
 
@@ -102,4 +102,15 @@ test("profile popover wires role pill, summary, GitHub entitlement and an admin-
 test("vite injects build metadata and the hook exists", () => {
   assert.match(read("../vite.config.js"), /__SKETCHIZI_BUILD__/);
   assert.match(read("../src/hooks/usePrivilegeGate.js"), /evaluatePrivilegeGate\(role, feature\)/);
+});
+
+test("admin diagnostics modal is admin-gated, fetches with credentials and degrades gracefully", () => {
+  const modal = read("../src/components/AdminDiagnosticsModal.jsx");
+  assert.match(modal, /role === USER_ROLES\.ADMIN/);
+  assert.match(modal, /\/api\/admin\/diagnostics/);
+  assert.match(modal, /credentials: "include"/);
+  assert.match(modal, /Backend diagnostics unavailable/);
+  assert.match(modal, /Copy Debug Bundle/);
+  const identity = read("../src/features/auth/ProfileIdentity.jsx");
+  assert.match(identity, /Diagnostics ↗/);
 });
