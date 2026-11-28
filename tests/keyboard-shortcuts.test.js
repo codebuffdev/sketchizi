@@ -194,7 +194,11 @@ test("tool configuration is not reset: keyboard path reuses runChild (record/pre
   assert.match(dockSource, /const chooseChildFromKeyboard = \(child\) => \{\s*rememberChild\(child\);\s*runChild\(child\);\s*\};/);
   assert.match(dockSource, /const chooseChild = \(child, \{ keepOpen = false \} = \{\}\) => \{\s*rememberChild\(child\);\s*runChild\(child\);/);
   // runChild is where style records / highlighter save-restore live; shortcuts add no style writes of their own.
-  const keyboardBlock = dockSource.slice(dockSource.indexOf("keyboard shortcuts */"), dockSource.indexOf("child rail open/close"));
+  const from = dockSource.indexOf("keyboard shortcuts */");
+  const to = dockSource.indexOf("const rememberedChild");
+  assert.ok(from > 0 && to > from, "keyboard block must be located");
+  const keyboardBlock = dockSource.slice(from, to);
+  assert.match(keyboardBlock, /createShortcutKeydownHandler/);
   assert.doesNotMatch(keyboardBlock, /updateScene|onToolStyleChange|setActiveTool\(/);
 });
 
@@ -265,4 +269,12 @@ test("regression: no dock tool or slot was removed or renamed", () => {
   assert.deepEqual(DOCK_SLOTS.map((s) => s.id), ["selection", "hand", "shapes", "connectors", "freehand", "text", "media", "eraser", "todo"]);
   assert.equal(findChildById("rectangle").keyHint, "R"); // legacy hints untouched
   assert.equal(findChildById("pen").keyHint, undefined);
+});
+
+test("regression: shortcut wiring is declared after everything it reads (no 'before initialization' crash)", () => {
+  const at = (needle) => { const i = dockSource.indexOf(needle); assert.ok(i >= 0, needle); return i; };
+  const wiring = at("shortcutRef.current = {");
+  for (const dep of ["const runChild = ", "const rememberChild = ", "const chooseChildFromKeyboard = "]) {
+    assert.ok(at(dep) < wiring, `${dep.trim()} must be declared before the shortcut wiring reads it`);
+  }
 });

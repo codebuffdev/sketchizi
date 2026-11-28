@@ -236,28 +236,6 @@ export default function PrimaryDock({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [collapseDock]);
 
-  /* ---------------------------------------------------------------- keyboard shortcuts */
-  // ONE listener, installed once. It reads the latest closures through a ref so
-  // it never needs re-registering; the registry replaces (never duplicates) it.
-  const shortcutRef = useRef(null);
-  shortcutRef.current = { chooseChildFromKeyboard, canEdit };
-  const platform = useRef(detectPlatform()).current;
-  useEffect(() => {
-    const handler = createShortcutKeydownHandler({
-      getContext: () => ({
-        platform,
-        canEdit: shortcutRef.current.canEdit,
-        isEditingCanvasText: () => Boolean(apiRef.current?.getAppState?.()?.editingTextElement),
-        isBlocked: () => Boolean(document.querySelector(".startup-canvas-chooser, .design-studio-screen")),
-      }),
-      activate: (definition) => {
-        const child = findChild(definition.toolId);
-        if (child) shortcutRef.current.chooseChildFromKeyboard(child);
-      },
-    });
-    return installShortcutListener(window, handler);
-  }, [apiRef, platform]);
-
   /* ---------------------------------------------------------------- child rail open/close */
   const measureRailTop = (slotId) => {
     const button = slotButtonRefs.current[slotId];
@@ -380,6 +358,28 @@ export default function PrimaryDock({
     rememberChild(child);
     runChild(child);
   };
+
+  /* ---------------------------------------------------------------- keyboard shortcuts */
+  // ONE listener, installed once. It reads the latest closures through a ref so
+  // it never needs re-registering; the registry replaces (never duplicates) it.
+  const shortcutRef = useRef(null);
+  shortcutRef.current = { chooseChildFromKeyboard, canEdit };
+  const platform = useRef(detectPlatform()).current;
+  useEffect(() => {
+    const handler = createShortcutKeydownHandler({
+      getContext: () => ({
+        platform,
+        canEdit: shortcutRef.current.canEdit,
+        isEditingCanvasText: () => Boolean(apiRef.current?.getAppState?.()?.editingTextElement),
+        isBlocked: () => Boolean(document.querySelector(".startup-canvas-chooser, .design-studio-screen")),
+      }),
+      activate: (definition) => {
+        const child = findChild(definition.toolId);
+        if (child) shortcutRef.current.chooseChildFromKeyboard(child);
+      },
+    });
+    return installShortcutListener(window, handler);
+  }, [apiRef, platform]);
 
   const rememberedChild = (slot) => findChild(slotMemory[slot.id]) || slot.tools[0];
 
