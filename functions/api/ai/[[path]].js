@@ -49,12 +49,15 @@ function bytesToBase64Url(bytes) {
   return btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 }
 
-async function signAssertion(subject, email, secret) {
+// emailVerified is true, false, or undefined. undefined (the identity source did not report it) omits the claim so
+// the backend keeps its compatibility behaviour; it is never converted to true here.
+async function signAssertion(subject, email, secret, emailVerified) {
   const now = Math.floor(Date.now() / 1000);
   const header = bytesToBase64Url(new TextEncoder().encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
   const payload = bytesToBase64Url(new TextEncoder().encode(JSON.stringify({
     sub: subject,
     email,
+    ...(typeof emailVerified === "boolean" ? { email_verified: emailVerified } : {}),
     aud: "sketchizi-ai",
     iat: now,
     exp: now + ASSERTION_LIFETIME_SECONDS,
@@ -86,7 +89,9 @@ async function inspectSession(authOrigin, request, requestId) {
   const payload = await response.json().catch(() => null);
   const subject = payload?.authenticated === true && typeof payload?.user?.id === "string" ? payload.user.id : "";
   const email = payload?.authenticated === true && typeof payload?.user?.email === "string" ? payload.user.email.trim().toLowerCase() : "";
-  return subject && subject.length <= 255 ? { subject, email } : null;
+  // Only a real boolean from the authenticated /api/auth/me response is forwarded; strings and other types are ignored.
+  const emailVerified = payload?.authenticated === true && typeof payload?.user?.emailVerified === "boolean" ? payload.user.emailVerified : undefined;
+  return subject && subject.length <= 255 ? { subject, email, emailVerified } : null;
 }
 
 function requestIsSameOrigin(request, incoming, env) {
@@ -156,7 +161,7 @@ export async function onRequest({ request, env }) {
       return fail(502, "Could not verify your Sketchizi sign-in session.", "identity_verification_unavailable");
     }
     if (!identity) return fail(401, "Sign in with Google to use AI Ask.", "authentication_required");
-    try { assertion = await signAssertion(identity.subject, identity.email, secret); }
+    try { assertion = await signAssertion(identity.subject, identity.email, secret, identity.emailVerified); }
     catch { return fail(503, "The AI identity gateway is unavailable.", "identity_assertion_failed"); }
   }
 

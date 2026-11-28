@@ -135,3 +135,60 @@ test("gateway forwards a correlation ID and preserves a backend identity-store e
   assert.equal(response.headers.get("x-request-id"), gatewayRequestId);
   assert.match(gatewayRequestId, /^[0-9a-f-]{36}$/i);
 });
+
+async function captureAssertion({ meUser, requestHeaders = {}, body } = {}) {
+  let assertion = "";
+  let forwardedHeaders;
+  globalThis.fetch = async (url, options) => {
+    if (String(url) === "https://auth.example.test/api/auth/me") return Response.json({ authenticated: true, user: meUser });
+    forwardedHeaders = options.headers;
+    assertion = options.headers.get("x-sketchizi-identity");
+    return Response.json({});
+  };
+  const response = await onRequest({ request: postRequest("/api/ai/conversations", { headers: requestHeaders, body }), env });
+  assert.equal(response.status, 200);
+  const [headerPart, payloadPart, signaturePart] = assertion.split(".");
+  const key = await globalThis.crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(env.AI_IDENTITY_HMAC_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const expected = new Uint8Array(await globalThis.crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${headerPart}.${payloadPart}`)));
+  assert.deepEqual(Buffer.from(signaturePart, "base64url"), Buffer.from(expected), "assertion must stay validly signed");
+  return { payload: JSON.parse(Buffer.from(payloadPart, "base64url").toString("utf8")), forwardedHeaders };
+}
+
+test("assertion carries email_verified=true for a verified Google identity and keeps existing claims", async () => {
+  const { payload } = await captureAssertion({ meUser: { id: "g-1", email: "A@Example.test", emailVerified: true } });
+  assert.equal(payload.email_verified, true);
+  assert.equal(payload.sub, "g-1");
+  assert.equal(payload.email, "a@example.test");
+  assert.equal(payload.aud, "sketchizi-ai");
+  assert.ok(payload.exp > payload.iat && payload.exp - payload.iat <= 60);
+  assert.match(payload.jti, /^[0-9a-f-]{36}$/i);
+});
+
+test("assertion carries email_verified=false for an unverified identity and never upgrades it", async () => {
+  const { payload } = await captureAssertion({ meUser: { id: "g-2", email: "b@example.test", emailVerified: false } });
+  assert.equal(payload.email_verified, false);
+});
+
+test("missing or non-boolean emailVerified omits the claim so the backend compatibility behaviour applies", async () => {
+  for (const meUser of [
+    { id: "g-3", email: "c@example.test" },
+    { id: "g-3", email: "c@example.test", emailVerified: "true" },
+    { id: "g-3", email: "c@example.test", emailVerified: 1 },
+    { id: "g-3", email: "c@example.test", emailVerified: null },
+  ]) {
+    const { payload } = await captureAssertion({ meUser });
+    assert.equal(Object.hasOwn(payload, "email_verified"), false);
+  }
+});
+
+test("client-supplied verification values and identity headers cannot override the authenticated identity", async () => {
+  const { payload, forwardedHeaders } = await captureAssertion({
+    meUser: { id: "g-4", email: "d@example.test", emailVerified: false },
+    requestHeaders: { "x-sketchizi-identity": "forged.token.value", "x-email-verified": "true" },
+    body: JSON.stringify({ email_verified: true, emailVerified: true, user: { emailVerified: true } }),
+  });
+  assert.equal(payload.email_verified, false);
+  assert.notEqual(forwardedHeaders.get("x-sketchizi-identity"), "forged.token.value");
+});
