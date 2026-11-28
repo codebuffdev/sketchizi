@@ -13,7 +13,15 @@ import {
   resolveActiveChild,
   sectionBreakAfter,
   tooltipLabel,
+  tooltipLabelWithShortcuts,
+  tooltipShortcutText,
 } from "./primaryDockModel.js";
+import {
+  ariaKeyShortcuts,
+  createShortcutKeydownHandler,
+  detectPlatform,
+  installShortcutListener,
+} from "../../features/commands/keyboardShortcutRegistry.js";
 import { INSERT_IMAGE_EVENT } from "../../features/canvas/imageImport/imageImportModel.js";
 
 // Grace period before the dock collapses after the pointer leaves it.
@@ -228,6 +236,28 @@ export default function PrimaryDock({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [collapseDock]);
 
+  /* ---------------------------------------------------------------- keyboard shortcuts */
+  // ONE listener, installed once. It reads the latest closures through a ref so
+  // it never needs re-registering; the registry replaces (never duplicates) it.
+  const shortcutRef = useRef(null);
+  shortcutRef.current = { chooseChildFromKeyboard, canEdit };
+  const platform = useRef(detectPlatform()).current;
+  useEffect(() => {
+    const handler = createShortcutKeydownHandler({
+      getContext: () => ({
+        platform,
+        canEdit: shortcutRef.current.canEdit,
+        isEditingCanvasText: () => Boolean(apiRef.current?.getAppState?.()?.editingTextElement),
+        isBlocked: () => Boolean(document.querySelector(".startup-canvas-chooser, .design-studio-screen")),
+      }),
+      activate: (definition) => {
+        const child = findChild(definition.toolId);
+        if (child) shortcutRef.current.chooseChildFromKeyboard(child);
+      },
+    });
+    return installShortcutListener(window, handler);
+  }, [apiRef, platform]);
+
   /* ---------------------------------------------------------------- child rail open/close */
   const measureRailTop = (slotId) => {
     const button = slotButtonRefs.current[slotId];
@@ -344,6 +374,13 @@ export default function PrimaryDock({
     if (!keepOpen) collapseDock();
   };
 
+  // Keyboard shortcuts take the exact same runChild path as a click. The dock
+  // collapses via the active-tool effect, which deliberately never steals focus.
+  const chooseChildFromKeyboard = (child) => {
+    rememberChild(child);
+    runChild(child);
+  };
+
   const rememberedChild = (slot) => findChild(slotMemory[slot.id]) || slot.tools[0];
 
   const handleSlotClick = (slot, event) => {
@@ -384,7 +421,7 @@ export default function PrimaryDock({
     const top = Math.round(button.getBoundingClientRect().top - nav.getBoundingClientRect().top - nav.clientTop + button.offsetHeight / 2);
     tooltipTimerRef.current = window.setTimeout(() => {
       tooltipTimerRef.current = null;
-      if (!openSlotRef.current) setTooltip({ label: tooltipLabel(slot.tools[0]), top });
+      if (!openSlotRef.current) setTooltip({ label: tooltipLabelWithShortcuts(slot.tools[0], platform), top });
     }, SINGLE_TOOLTIP_DELAY_MS);
   };
   const handleSlotPointerLeave = (slot, event) => {
@@ -490,6 +527,8 @@ export default function PrimaryDock({
                           aria-pressed={isCurrent}
                           data-tool={child.id}
                           data-tip={tooltipLabel(child)}
+                          data-shortcut-tail={tooltipShortcutText(child, platform) ? ` · ${tooltipShortcutText(child, platform)}` : undefined}
+                          aria-keyshortcuts={ariaKeyShortcuts(child.id, platform) || undefined}
                           disabled={!canEdit}
                           onClick={() => chooseChild(child)}
                           onKeyDown={(event) => handleChildKeyDown(slot, event)}

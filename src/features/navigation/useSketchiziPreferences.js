@@ -100,7 +100,7 @@ export function useSketchiziPreferences({ apiRef, apiReady = false, closePanel, 
       if (!plainKey) return;
       if (key === "d") { event.preventDefault(); setThemeMode((mode) => mode === "dark" ? "light" : "dark"); return; }
       if (!event.shiftKey && key === "g") { event.preventDefault(); toggleGrid(); return; }
-      if (key === "p" && selectedCount > 0) { event.preventDefault(); togglePanel("properties"); return; }
+      if (key === "p" && event.shiftKey && selectedCount > 0) { event.preventDefault(); togglePanel("properties"); return; }
       if (key === "m") { event.preventDefault(); setMinimapOpen((open) => !open); return; }
       if (key === "f") { event.preventDefault(); fitDiagram(); }
     };

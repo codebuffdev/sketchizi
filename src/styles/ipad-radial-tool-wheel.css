@@ -187,7 +187,7 @@
 .sketchizi-tool-sidebar-tooltip { left: calc(100% + 8px); transform: translateY(-50%); }
 /* Child button sits 6px inside the rail, so +6px keeps the 8px gap from the rail edge. */
 .sketchizi-tool-sidebar-child::after {
-  content: attr(data-tip);
+  content: attr(data-tip) attr(data-shortcut-tail);
   left: calc(100% + 6px + 8px);
   top: 50%;
   transform: translateY(-50%);

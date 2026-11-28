@@ -17,6 +17,7 @@
     "test:chat": "node --test tests/chat-protocol.test.js",
     "test:sync": "node --import ./tests/register-sync-test-loader.mjs --test tests/collaboration-sync-characterization.test.js tests/collaboration-sync-core.test.js tests/sync-diagnostics.test.js",
     "test:sync-performance": "node --import ./tests/register-sync-test-loader.mjs ./tests/sync-performance-sample.mjs",
+    "test:keyboard-shortcuts": "node --test tests/keyboard-shortcuts.test.js",
     "test:map-dock": "node --test tests/map-dock.test.js",
     "test:ui-defaults": "node --test tests/ui-defaults.test.js",
     "test:tool-style-presets": "node --test tests/tool-style-presets.test.js",

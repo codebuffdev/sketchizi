@@ -18,6 +18,8 @@
  * "C" is owned by CodeBlockLayer (window keydown, ignored while typing).
  */
 
+import { shortcutLabelsForTool } from "../../features/commands/keyboardShortcutRegistry.js";
+
 export const HIGHLIGHTER_DEFAULTS = Object.freeze({ strokeColor: "#ffd60a", opacity: 38, strokeWidth: 14 });
 
 const ARROW_BASE = { lineGeometry: "straight", startArrowhead: null, endArrowhead: "arrow", strokeStyle: "solid" };
@@ -118,4 +120,19 @@ export function resolveActiveChild({ activeToolType, customTool, selectedType, s
 
 export function tooltipLabel(child) {
   return child.keyHint ? `${child.label} (${child.keyHint})` : child.label;
+}
+
+/**
+ * Shortcut text appended to a tool's tooltip. Comes from the central registry
+ * (features/commands/keyboardShortcutRegistry.js); the legacy keyHint already in
+ * tooltipLabel() is not repeated. Example: Rectangle -> "Alt+Shift+R", Fine Pencil -> "P · Alt+Shift+P".
+ */
+export function tooltipShortcutText(child, platform = "other") {
+  return shortcutLabelsForTool(child.id, platform).filter((label) => label !== child.keyHint).join(" · ");
+}
+
+/** Full tooltip including registry shortcuts, e.g. "Rectangle (R) · Alt+Shift+R". */
+export function tooltipLabelWithShortcuts(child, platform = "other") {
+  const extra = tooltipShortcutText(child, platform);
+  return extra ? `${tooltipLabel(child)} · ${extra}` : tooltipLabel(child);
 }
