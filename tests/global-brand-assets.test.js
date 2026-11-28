@@ -6,7 +6,7 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 test("document metadata uses the unified Sketchizi brand", () => {
   const html = read("../index.html");
-  assert.match(html, /<title>Sketchizi<\/title>/);
+  assert.match(html, /<title>Sketchizi — Free Online Diagram &amp; Architecture Designer<\/title>/);
   assert.match(html, /href="\/sketchizi-icon\.svg"/);
   assert.match(html, /content="#0b0f17"/);
   assert.match(html, /sketchizi-icon\.svg/);

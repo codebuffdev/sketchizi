@@ -9,3 +9,5 @@
   X-Robots-Tag: noindex, nofollow
 /admin*
   X-Robots-Tag: noindex, nofollow
+/join-team*
+  X-Robots-Tag: noindex, nofollow

@@ -1,22 +1,13 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { COMMUNITY_SEO, INDEXABLE_ROBOTS } from "../src/features/community/communitySeo.js";
 
 const DEFAULT_OUT_DIR = fileURLToPath(new URL("../dist/", import.meta.url));
-const SITE_ORIGIN = "https://sketchizi.pages.dev";
 
-export const COMMUNITY_PAGES = {
-  reviews: {
-    title: "Sketchizi Reviews — Community Feedback",
-    description: "Read community reviews of Sketchizi, the online diagram and architecture editor.",
-    canonical: SITE_ORIGIN + "/reviews",
-  },
-  "join-team": {
-    title: "Join the Sketchizi Team",
-    description: "Explore opportunities to contribute to Sketchizi and help build an online diagramming and architecture design tool.",
-    canonical: SITE_ORIGIN + "/join-team",
-  },
-};
+export const COMMUNITY_PAGES = Object.fromEntries(
+  Object.values(COMMUNITY_SEO).map(({ slug, title, description, canonical, robots }) => [slug, { title, description, canonical, robots }]),
+);
 
 function escapeAttribute(value) {
   return value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
@@ -39,9 +30,11 @@ function setCanonical(html, canonical) {
 }
 
 export function applyCommunityMetadata(html, page) {
-  let output = html.replace(/<title>[\s\S]*?<\/title>/i, "<title>" + escapeAttribute(page.title) + "</title>");
+  // The homepage-only crawlable summary must not leak into community routes.
+  let output = html.replace(/<noscript id="sketchizi-home-summary">[\s\S]*?<\/noscript>\s*/i, "");
+  output = output.replace(/<title>[\s\S]*?<\/title>/i, "<title>" + escapeAttribute(page.title) + "</title>");
   output = setMeta(output, "name", "description", page.description);
-  output = setMeta(output, "name", "robots", "index, follow, max-image-preview:large");
+  output = setMeta(output, "name", "robots", page.robots || INDEXABLE_ROBOTS);
   output = setMeta(output, "property", "og:type", "website");
   output = setMeta(output, "property", "og:site_name", "Sketchizi");
   output = setMeta(output, "property", "og:title", page.title);
