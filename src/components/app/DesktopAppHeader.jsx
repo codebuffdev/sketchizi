@@ -665,6 +665,20 @@ export default function DesktopAppHeader({
                       <kbd>{paletteShortcut.secondaryLabel}</kbd>
                     </button>
                   )}
+                  {menu.label === "View" && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="desktop-app-dropdown-command"
+                      onClick={() => {
+                        setOpenMenu(null);
+                        window.location.assign("/resources/");
+                      }}
+                    >
+                      <ViewCommandIcon name="search" />
+                      <span className="desktop-app-dropdown-label">Guides &amp; Resources</span>
+                    </button>
+                  )}
                   {commandsForMenu.map((command) => (
                     <button
                       type="button"
