@@ -20,6 +20,7 @@ import { applyMarkdownListEdit, getListPasteEdit, getListRenumberEdit, getMarkdo
 import { getScrollBackPlacement } from "../../features/canvas/scrollBackPlacement.js";
 import { stripLegacyTextRuns } from "../../features/canvas/legacyTextRuns.js";
 import { attachPasteHintGuard } from "../../features/canvas/pasteHintGuard.js";
+import { attachFocalZoom } from "../../features/canvas/focalZoom.js";
 import { attachPasteCentering } from "../../features/canvas/pasteCentering.js";
 import { workspaceFocusRect, spotlightGridPattern, workspaceCoarseGridPattern } from "../../features/canvas/gridSpotlight.js";
 import { useContainerAutoExpand } from "../../features/canvas/containerAutoExpand/useContainerAutoExpand.js";
@@ -78,6 +79,8 @@ export default function SketchiziCanvas({
   // Ink-Adaptive Hairline Ghost: one wrapper frame around the open text editor, tinted by the
   // text element's strokeColor (--active-ink) and grown with the textarea.
   useEffect(() => attachTextEditorFrame({ root: canvasRootRef.current, apiRef }), [apiRef]);
+  // Focal-point zoom: track last clicked canvas point and route Ctrl/Cmd +/-/0 through it.
+  useEffect(() => attachFocalZoom({ root: canvasRootRef.current, apiRef }), [apiRef]);
   // Excalidraw's "paste as a single element" hint: own a single timer and dismiss it on
   // paste-into-editor, Ctrl+Shift+V, canvas click, Escape, tab switch and unmount.
   useEffect(() => attachPasteHintGuard({ apiRef }), [apiRef]);

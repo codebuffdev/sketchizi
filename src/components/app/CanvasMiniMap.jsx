@@ -21,6 +21,7 @@ export default function CanvasMiniMap({ apiRef, canvasRootRef, isDarkTheme = tru
     window.addEventListener("pointermove", schedule, { passive: true });
     window.addEventListener("wheel", schedule, { passive: true });
     window.addEventListener("resize", schedule);
+    window.addEventListener("sketchizi:camera-change", schedule); // zoom buttons/shortcuts: no polling lag
 
     const interval = setInterval(schedule, 400);
 
@@ -30,6 +31,7 @@ export default function CanvasMiniMap({ apiRef, canvasRootRef, isDarkTheme = tru
       window.removeEventListener("pointermove", schedule);
       window.removeEventListener("wheel", schedule);
       window.removeEventListener("resize", schedule);
+      window.removeEventListener("sketchizi:camera-change", schedule);
     };
   }, [canvasRootRef]);
 

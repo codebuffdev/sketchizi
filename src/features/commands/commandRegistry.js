@@ -1,4 +1,5 @@
 import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+import { resetView, zoomStep } from "../canvas/focalZoom.js";
 import { ARCHITECTURE_PACKS } from "../templates/architecturePacks.js";
 import {
   COMMAND_CATEGORY_INSERT,
@@ -50,16 +51,12 @@ export function createSketchiziCommandRegistry(context) {
     openDesignTemplates,
   } = context;
 
+  // Focal-point zoom: anchors on the active selection, else the last clicked canvas point.
   const updateZoom = (operation) => {
     const api = apiRef.current;
     if (!api) return;
-    const current = Number(api.getAppState?.().zoom?.value) || 1;
-    const next = operation === "in"
-      ? Math.min(8, current * 1.2)
-      : operation === "out"
-        ? Math.max(0.1, current / 1.2)
-        : 1;
-    api.updateScene?.({ appState: { ...api.getAppState(), zoom: { value: next } }, captureUpdate: CaptureUpdateAction.NEVER });
+    if (operation === "reset") resetView(api);
+    else zoomStep(api, operation);
   };
 
   const commands = [];
