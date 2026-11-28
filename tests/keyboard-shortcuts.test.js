@@ -16,10 +16,10 @@ const css = read("../src/styles/ipad-radial-tool-wheel.css");
 
 const ev = (over = {}) => ({ key: "", code: "", ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, repeat: false, isComposing: false, defaultPrevented: false, target: { tagName: "DIV", closest: () => null }, ...over });
 const press = (d, over = {}) => d.modifiers.alt
-  ? ev({ code: d.code, key: "Dead", altKey: true, shiftKey: true, ...over }) // macOS Option rewrites key
+  ? ev({ code: d.code, key: "Dead", altKey: true, shiftKey: Boolean(d.modifiers.shift), ...over }) // macOS Option rewrites key
   : ev({ key: d.key.toLowerCase(), code: d.code, ...over });
 
-const PRIMARY_TABLE = { select: "V", hand: "H", rectangle: "R", arrow: "A", pen: "P", text: "T", image: "I", eraser: "E", "code-block": "C", todo: "L" };
+const PRIMARY_TABLE = { select: "V", hand: "H", rectangle: "R", arrow: "A", pen: "P", text: "T", image: "I", eraser: "E", "code-block": "C", line: "L" };
 const subTools = ALL_CHILDREN.filter((c) => !["hand", "todo"].includes(c.id)); // tools that live in a real sub-dock
 const sub = (id) => SHORTCUT_DEFINITIONS.find((d) => d.scope === "sub" && d.toolId === id);
 const primary = (id) => SHORTCUT_DEFINITIONS.find((d) => d.scope === "primary" && d.toolId === id);
@@ -158,9 +158,9 @@ test("dispatcher activates every dock-owned primary and sub-tool directly (no su
 });
 const findChildById = (id) => ALL_CHILDREN.find((c) => c.id === id);
 
-test("owner/native shortcuts (C, L, O, B, K) are labelled but never intercepted by the dock listener", () => {
+test("owner/native shortcuts (C, O, B, K) are labelled but never intercepted by the dock listener", () => {
   const h = harness();
-  for (const id of ["code-block", "todo", "ellipse", "bucketfill", "laser"]) {
+  for (const id of ["code-block", "ellipse", "bucketfill", "laser"]) {
     const d = primary(id);
     assert.notEqual(d.handler, "dock", id);
     const calls = h.fire(press(d));
@@ -231,7 +231,9 @@ test("tooltips show shortcuts: legacy format preserved, registry chords appended
     assert.match(text, /Alt\+Shift\+/, `${child.id} tooltip lacks its shortcut`);
   }
   assert.match(tooltipLabelWithShortcuts(findChildById("hand"), "other"), /\(H\)/);
-  assert.match(tooltipLabelWithShortcuts(findChildById("todo"), "other"), /\(L\)/);
+  assert.equal(tooltipLabelWithShortcuts(findChildById("line"), "other"), "Line (L) · Alt+Shift+L");
+  assert.equal(tooltipLabelWithShortcuts(findChildById("arrow"), "other"), "Arrow (A) · Alt+Shift+A");
+  assert.equal(tooltipLabelWithShortcuts(findChildById("todo"), "other"), "Todo List");
   assert.match(dockSource, /data-tip=\{tooltipLabel\(child\)\}/);
   assert.match(dockSource, /aria-keyshortcuts=/);
   assert.match(css, /content: attr\(data-tip\) attr\(data-shortcut-tail\);/);
@@ -277,4 +279,16 @@ test("regression: shortcut wiring is declared after everything it reads (no 'bef
   for (const dep of ["const runChild = ", "const rememberChild = ", "const chooseChildFromKeyboard = "]) {
     assert.ok(at(dep) < wiring, `${dep.trim()} must be declared before the shortcut wiring reads it`);
   }
+});
+
+test("plain L/l selects the Line tool; Todo List has no shortcut", () => {
+  const h = harness();
+  for (const key of ["l", "L"]) h.fire(ev({ key, code: "KeyL" }));
+  assert.deepEqual(h.activated, ["line", "line"]);
+  assert.equal(matchShortcut(ev({ key: "l", code: "KeyL", ctrlKey: true })), null, "Ctrl/Cmd+L is left alone");
+  assert.equal(h.fire(ev({ key: "l", code: "KeyL", target: { tagName: "TEXTAREA", closest: () => null } })).prevent, 0, "typing l in a text field");
+  assert.equal(matchShortcut(ev({ key: "¬", code: "KeyL", altKey: true })), null, "Alt+L is unbound");
+  assert.equal(SHORTCUT_DEFINITIONS.some((d) => d.toolId === "todo"), false);
+  assert.equal(matchShortcut(ev({ key: "Dead", code: "KeyL", altKey: true, shiftKey: true }))?.toolId, "line");
+  assert.doesNotMatch(read("../src/components/app/SketchiziCanvas.jsx"), /onTodoShortcut/);
 });

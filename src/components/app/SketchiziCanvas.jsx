@@ -94,21 +94,6 @@ export default function SketchiziCanvas({
   const cameraLockUpdateRef = useRef(false);
   const pagesMode = pageContext?.mode === "pages";
 
-  useEffect(() => {
-    const onTodoShortcut = (event) => {
-      if (event.key?.toLowerCase() !== "l" || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
-      const target = event.target;
-      if (target instanceof HTMLElement && (target.isContentEditable || target.closest("input, textarea, select, [contenteditable='true']"))) return;
-      if (pagesMode || viewModeEnabled || !canEdit) return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation?.();
-      onOpenTodoTab?.();
-    };
-    window.addEventListener("keydown", onTodoShortcut, true);
-    return () => window.removeEventListener("keydown", onTodoShortcut, true);
-  }, [pagesMode, viewModeEnabled, canEdit, onOpenTodoTab]);
-
   // A Pages chapter is a bounded sheet, not an infinite canvas. Consume all
   // viewport-navigation gestures before Excalidraw can translate its camera.
   useEffect(() => {

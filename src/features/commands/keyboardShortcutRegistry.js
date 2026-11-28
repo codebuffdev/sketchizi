@@ -19,8 +19,7 @@
  *   "dock"   -> dispatched by the single dock keydown listener
  *               (same code path as a mouse click: PrimaryDock.chooseChild)
  *   "owner"  -> the key is registered here for labels and conflict detection,
- *               but an existing dedicated handler performs it (L opens the Todo
- *               tab in SketchiziCanvas, C arms Code Block in CodeBlockLayer)
+ *               but an existing dedicated handler performs it (C arms Code Block in CodeBlockLayer)
  *   "native" -> performed by Excalidraw itself (O, B, K legacy hints)
  */
 import { isMacPlatform } from "./platformShortcut.js";
@@ -51,7 +50,8 @@ const PRIMARY = [
   def("primary", "eraser", "eraser", "E"),
   // C belongs to Code Block today (no "Smart Flow Connector" tool exists in the dock).
   def("primary", "code-block", "text", "C", { handler: "owner" }),
-  def("primary", "todo", "todo", "L", { handler: "owner" }),
+  // Plain L is the Line tool. Todo List has no keyboard shortcut.
+  def("primary", "line", "connectors", "L"),
   // Legacy plain hints already shown in the dock; performed by Excalidraw.
   def("primary", "ellipse", "shapes", "O", { handler: "native" }),
   def("primary", "bucketfill", "shapes", "B", { handler: "native" }),

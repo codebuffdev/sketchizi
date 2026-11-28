@@ -20,7 +20,7 @@ inputs/textareas/contenteditable/dialogs, during canvas text editing, on key aut
 | I | Image | dock |
 | E | Eraser | dock |
 | C | Code Block (see notes) | CodeBlockLayer |
-| L | Todo List | SketchiziCanvas |
+| L | Line | dock |
 | O / B / K | Ellipse / Bucket Fill / Laser (legacy hints) | Excalidraw |
 
 ## Sub-dock (Alt+Shift+…)
@@ -31,6 +31,7 @@ Image: **I** Upload Image, **F** Frame · Eraser: **E** Eraser, **1** Laser Poin
 (Alt+Shift+Z is unused on purpose: Alt+Z is Zen mode.)
 
 ## Notes
+* Plain `L` selects Line (was Todo List). Todo List no longer has a keyboard shortcut.
 * Properties toggle moved from `P` to `Shift+P` because `P` is Pen.
 * "Smart Flow Connector" does not exist in the dock, so `C` stays with Code Block. Reassign when that tool ships.
 * The spec's Box Marquee, Pill, Calligraphy Brush, Speech Callout, Half-Filled Circle and Area Eraser are not dock tools today;
