@@ -24,9 +24,12 @@ function escapeAttribute(value) {
 
 function setMeta(html, attribute, key, content) {
   const escaped = escapeAttribute(content);
-  const selector = new RegExp("<meta\\s+" + attribute + "=[\\"']" + key + "[\\"'][^>]*>", "i");
-  const tag = '<meta ' + attribute + '="' + key + '" content="' + escaped + '" />';
-  return selector.test(html) ? html.replace(selector, tag) : html;
+  const marker = '<meta ' + attribute + '="' + key + '"';
+  const tag = '<meta ' + attribute + '="' + key + '" content="' + escaped + '" />";
+  const start = html.indexOf(marker);
+  if (start < 0) return html;
+  const end = html.indexOf(">", start);
+  return end < 0 ? html : html.slice(0, start) + tag + html.slice(end + 1);
 }
 
 function setCanonical(html, canonical) {
