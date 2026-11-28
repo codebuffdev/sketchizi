@@ -101,7 +101,8 @@ const COMMUNITY_SEO = {
 function updateCommunitySeo(route) {
   const isPrivate = route === "/workspace" || route.startsWith("/workspace/")
     || route === "/feedback" || route.startsWith("/feedback/")
-    || route === "/reviews/write" || route === "/reviews/mine"
+    || route === "/reviews/write" || route.startsWith("/reviews/write/")
+    || route === "/reviews/mine" || route.startsWith("/reviews/mine/")
     || route === "/admin" || route.startsWith("/admin/");
   const page = COMMUNITY_SEO[route] || {
     title: "Sketchizi",
