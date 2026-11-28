@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { resolveBuildMetadata } from "./src/config/buildMetadata.js";
 import { onRequestGet as eraserCatalog } from "./functions/api/eraser-catalog.js";
 import { onRequestGet as eraserIcon } from "./functions/api/eraser-icon.js";
 import { onRequest as authGateway } from "./functions/api/auth/[[path]].js";
@@ -106,7 +107,12 @@ function sketchiziPagesFunctionsDev() {
   };
 }
 
+const buildMetadata = resolveBuildMetadata(process.env);
+
 export default defineConfig({
+  define: {
+    __SKETCHIZI_BUILD__: JSON.stringify({ fullHash: buildMetadata.fullHash, branch: buildMetadata.branch, builtAt: buildMetadata.builtAt }),
+  },
   plugins: [react(), sketchiziPagesFunctionsDev()],
   server: {
     proxy: {

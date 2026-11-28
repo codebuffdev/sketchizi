@@ -1,6 +1,8 @@
 import { useEffect, useState, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { fetchAuthProviders, fetchCurrentUser, fetchGitHubRepositoryConnection, invalidateCurrentUserCache, disconnectGitHubRepositoryConnection, signOut, startGitHubRepositoryConnection, startGitHubSignIn, startGoogleSignIn } from "./authClient.js";
+import { ROLE_PRIVILEGES, resolveUserRole } from "../../config/privileges.js";
+import { AdminBuildStrip, RolePill } from "./ProfileIdentity.jsx";
 
 export default function AuthenticationControl() {
   const [auth, setAuth] = useState({ status: "loading", user: null, error: "" });
@@ -262,7 +264,9 @@ export default function AuthenticationControl() {
   // A transformed application shell can become the containing block for
   // position: fixed. Portal to body so the backdrop and dialog are centered
   // against the actual viewport, independent of editor/header transforms.
-  const dialogHost = typeof document !== "undefined" ? document.body : null;
+  const accountRole = resolveUserRole(auth.user);
+
+    const dialogHost = typeof document !== "undefined" ? document.body : null;
 
   return (
     <div className="auth-control-root">
@@ -284,16 +288,21 @@ export default function AuthenticationControl() {
           {profileMenuOpen && (
             <div className="auth-account-menu" role="menu" aria-label="Account menu">
               <div className="auth-account-menu-heading">
-                <strong>{auth.user?.name || "Signed in"}</strong>
+                <div className="auth-account-menu-name-row">
+                  <strong>{auth.user?.name || "Signed in"}</strong>
+                  <RolePill role={accountRole} />
+                </div>
                 {auth.user?.email && <span>{auth.user.email}</span>}
+                <span className="auth-account-plan-summary">{ROLE_PRIVILEGES[accountRole].summary}</span>
               </div>
               <div className="auth-github-repository-section">
                 <strong>GitHub repositories</strong>
-                {githubConnection.loading ? <span className="auth-github-repository-status">Checking connection…</span> : githubConnection.connected ? <span className="auth-github-repository-status">Connected as @{githubConnection.githubLogin}</span> : <span className="auth-github-repository-status">{githubConnection.authorizationAvailable ? "Not connected" : "Not configured"}</span>}
+                {githubConnection.loading ? <span className="auth-github-repository-status">Checking connection…</span> : githubConnection.connected ? <span className="auth-github-repository-status">Connected as @{githubConnection.githubLogin}{ROLE_PRIVILEGES[accountRole].limits.githubPublicOnly ? " · Public repo only" : ""}</span> : <span className="auth-github-repository-status">{!githubConnection.authorizationAvailable ? "Not configured" : ROLE_PRIVILEGES[accountRole].limits.githubPublicOnly ? "Public repo only" : "Not connected"}</span>}
                 {githubConnection.authorizationAvailable && !githubConnection.connected && <><span className="auth-github-repository-status">GitHub will ask you to authorize repository access, which may include private repositories. Sketchizi stores the token encrypted on its server; it is never sent to the browser.</span><button className="auth-account-menu-item" type="button" role="menuitem" onClick={handleConnectGitHubRepositories} disabled={githubConnectionBusy}>{githubConnectionBusy ? "Connecting…" : "Connect GitHub repositories"}</button></>}
                 {githubConnection.connected && <button className="auth-account-menu-item" type="button" role="menuitem" onClick={handleDisconnectGitHubRepositories} disabled={githubConnectionBusy}>{githubConnectionBusy ? "Disconnecting…" : "Disconnect GitHub"}</button>}
                 {githubConnectionMessage && <span className="auth-github-repository-status" role="status">{githubConnectionMessage}</span>}
               </div>
+              <AdminBuildStrip role={accountRole} />
               <button className="auth-account-menu-item" type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); handleSignOut(); }} disabled={busy}>
                 <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 3H4.8A1.8 1.8 0 0 0 3 4.8v10.4A1.8 1.8 0 0 0 4.8 17H8" /><path d="M11 6l4 4-4 4M15 10H7" /></svg>
                 <span>{busy ? "Signing out…" : "Sign out"}</span>
