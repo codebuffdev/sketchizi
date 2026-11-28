@@ -1,5 +1,5 @@
 const PREFIX = "/api/workspace";
-import { getCsrfHeaders, invalidateCsrfToken, isCsrfRejection } from "../auth/csrfClient.js";
+import { clearCsrfTokenCache, getCsrfHeaders, isCsrfRejection } from "../auth/csrfClient.js";
 
 const REQUEST_TIMEOUT_MS = 12000;
 const DRAWING_WRITE_TIMEOUT_MS = 75000;
@@ -102,7 +102,7 @@ async function request(path, { method = "GET", body, headers = {}, timeout } = {
       const payload = await response.json().catch(() => null);
       if (isWrite && !csrfRetried && isCsrfRejection(response.status, payload)) {
         csrfRetried = true;
-        invalidateCsrfToken();
+        clearCsrfTokenCache();
         forceToken = true;
         attempt -= 1;
         continue;

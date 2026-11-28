@@ -1,5 +1,5 @@
 import { ensureBackendReady } from "../backend/backendWarmup.js";
-import { getCsrfHeaders } from "./csrfClient.js";
+import { fetchWithCsrfRetry } from "./csrfClient.js";
 
 const AUTH_ME_URL = "/api/auth/me";
 const AUTH_LOGOUT_URL = "/api/auth/logout";
@@ -184,12 +184,16 @@ export async function startGitHubRepositoryConnection(returnTo = window.location
 
 export async function disconnectGitHubRepositoryConnection() {
   await ensureBackendReady();
-  let csrf;
-  try { csrf = await getCsrfHeaders(); } catch { throw new Error("Could not prepare a secure GitHub disconnect request."); }
-  const response = await fetch("/api/github/disconnect", {
-    method: "POST", credentials: "same-origin", cache: "no-store",
-    headers: { accept: "application/json", ...csrf },
-  });
+  let response;
+  try {
+    response = await fetchWithCsrfRetry("/api/github/disconnect", {
+      method: "POST", credentials: "same-origin", cache: "no-store",
+      headers: { accept: "application/json" },
+    });
+  } catch (error) {
+    if (error?.code === "csrf_unavailable") throw new Error("Could not prepare a secure GitHub disconnect request.");
+    throw error;
+  }
   if (response.status === 401) throw new Error("Your sign-in session has expired. Please sign in again.");
   if (!response.ok && response.status !== 204) throw new Error("Could not disconnect GitHub. Please try again.");
   return true;
@@ -197,12 +201,16 @@ export async function disconnectGitHubRepositoryConnection() {
 
 export async function signOut() {
   await ensureBackendReady();
-  let csrf;
-  try { csrf = await getCsrfHeaders(); } catch { throw new Error("Could not prepare a secure sign-out request."); }
-  const response = await fetch(AUTH_LOGOUT_URL, {
-    method: "POST", credentials: "same-origin", cache: "no-store",
-    headers: { accept: "application/json", ...csrf },
-  });
+  let response;
+  try {
+    response = await fetchWithCsrfRetry(AUTH_LOGOUT_URL, {
+      method: "POST", credentials: "same-origin", cache: "no-store",
+      headers: { accept: "application/json" },
+    });
+  } catch (error) {
+    if (error?.code === "csrf_unavailable") throw new Error("Could not prepare a secure sign-out request.");
+    throw error;
+  }
   if (!response.ok && response.status !== 204) throw new Error("Sign-out failed. Please try again.");
   window.dispatchEvent(new CustomEvent("sketchizi:auth-changed", { detail: { authenticated: false, signedOut: true } }));
 }
@@ -212,13 +220,17 @@ export async function fetchHostAuthorization(roomId) {
   if (typeof roomId !== "string" || !/^[A-Za-z0-9_-]{20,64}$/.test(roomId)) {
     throw new Error("Could not prepare secure collaboration hosting.");
   }
-  let csrf;
-  try { csrf = await getCsrfHeaders(); } catch { throw new Error("Could not verify your session. Please try again."); }
-  const response = await fetch("/api/auth/collaboration-host-token", {
-    method: "POST", credentials: "same-origin", cache: "no-store",
-    headers: { accept: "application/json", "content-type": "application/json", ...csrf },
-    body: JSON.stringify({ roomId }),
-  });
+  let response;
+  try {
+    response = await fetchWithCsrfRetry("/api/auth/collaboration-host-token", {
+      method: "POST", credentials: "same-origin", cache: "no-store",
+      headers: { accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify({ roomId }),
+    });
+  } catch (error) {
+    if (error?.code === "csrf_unavailable") throw new Error("Could not verify your session. Please try again.");
+    throw error;
+  }
   if (response.status === 401) throw new Error("Your sign-in session has expired. Please sign in again.");
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));

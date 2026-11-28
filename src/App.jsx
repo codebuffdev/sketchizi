@@ -60,7 +60,7 @@ import { AWS_RELATIONSHIP_TYPES, getAwsRelationship, updateRelationshipType } fr
 import { KUBERNETES_RELATIONSHIP_TYPES, getKubernetesRelationship, getKubernetesRelationshipGuidance, updateKubernetesRelationshipMetadata } from "./features/kubernetes-relationships/kubernetesRelationshipService";
 import CommandPalette from "./components/app/CommandPalette";
 import DesktopAppHeader from "./components/app/DesktopAppHeader";
-import { invalidateCsrfToken } from "./features/auth/csrfClient.js";
+import { forceRefreshCsrfToken } from "./features/auth/csrfClient.js";
 const SystemDesignStudio = lazy(() => import("./features/system-design/SystemDesignStudio.jsx"));
 const DockerComposeStudio = lazy(() => import("./features/docker-compose/ui/DockerComposeStudio.jsx"));
 const KubernetesStudio = lazy(() => import("./features/kubernetes-studio/ui/KubernetesStudio.jsx"));
@@ -1890,10 +1890,12 @@ function App() {
         <span className="cloud-editor-save-status-text">{cloudSaveState.state === "loading" ? "Loading cloud diagram…" : cloudSaveState.state === "pending" || cloudSaveState.state === "saving" ? "Saving to Cloud Workspace…" : cloudSaveState.state === "saved" ? "Saved to Cloud Workspace" : ["error", "conflict"].includes(cloudSaveState.state) ? cloudSaveState.error : ""}</span>
         <span className="cloud-editor-save-status-actions">
           {cloudSaveState.state === "error" && <>
-            <button type="button" className="is-primary" onClick={() => {
+            <button type="button" className="is-primary" onClick={async () => {
               const api = apiRef.current;
               if (!api) return;
-              invalidateCsrfToken();
+              // Self-healing: get a brand-new security token first, then save. A failure here is
+              // not fatal; the save pipeline retries the token once more on its own.
+              try { await forceRefreshCsrfToken(); } catch { /* the save below surfaces any real failure */ }
               queueSketchSave(api.getSceneElementsIncludingDeleted?.() || api.getSceneElements?.() || [], api.getAppState?.() || {});
             }}>Retry save</button>
             <button type="button" onClick={downloadRecoveryBackup}>Download backup</button>

@@ -1,10 +1,10 @@
 import { ensureBackendReady } from "../backend/backendWarmup.js";
-import { getCsrfHeaders } from "../auth/csrfClient.js";
+import { clearCsrfTokenCache, getCsrfHeaders, isCsrfRejection } from "../auth/csrfClient.js";
 
 const API_BASE = "/api/ai";
 
-async function csrfHeaders(signal) {
-  try { return await getCsrfHeaders({ signal }); }
+async function csrfHeaders(signal, force = false) {
+  try { return await getCsrfHeaders({ signal, force }); }
   catch { throw new Error("Could not prepare a secure AI request. Refresh your sign-in session and try again."); }
 }
 
@@ -14,12 +14,15 @@ export async function aiApiRequest(path, { method = "GET", body, signal } = {}) 
   const retryableLogicalChat = normalizedMethod === "POST" && path === "/chat" && body && typeof body.requestId === "string";
   const maxAttempts = retryableLogicalChat ? 2 : 1;
   let lastNetworkError;
+  let csrfRetried = false;
+  let forceToken = false;
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const headers = { accept: "application/json" };
     if (body !== undefined) {
       headers["content-type"] = "application/json";
-      Object.assign(headers, await csrfHeaders(signal));
+      Object.assign(headers, await csrfHeaders(signal, forceToken));
+      forceToken = false;
     }
     let response;
     try {
@@ -43,6 +46,14 @@ export async function aiApiRequest(path, { method = "GET", body, signal } = {}) 
 
     const payload = await response.json().catch(() => ({}));
     const requestId = response.headers.get("x-request-id") || payload.requestId || null;
+    if (!response.ok && body !== undefined && !csrfRetried && isCsrfRejection(response.status, payload)) {
+      // Stale or missing security token: refresh it and replay the same request once, silently.
+      csrfRetried = true;
+      clearCsrfTokenCache();
+      forceToken = true;
+      attempt -= 1;
+      continue;
+    }
     if (!response.ok) {
       const message = typeof payload.error === "string" ? payload.error : "The AI service could not complete this request.";
       const error = new Error(message);
